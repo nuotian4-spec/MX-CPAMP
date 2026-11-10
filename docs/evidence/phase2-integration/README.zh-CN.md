@@ -1,6 +1,6 @@
 # 二期离线跨线集成
 
-状态：工具语法、合成登录进程及异常清理反例通过；最终候选首次真实组件集成exit1，停在`batch_redaction`。健康、鉴权及隔离边界通过，容器清理已核无残留。具体结果见[首次候选回执](final-candidate-20261111.zh-CN.md)。所有输入均为合成账号/Key，工具不读取真实凭据、不访问生产、不发真实登录、刷新或模型请求。
+状态：r2最终候选真实组件离线集成exit0，批次、保存注册、BFF和并发调度全部检查通过，容器清理已核无残留，见[r2候选回执](final-candidate-r2-20261111.zh-CN.md)。[首次候选exit1回执](final-candidate-20261111.zh-CN.md)保留原文。所有输入均为合成账号/Key，工具不读取真实凭据、不访问生产、不发真实登录、刷新或模型请求。
 
 ## 覆盖与边界
 
@@ -51,4 +51,4 @@ node run.mjs --cpa-binary ABSOLUTE_CPA_LINUX_BINARY --manager-binary ABSOLUTE_MA
 
 容器预生成名称在`docker run`之前登记，CLI回执失败也进入清理。`verify-cleanup.mjs`通过CLI替身覆盖两个工具的“daemon已建容器、run返回失败”路径，要求主动删除且最终无残留；它只验证工具清理，不启动Docker或产品。
 
-后续结果回执须绑定实际候选revision/镜像或叠加输入、执行命令、退出码和cleanup核验；产品候选未齐时保留待跑，不以此文档或fixture成功代替跨线验收。
+最终结果回执分别绑定实际组件revision/镜像ID、工具输入、执行命令、退出码和cleanup核验。离线集成结果不替代真实授权、刷新、公开模型调用或生产验收。

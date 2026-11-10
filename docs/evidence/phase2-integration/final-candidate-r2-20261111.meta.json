@@ -1,0 +1,15 @@
+{
+  "tool_revision": "bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f",
+  "tool_last_change": "efe4d4989db8899771fe24cf07ff370111eed137",
+  "source_revision": "bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f",
+  "expected_component_revisions": {
+    "cpa": "95dd9ca2c16d5469c43ce7c910f38ff271af45e3",
+    "manager": "bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f",
+    "worker": "95dd9ca2c16d5469c43ce7c910f38ff271af45e3"
+  },
+  "command": "node docs/evidence/phase2-integration/run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:phase2-local-20261111-r2 --worker-image mx-oauth-login:phase2-local-20261111 --source-revision bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f --cpa-revision 95dd9ca2c16d5469c43ce7c910f38ff271af45e3 --worker-revision 95dd9ca2c16d5469c43ce7c910f38ff271af45e3",
+  "started_at": "2026-11-10T18:10:42.6113654Z",
+  "finished_at": "2026-11-10T18:10:52.4840363Z",
+  "exit_code": 0,
+  "receipt": "final-candidate-r2-20261111.jsonl"
+}
