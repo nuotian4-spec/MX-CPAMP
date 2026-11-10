@@ -26,6 +26,8 @@
 
 ## 分发状态
 
-GitHub 发布草稿 `mx-cpamp-20261110-rc1` 的两项资产上传成功，API 返回 `state=uploaded`。GitHub 归档 digest 与本地上述 SHA256 相同。manifest 资产 digest 为 `sha256:a42af112370d3e5bd2f10448c63a58a171ad9715650c87349774b8b93169d5c7`。公开发布需在部署材料审查完成后记录。
+GitHub [候选版 mx-cpamp-20261110-rc1](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261110-rc1) 已公开发布，API 返回 `draft=false`、`prerelease=true`，远端 tag 绑定 `3baeb518da2dbbff14befe386701a9d2815c9a9c`。两项资产均 `state=uploaded`，GitHub 归档 digest 与本地上述 SHA256 相同。manifest 资产 digest 为 `sha256:a42af112370d3e5bd2f10448c63a58a171ad9715650c87349774b8b93169d5c7`，公开下载后再次匹配。
+
+固定提交的三个交付脚本已从公开 raw URL 实际下载，逐文件与独立审查输入相同。准备命令见 [上线说明](../../deployment-release.zh-CN.md)。生产准备和切换仍待用户执行。
 
 产品专项与三组件合成授权集成沿用 [本地候选记录](../../local-candidate.zh-CN.md)。本记录证明归档与加载身份，不代表生产服务或真实账号业务已验收。

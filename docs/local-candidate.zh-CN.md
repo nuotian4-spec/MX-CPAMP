@@ -6,9 +6,9 @@
 
 开发分支 `codex/openai-bps-login` 已推送，已创建 [草稿 PR #1](https://github.com/nuotian4-spec/MX-CPAMP/pull/1)。首批交付提交为 `3bc483f1a9e4319c9568dc216d7b68de6c8a1345`；后续文档与只读预检材料不改变下列产品与镜像输入。
 
-CPA 上游自带的两项 Google OAuth 公开客户端常量，按用户授权完成本次推送放行，保留原有源码与 Google 登录行为。已通过 GitHub API 核实仓库 `secret_scanning`、`secret_scanning_push_protection` 均为 `enabled`。未发布镜像或切换生产服务；真实业务验收完成前保持 PR 草稿。
+CPA 上游自带的两项 Google OAuth 公开客户端常量，按用户授权完成本次推送放行，保留原有源码与 Google 登录行为。已通过 GitHub API 核实仓库 `secret_scanning`、`secret_scanning_push_protection` 均为 `enabled`。三镜像归档已作为 [mx-cpamp-20261110-rc1](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261110-rc1) 分发；生产服务尚未切换，真实业务验收完成前保持 PR 草稿。
 
-上线接续从 [服务器只读预检](deployment-preflight.zh-CN.md) 开始。脚本已通过 Linux 四场景及真实 Docker 模板验证；等待服务器回执后，按实际 Compose、镜像与数据挂载准备发布材料。证据见 [预检回执](evidence/manager-login/PREFLIGHT.zh-CN.md)。
+用户已回传 [服务器只读预检](deployment-preflight.zh-CN.md)，确认既有 cpa-stack、完整镜像和数据挂载。匹配现场的 [准备与切换材料](deployment-release.zh-CN.md) 已通过 Linux 专项及 [独立审查](evidence/deployment-review.zh-CN.md)。当前等待用户执行准备阶段，回传后再进入一次性备份与受控切换。
 
 ## 实现
 
@@ -69,4 +69,4 @@ docker build -t mx-oauth-login:local --build-arg "SOURCE_COMMIT=$sourceCommit" -
 - BPS 模型清单默认空；只填写已确认可用的模型，不以历史默认列表代替当前能力。
 - 首期 BPS 不接原生 WebSocket、工具、媒体、opaque/compaction、background、服务端 `previous_response_id` 或 token counting。
 - 自动续期由 CPA 执行；刷新失效后人工补登录，不保存密码/TOTP 作无人值守重登。
-- 镜像目前仅在本地；镜像发布、生产切换及本次必要备份需单独记录和安排。
+- 候选镜像已发布；生产准备、切换与本次必要备份尚未执行。分发身份见 [归档核证](evidence/deployment/archive-verification.zh-CN.md)。

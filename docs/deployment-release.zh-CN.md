@@ -4,12 +4,12 @@
 
 ## 下载与准备
 
-将 `SOURCE_COMMIT` 替换为 P9 公布的完整已审提交。三个文件必须下载到同一目录，使用服务器既有代理环境，不把 Windows 本机代理地址写入服务器。
+候选资产已发布为 [mx-cpamp-20261110-rc1](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261110-rc1)，固定已审提交 `3baeb518da2dbbff14befe386701a9d2815c9a9c`。三个文件必须下载到同一目录，使用服务器既有代理环境，不把 Windows 本机代理地址写入服务器。
 
 ```bash
 sudo bash <<'BOOTSTRAP'
 set -euo pipefail
-SOURCE_COMMIT='P9公布的40位完整提交'
+SOURCE_COMMIT='3baeb518da2dbbff14befe386701a9d2815c9a9c'
 RELEASE_BASE='https://github.com/nuotian4-spec/MX-CPAMP/releases/download/mx-cpamp-20261110-rc1'
 TOOLS='/opt/cpa-stack/mx-release-20261110-rc1'
 install -d -o root -g root -m 0700 "$TOOLS"
