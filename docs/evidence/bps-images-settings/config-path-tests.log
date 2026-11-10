@@ -1,0 +1,5 @@
+代码输入: 7ab7ff3e565174053aa5d3a17574c7fc19fa1703
+工作目录: D:/MX-CPAMP-worktrees/bps-images-settings/components/cpa
+命令: go test ./internal/config -run TestBPSProtocol -count=1
+ok  github.com/router-for-me/CLIProxyAPI/v8/internal/config  0.201s
+exit=0

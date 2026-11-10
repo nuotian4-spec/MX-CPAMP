@@ -1,0 +1,6 @@
+产品输入: e60233550b447dca6c0d35cefaff67d9efab0fea + 7ab7ff3e565174053aa5d3a17574c7fc19fa1703
+专项测试: d733e685d6dfe470de2c9203766cd12efdbe880a内的bps_settings_routes_test.go
+工作目录: D:/MX-CPAMP-worktrees/bps-images-settings/components/cpa
+命令: go test ./internal/api -run TestBPSSettingsAndImageReadRoutes -count=1
+ok  github.com/router-for-me/CLIProxyAPI/v8/internal/api  0.179s
+exit=0
