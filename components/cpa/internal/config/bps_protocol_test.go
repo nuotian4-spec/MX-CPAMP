@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -48,5 +49,33 @@ func TestBPSProtocolRelayOriginAndStateIsolation(t *testing.T) {
 	cfg.BPSProtocol.StateDir = filepath.Join(root, "private-state")
 	if err := cfg.ValidateBPSProtocol(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestBPSProtocolResolvedStateIsolation(t *testing.T) {
+	root := t.TempDir()
+	auth := filepath.Join(root, "auths")
+	for _, cfg := range []*Config{
+		{AuthDir: filepath.Join(root, "bps-state")},
+		{AuthDir: auth, BPSProtocol: BPSProtocolConfig{StateDir: "  " + filepath.Join(auth, "images") + "  "}},
+	} {
+		if cfg.ValidateBPSProtocol() == nil {
+			t.Fatal("接受凭证扫描树内的有效状态路径", BPSStateDirectory(cfg))
+		}
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := &Config{AuthDir: filepath.Join(root, "auths"), BPSProtocol: BPSProtocolConfig{StateDir: "  ~/bps-private-state  "}}
+	if got, want := BPSStateDirectory(cfg), filepath.Join(home, "bps-private-state"); got != want {
+		t.Fatal(got, want)
+	}
+	if err = cfg.ValidateBPSProtocol(); err != nil {
+		t.Fatal(err)
+	}
+	cfg.AuthDir = filepath.Join(home, "bps-private-state")
+	if cfg.ValidateBPSProtocol() == nil {
+		t.Fatal("~展开后未识别相同目录")
 	}
 }

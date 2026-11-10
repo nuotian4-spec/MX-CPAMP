@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints/urlvalidator"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints/urlvalidator"
 )
 
 // BPSProtocolConfig控制新请求，在途请求继续使用原快照。
@@ -49,14 +50,26 @@ func (c BPSProtocolConfig) Validate() error {
 func BPSStateDirectory(cfg *Config) string {
 	if cfg != nil {
 		if path := strings.TrimSpace(cfg.BPSProtocol.StateDir); path != "" {
-			return filepath.Clean(path)
-		}
-		if authDir := strings.TrimSpace(cfg.AuthDir); authDir != "" {
-			authDir = expandBPSPath(authDir)
-			return filepath.Join(filepath.Dir(filepath.Clean(authDir)), "bps-state")
+			return resolveBPSPath(path)
 		}
 	}
-	return filepath.Join("state", "bps")
+	return filepath.Join(filepath.Dir(bpsAuthDirectory(cfg)), "bps-state")
+}
+
+func bpsAuthDirectory(cfg *Config) string {
+	path := DefaultAuthDir
+	if cfg != nil && strings.TrimSpace(cfg.AuthDir) != "" {
+		path = cfg.AuthDir
+	}
+	return resolveBPSPath(path)
+}
+
+func resolveBPSPath(path string) string {
+	path = filepath.Clean(expandBPSPath(strings.TrimSpace(path)))
+	if absolute, err := filepath.Abs(path); err == nil {
+		return absolute
+	}
+	return path
 }
 
 func expandBPSPath(path string) string {
@@ -75,21 +88,8 @@ func (cfg *Config) ValidateBPSProtocol() error {
 	if err := cfg.BPSProtocol.Validate(); err != nil {
 		return err
 	}
-	if cfg.BPSProtocol.StateDir == "" {
-		return nil
-	}
-	authDir := cfg.AuthDir
-	if strings.TrimSpace(authDir) == "" {
-		authDir = DefaultAuthDir
-	}
-	authPath, err := filepath.Abs(expandBPSPath(authDir))
-	if err != nil {
-		return err
-	}
-	statePath, err := filepath.Abs(expandBPSPath(cfg.BPSProtocol.StateDir))
-	if err != nil {
-		return err
-	}
+	authPath := bpsAuthDirectory(cfg)
+	statePath := BPSStateDirectory(cfg)
 	rel, err := filepath.Rel(authPath, statePath)
 	if err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return fmt.Errorf("BPS状态目录必须位于凭证扫描目录之外")
