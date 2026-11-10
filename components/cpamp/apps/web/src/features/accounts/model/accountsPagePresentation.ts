@@ -99,6 +99,7 @@ export const getAccountSortFieldOption = (value: AccountSortFieldValue) =>
   DEFAULT_ACCOUNT_SORT_FIELD_OPTION;
 
 export const getProviderLabel = (provider: string, t: TFunction) => {
+  if (provider === 'bps') return 'BPS';
   const key = `auth_files.filter_${provider}`;
   const translated = t(key);
   if (translated !== key) return translated;

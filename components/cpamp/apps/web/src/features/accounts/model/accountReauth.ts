@@ -8,6 +8,7 @@ export type AccountReauthAction =
   | { kind: 'unsupported'; provider: string };
 
 const OAUTH_PROVIDER_BY_ACCOUNT_PROVIDER: Record<string, string> = {
+  bps: 'bps',
   anthropic: 'anthropic',
   antigravity: 'antigravity',
   claude: 'anthropic',

@@ -23,6 +23,7 @@ import (
 	managerconfigsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/managerconfig"
 	modelpricesvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/modelprice"
 	monitoringsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/monitoring"
+	loginsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/oauthlogin"
 	panelsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/panel"
 	proxysvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/proxy"
 	quotasnapshotsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/quotasnapshot"
@@ -45,6 +46,7 @@ type DatabaseMaintenanceStatusProvider interface {
 }
 
 type Context struct {
+	OAuthLoginService  *loginsvc.Service
 	UpdateCheckService *updatechecksvc.Service
 	Config             config.Config
 	Store              *store.Store
@@ -165,6 +167,7 @@ func fromExisting(
 	}))
 	authFileMutationCoordinator := cpaauthfiles.NewMutationCoordinator()
 	return &Context{
+		OAuthLoginService:    loginsvc.New(managerConfigService, authFileMutationCoordinator, cfg.OAuthLoginURL, cfg.OAuthLoginSecret),
 		UpdateCheckService:   updatechecksvc.New(st, buildinfo.Version, buildinfo.SourceCommit, os.Getenv("CPAMP_UPDATE_CHECK_ENABLED") != "false"),
 		Config:               cfg,
 		Store:                st,

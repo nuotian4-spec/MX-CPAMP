@@ -30,6 +30,8 @@ const (
 )
 
 type Config struct {
+	OAuthLoginURL                string
+	OAuthLoginSecret             string
 	HTTPAddr                     string
 	DataDir                      string
 	DBPath                       string
@@ -155,6 +157,8 @@ func LoadWithOptions(options LoadOptions) (Config, error) {
 	}
 
 	return Config{
+		OAuthLoginURL:                env("OAUTH_LOGIN_URL", ""),
+		OAuthLoginSecret:             readSecret("OAUTH_LOGIN_SECRET", "OAUTH_LOGIN_SECRET_FILE", "/run/secrets/oauth_login_secret"),
 		HTTPAddr:                     env("HTTP_ADDR", stringFallback(cfgFile.HTTPAddr, "0.0.0.0:18317")),
 		DataDir:                      dataDir,
 		DBPath:                       dbPath,

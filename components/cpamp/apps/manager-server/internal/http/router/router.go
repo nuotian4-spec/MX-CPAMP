@@ -14,6 +14,7 @@ import (
 	managerconfigcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/managerconfig"
 	modelpricecontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/modelprice"
 	monitoringcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/monitoring"
+	logincontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/oauthlogin"
 	panelcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/panel"
 	proxycontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/proxy"
 	quotacooldowncontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/quotacooldown"
@@ -45,6 +46,8 @@ func New(appCtx *app.Context) http.Handler {
 	panelHandler := &panelcontroller.Handler{App: appCtx}
 
 	mux := http.NewServeMux()
+	loginHandler := &logincontroller.Handler{Service: appCtx.OAuthLoginService, Auth: appCtx.AdminAuthService}
+	mux.HandleFunc("/api/oauth-login/", middleware.WithCORS(appCtx.Config, loginHandler.Handle))
 	updates := &updatecheckcontroller.Handler{App: appCtx}
 	mux.HandleFunc("/usage-service/updates", middleware.WithCORS(appCtx.Config, updates.Handle))
 	mux.HandleFunc("/usage-service/updates/", middleware.WithCORS(appCtx.Config, updates.Handle))

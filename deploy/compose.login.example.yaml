@@ -1,0 +1,30 @@
+# 作为现有 Compose 的人工合并模板，不直接覆盖线上配置。
+services:
+  cpa-manager-plus:
+    environment:
+      OAUTH_LOGIN_URL: http://oauth-login:18417
+      OAUTH_LOGIN_SECRET_FILE: /run/secrets/oauth_login_secret
+    secrets:
+      - oauth_login_secret
+    depends_on:
+      oauth-login:
+        condition: service_started
+  oauth-login:
+    image: mx-oauth-login:local
+    build:
+      context: ../components/oauth-login
+    init: true
+    restart: unless-stopped
+    environment:
+      OAUTH_LOGIN_SECRET_FILE: /run/secrets/oauth_login_secret
+    secrets:
+      - oauth_login_secret
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    # 仅使用现有 Compose 网络；不配置 ports、CPA auth、Manager数据卷或Docker socket。
+secrets:
+  oauth_login_secret:
+    file: ./secrets/oauth_login_secret

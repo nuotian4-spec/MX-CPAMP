@@ -61,6 +61,7 @@ import iconGrokDark from '@/assets/icons/grok-dark.svg';
 import iconDevin from '@/assets/icons/devin.svg';
 import iconDevinDark from '@/assets/icons/devin-dark.svg';
 import iconMeta from '@/assets/icons/meta.svg';
+import { InternalLoginCards } from './InternalLoginCards';
 
 interface ProviderState {
   url?: string;
@@ -1087,6 +1088,7 @@ export function OAuthPage() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
+        <InternalLoginCards key={connectionFingerprint} scope={requestScope} />
         {providers.map((provider) => {
           const state = states[provider.id] || {};
           const canSubmitCallback = provider.supportsCallback && Boolean(state.url);

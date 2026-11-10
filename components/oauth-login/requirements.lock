@@ -1,0 +1,8 @@
+curl_cffi==0.15.0
+cffi==2.0.0
+pycparser==2.23
+certifi==2026.2.25
+rich==15.0.0
+markdown-it-py==4.2.0
+Pygments==2.21.0
+mdurl==0.1.2
