@@ -82,3 +82,13 @@ BPS协议和图片默认开启，图片默认原生模式。关闭开关影响�
 真实测试改用 `gpt-6-luna`，工具和图片测试尚未执行。旧的 `gpt-5.6-sol` 两请求工具基础保留在独立工作树，需按新模型和协议适配后再使用。最多四次客户端请求，先文本验证可用性；登录、刷新或文本失败时不继续工具与图片，工具或图片失败也不自动重发。上线继续遵守完整验收后统一发布。
 
 没有SQL/schema迁移。运行时新增CPA最小绑定记录、临时图片和协议设置写入；后续发布材料需明确数据挂载与HTTPS读取路由，不直接改变当前生产入口。
+
+## 实施分工
+
+| 执行线 | 工作树与分支 | 单写范围 |
+|---|---|---|
+| 协议与绑定 | `D:/MX-CPAMP-worktrees/bps-protocol-tools`，`codex/bps-protocol-tools` | 供体核心包、BPS请求/事件/流式、能力判断、调用方与原凭证绑定、必要Go依赖 |
+| 图片与设置 | `D:/MX-CPAMP-worktrees/bps-images-settings`，`codex/bps-images-settings` | CPA图片宿主与临时入口、全局配置与管理API、Manager认证BFF及设置界面 |
+| 验收工具 | `D:/MX-CPAMP-worktrees/phase2-feature-probe`，`codex/phase2-feature-probe` | 隔离验证工具、gpt-6-luna的文本/工具往返/图片预算与脱敏回执 |
+
+供体核心包由协议线统一接入，图片线通过窄接口复用；配置与HTTP入口由图片线单写。总体方案、真实回执与最终整合由主会话负责，独立审查在提交后进行。未变的组件与证据按实际输入复用。
