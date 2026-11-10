@@ -4,9 +4,9 @@
 
 ## 当前状态
 
-已完成方案与架构设计，正在准备独立开发环境。产品源码尚未导入，四入口和 BPS 运行时尚未实现，未更新生产服务器。
+已导入固定上游源码，并实现四入口、独立 BPS 运行时与内部登录容器。本地候选正在整合验收，尚未更新生产服务器。
 
-[方案与架构](docs/architecture.zh-CN.md) · [上游来源与基线](docs/UPSTREAMS.md)
+[方案与架构](docs/architecture.zh-CN.md) · [上游来源与基线](docs/UPSTREAMS.md) · [执行与验收状态](docs/execution/P9-20261110.zh-CN.md)
 
 ## 目标
 
@@ -17,7 +17,7 @@
 
 ## 仓库布局
 
-采用普通目录单仓库，以下为规划布局；组件与部署模板将在后续阶段加入。
+采用普通目录单仓库：
 
 ```text
 components/
@@ -29,6 +29,15 @@ docs/              设计、来源、验证与发布记录
 ```
 
 三份镜像分别使用组件目录作为构建上下文，不复制上游 `.git`，不使用 submodule。保留各组件的上游许可与来源，不将全部文件统一声明为一种许可。
+
+## 使用边界
+
+- 2FA 入口只取得所选通道授权；CPA 负责保存和刷新令牌。刷新失效后在对应入口补登录。
+- BPS 首期为文本 Responses、Chat Completions 及 SSE；同名模型沿用现有账号调度。BPS 模型在 `oauth.providers.bps.models` 显式配置，默认空清单。
+- BPS 不接原生 WebSocket、工具、媒体、compaction、background 或 `previous_response_id`。已有 Codex 能力沿用原路径。
+- 本地验证采用假登录上游。四入口真实登录、令牌续期和真实模型调用待业务验收；BPS 手工 OAuth 的官方回调授权码可兑换性仍待确认。
+
+[内部登录部署模板](deploy/README.zh-CN.md) · [CPA 管理契约](docs/contracts/cpa-login-v8.md) · [Worker 契约](docs/contracts/login-worker.md)
 
 ## 数据与发布
 
