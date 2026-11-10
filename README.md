@@ -4,9 +4,9 @@
 
 ## 当前状态
 
-已导入固定上游源码，并实现四入口、独立 BPS 运行时与内部登录容器。本地候选正在整合验收，尚未更新生产服务器。
+已实现四入口、独立 BPS 运行时与内部登录容器，通过本地专项、Linux 构建、三容器集成和独立审查。真实业务验收待安排，尚未更新生产服务器。
 
-[方案与架构](docs/architecture.zh-CN.md) · [上游来源与基线](docs/UPSTREAMS.md) · [执行与验收状态](docs/execution/P9-20261110.zh-CN.md)
+[本地候选与验收记录](docs/local-candidate.zh-CN.md) · [方案与架构](docs/architecture.zh-CN.md) · [上游来源与基线](docs/UPSTREAMS.md)
 
 ## 目标
 
