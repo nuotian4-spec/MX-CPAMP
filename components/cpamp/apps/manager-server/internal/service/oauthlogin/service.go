@@ -33,6 +33,8 @@ type Task struct {
 	Profile   string    `json:"profile"`
 	Status    string    `json:"status"`
 	ErrorCode string    `json:"error_code,omitempty"`
+	Stage     string    `json:"stage,omitempty"`
+	Reason    string    `json:"reason,omitempty"`
 	AuthID    string    `json:"auth_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	workerID  string
@@ -54,6 +56,8 @@ type workerTask struct {
 	ID        string       `json:"id"`
 	Status    string       `json:"status"`
 	ErrorCode string       `json:"error_code"`
+	Stage     string       `json:"stage"`
+	Reason    string       `json:"reason"`
 	Result    *credentials `json:"result"`
 }
 type upstreamError struct {
@@ -277,6 +281,10 @@ func (s *Service) run(ctx context.Context, id string, input Input) {
 			s.finish(id, "failed", "worker_unavailable", "")
 			return
 		}
+		s.mu.Lock()
+		s.tasks[id].Stage = safeStage(current.Stage)
+		s.tasks[id].Reason = safeReason(current.Reason)
+		s.mu.Unlock()
 		switch current.Status {
 		case "succeeded":
 			s.mu.Lock()
@@ -285,6 +293,8 @@ func (s *Service) run(ctx context.Context, id string, input Input) {
 				continue
 			}
 			s.tasks[id].Status = "importing"
+			s.tasks[id].Stage = "cpa_import"
+			s.tasks[id].Reason = ""
 			s.mu.Unlock()
 			s.importCredentials(id, current.Result)
 			current.Result = nil
@@ -304,7 +314,7 @@ func (s *Service) run(ctx context.Context, id string, input Input) {
 }
 func safeCode(code string) string {
 	switch code {
-	case "invalid_credentials", "password_rejected", "totp_rejected", "needs_user_action", "timeout", "cancelled", "protocol_error":
+	case "invalid_credentials", "password_rejected", "totp_rejected", "needs_user_action", "timeout", "cancelled", "protocol_error", "callback_invalid", "token_exchange_failed", "credentials_incomplete", "identity_mismatch", "invalid_profile", "transport_error", "process_failed", "output_invalid":
 		return code
 	}
 	return "login_failed"

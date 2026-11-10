@@ -5,10 +5,12 @@ const browserHeadersForTransport = transport => transport.headers;
 const safeUrl = value => new URL(value).origin;
 const summarizeHtml = () => '';
 const ask = async () => { throw new Error('interaction_required'); };
+const observeStage = (onStage, stage) => { try { onStage?.(stage); } catch {} };
+const interaction = reason => Object.assign(new Error('interaction_required'), {diagnostic_reason: reason});
 const askTotpOtp = ask;
 const verifyEmailOtp = ask;
 const completeAccountProfileIfNeeded = async (_client, {payload}) => {
-  if (isAccountProfileRequired(payload)) throw new Error('interaction_required');
+  if (isAccountProfileRequired(payload)) throw interaction('account_setup_required');
   return payload;
 };
 const isLocalCallback = value => {
@@ -282,7 +284,8 @@ function isStoredCookie(cookie) {
   );
 }
 
-async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, password, totpSecret }) {
+async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, password, totpSecret, onStage }) {
+  observeStage(onStage, "web_login");
   await client.follow(`${chatgptBase}/`, { referer: `${chatgptBase}/` });
   await client.getJson("GET", `${chatgptBase}/api/auth/providers`, {
     referer: `${chatgptBase}/`,
@@ -330,6 +333,7 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
   let loginMethod;
   if (isPasswordLoginPage(authPage.finalUrl)) {
     loginMethod = "password";
+    observeStage(onStage, "password");
     console.log("[3/5] Password login page reached.");
     authenticated = await verifyPassword(client, {
       authBase,
@@ -340,6 +344,7 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
     });
   } else if (isEmailVerificationPage(authPage.finalUrl)) {
     loginMethod = "email_otp";
+    observeStage(onStage, "email_otp");
     console.log(`[email-otp-requested-at] ${authRequestStartedAt}`);
     console.log("[3/5] Email OTP page reached. Enter code, or type r to resend.");
     authenticated = await verifyEmailOtp(client, {
@@ -360,6 +365,7 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
     throw new Error(`UNEXPECTED_LOGIN_PAGE: Expected password or email verification, received ${pathname}`);
   }
 
+  observeStage(onStage, "web_login");
   const mfaRequired = isMfaChallengePayload(authenticated);
   authenticated = await completeTotpMfaIfNeeded(client, {
     authBase,
@@ -367,17 +373,21 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
     deviceId,
     payload: authenticated,
     totpSecret,
+    onStage,
     referer: authPage.finalUrl,
   });
+  observeStage(onStage, "web_login");
   authenticated = await completeAccountProfileIfNeeded(client, {
     authBase,
     deviceId,
     payload: authenticated,
   });
   authenticated = await selectChatgptLoginWorkspaceIfNeeded(client, {
+    onStage,
     authBase,
     payload: authenticated,
   });
+  observeStage(onStage, "web_login");
   const callback = await continueFlow(client, authenticated);
   return {
     deviceId,
@@ -389,13 +399,14 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
   };
 }
 
-async function selectChatgptLoginWorkspaceIfNeeded(client, { authBase, payload }) {
+async function selectChatgptLoginWorkspaceIfNeeded(client, { authBase, payload, onStage }) {
   if (!isWorkspaceSelectionPayload(payload)) return payload;
   const workspaceId = pickWorkspaceId(payload);
   if (!workspaceId) {
     console.log("[web] Workspace page did not include a selectable workspace; skipping selection.");
     return payload;
   }
+  observeStage(onStage, "workspace_session");
   const workspaceUrl = getContinueUrl(payload) || `${authBase}/workspace`;
   console.log("[web] Select ChatGPT login workspace");
   const { data } = await authJsonStep(client, authBase, "POST", "/api/accounts/workspace/select", {
@@ -429,8 +440,9 @@ async function verifyPassword(client, { authBase, rl, deviceId, password, refere
   }
 }
 
-async function completeTotpMfaIfNeeded(client, { authBase, rl, deviceId, payload, totpSecret, referer }) {
+async function completeTotpMfaIfNeeded(client, { authBase, rl, deviceId, payload, totpSecret, referer, onStage }) {
   if (!isMfaChallengePayload(payload)) return payload;
+  observeStage(onStage, "totp");
   const factor = pickTotpFactor(payload);
   if (!factor?.id) throw new Error("2FA is required, but the response does not contain a TOTP factor ID");
 
@@ -596,7 +608,9 @@ async function authJsonStep(client, authBase, method, pathname, body, options = 
 }
 
 async function continueFlow(client, payload) {
-  if (isPhoneBindingRequired(payload) || isAccountProfileRequired(payload) || isEmailVerificationPage(getContinueUrl(payload))) throw new Error("interaction_required");
+  if (isPhoneBindingRequired(payload)) throw interaction("phone_verification_required");
+  if (isAccountProfileRequired(payload)) throw interaction("account_setup_required");
+  if (isEmailVerificationPage(getContinueUrl(payload))) throw interaction("email_verification_required");
   const url = payload?.continue_url || payload?.page?.payload?.url;
   if (!url) return null;
   if (isLocalCallback(url)) return { finalUrl: url, last: null };

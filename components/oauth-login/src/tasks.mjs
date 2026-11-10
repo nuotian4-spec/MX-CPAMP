@@ -1,6 +1,7 @@
 import {spawn,spawnSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {safeStage,safeReason} from './diagnostics.mjs';
 const terminal=new Set(['succeeded','failed','needs_user_action','cancelled','expired']);
 export class Tasks {
   constructor({runner=fileURLToPath(new URL('./login.mjs',import.meta.url)),timeoutMs=25*60*1000,retentionMs=5*60*1000}={}){this.runner=runner;this.timeoutMs=timeoutMs;this.retentionMs=retentionMs;this.tasks=new Map();}
@@ -25,6 +26,7 @@ export class Tasks {
       if(task.stopStatus){this.finish(task,task.stopStatus,task.stopCode);return;}
       try{
         const response=JSON.parse(task.output);
+        task.stage=safeStage(response.stage);task.reason=safeReason(response.reason);
         if(response.status==='succeeded'&&this.validResult(response.result,task.profile)){task.result=Object.fromEntries(['profile','client_id','access_token','refresh_token','id_token','account_id','email','expired'].map(k=>[k,response.result[k]]));this.finish(task,'succeeded');}
         else if(response.status==='needs_user_action')this.finish(task,'needs_user_action','needs_user_action');
         else this.finish(task,'failed',this.errorCode(response.error_code));
@@ -39,7 +41,7 @@ export class Tasks {
   killGroup(task){if(!task.child?.pid)return;try{if(process.platform==='win32')spawnSync('taskkill.exe',['/PID',String(task.child.pid),'/T','/F'],{stdio:'ignore',windowsHide:true});else process.kill(-task.child.pid,'SIGKILL');}catch(error){if(error.code!=='ESRCH')throw error;}}
   stop(task,status,code){if(terminal.has(task.status)||task.stopStatus)return;task.stopStatus=status;task.stopCode=code;this.killGroup(task);}
   finish(task,status,code){if(terminal.has(task.status))return;clearTimeout(task.timer);task.status=status;if(code)task.error_code=this.errorCode(code);task.finished_at=Date.now();task.output='';task.child=null;task.resolve?.();task.retention=setTimeout(()=>{task.result=null;this.tasks.delete(task.id);},this.retentionMs);task.retention.unref?.();}
-  view(task){return {id:task.id,profile:task.profile,status:task.status,created_at:task.created_at,...(task.error_code?{error_code:task.error_code}:{}),...(task.result?{result:task.result}:{})};}
+  view(task){return {id:task.id,profile:task.profile,status:task.status,created_at:task.created_at,...(task.stage?{stage:task.stage}:{}),...(task.reason?{reason:task.reason}:{}),...(task.error_code?{error_code:task.error_code}:{}),...(task.result?{result:task.result}:{})};}
   get(id){this.prune();const task=this.tasks.get(id);return task?this.view(task):null;}
   async delete(id){const task=this.tasks.get(id);if(!task)return null;if(terminal.has(task.status)){const view=this.view(task);delete view.result;task.result=null;clearTimeout(task.retention);this.tasks.delete(id);return {...view,result_cleared:true};}this.stop(task,'cancelled');await task.done;return this.view(task);}
   prune(){for(const [id,task]of this.tasks)if(terminal.has(task.status)&&Date.now()-task.finished_at>this.retentionMs){task.result=null;this.tasks.delete(id);}}

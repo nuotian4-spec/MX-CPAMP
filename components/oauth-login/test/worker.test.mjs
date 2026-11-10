@@ -17,7 +17,7 @@ test('鉴权、单任务与HTTP结果清理',async()=>{
   }finally{await tasks.close();await new Promise(r=>server.close(r));}
 });
 test('需要人工验证与失败只回枚举',async()=>{
-  const tasks=new Tasks({runner});try{let t=tasks.create(credentials('challenge@example.test'));assert.equal((await settle(tasks,t.id)).status,'needs_user_action');t=tasks.create(credentials('bad@example.test'));const done=await settle(tasks,t.id);assert.equal(done.error_code,'protocol_error');assert.ok(!JSON.stringify(done).includes('secret-canary'));}finally{await tasks.close();}
+  const tasks=new Tasks({runner});try{let t=tasks.create(credentials('challenge@example.test'));const challenge=await settle(tasks,t.id);assert.equal(challenge.status,'needs_user_action');assert.equal(challenge.stage,'totp');assert.equal(challenge.reason,'security_check');t=tasks.create(credentials('bad@example.test'));const done=await settle(tasks,t.id);assert.equal(done.error_code,'protocol_error');assert.equal(done.stage,'unknown');assert.equal(done.reason,'unknown');assert.ok(!JSON.stringify(done).includes('secret-canary'));}finally{await tasks.close();}
 });
 test('取消与超时结束整个进程组',async()=>{
   const tasks=new Tasks({runner,timeoutMs:300});try{

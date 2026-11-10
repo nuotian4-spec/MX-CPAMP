@@ -7,6 +7,7 @@ import {
   loginTasksApi,
   isLoginTaskActive,
   loginTaskLabel,
+  loginDiagnosticLabel,
   type LoginProfile,
   type LoginTask,
 } from '@/services/api/loginTasks';
@@ -157,6 +158,7 @@ function PasswordLogin({
         {task && (
           <p role="status">
             {loginTaskLabel(task)}
+            {loginDiagnosticLabel(task) ? ` · ${loginDiagnosticLabel(task)}` : ''}
             {task.auth_id ? ` · ${task.auth_id}` : ''}
             {task.error_code
               ? ` · ${task.error_code === 'password_rejected' ? '密码校验失败，请重新输入' : task.error_code === 'totp_rejected' ? 'TOTP校验失败，请检查种子' : task.error_code}`

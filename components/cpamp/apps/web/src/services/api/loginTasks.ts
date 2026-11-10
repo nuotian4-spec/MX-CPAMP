@@ -17,6 +17,8 @@ export interface LoginTask {
   profile: LoginProfile;
   status: LoginTaskStatus;
   error_code?: string;
+  stage?: string;
+  reason?: string;
   auth_id?: string;
 }
 export interface LoginInput {
@@ -67,3 +69,35 @@ export const loginTaskLabel = (task: LoginTask) =>
     expired: '登录超时',
     needs_user_action: '需要在官方页面完成额外验证',
   })[task.status];
+
+const stageLabels: Record<string, string> = {
+  input: '输入校验',
+  web_login: '网页登录',
+  authorize: '授权入口',
+  email: '邮箱提交',
+  email_otp: '邮箱验证码',
+  password: '密码验证',
+  totp: 'TOTP验证',
+  workspace_session: '工作区/会话选择',
+  callback: '授权回调',
+  token_exchange: '令牌兑换',
+  credential_validation: '凭证校验',
+  cpa_import: 'CPA保存注册',
+};
+const reasonLabels: Record<string, string> = {
+  security_check: '官方安全检查',
+  email_verification_required: '需要邮箱验证',
+  phone_verification_required: '需要手机号验证',
+  account_setup_required: '需要补全账号资料',
+  unexpected_login_page: '未识别的登录页面',
+  session_selection_required: '需要选择会话',
+  totp_factor_missing: '缺少TOTP验证因子',
+  interaction_required: '需要官方交互',
+};
+export const loginDiagnosticLabel = (task: Pick<LoginTask, 'stage' | 'reason'>) => {
+  const stage = task.stage && stageLabels[task.stage];
+  const reason = task.reason && reasonLabels[task.reason];
+  return [stage ? `阶段：${stage}` : '', reason ? `提示：${reason}` : '']
+    .filter(Boolean)
+    .join(' · ');
+};

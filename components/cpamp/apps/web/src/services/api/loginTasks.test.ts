@@ -7,8 +7,17 @@ vi.mock('./client', () => ({
     headers: { Authorization: `Bearer ${scope.managementKey}` },
   }),
 }));
-import { loginTasksApi, isLoginTaskActive, loginTaskLabel } from './loginTasks';
+import {
+  loginTasksApi,
+  isLoginTaskActive,
+  loginTaskLabel,
+  loginDiagnosticLabel,
+} from './loginTasks';
 describe('登录API隔离', () => {
+  it('只渲染已知诊断，不渲染原始输入', () => {
+    expect(loginDiagnosticLabel({ stage: 'totp', reason: 'security_check' })).toContain('TOTP验证');
+    expect(loginDiagnosticLabel({ stage: 'PASSWORD_SECRET', reason: 'COOKIE_SECRET' })).toBe('');
+  });
   it('使用Manager根入口而非v0，固定BPS且保留管理员头', () => {
     const scope = { apiBase: 'https://panel.invalid/v0/management', managementKey: 'ADMIN' };
     loginTasksApi.startBPS(scope);
