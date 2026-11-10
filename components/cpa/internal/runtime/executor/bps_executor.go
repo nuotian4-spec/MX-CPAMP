@@ -114,6 +114,10 @@ func (e *BPSExecutor) build(ctx context.Context, auth *coreauth.Auth, req coreex
 	_ = doc.Set("stream", opts.Stream)
 	wire, bridge, release, err := helps.PrepareBPSImages(ctx, e.cfg, auth, doc.Bytes(), bindings.Scope(opts))
 	if err != nil {
+		var scoped interface{ IsRequestScoped() bool }
+		if errors.As(err, &scoped) && scoped.IsRequestScoped() {
+			return nil, err
+		}
 		return nil, bpsRequestError{message: err.Error()}
 	}
 	prepared := &bpsPrepared{bridge: bridge, bindings: bindings, release: release}

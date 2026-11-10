@@ -8,6 +8,7 @@
 |---|---|---|
 | 公开HTTP入口 | `go test ./internal/api -run '^TestBPSToolsPublicHTTPRoundTrip$' -count=1 -v -timeout 120s`，exit0 | `public-http-tools.log` |
 | 最终宿主专项 | `go test ./internal/bpsbinding ./sdk/cliproxy/auth ./sdk/cliproxy/executor ./internal/runtime/executor ./internal/runtime/executor/helps -run '^(TestBinding\|TestBPS)' -count=1 -timeout 120s`，exit0 | `host-final-tests.log` |
+| 图片上传失败传播 | `go test ./internal/runtime/executor -run '^TestBPSImageUploadErrorKeepsStatusAndStopsGeneration$' -count=1 -v -timeout 60s`，exit0；附件上游503只发1次上传，宿主保留502分类，不启动模型请求 | `image-error-status.log` |
 | 供体全包 | `go test ./internal/basispoints ./internal/basispoints/urlvalidator -count=1 -timeout 120s`，exit1，仅下述三项失败 | `core-tests.log` |
 | 原始核心对照 | 以Go overlay把`internal/basispoints/stream.go`替换为`git show 9b93c3b:components/cpa/internal/basispoints/stream.go`内容，仅运行下述三项，exit1，同样失败 | `core-baseline-three.log` |
 

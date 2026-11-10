@@ -1,8 +1,11 @@
 package executor
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"net/http"
 	"os"
@@ -10,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/MoeForge/moego/base64"
 	"github.com/MoeForge/moego/ojson"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/bpsbinding"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
@@ -166,5 +170,29 @@ func TestBPSImagesDisabledAfterPayloadRules(t *testing.T) {
 	_, err := NewBPSExecutor(cfg).Execute(ctx, auth, coreexecutor.Request{Model: "configured-model", Payload: []byte(`{"input":"text only"}`)}, coreexecutor.Options{SourceFormat: sdktranslator.FormatOpenAIResponse})
 	if err == nil || calls != 0 || !strings.Contains(err.Error(), "image input is disabled") {
 		t.Fatalf("final payload image policy: calls=%d err=%v", calls, err)
+	}
+}
+
+func TestBPSImageUploadErrorKeepsStatusAndStopsGeneration(t *testing.T) {
+	var imageData bytes.Buffer
+	if err := png.Encode(&imageData, image.NewRGBA(image.Rect(0, 0, 1, 1))); err != nil {
+		t.Fatal(err)
+	}
+	doc := ojson.NewDocString(`{"input":[{"role":"user","content":[{"type":"input_image"}]}]}`)
+	_ = doc.Set("input.0.content.0.image_url", "data:image/png;base64,"+base64.StdEncoding.EncodeToString(imageData.Bytes()))
+	calls := 0
+	transport := bpsTestTransport(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if r.URL.Path != "/basispoints/api/attachments" {
+			t.Fatalf("unexpected model request: %s", r.URL.Path)
+		}
+		return &http.Response{StatusCode: 503, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(strings.NewReader(`{}`))}, nil
+	})
+	ctx := context.WithValue(context.Background(), "cliproxy.roundtripper", http.RoundTripper(transport))
+	auth := &coreauth.Auth{ID: "original", Provider: "bps", Metadata: map[string]any{"access_token": "token", "account_id": "workspace", "sub": "user"}}
+	_, err := NewBPSExecutor(&config.Config{}).Execute(ctx, auth, coreexecutor.Request{Model: "configured-model", Payload: doc.Bytes()}, coreexecutor.Options{SourceFormat: sdktranslator.FormatOpenAIResponse})
+	status, ok := err.(interface{ StatusCode() int })
+	if !ok || status.StatusCode() != 502 || calls != 1 {
+		t.Fatalf("upload error changed to request validation or generation started: calls=%d err=%v", calls, err)
 	}
 }
