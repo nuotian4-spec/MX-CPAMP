@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -84,12 +83,13 @@ func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]
 	return readBPSEvents(ctx, response, false, consume)
 }
 
-func ReadBPSProtocolEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error) error {
+func ReadBPSProtocolEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error) (err error) {
+	defer func() { err = WithBPSHTTPStatus(err, response.StatusCode) }()
 	upstream := response.Body
 	if !strings.Contains(strings.ToLower(response.Header.Get("Content-Type")), "text/event-stream") {
 		raw, err := io.ReadAll(io.LimitReader(upstream, (16<<20)+1))
 		if err != nil || len(raw) > 16<<20 || !ojson.ValidBytes(raw) {
-			return errors.New("invalid BPS JSON response")
+			return NewBPSFailure("protocol_decode", "invalid_response")
 		}
 		doc := ojson.NewDocString(`{"type":"response.completed"}`)
 		_ = doc.SetRaw("response", string(raw))
@@ -125,7 +125,7 @@ func readBPSEvents(ctx context.Context, response *http.Response, tools bool, con
 			return nil
 		}
 		if !ojson.ValidBytes(data) || !ojson.ParseBytes(data).IsObject() {
-			return errors.New("malformed BPS event")
+			return NewBPSFailure("protocol_decode", "invalid_response")
 		}
 		doc := ojson.NewDoc(data)
 		for _, path := range []string{"response.id", "response_id"} {
@@ -142,23 +142,40 @@ func readBPSEvents(ctx context.Context, response *http.Response, tools bool, con
 			_ = doc.Set("type", kind)
 		}
 		if kind == "response.failed" || kind == "response.incomplete" || kind == "error" {
-			return errors.New("BPS upstream response failed")
+			if failure := basispoints.ParseBridgeFailure(data); failure != nil {
+				if failure.FailureStage == "bridge_tool_validation" {
+					return NewBPSFailure("tool_validation", "tool_validation_failed")
+				}
+				return NewBPSFailure("protocol_conversion", "conversion_failed")
+			}
+			if kind == "response.incomplete" {
+				return NewBPSFailure("protocol_decode", "incomplete_response")
+			}
+			diagnostic := NewBPSFailure("upstream_inband", "unknown")
+			if failure := basispoints.ParseUpstreamFailure(data); failure != nil {
+				// The bridge's default 502 does not prove an explicit in-band status.
+				if failure.Status != http.StatusBadGateway || (failure.Code != "basispoints_upstream_error" && failure.Code != "basispoints_upstream_cancelled") {
+					diagnostic = NewBPSFailure("upstream_inband", "upstream_failed")
+					diagnostic.inbandStatus = failure.Status
+				}
+			}
+			return diagnostic
 		}
 		if !tools && (strings.Contains(kind, "function_call") || strings.Contains(kind, "custom_tool")) {
-			return errors.New("BPS returned an unsupported tool call")
+			return NewBPSFailure("tool_validation", "tool_validation_failed")
 		}
 		allowedItem := func(kind string) bool {
 			return kind == "message" || kind == "reasoning" || tools && (kind == "function_call" || kind == "custom_tool_call")
 		}
 		if item := doc.Get("item.type").String(); item != "" && !allowedItem(item) {
-			return errors.New("BPS returned an unsupported output item")
+			return NewBPSFailure("protocol_conversion", "conversion_failed")
 		}
 		if index := doc.Get("output_index"); index.Exists() {
 			_ = doc.Set("output_index", publicOutputIndex(index.Int()))
 		}
 		if kind == "response.completed" {
 			if status := doc.Get("response.status").String(); status != "completed" {
-				return errors.New("BPS terminal status is not completed")
+				return NewBPSFailure("protocol_decode", "incomplete_response")
 			}
 			terminal = true
 		}
@@ -166,7 +183,7 @@ func readBPSEvents(ctx context.Context, response *http.Response, tools bool, con
 			output := []any{}
 			for upstreamIndex, item := range source.Array() {
 				if kind := item.Get("type").String(); !allowedItem(kind) {
-					return errors.New("BPS returned an unsupported output item")
+					return NewBPSFailure("protocol_conversion", "conversion_failed")
 				}
 				if item.Get("type").String() != "reasoning" {
 					index := publicOutputIndex(int64(upstreamIndex))
@@ -186,11 +203,11 @@ func readBPSEvents(ctx context.Context, response *http.Response, tools bool, con
 			return err
 		}
 		if len(data) > max {
-			return errors.New("BPS response exceeds maximum size")
+			return NewBPSFailure("protocol_decode", "invalid_response")
 		}
 		doc := ojson.NewDocString(`{"type":"response.completed"}`)
 		if err = doc.SetRaw("response", string(data)); err != nil {
-			return errors.New("malformed BPS response")
+			return NewBPSFailure("protocol_decode", "invalid_response")
 		}
 		return dispatch(doc.Bytes())
 	}
@@ -216,18 +233,21 @@ func readBPSEvents(ctx context.Context, response *http.Response, tools bool, con
 			}
 			data = append(data, bytes.TrimPrefix(line[5:], []byte(" "))...)
 			if len(data) > max {
-				return errors.New("BPS event exceeds maximum size")
+				return NewBPSFailure("protocol_decode", "invalid_response")
 			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return NewBPSFailure("protocol_decode", "incomplete_response")
+		}
 		return err
 	}
 	if err := dispatch(bytes.TrimSpace(data)); err != nil {
 		return err
 	}
 	if !terminal {
-		return fmt.Errorf("BPS stream ended before response.completed")
+		return NewBPSFailure("protocol_decode", "incomplete_response")
 	}
 	return nil
 }

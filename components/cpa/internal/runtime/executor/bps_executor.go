@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -171,7 +170,8 @@ func (e *BPSExecutor) send(ctx context.Context, auth *coreauth.Auth, req coreexe
 		if prepared.release != nil {
 			prepared.release()
 		}
-		return nil, nil, statusErr{code: response.StatusCode, msg: fmt.Sprintf("BPS upstream returned HTTP %d", response.StatusCode)}
+		diagnostic := helps.WithBPSHTTPStatus(helps.NewBPSFailure("upstream_http", "http_rejected"), response.StatusCode)
+		return nil, nil, statusErr{code: response.StatusCode, msg: helps.BPSFailureBody(diagnostic, response.StatusCode)}
 	}
 	return response, prepared, nil
 }
@@ -195,7 +195,7 @@ func (e *BPSExecutor) Execute(ctx context.Context, auth *coreauth.Auth, req core
 		return nil
 	})
 	if err != nil {
-		return result, bpsAcceptedResponseError{message: err.Error()}
+		return result, bpsAcceptedResponseError{message: helps.BPSFailureBody(err, http.StatusBadGateway)}
 	}
 	if detail, ok := helps.ParseCodexUsage(terminal); ok {
 		reporter.Publish(ctx, detail)
@@ -203,7 +203,8 @@ func (e *BPSExecutor) Execute(ctx context.Context, auth *coreauth.Auth, req core
 	var parameter any
 	payload := sdktranslator.TranslateNonStream(ctx, sdktranslator.FormatCodex, coreexecutor.ResponseFormatOrSource(opts), req.Model, opts.OriginalRequest, prepared.body, terminal, &parameter)
 	if len(payload) == 0 {
-		return result, statusErr{code: 502, msg: "BPS response translation failed"}
+		diagnostic := helps.WithBPSHTTPStatus(helps.NewBPSFailure("response_translation", "translation_empty"), response.StatusCode)
+		return result, statusErr{code: 502, msg: helps.BPSFailureBody(diagnostic, http.StatusBadGateway)}
 	}
 	return coreexecutor.Response{Payload: payload, Headers: response.Header.Clone()}, nil
 }
@@ -274,7 +275,7 @@ func (e *BPSExecutor) ExecuteStream(ctx context.Context, auth *coreauth.Auth, re
 		if streamErr != nil {
 			reporter.PublishFailure(ctx, streamErr)
 			select {
-			case chunks <- coreexecutor.StreamChunk{Err: bpsAcceptedResponseError{message: streamErr.Error()}}:
+			case chunks <- coreexecutor.StreamChunk{Err: bpsAcceptedResponseError{message: helps.BPSFailureBody(streamErr, http.StatusBadGateway)}}:
 			case <-ctx.Done():
 			}
 		}

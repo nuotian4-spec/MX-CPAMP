@@ -7,6 +7,9 @@ export const businessCodes=new Set(['services_not_ready','proxy_unreachable','ad
 const publicCodes=new Set(['invalid_api_key','upstream_authentication_required','insufficient_quota','rate_limit_exceeded','model_not_found','request_timeout','internal_server_error','auth_not_found','auth_unavailable','provider_not_found','executor_not_found','credential_queue_full','credential_concurrency_timeout','model_cooldown','request_scoped']);
 const publicTypes=new Set(['authentication_error','permission_error','rate_limit_error','invalid_request_error','server_error']);
 const publicCategories=new Set(['local_configuration','model_capability','admission','upstream_http','transport','authentication','unknown']);
+const bpsStages=new Set(['upstream_http','upstream_inband','protocol_decode','protocol_conversion','tool_validation','binding_identity','binding_storage','response_translation','unknown']);
+const bpsCodes=new Set(['http_rejected','upstream_failed','invalid_response','incomplete_response','conversion_failed','tool_validation_failed','identity_incomplete_or_changed','storage_unavailable','translation_empty','unknown']);
+const bpsStatus=(value,min)=>Number.isInteger(value)&&value>=min&&value<=599?value:null;
 const capabilityMessages=new Set(['BPS supports OpenAI text requests only','BPS requires text input','invalid BPS reasoning effort','previous_response_id requires the original provider','background responses are not supported','client tools require the original provider','opaque, tool or non-text history requires the original provider and account','BPS requires complete text history; its response IDs cannot be continued']);
 export function publicErrorDiagnostics(value={}){
   const error=value?.error&&typeof value.error==='object'?value.error:{};
@@ -25,7 +28,8 @@ export function publicErrorDiagnostics(value={}){
   else if(['auth_not_found','auth_unavailable','credential_queue_full','credential_concurrency_timeout','model_cooldown','rate_limit_exceeded','insufficient_quota'].includes(code))category='admission';
   else if(['invalid_api_key','upstream_authentication_required'].includes(code))category='authentication';
   else if(code==='request_timeout')category='transport';
-  return{public_error_code:code,public_error_type:type,public_error_category:category,public_upstream_http_status:upstreamStatus};
+  const diagnostic=error.diagnostics&&typeof error.diagnostics==='object'&&!Array.isArray(error.diagnostics)?error.diagnostics:{};
+  return{public_error_code:code,public_error_type:type,public_error_category:category,public_upstream_http_status:upstreamStatus,bps_diagnostic_stage:bpsStages.has(diagnostic.stage)?diagnostic.stage:'unknown',bps_diagnostic_code:bpsCodes.has(diagnostic.code)?diagnostic.code:'unknown',bps_upstream_http_status:bpsStatus(diagnostic.upstream_http_status,100),bps_inband_status:bpsStatus(diagnostic.inband_status,400)};
 }
 export function sanitizeReceipt(value={}){
   const out={stage:['ready','batch','saved_registered','concurrency','refresh','business','complete','harness'].includes(value.stage)?value.stage:'harness',profile:'bps'};
@@ -38,6 +42,8 @@ export function sanitizeReceipt(value={}){
   if(Number.isInteger(value.public_http_status)&&value.public_http_status>=100&&value.public_http_status<=599)out.public_http_status=value.public_http_status;
   for(const [field,allowed]of [['public_error_code',publicCodes],['public_error_type',publicTypes],['public_error_category',publicCategories]])if(field in value)out[field]=allowed.has(value[field])?value[field]:'unknown';
   if('public_upstream_http_status'in value)out.public_upstream_http_status=value.public_error_category==='upstream_http'&&Number.isInteger(value.public_upstream_http_status)&&value.public_upstream_http_status>=100&&value.public_upstream_http_status<=599?value.public_upstream_http_status:null;
+  for(const [field,allowed]of [['bps_diagnostic_stage',bpsStages],['bps_diagnostic_code',bpsCodes]])if(field in value)out[field]=allowed.has(value[field])?value[field]:'unknown';
+  for(const [field,min]of [['bps_upstream_http_status',100],['bps_inband_status',400]])if(field in value)out[field]=bpsStatus(value[field],min);
   if(['text','tools','tool_result','image'].includes(value.feature))out.feature=value.feature;
   if(['succeeded','rejected','unconfirmed','invalid'].includes(value.probe_outcome))out.probe_outcome=value.probe_outcome;
   for(const field of ['function_call_present','function_call_valid','probes_complete','all_requests_succeeded','text_gate_passed','tool_result_confirmed','tool_roundtrip_complete','image_red_confirmed'])if(typeof value[field]==='boolean')out[field]=value[field];

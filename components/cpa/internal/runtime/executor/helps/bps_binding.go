@@ -1,6 +1,7 @@
 package helps
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -74,6 +75,12 @@ func (b *BPSBindings) Publish(event []byte) ([]byte, error) {
 		if publicID == "" {
 			record, err := b.store.Save(b.caller, nativeID, b.identity)
 			if err != nil {
+				if errors.Is(err, bpsbinding.ErrConflict) {
+					return NewBPSFailure("binding_identity", "identity_incomplete_or_changed")
+				}
+				if errors.Is(err, bpsbinding.ErrStorage) {
+					return NewBPSFailure("binding_storage", "storage_unavailable")
+				}
 				return err
 			}
 			publicID = record.CallID
