@@ -177,6 +177,23 @@ func TestBPSImageBatchValidationAndUploadFailure(t *testing.T) {
 	}
 }
 
+func TestBPSImageSecondUploadFailureStopsBatch(t *testing.T) {
+	calls := 0
+	ctx := context.WithValue(context.Background(), "cliproxy.roundtripper", bpsImageTransport(func(*http.Request) (*http.Response, error) {
+		calls++
+		status, body := 200, `{"openai_file_id":"file-first"}`
+		if calls == 2 {
+			status, body = 500, `{}`
+		}
+		return &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}, nil
+	}))
+	raw := bpsImageBody(t, bpsImagePart(bpsTestImage(t, 11)), bpsImagePart(bpsTestImage(t, 12)))
+	wire, bridge, _, err := PrepareBPSImages(ctx, &config.Config{}, bpsTestAuth(), raw, "")
+	if err == nil || wire != nil || bridge != nil || calls != 2 {
+		t.Fatal("多图部分上传失败后仍进入模型请求", err, calls)
+	}
+}
+
 func TestBPSImageRelayCapabilityAndSwitchSnapshot(t *testing.T) {
 	cfg := &config.Config{AuthDir: filepath.Join(t.TempDir(), "auths"), BPSProtocol: config.BPSProtocolConfig{ImageTransport: "relay", ImageRelayBaseURL: "https://images.example.com"}}
 	wire, _, release, err := PrepareBPSImages(context.Background(), cfg, bpsTestAuth(), bpsImageBody(t, bpsImagePart(bpsTestImage(t, 3))), "caller/thread")

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// BPSSettings uses the same connection reference and mutation fence as credentials.
+// BPSSettings复用凭证管理的实例引用与写入互斥。
 type BPSSettings struct {
 	Enabled           bool             `json:"enabled"`
 	ImagesEnabled     bool             `json:"images_enabled"`
