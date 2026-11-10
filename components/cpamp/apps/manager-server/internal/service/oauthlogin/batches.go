@@ -24,10 +24,29 @@ type BatchInputItem struct {
 	Password   string `json:"password"`
 	TOTPSecret string `json:"totp_secret"`
 }
+type BatchTask struct {
+	ID        string    `json:"id"`
+	Profile   string    `json:"profile"`
+	Status    string    `json:"status"`
+	ErrorCode string    `json:"error_code,omitempty"`
+	Stage     string    `json:"stage,omitempty"`
+	Reason    string    `json:"reason,omitempty"`
+	AuthIndex string    `json:"auth_index,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func batchTaskSnapshot(t *Task) BatchTask {
+	out := BatchTask{ID: t.ID, Profile: t.Profile, Status: t.Status, ErrorCode: t.ErrorCode, Stage: t.Stage, Reason: t.Reason, CreatedAt: t.CreatedAt}
+	if t.Status == "succeeded" {
+		out.AuthIndex = t.authIndex
+	}
+	return out
+}
+
 type BatchItem struct {
 	LineNo    int    `json:"line_no"`
 	EmailHint string `json:"email_hint"`
-	Task
+	BatchTask
 }
 type Batch struct {
 	ID        string      `json:"id"`
@@ -63,9 +82,6 @@ func batchActive(status string) bool { return status == "running" || status == "
 func batchSnapshot(b *batchState) Batch {
 	out := b.Batch
 	out.Items = append([]BatchItem(nil), b.Items...)
-	for i := range out.Items {
-		out.Items[i].Task = snapshot(&out.Items[i].Task)
-	}
 	return out
 }
 func emailHint(email string) string {
@@ -124,7 +140,7 @@ func (s *Service) CreateBatch(input BatchInput) (Batch, error) {
 	for i, item := range input.Items {
 		email := strings.ToLower(strings.TrimSpace(item.Email))
 		secret := strings.ToUpper(strings.Join(strings.Fields(item.TOTPSecret), ""))
-		row := BatchItem{LineNo: item.LineNo, EmailHint: emailHint(email), Task: Task{Profile: input.Profile, Status: "pending", CreatedAt: now}}
+		row := BatchItem{LineNo: item.LineNo, EmailHint: emailHint(email), BatchTask: BatchTask{Profile: input.Profile, Status: "pending", CreatedAt: now}}
 		address, parseErr := mail.ParseAddress(email)
 		if item.LineNo <= 0 || lines[item.LineNo] || len(item.Email)+len(item.Password)+len(item.TOTPSecret) > 16*1024 || parseErr != nil || address.Address != email || item.Password == "" || len(item.Password) > 4096 || !batchTOTP.MatchString(secret) {
 			row.Status, row.ErrorCode = "skipped", "invalid_row"
@@ -201,7 +217,7 @@ func (s *Service) batchViewLocked(b *batchState) Batch {
 	out := batchSnapshot(b)
 	for i := range out.Items {
 		if t := s.tasks[out.Items[i].ID]; t != nil {
-			out.Items[i].Task = snapshot(t)
+			out.Items[i].BatchTask = batchTaskSnapshot(t)
 		}
 	}
 	return out
@@ -295,7 +311,7 @@ func (s *Service) runBatch(id string) {
 			return
 		}
 		b.current = task.ID
-		b.Items[i].Task = task
+		b.Items[i].BatchTask = batchTaskSnapshot(&task)
 		live := s.tasks[task.ID]
 		// 取消可能在创建过程中到达；导入阶段仍等待真实结果。
 		if b.Status == "cancelling" && !terminal(live.Status) && live.Status != "importing" {
@@ -306,14 +322,14 @@ func (s *Service) runBatch(id string) {
 		s.mu.Unlock()
 		<-done
 		s.mu.Lock()
-		b.Items[i].Task = snapshot(live)
+		b.Items[i].BatchTask = batchTaskSnapshot(live)
 		b.current = ""
 		code := live.ErrorCode
 		if !live.cleanupConfirmed {
 			code = "worker_cleanup_unconfirmed"
 		}
 		switch code {
-		case "worker_cleanup_unconfirmed", "worker_stop_unconfirmed", "worker_unavailable", "import_unconfirmed", "cpa_target_changed", "import_busy":
+		case "worker_cleanup_unconfirmed", "worker_stop_unconfirmed", "worker_unavailable", "import_unconfirmed", "cpa_target_changed", "import_busy", "credential_mapping_unconfirmed":
 			s.endBatchLocked(b, "interrupted", code)
 			s.mu.Unlock()
 			return

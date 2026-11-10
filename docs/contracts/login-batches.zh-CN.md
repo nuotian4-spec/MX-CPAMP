@@ -15,3 +15,12 @@ Manager Admin 鉴权、`Cache-Control: no-store`。密码和 TOTP 只进入当�
 等待材料从接收起最多30分钟，后台定时清理，不依赖轮询；已启动条目沿用25分钟上限。页面离开仅停轮询；重新进入按当前连接和通道查询最近保留摘要，同时查询活动批次；不保存浏览器任务ID或登录材料。服务重启不续跑，404不触发重交。终态脱敏摘要保留1小时。批次状态为running/cancelling/completed/cancelled/interrupted；逐行另含pending/skipped与原单任务终态。
 
 BPS OAuth页面提供生成、打开及复制授权链接；回调提交ACK只表示接收，状态查询确认CPA保存注册后才发账号更新事件。
+
+
+## 成功凭证定位
+
+批次条目使用独立白名单DTO：`line_no`、`email_hint`、任务`id`、`profile`、`status`、`created_at`，以及可选`error_code`、`stage`、`reason`、`auth_index`。POST（含同编号重试）、GET、active、latest、DELETE均不返回`auth_id`；邮箱仍只通过`email_hint`掩码展示。
+
+成功条目的`auth_index`直接取自CPA既有凭证索引，不产生新ID、哈希或映射表。批次导入已得到saved/registered/auth_id后，只读请求固定`GET /v8/management/credentials?name=<已保存auth_id>`；该路由支持name筛选，Manager仍按返回`files[]`的`id + provider`精确且唯一匹配，读取原有16位十六进制`auth_index`。查询前后复核批次冻结的CPA连接。
+
+导入已确认但索引查询、唯一匹配或连接复核未确认时，条目`status=failed`、`error_code=credential_mapping_unconfirmed`，整批`status=interrupted`并清除未启动材料。页面显示“已保存，凭证索引待核实”，更新账号列表，不自动重导入或撤回已保存账号。内部Task保留真实auth_id供对账；原单任务公开契约及凭证并发BFF的auth_id映射保持原行为。

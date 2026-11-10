@@ -12,6 +12,9 @@ import (
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/store"
 )
 
+const batchFixtureAuthID = "codex-user@example.invalid-plan.json"
+const batchFixtureAuthIndex = "0123456789abcdef"
+
 type batchFixture struct {
 	mu            sync.Mutex
 	posts         []Input
@@ -20,6 +23,7 @@ type batchFixture struct {
 	block         bool
 	cleanupFail   bool
 	importUnknown bool
+	mappingKind   string
 	importStarted chan struct{}
 	allowImport   chan struct{}
 	resolver      *resolver
@@ -30,6 +34,31 @@ func newBatchFixture(t *testing.T) *batchFixture {
 	t.Helper()
 	f := &batchFixture{deleted: map[string]bool{}}
 	cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/v8/management/credentials" {
+			if r.URL.Query().Get("name") != batchFixtureAuthID {
+				t.Error("凭证查询未使用导入返回的真实ID")
+			}
+			if f.mappingKind == "unavailable" {
+				w.WriteHeader(503)
+				return
+			}
+			file := map[string]any{"id": batchFixtureAuthID, "name": batchFixtureAuthID, "provider": "codex", "auth_index": batchFixtureAuthIndex}
+			files := []any{file}
+			switch f.mappingKind {
+			case "missing":
+				files = []any{}
+			case "duplicate":
+				files = append(files, file)
+			case "wrong_provider":
+				file["provider"] = "bps"
+			case "invalid_index":
+				file["auth_index"] = "user@example.invalid"
+			case "after_drift":
+				f.resolver.setURL("http://other.invalid")
+			}
+			jsonReply(w, map[string]any{"files": files})
+			return
+		}
 		if f.importStarted != nil {
 			close(f.importStarted)
 			<-f.allowImport
@@ -38,7 +67,10 @@ func newBatchFixture(t *testing.T) *batchFixture {
 			w.WriteHeader(502)
 			return
 		}
-		jsonReply(w, map[string]any{"status": "ok", "provider": "codex", "auth_id": "account.json", "saved": true, "registered": true})
+		if f.mappingKind == "before_drift" {
+			f.resolver.setURL("http://other.invalid")
+		}
+		jsonReply(w, map[string]any{"status": "ok", "provider": "codex", "auth_id": batchFixtureAuthID, "saved": true, "registered": true})
 	}))
 	worker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
@@ -261,7 +293,7 @@ func TestBatchCancellationWaitsForImportResult(t *testing.T) {
 	}
 	close(f.allowImport)
 	b = waitBatch(t, f.service, b.ID, func(b Batch) bool { return !batchActive(b.Status) })
-	if b.Status != "cancelled" || b.Items[0].Status != "succeeded" || b.Items[0].AuthID == "" {
+	if b.Status != "cancelled" || b.Items[0].Status != "succeeded" || b.Items[0].AuthIndex == "" {
 		t.Fatalf("导入结果被取消覆盖: %+v", b)
 	}
 }
@@ -306,5 +338,80 @@ func TestLatestBatchExpiresWithSummaryRetention(t *testing.T) {
 	latest, err := f.service.LatestBatch("codex")
 	if err != nil || latest != nil {
 		t.Fatal("终态保留期后未清理摘要")
+	}
+}
+
+func TestBatchSummariesDoNotExposeEmailInCredentialFilename(t *testing.T) {
+	f := newBatchFixture(t)
+	b, err := f.service.CreateBatch(batchInput("user@example.invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	initial := b
+	b = waitBatch(t, f.service, b.ID, func(b Batch) bool { return !batchActive(b.Status) })
+	replay, err := f.service.CreateBatch(batchInput("user@example.invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	latest, err := f.service.LatestBatch("codex")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelled, err := f.service.CancelBatch(b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, response := range map[string]any{"post": initial, "post_retry": replay, "get": b, "latest": latest, "delete": cancelled} {
+		raw, _ := json.Marshal(response)
+		for _, secret := range []string{"user@example.invalid", batchFixtureAuthID, `"auth_id"`, "PASSWORD_CANARY", "ABCDEFGHIJKLMNOP", "ACCESS_SECRET"} {
+			if strings.Contains(string(raw), secret) {
+				t.Fatalf("%s摘要泄露凭证邮箱或秘密", name)
+			}
+		}
+	}
+	raw, _ := json.Marshal(b)
+	var result struct {
+		Items []struct {
+			AuthIndex string `json:"auth_index"`
+			EmailHint string `json:"email_hint"`
+		}
+	}
+	_ = json.Unmarshal(raw, &result)
+	if len(result.Items) != 1 || result.Items[0].AuthIndex != batchFixtureAuthIndex || result.Items[0].EmailHint != "u***@example.invalid" {
+		t.Fatalf("摘要索引或邮箱掩码不匹配")
+	}
+	task, err := f.service.Get(b.Items[0].ID)
+	if err != nil || task.AuthID != batchFixtureAuthID {
+		t.Fatal("内部真实凭证ID未保留")
+	}
+}
+
+func TestBatchSavedCredentialMappingUnknownStopsWithoutReimport(t *testing.T) {
+	for _, kind := range []string{"unavailable", "missing", "duplicate", "wrong_provider", "invalid_index", "before_drift", "after_drift"} {
+		t.Run(kind, func(t *testing.T) {
+			f := newBatchFixture(t)
+			f.mappingKind = kind
+			b, err := f.service.CreateBatch(batchInput("user@example.invalid", "next@example.invalid"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			b = waitBatch(t, f.service, b.ID, func(b Batch) bool { return !batchActive(b.Status) })
+			if b.Status != "interrupted" || b.ErrorCode != "credential_mapping_unconfirmed" || b.Items[0].ErrorCode != "credential_mapping_unconfirmed" || b.Items[0].AuthIndex != "" || b.Items[1].Status != "cancelled" {
+				t.Fatalf("索引未确认后仍推进: %+v", b)
+			}
+			task, err := f.service.Get(b.Items[0].ID)
+			if err != nil || task.AuthID != batchFixtureAuthID {
+				t.Fatal("丢失已保存凭证的内部ID")
+			}
+			raw, _ := json.Marshal(b)
+			if strings.Contains(string(raw), "user@example.invalid") || strings.Contains(string(raw), `"auth_id"`) {
+				t.Fatal("未确认摘要泄露邮箱")
+			}
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			if len(f.posts) != 1 {
+				t.Fatal("索引未确认后启动了下一账号")
+			}
+		})
 	}
 }

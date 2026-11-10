@@ -52,7 +52,11 @@ export function BatchPasswordLogin({
       current.current = next;
       setBatch(next);
       for (const row of next.items) {
-        if (row.status === 'succeeded' && row.auth_id && !published.current.has(row.id)) {
+        if (
+          ((row.status === 'succeeded' && row.auth_index) ||
+            row.error_code === 'credential_mapping_unconfirmed') &&
+          !published.current.has(row.id)
+        ) {
           published.current.add(row.id);
           publishAccountCredentialMutationRevision({
             connectionFingerprint:
@@ -229,14 +233,18 @@ export function BatchPasswordLogin({
               {batch.items.map((row) => (
                 <li key={row.line_no}>
                   第{row.line_no}行 · {row.email_hint} ·{' '}
-                  {row.status === 'pending'
-                    ? '等待执行'
-                    : row.status === 'skipped'
-                      ? '已跳过'
-                      : loginTaskLabel(row as LoginTask)}
+                  {row.error_code === 'credential_mapping_unconfirmed'
+                    ? '已保存，凭证索引待核实'
+                    : row.status === 'pending'
+                      ? '等待执行'
+                      : row.status === 'skipped'
+                        ? '已跳过'
+                        : loginTaskLabel(row as LoginTask)}
                   {loginDiagnosticLabel(row) ? ` · ${loginDiagnosticLabel(row)}` : ''}
-                  {row.error_code ? ` · ${row.error_code}` : ''}
-                  {row.auth_id ? ` · ${row.auth_id}` : ''}
+                  {row.error_code && row.error_code !== 'credential_mapping_unconfirmed'
+                    ? ` · ${row.error_code}`
+                    : ''}
+                  {row.auth_index ? ` · 凭证索引 ${row.auth_index}` : ''}
                 </li>
               ))}
             </ol>

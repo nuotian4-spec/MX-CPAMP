@@ -42,6 +42,8 @@ type Task struct {
 	setup            store.Setup
 	done             chan struct{}
 	cleanupConfirmed bool
+	batchID          string
+	authIndex        string
 }
 type credentials struct {
 	LoginMethod  string `json:"login_method"`
@@ -188,7 +190,7 @@ func (s *Service) createBound(input Input, expected *store.Setup, batchID string
 	if input.TaskID != "" {
 		taskID = input.TaskID
 	}
-	t := &Task{ID: taskID, Profile: input.Profile, Status: "created", CreatedAt: time.Now().UTC(), cancel: cancel, setup: setup, done: make(chan struct{})}
+	t := &Task{ID: taskID, Profile: input.Profile, Status: "created", CreatedAt: time.Now().UTC(), cancel: cancel, setup: setup, done: make(chan struct{}), batchID: batchID}
 	s.tasks[t.ID] = t
 	go s.run(ctx, t.ID, input)
 	return snapshot(t), nil
@@ -344,6 +346,7 @@ func (s *Service) importCredentials(id string, result *credentials) {
 	s.mu.Lock()
 	provider := s.tasks[id].Profile
 	expected := s.tasks[id].setup
+	isBatch := s.tasks[id].batchID != ""
 	s.mu.Unlock()
 	profile, client := "codex", "app_EMoamEEZ73f0CkXaXp7hrann"
 	if provider == "bps" {
@@ -386,6 +389,16 @@ func (s *Service) importCredentials(id string, result *credentials) {
 	if response.Status != "ok" || response.Provider != provider || !response.Saved || !response.Registered || response.AuthID == "" {
 		s.finish(id, "failed", "import_unconfirmed", "")
 		return
+	}
+	if isBatch {
+		index, err := s.importedCredentialIndex(ctx, expected, response.AuthID, provider)
+		if err != nil {
+			s.finish(id, "failed", "credential_mapping_unconfirmed", response.AuthID)
+			return
+		}
+		s.mu.Lock()
+		s.tasks[id].authIndex = index
+		s.mu.Unlock()
 	}
 	s.finish(id, "succeeded", "", response.AuthID)
 }

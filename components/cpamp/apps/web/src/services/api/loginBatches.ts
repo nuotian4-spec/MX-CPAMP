@@ -2,9 +2,10 @@ import { apiClient, createScopedApiRequestConfig, type ApiClientRequestScope } f
 import { normalizeApiBase } from '@/utils/connection';
 import type { LoginProfile, LoginTask } from './loginTasks';
 
-export interface LoginBatchItem extends Omit<LoginTask, 'status'> {
+export interface LoginBatchItem extends Omit<LoginTask, 'status' | 'auth_id'> {
   line_no: number;
   email_hint: string;
+  auth_index?: string;
   status: LoginTask['status'] | 'pending' | 'skipped';
 }
 export interface LoginBatch {

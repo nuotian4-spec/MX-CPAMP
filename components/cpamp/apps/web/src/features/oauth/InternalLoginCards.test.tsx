@@ -153,7 +153,7 @@ describe('批量与BPS授权入口', () => {
           ? {
               ...running,
               status,
-              items: [{ ...running.items[0], status: 'succeeded', auth_id: 'saved.json' }],
+              items: [{ ...running.items[0], status: 'succeeded', auth_index: '0123456789abcdef' }],
             }
           : null
       );
@@ -162,7 +162,7 @@ describe('批量与BPS授权入口', () => {
       expect(JSON.stringify(renderer.toJSON())).toContain(
         status === 'completed' ? '批次已完成' : '批次已中断'
       );
-      expect(JSON.stringify(renderer.toJSON())).toContain('saved.json');
+      expect(JSON.stringify(renderer.toJSON())).toContain('0123456789abcdef');
       expect(mocks.create).not.toHaveBeenCalled();
       expect(mocks.cancel).not.toHaveBeenCalled();
     }
@@ -180,6 +180,52 @@ describe('批量与BPS授权入口', () => {
     expect(JSON.stringify(renderer.toJSON())).toContain('batch_not_found');
     expect(mocks.create).toHaveBeenCalledTimes(1);
     expect(mocks.cancel).not.toHaveBeenCalled();
+  });
+  it('成功摘要只显示既有凭证索引，不显示带邮箱的文件名', async () => {
+    mocks.create.mockResolvedValue(running);
+    mocks.get.mockResolvedValue({
+      ...running,
+      status: 'completed',
+      items: [
+        {
+          ...running.items[0],
+          status: 'succeeded',
+          auth_index: '0123456789abcdef',
+          auth_id: 'codex-user@example.invalid-plan.json',
+        },
+      ],
+    });
+    await render();
+    await submit();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1600);
+    });
+    const text = JSON.stringify(renderer.toJSON());
+    expect(text).toContain('0123456789abcdef');
+    expect(text).not.toContain('user@example.invalid');
+    expect(text).not.toContain('plan.json');
+    expect(mocks.publish).toHaveBeenCalledTimes(1);
+  });
+  it('已保存但索引未知明确提示且不自动重放', async () => {
+    mocks.create.mockResolvedValue(running);
+    mocks.get.mockResolvedValue({
+      ...running,
+      status: 'interrupted',
+      error_code: 'credential_mapping_unconfirmed',
+      items: [
+        { ...running.items[0], status: 'failed', error_code: 'credential_mapping_unconfirmed' },
+      ],
+    });
+    await render();
+    await submit();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1600);
+    });
+    const text = JSON.stringify(renderer.toJSON());
+    expect(text).toContain('已保存，凭证索引待核实');
+    expect(text).not.toContain('登录未完成');
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.publish).toHaveBeenCalledTimes(1);
   });
   it('取消剩余条目并等待当前真实结果', async () => {
     mocks.create.mockResolvedValue(running);
