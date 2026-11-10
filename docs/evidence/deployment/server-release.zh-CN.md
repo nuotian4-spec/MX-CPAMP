@@ -19,6 +19,17 @@ release_complete state=/opt/cpa-stack/.mx-upgrade-20261110-rc1 backup=/opt/cpa-s
 
 备份目录为 `/opt/cpa-stack/.mx-upgrade-20261110-rc1/backup`，包含 Manager 数据、CPA 凭据/KV 及恢复所需配置、密钥与环境来源；备份内容保留在服务器私有目录。无新增 SQL/schema 迁移。
 
-当前结论：生产发布脚本完成。仍需补实际运行容器的镜像身份、备份文件元数据和页面验收；真实账号登录、所属 client 的令牌刷新和模型业务验收待用户操作。此回执不宣称四入口真实授权或 BPS 官方手工回调兑换已通过。
+用户补充的生产只读回执确认四容器均 `running`：
 
-下一责任人：用户执行一组只读状态/身份/备份元数据核对，并在原管理面板强制刷新确认入口；P9 根据回执继续验收。
+| 服务 | 实际镜像 | 实际完整镜像 ID |
+|---|---|---|
+| CPA | `mx-cpa:20261110-rc1` | `sha256:58d0177203d8f4e4968cebc60c59bdb0e236404a05c27656a38351dc1022ab93` |
+| Manager | `mx-cpamp:20261110-rc1` | `sha256:85a8f76852c08de220ba132490cbdf234b87f1bdeba91a6e0d9bfa905769a25c` |
+| Worker | `mx-oauth-login:20261110-rc1` | `sha256:64168881ce990f58d24736d1f8488549457ed2c775a072c1d0572bd524b7926b` |
+| Caddy | `caddy:2.10.2-alpine` | `sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d` |
+
+三候选镜像完整 ID 与已验证分发清单匹配，Caddy 镜像与原基线一致。备份目录权限 `0700`；`data.tar.gz` 为 20826 字节，`environment-sources.tar.gz` 为 69 字节，`contents.txt` 为 244 字节，三文件均 `0600`。
+
+当前结论：服务器部署核验通过。页面、真实账号登录、所属 client 的令牌刷新和模型业务验收待用户操作。此回执不宣称四入口真实授权或 BPS 官方手工回调兑换已通过。
+
+下一责任人：用户在原管理面板强制刷新确认四入口，随后分通道进行真实登录验收；P9 根据页面结果和脱敏错误码继续核证。

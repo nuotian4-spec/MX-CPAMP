@@ -8,7 +8,7 @@
 
 CPA 上游自带的两项 Google OAuth 公开客户端常量，按用户授权完成本次推送放行，保留原有源码与 Google 登录行为。已通过 GitHub API 核实仓库 `secret_scanning`、`secret_scanning_push_protection` 均为 `enabled`。三镜像归档已作为 [mx-cpamp-20261110-rc1](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261110-rc1) 分发；用户已完成生产切换脚本，真实业务验收完成前保持 PR 草稿。
 
-用户已回传 [服务器只读预检](deployment-preflight.zh-CN.md)，并按已审 [准备与切换材料](deployment-release.zh-CN.md) 完成 prepare、TTY DEPLOY、一次性备份和受控切换，最终 `release_complete`。见 [生产回执](evidence/deployment/server-release.zh-CN.md)。当前待补运行镜像身份、备份元数据和页面验收。
+用户已回传 [服务器只读预检](deployment-preflight.zh-CN.md)，并按已审 [准备与切换材料](deployment-release.zh-CN.md) 完成 prepare、TTY DEPLOY、一次性备份和受控切换，最终 `release_complete`。补充只读回执确认三候选镜像完整ID匹配、四容器运行、备份目录0700与文件0600。服务器部署核验通过，见 [生产回执](evidence/deployment/server-release.zh-CN.md)。页面和真实业务待验收。
 
 ## 实现
 
@@ -69,4 +69,4 @@ docker build -t mx-oauth-login:local --build-arg "SOURCE_COMMIT=$sourceCommit" -
 - BPS 模型清单默认空；只填写已确认可用的模型，不以历史默认列表代替当前能力。
 - 首期 BPS 不接原生 WebSocket、工具、媒体、opaque/compaction、background、服务端 `previous_response_id` 或 token counting。
 - 自动续期由 CPA 执行；刷新失效后人工补登录，不保存密码/TOTP 作无人值守重登。
-- 候选镜像已发布；生产准备、切换与本次必要备份已收到完成回执。待补运行身份和页面验收，分发身份见 [归档核证](evidence/deployment/archive-verification.zh-CN.md)。
+- 候选镜像已发布；生产准备、切换、运行镜像身份与本次必要备份均已核，页面和真实业务待验收。分发身份见 [归档核证](evidence/deployment/archive-verification.zh-CN.md)。

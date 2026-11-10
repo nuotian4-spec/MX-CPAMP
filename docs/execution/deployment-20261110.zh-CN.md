@@ -50,4 +50,6 @@ P8 部署材料提交 `e71421cb6c6111360095bc6e91f3258b3ac0cd26` 已整合为 `0
 
 用户已回传固定提交 `3baeb518da2dbbff14befe386701a9d2815c9a9c` 的生产 prepare 成功回执，并在 TTY 输入 DEPLOY 完成 apply：漂移检查、停 CPA/Manager、备份、启动候选、内部鉴权检查，最终 `stage=complete`、`release_complete`。备份位置 `/opt/cpa-stack/.mx-upgrade-20261110-rc1/backup`。详见 [生产回执](../evidence/deployment/server-release.zh-CN.md)。
 
-当前责任人：P9 核生产完成回执并记录结果；下一责任人：用户补实际运行镜像与备份元数据、原管理面板页面验收，P9 接续核证。真实登录、刷新和模型业务待验收。
+用户补充只读回执：三候选镜像完整 ID 均匹配分发清单，原 Caddy 镜像不变，四容器均 running；备份目录0700、三文件0600，data.tar.gz 为20826字节。服务器部署核验通过。
+
+当前责任人：P9 记录部署核验结论；下一责任人：用户在原管理面板确认四入口并分通道进行真实登录验收，P9 接续核证。真实登录、刷新和模型业务待验收。
