@@ -4,6 +4,8 @@ import {EventEmitter} from 'node:events';
 import {PassThrough,Writable} from 'node:stream';
 
 const containers=new Set();
+const revisions=JSON.parse(process.env.MX_FIXTURE_IMAGE_REVISIONS||'{}');
+const expectRun=process.env.MX_FIXTURE_EXPECT_RUN!=='no';
 let failedRun=false,removed=false;
 childProcess.spawn=(command,args)=>{
   if(command!=='docker')throw new Error('unexpected_fixture_command');
@@ -14,7 +16,7 @@ childProcess.spawn=(command,args)=>{
   queueMicrotask(()=>{
     let code=0,output='';
     if(args[0]==='image'&&args[1]==='inspect'){
-      output=JSON.stringify({Id:'sha256:'+'1'.repeat(64),Config:{Labels:{'org.opencontainers.image.revision':'9'.repeat(40)}}});
+      output=JSON.stringify({Id:'sha256:'+'1'.repeat(64),Config:{Labels:{'org.opencontainers.image.revision':revisions[args[2]]||'9'.repeat(40)}}});
     }else if(args[0]==='run'){
       const name=args[args.indexOf('--name')+1];
       containers.add(name);failedRun=true;code=1;
@@ -29,5 +31,5 @@ childProcess.spawn=(command,args)=>{
 };
 syncBuiltinESMExports();
 process.on('exit',()=>{
-  if(!failedRun||!removed||containers.size)process.exitCode=23;
+  if((expectRun&&(!failedRun||!removed))||(!expectRun&&failedRun)||containers.size)process.exitCode=23;
 });

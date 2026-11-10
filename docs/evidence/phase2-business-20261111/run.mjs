@@ -8,11 +8,12 @@ import {sanitizeReceipt} from './diagnostics.mjs';
 
 const directory=path.dirname(fileURLToPath(import.meta.url));
 let options;
-try{options=parseArgs({options:{execute:{type:'boolean'},preflight:{type:'boolean'},'cpa-image':{type:'string',default:'mx-cpa:20261110-rc1'},'manager-image':{type:'string',default:'mx-cpamp:20261110-rc1'},'worker-image':{type:'string',default:'mx-oauth-login:20261110-rc1'},'worker-source':{type:'string'},'cpa-binary':{type:'string'},'manager-binary':{type:'string'},'source-revision':{type:'string'}}}).values;}
+try{options=parseArgs({options:{execute:{type:'boolean'},preflight:{type:'boolean'},'cpa-image':{type:'string',default:'mx-cpa:20261110-rc1'},'manager-image':{type:'string',default:'mx-cpamp:20261110-rc1'},'worker-image':{type:'string',default:'mx-oauth-login:20261110-rc1'},'worker-source':{type:'string'},'cpa-binary':{type:'string'},'manager-binary':{type:'string'},'source-revision':{type:'string'},'cpa-revision':{type:'string'},'manager-revision':{type:'string'},'worker-revision':{type:'string'}}}).values;}
 catch{process.stdout.write('{"stage":"harness","status":"failed","error_code":"invalid_options"}\n');process.exit(1);}
 const preflight=!options.execute;
 const images={cpa:options['cpa-image'],manager:options['manager-image'],worker:options['worker-image']};
 const overlays={worker:options['worker-source']?path.resolve(options['worker-source']):null,cpa:options['cpa-binary']?path.resolve(options['cpa-binary']):null,manager:options['manager-binary']?path.resolve(options['manager-binary']):null};
+const revisions=Object.fromEntries(['cpa','manager','worker'].map(role=>[role,options[role+'-revision']??options['source-revision']]));
 const prefix='mx-bps-business-'+crypto.randomBytes(6).toString('hex');
 const names={cpa:prefix+'-cpa',manager:prefix+'-manager',worker:prefix+'-worker'};
 const keys=Object.fromEntries(['cpa','admin','api','worker'].map(name=>[name,crypto.randomBytes(32).toString('hex')]));
@@ -57,7 +58,7 @@ async function put(name,target,value,owner){
 try{
   if(options.execute&&options.preflight)throw new Error('invalid_options');
   for(const image of Object.values(images))if(!/^[a-zA-Z0-9][a-zA-Z0-9._/:@-]*$/.test(image))throw new Error('invalid_options');
-  if(options['source-revision']&&!/^[a-f0-9]{40}$/.test(options['source-revision']))throw new Error('invalid_options');
+  for(const revision of [options['source-revision'],...Object.values(revisions)])if(revision!==undefined&&!/^[a-f0-9]{40}$/.test(revision))throw new Error('invalid_options');
   if((options.execute||Object.values(overlays).some(Boolean))&&!/^[a-f0-9]{40}$/.test(options['source-revision']||''))throw new Error('overlay_revision_required');
   if(overlays.worker&&!fs.statSync(overlays.worker).isDirectory())throw new Error('invalid_overlay');
   if(overlays.manager&&!fs.statSync(overlays.manager).isFile())throw new Error('invalid_overlay');
@@ -74,8 +75,9 @@ try{
     const inspected=await docker(['image','inspect',image,'--format','{{json .}}']);const identity=JSON.parse(inspected.output);
     if(!/^sha256:[a-f0-9]{64}$/.test(identity.Id))throw new Error('image_identity_invalid');
     const revision=identity.Config?.Labels?.['org.opencontainers.image.revision'];
-    if(!overlays[role]&&options['source-revision']&&revision!==options['source-revision'])throw new Error('image_revision_mismatch');
-    report({stage:'image',role,image_id:identity.Id,image_revision:/^[a-f0-9]{40}$/.test(revision||'')?revision:null});
+    const expected=(!overlays[role]||options[role+'-revision']!==undefined)?revisions[role]:undefined;
+    report({stage:'image',role,image_id:identity.Id,image_revision:/^[a-f0-9]{40}$/.test(revision||'')?revision:null,expected_revision:expected||null});
+    if(expected&&revision!==expected)throw new Error('image_revision_mismatch');
   }
   stage='cpa_start';
   await create(names.cpa,['--tmpfs','/state:mode=0700,size=64m','--tmpfs','/tmp:mode=1777,size=32m',...(overlays.cpa?['--mount','type=bind,source='+overlays.cpa+',target=/candidate/CLIProxyAPI,readonly']:[]),'--entrypoint','/bin/sh',images.cpa,'-c','while [ ! -s /state/config.yaml ]; do sleep 0.1; done; exec '+(overlays.cpa?'/candidate/CLIProxyAPI':'/CLIProxyAPI/CLIProxyAPI')+' --config /state/config.yaml --local-model']);

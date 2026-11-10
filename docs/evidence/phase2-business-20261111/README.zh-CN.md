@@ -24,6 +24,8 @@ node run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:p
 
 亦可通过`--cpa-binary`、`--manager-binary`、`--worker-source`只读叠加Linux产物/源码；叠加必须提供完整40位revision，记录有效输入摘要并在结束复核未漂移。无叠加时逐镜像要求OCI revision与所给完整revision一致，记录实际镜像ID和revision。工具不构建、不拉镜像，不使用尚未完成的tag。
 
+镜像预期revision默认取`--source-revision`，支持`--cpa-revision`、`--manager-revision`、`--worker-revision`逐角色显式覆盖，严格要求40位完整提交与实际OCI标签一致。每角色记录实际镜像ID、实际revision、预期revision；主会话证明产品目录未变后可明确复用旧镜像，整体source revision仍绑定新Manager提交。叠加时source revision绑定有效输入，显式角色revision仍校验对应基础镜像。`node ../phase2-integration/verify-revisions.mjs`覆盖混合revision成功校验、标签不符与非法revision反例，不访问Docker或凭据。
+
 ## 隔离和输出
 
 复用已审真实2FA构型：随机独立容器、只读根、tmpfs业务状态、log-driver none、无端口发布、无生产挂载或Docker socket；管理key和真实材料经stdin进入容器。Worker登录器仅注入固定本地`host.docker.internal:7890`后import原login.mjs；CPA刷新/推理通过隔离requests.proxy-url使用同一代理。此配置只代表本地验收，不证明生产VPS网络等价。

@@ -23,6 +23,7 @@ node --check worker.mjs
 node --check fixture-runner.mjs
 node verify-fixture.mjs
 node verify-cleanup.mjs
+node verify-revisions.mjs
 ```
 
 候选镜像方式：
@@ -42,6 +43,8 @@ node run.mjs --cpa-binary ABSOLUTE_CPA_LINUX_BINARY --manager-binary ABSOLUTE_MA
 ## 输入与证据
 
 工具记录三个基础镜像的实际完整ID；叠加时要求40位完整source revision，记录三份有效输入摘要并在结束时复核未漂移。叠加只证明本地可执行输入，不代表正式镜像或生产网络等价。
+
+无叠加时每个镜像的预期OCI revision默认取`--source-revision`；`--cpa-revision`、`--manager-revision`、`--worker-revision`可逐角色覆盖，必须是完整40位提交，实际revision不符立即停止。每个image回执分别记录实际ID、实际revision及预期revision。复用未变产品目录的旧镜像须由主会话核输入等价，并显式传入旧提交；整体source revision仍使用当前Manager提交，不宣称三镜像同源。叠加时source revision绑定有效输入；若另外显式指定某角色revision，仍严格校验该基础镜像标签。
 
 随机管理密钥、共享Worker认证secret仅通过stdin进入各容器tmpfs。无真实账号stdin接口。三组件只读根、log-driver none、无端口发布、无业务卷或Docker socket；全部配置、导入的合成凭证、Manager SQLite和任务状态在tmpfs。finally只删除本次随机label资源，并实际核无残留。输出仅阶段、固定检查码、布尔结果、必要ID/摘要，无合成token或配置Key正文。
 
