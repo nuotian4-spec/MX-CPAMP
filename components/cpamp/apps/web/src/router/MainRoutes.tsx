@@ -7,6 +7,7 @@ import {
   type RouteObject,
 } from 'react-router-dom';
 import { AccountsPage } from '@/pages/AccountsPage';
+import { CredentialConcurrencyPage } from '@/features/accounts/CredentialConcurrencyPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AiProvidersPage } from '@/pages/AiProvidersPage';
 import { AiProvidersClaudeEditLayout } from '@/pages/AiProvidersClaudeEditLayout';
@@ -166,6 +167,7 @@ const mainRoutes: RouteObject[] = [
   { path: '/ai-providers', element: <AiProvidersPage /> },
   { path: '/ai-providers/*', element: <AiProvidersPage /> },
   { path: '/accounts', element: <AccountsPage /> },
+  { path: '/credential-concurrency', element: <CredentialConcurrencyPage /> },
   { path: '/oauth', element: <OAuthPage /> },
   {
     path: '/usage-analytics',

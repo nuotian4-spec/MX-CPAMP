@@ -20,6 +20,8 @@ type batchFixture struct {
 	block         bool
 	cleanupFail   bool
 	importUnknown bool
+	importStarted chan struct{}
+	allowImport   chan struct{}
 	resolver      *resolver
 	service       *Service
 }
@@ -28,6 +30,10 @@ func newBatchFixture(t *testing.T) *batchFixture {
 	t.Helper()
 	f := &batchFixture{deleted: map[string]bool{}}
 	cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if f.importStarted != nil {
+			close(f.importStarted)
+			<-f.allowImport
+		}
 		if f.importUnknown {
 			w.WriteHeader(502)
 			return
@@ -234,5 +240,28 @@ func TestCleanupRequiresExplicitConfirmation(t *testing.T) {
 				t.Fatal("清理确认含义不正确")
 			}
 		})
+	}
+}
+
+func TestBatchCancellationWaitsForImportResult(t *testing.T) {
+	f := newBatchFixture(t)
+	f.importStarted = make(chan struct{})
+	f.allowImport = make(chan struct{})
+	b, err := f.service.CreateBatch(batchInput("one@example.invalid", "two@example.invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-f.importStarted
+	cancelled, err := f.service.CancelBatch(b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cancelled.Status != "cancelling" || cancelled.Items[0].Status != "importing" || cancelled.Items[1].Status != "cancelled" {
+		t.Fatalf("%+v", cancelled)
+	}
+	close(f.allowImport)
+	b = waitBatch(t, f.service, b.ID, func(b Batch) bool { return !batchActive(b.Status) })
+	if b.Status != "cancelled" || b.Items[0].Status != "succeeded" || b.Items[0].AuthID == "" {
+		t.Fatalf("导入结果被取消覆盖: %+v", b)
 	}
 }

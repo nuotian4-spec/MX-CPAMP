@@ -71,7 +71,13 @@ describe('批量与BPS授权入口', () => {
             textareas.push(node);
             return node;
           }
-          if (element.type === 'input' && element.props.type === 'password') {
+          if (
+            element.type === 'input' &&
+            element.props &&
+            typeof element.props === 'object' &&
+            'type' in element.props &&
+            element.props.type === 'password'
+          ) {
             const node = { value: '' };
             callbacks.push(node);
             return node;

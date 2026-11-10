@@ -604,6 +604,12 @@ function MainLayoutContent({ routeBase = '', demoMode = false }: MainLayoutProps
         icon: sidebarIcons.authFiles,
       },
       {
+        path: '/credential-concurrency',
+        label: '凭证并发',
+        shortLabel: '并发',
+        icon: sidebarIcons.authFiles,
+      },
+      {
         path: '/oauth',
         label: t('nav.oauth', { defaultValue: 'OAuth' }),
         shortLabel: navShortLabel('nav.oauth', t('nav.oauth', { defaultValue: 'OAuth' })),
