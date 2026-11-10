@@ -72,7 +72,7 @@ func TestBPSImageNativeUploadAndCredentialScopedCache(t *testing.T) {
 		if len(raw) == 0 {
 			t.Fatal("附件内容为空")
 		}
-		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"id":"file-uploaded"}`))}, nil
+		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"openai_file_id":"file-uploaded"}`))}, nil
 	}))
 	raw := bpsImageBody(t, bpsImagePart(bpsTestImage(t, 1)))
 	auth := bpsTestAuth()
@@ -116,6 +116,18 @@ func TestBPSImageNativeToolScreenshotStaysInline(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("工具截图关联或顺序丢失")
+	}
+}
+
+func TestBPSImageUploadRejectsNonDonorReceipt(t *testing.T) {
+	for _, response := range []string{`{"id":"file-other"}`, `{"file_id":"file-other"}`, `{"openai_file_id":"invalid"}`, strings.Repeat(" ", 64<<10) + `{"openai_file_id":"file-other"}`} {
+		ctx := context.WithValue(context.Background(), "cliproxy.roundtripper", bpsImageTransport(func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(response))}, nil
+		}))
+		wire, _, _, err := PrepareBPSImages(ctx, &config.Config{}, bpsTestAuth(), bpsImageBody(t, bpsImagePart(bpsTestImage(t, 9))), "")
+		if err == nil || len(wire) != 0 {
+			t.Fatal("接受错误的附件回执")
+		}
 	}
 }
 

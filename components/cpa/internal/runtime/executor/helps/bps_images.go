@@ -205,20 +205,17 @@ func uploadBPSImage(ctx context.Context, client *http.Client, token, account str
 		return "", bpsImageError{502, "BPS附件上传失败，请求未重放"}
 	}
 	defer func() { _ = res.Body.Close() }()
-	raw, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
+	raw, err := io.ReadAll(io.LimitReader(res.Body, (64<<10)+1))
 	if err != nil {
 		return "", bpsImageError{502, "BPS附件回执读取失败"}
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		return "", bpsImageError{502, fmt.Sprintf("BPS附件上传返回HTTP%d，请求未重放", res.StatusCode)}
 	}
-	if !ojson.ValidBytes(raw) {
+	if len(raw) > 64<<10 || !ojson.ValidBytes(raw) {
 		return "", bpsImageError{502, "BPS附件回执无效"}
 	}
-	id := ojson.GetBytes(raw, "id").String()
-	if id == "" {
-		id = ojson.GetBytes(raw, "file_id").String()
-	}
+	id := ojson.GetBytes(raw, "openai_file_id").String()
 	if !basispoints.ValidAttachmentID(id) {
 		return "", bpsImageError{502, "BPS附件回执缺少有效附件ID"}
 	}
