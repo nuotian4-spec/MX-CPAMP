@@ -10,7 +10,7 @@
 2. 批次成功项仅有16hex `auth_index`，没有`auth_id`或原邮箱；CPA列表按索引与provider唯一定位真实ID，工具只在内部使用该ID。当前注册列表与保存文件一致，且仅有这一份BPS授权；核profile=excel、固定Excel client、同输入邮箱与账号身份。
 3. Manager GET取得当前32hex connection_ref，PATCH把该凭证并发覆盖设为3；核保存。
 4. CPA受支持的`POST /v8/management/credentials/refresh`仅指定该auth name，正常刷新一次；核同auth、账号身份、profile/client、refresh token保留及并发覆盖不丢失。不修改过期字段或强造401。
-5. 显式BPS目录仅包含用户确认的`gpt-6-astra`、`gpt-6.1-sol`、`gpt-5.6-sol`。公开`/v1/responses`只发一次客户端请求：模型`gpt-5.6-sol`、小文本、非流式、最多128输出token、`reasoning.effort=low`；核completed终态、BPS响应ID、非空文本和同auth成功计数增加，最后核active/waiting排空。正文和token均不输出。
+5. 显式BPS目录仅包含用户确认的`gpt-6-astra`、`gpt-6.1-sol`、`gpt-5.6-sol`。公开`/v1/responses`只发一次客户端请求，正文严格为`{"model":"gpt-5.6-sol","input":"Reply with OK.","reasoning":{"effort":"low"},"stream":false}`；核completed终态、BPS响应ID、非空文本和同auth成功计数增加，最后核active/waiting排空。正文和token均不输出。
 
 任何额外交互、未知保存、刷新未知或失败立即停止，不自动重登、重POST或再次发客户端请求。客户端预算为1；CPA同凭证内部401刷新/重试仍可能发生，未做传输计数时输出`upstream_attempts:unknown`，不声称上游仅尝试一次。routing额外retry轮数在隔离配置设为0，仍不代替传输次数证据。
 
@@ -41,6 +41,8 @@ node run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:p
 索引契约反例覆盖`credential_mapping_unconfirmed`的failed/interrupted结果，工具保留该固定诊断并立即停止；索引不符、索引不唯一或批次出现raw auth_id也停止。这些批次或索引失败路径都是1次batch、0次refresh、0次模型请求。成功fixture中的内部凭证ID刻意包含完整合成邮箱，输出仍不含该ID、邮箱或秘密标记。
 
 公开请求HTTP500反例恰好1次batch、1次refresh、1次模型请求，失败后没有后续请求或完成回执。秘密哨兵、URL与伪造上游状态不回显。`node verify-diagnostics.mjs`核固定错误分类、未知值保留unknown及脱敏；这两项均为无网络fixture，不消耗真实请求预算。
+
+请求fixture强断言以上完整正文，且`max_output_tokens`、`max_tokens`、`max_completion_tokens`三者均不存在；分别添加任意一个字段都会被工具契约反例拒绝。CPA的真实能力校验在`bps_capability.go`明确拒绝这些参数；真实public handler的旧max本地拒绝证据由主会话单独留存，本工具fixture只验证请求契约与执行预算。既有真实失败回执及当时工具revision保持原文，后续真实执行需主会话另行取得请求预算。
 
 容器预生成名称在`docker run`之前登记，CLI回执失败也进入清理。`node ../phase2-integration/verify-cleanup.mjs`已通过两个工具的CLI替身反例：daemon已建容器但run返回失败，必须主动删除并核无残留；反例不启动Docker，不读取凭据。
 

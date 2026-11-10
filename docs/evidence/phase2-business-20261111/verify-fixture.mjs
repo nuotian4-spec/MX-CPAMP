@@ -2,6 +2,14 @@ import assert from 'node:assert/strict';
 import {runBusiness,models} from './check.mjs';
 import {sanitizeReceipt} from './diagnostics.mjs';
 
+const supportedRequest={model:'gpt-5.6-sol',input:'Reply with OK.',reasoning:{effort:'low'},stream:false};
+function assertRequest(body){
+  for(const field of ['max_output_tokens','max_tokens','max_completion_tokens'])assert.equal(Object.hasOwn(body,field),false);
+  assert.deepEqual(body,supportedRequest);
+}
+assertRequest(supportedRequest);
+for(const field of ['max_output_tokens','max_tokens','max_completion_tokens'])assert.throws(()=>assertRequest({...supportedRequest,[field]:128}),assert.AssertionError);
+
 async function scenario(mode='complete'){
   const needsAction=mode==='needs_action',mappingFailed=mode==='mapping_failed';
   const input={cpa:'synthetic-cpa',admin:'synthetic-admin',api:'synthetic-api',credentials:{email:'fixture@example.invalid',password:'SECRET_PASSWORD_MARKER',totp_secret:'SECRET_TOTP_MARKER'}};
@@ -21,7 +29,7 @@ async function scenario(mode='complete'){
     }
     if(path==='/v8/management/credentials/refresh'&&method==='POST'){posts.refresh++;assert.deepEqual(body,{name:authID});refreshDone=true;return{status:200,value:{ok:true,auth:entry()}};}
     if(path==='/v1/models')return{status:200,value:{data:models.map(id=>({id}))}};
-    if(path==='/v1/responses'&&method==='POST'){posts.model++;assert.equal(body.model,'gpt-5.6-sol');assert.equal(body.max_output_tokens,128);assert.deepEqual(body.reasoning,{effort:'low'});if(mode==='http500')return{status:500,value:{error:{code:'internal_server_error',type:'server_error',message:'SECRET_UPSTREAM_MESSAGE_MARKER https://fixture.invalid/SECRET_URL_MARKER'},debug:'SECRET_BODY_MARKER',upstream_status:401}};success++;return{status:200,value:{id:'resp_bps_fixture',status:'completed',output:[{type:'message',content:[{type:'output_text',text:'SECRET_OUTPUT_MARKER'}]}]}};}
+    if(path==='/v1/responses'&&method==='POST'){posts.model++;assertRequest(body);if(mode==='http500')return{status:500,value:{error:{code:'internal_server_error',type:'server_error',message:'SECRET_UPSTREAM_MESSAGE_MARKER https://fixture.invalid/SECRET_URL_MARKER'},debug:'SECRET_BODY_MARKER',upstream_status:401}};success++;return{status:200,value:{id:'resp_bps_fixture',status:'completed',output:[{type:'message',content:[{type:'output_text',text:'SECRET_OUTPUT_MARKER'}]}]}};}
     throw new Error('unexpected_fixture_call');
   };
   let result,error;
