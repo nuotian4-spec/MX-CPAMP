@@ -1,0 +1,368 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 698B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22.23.4-bookworm-slim
+#2 DONE 2.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 86B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 100.71kB 0.0s done
+#4 DONE 0.0s
+
+#5 [ 1/10] FROM docker.io/library/node:22.23.4-bookworm-slim@sha256:5ec23b7c622b00547753bc6ffd78085dd868a68aeb41c8e0a1418f033e13d96d
+#5 resolve docker.io/library/node:22.23.4-bookworm-slim@sha256:5ec23b7c622b00547753bc6ffd78085dd868a68aeb41c8e0a1418f033e13d96d
+#5 resolve docker.io/library/node:22.23.4-bookworm-slim@sha256:5ec23b7c622b00547753bc6ffd78085dd868a68aeb41c8e0a1418f033e13d96d 0.1s done
+#5 CACHED
+
+#6 [ 2/10] RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv ca-certificates && rm -rf /var/lib/apt/lists/*
+#6 1.205 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#6 1.478 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+#6 1.910 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB]
+#6 2.189 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8790 kB]
+#6 3.105 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+#6 3.369 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [366 kB]
+#6 3.672 Fetched 9404 kB in 3s (3406 kB/s)
+#6 3.672 Reading package lists...
+#6 4.179 Reading package lists...
+#6 4.640 Building dependency tree...
+#6 4.771 Reading state information...
+#6 4.904 The following additional packages will be installed:
+#6 4.904   libexpat1 libgssapi-krb5-2 libk5crypto3 libkeyutils1 libkrb5-3
+#6 4.904   libkrb5support0 libncursesw6 libnsl2 libpython3-stdlib libpython3.11-minimal
+#6 4.904   libpython3.11-stdlib libreadline8 libsqlite3-0 libssl3 libtirpc-common
+#6 4.905   libtirpc3 media-types openssl python3-distutils python3-lib2to3
+#6 4.905   python3-minimal python3-pip-whl python3-setuptools-whl python3.11
+#6 4.905   python3.11-minimal python3.11-venv readline-common
+#6 4.906 Suggested packages:
+#6 4.906   krb5-doc krb5-user python3-doc python3-tk python3.11-doc binutils
+#6 4.906   binfmt-support readline-doc
+#6 4.906 Recommended packages:
+#6 4.906   krb5-locales libgpm2
+#6 5.073 The following NEW packages will be installed:
+#6 5.074   ca-certificates libexpat1 libgssapi-krb5-2 libk5crypto3 libkeyutils1
+#6 5.074   libkrb5-3 libkrb5support0 libncursesw6 libnsl2 libpython3-stdlib
+#6 5.074   libpython3.11-minimal libpython3.11-stdlib libreadline8 libsqlite3-0 libssl3
+#6 5.075   libtirpc-common libtirpc3 media-types openssl python3 python3-distutils
+#6 5.075   python3-lib2to3 python3-minimal python3-pip-whl python3-setuptools-whl
+#6 5.075   python3-venv python3.11 python3.11-minimal python3.11-venv readline-common
+#6 5.351 0 upgraded, 30 newly installed, 0 to remove and 0 not upgraded.
+#6 5.351 Need to get 14.1 MB of archives.
+#6 5.351 After this operation, 40.5 MB of additional disk space will be used.
+#6 5.351 Get:1 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.22-1~deb12u2 [2040 kB]
+#6 5.706 Get:2 http://deb.debian.org/debian-security bookworm-security/main amd64 libpython3.11-minimal amd64 3.11.2-6+deb12u9 [821 kB]
+#6 6.002 Get:3 http://deb.debian.org/debian-security bookworm-security/main amd64 libexpat1 amd64 2.5.0-1+deb12u5 [108 kB]
+#6 6.280 Get:4 http://deb.debian.org/debian-security bookworm-security/main amd64 python3.11-minimal amd64 3.11.2-6+deb12u9 [2055 kB]
+#6 6.631 Get:5 http://deb.debian.org/debian bookworm/main amd64 python3-minimal amd64 3.11.2-1+b1 [26.3 kB]
+#6 6.891 Get:6 http://deb.debian.org/debian bookworm/main amd64 media-types all 10.0.0 [26.1 kB]
+#6 7.156 Get:7 http://deb.debian.org/debian bookworm/main amd64 libncursesw6 amd64 6.4-4 [134 kB]
+#6 7.421 Get:8 http://deb.debian.org/debian bookworm/main amd64 libkrb5support0 amd64 1.20.1-2+deb12u5 [33.2 kB]
+#6 7.683 Get:9 http://deb.debian.org/debian bookworm/main amd64 libk5crypto3 amd64 1.20.1-2+deb12u5 [79.7 kB]
+#6 8.031 Get:10 http://deb.debian.org/debian bookworm/main amd64 libkeyutils1 amd64 1.6.3-2 [8808 B]
+#6 8.302 Get:11 http://deb.debian.org/debian bookworm/main amd64 libkrb5-3 amd64 1.20.1-2+deb12u5 [332 kB]
+#6 8.811 Get:12 http://deb.debian.org/debian bookworm/main amd64 libgssapi-krb5-2 amd64 1.20.1-2+deb12u5 [135 kB]
+#6 9.086 Get:13 http://deb.debian.org/debian bookworm/main amd64 libtirpc-common all 1.3.3+ds-1 [14.0 kB]
+#6 9.361 Get:14 http://deb.debian.org/debian bookworm/main amd64 libtirpc3 amd64 1.3.3+ds-1 [85.2 kB]
+#6 9.628 Get:15 http://deb.debian.org/debian bookworm/main amd64 libnsl2 amd64 1.3.0-2 [39.5 kB]
+#6 9.908 Get:16 http://deb.debian.org/debian bookworm/main amd64 readline-common all 8.2-1.3 [69.0 kB]
+#6 10.17 Get:17 http://deb.debian.org/debian bookworm/main amd64 libreadline8 amd64 8.2-1.3 [166 kB]
+#6 10.46 Get:18 http://deb.debian.org/debian bookworm/main amd64 libsqlite3-0 amd64 3.40.1-2+deb12u2 [839 kB]
+#6 10.76 Get:19 http://deb.debian.org/debian-security bookworm-security/main amd64 libpython3.11-stdlib amd64 3.11.2-6+deb12u9 [1798 kB]
+#6 11.30 Get:20 http://deb.debian.org/debian-security bookworm-security/main amd64 python3.11 amd64 3.11.2-6+deb12u9 [575 kB]
+#6 11.61 Get:21 http://deb.debian.org/debian bookworm/main amd64 libpython3-stdlib amd64 3.11.2-1+b1 [9312 B]
+#6 11.88 Get:22 http://deb.debian.org/debian bookworm/main amd64 python3 amd64 3.11.2-1+b1 [26.3 kB]
+#6 12.15 Get:23 http://deb.debian.org/debian-security bookworm-security/main amd64 openssl amd64 3.0.22-1~deb12u2 [1442 kB]
+#6 12.48 Get:24 http://deb.debian.org/debian-security bookworm-security/main amd64 ca-certificates all 20250419~deb12u2 [161 kB]
+#6 12.76 Get:25 http://deb.debian.org/debian bookworm/main amd64 python3-lib2to3 all 3.11.2-3 [76.3 kB]
+#6 13.16 Get:26 http://deb.debian.org/debian bookworm/main amd64 python3-distutils all 3.11.2-3 [131 kB]
+#6 13.68 Get:27 http://deb.debian.org/debian bookworm/main amd64 python3-pip-whl all 23.0.1+dfsg-1 [1717 kB]
+#6 14.03 Get:28 http://deb.debian.org/debian bookworm/main amd64 python3-setuptools-whl all 66.1.1-1+deb12u2 [1112 kB]
+#6 14.36 Get:29 http://deb.debian.org/debian-security bookworm-security/main amd64 python3.11-venv amd64 3.11.2-6+deb12u9 [5896 B]
+#6 14.64 Get:30 http://deb.debian.org/debian bookworm/main amd64 python3-venv amd64 3.11.2-1+b1 [1200 B]
+#6 14.84 debconf: delaying package configuration, since apt-utils is not installed
+#6 14.88 Fetched 14.1 MB in 10s (1472 kB/s)
+#6 14.94 Selecting previously unselected package libssl3:amd64.
+#6 14.94 (Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6096 files and directories currently installed.)
+#6 14.96 Preparing to unpack .../libssl3_3.0.22-1~deb12u2_amd64.deb ...
+#6 14.98 Unpacking libssl3:amd64 (3.0.22-1~deb12u2) ...
+#6 15.17 Selecting previously unselected package libpython3.11-minimal:amd64.
+#6 15.17 Preparing to unpack .../libpython3.11-minimal_3.11.2-6+deb12u9_amd64.deb ...
+#6 15.18 Unpacking libpython3.11-minimal:amd64 (3.11.2-6+deb12u9) ...
+#6 15.35 Selecting previously unselected package libexpat1:amd64.
+#6 15.35 Preparing to unpack .../libexpat1_2.5.0-1+deb12u5_amd64.deb ...
+#6 15.36 Unpacking libexpat1:amd64 (2.5.0-1+deb12u5) ...
+#6 15.46 Selecting previously unselected package python3.11-minimal.
+#6 15.46 Preparing to unpack .../python3.11-minimal_3.11.2-6+deb12u9_amd64.deb ...
+#6 15.48 Unpacking python3.11-minimal (3.11.2-6+deb12u9) ...
+#6 15.67 Setting up libssl3:amd64 (3.0.22-1~deb12u2) ...
+#6 15.70 Setting up libpython3.11-minimal:amd64 (3.11.2-6+deb12u9) ...
+#6 15.73 Setting up libexpat1:amd64 (2.5.0-1+deb12u5) ...
+#6 15.77 Setting up python3.11-minimal (3.11.2-6+deb12u9) ...
+#6 16.29 Selecting previously unselected package python3-minimal.
+#6 16.29 (Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6424 files and directories currently installed.)
+#6 16.30 Preparing to unpack .../00-python3-minimal_3.11.2-1+b1_amd64.deb ...
+#6 16.31 Unpacking python3-minimal (3.11.2-1+b1) ...
+#6 16.38 Selecting previously unselected package media-types.
+#6 16.38 Preparing to unpack .../01-media-types_10.0.0_all.deb ...
+#6 16.39 Unpacking media-types (10.0.0) ...
+#6 16.46 Selecting previously unselected package libncursesw6:amd64.
+#6 16.46 Preparing to unpack .../02-libncursesw6_6.4-4_amd64.deb ...
+#6 16.47 Unpacking libncursesw6:amd64 (6.4-4) ...
+#6 16.55 Selecting previously unselected package libkrb5support0:amd64.
+#6 16.55 Preparing to unpack .../03-libkrb5support0_1.20.1-2+deb12u5_amd64.deb ...
+#6 16.56 Unpacking libkrb5support0:amd64 (1.20.1-2+deb12u5) ...
+#6 16.64 Selecting previously unselected package libk5crypto3:amd64.
+#6 16.64 Preparing to unpack .../04-libk5crypto3_1.20.1-2+deb12u5_amd64.deb ...
+#6 16.65 Unpacking libk5crypto3:amd64 (1.20.1-2+deb12u5) ...
+#6 16.72 Selecting previously unselected package libkeyutils1:amd64.
+#6 16.72 Preparing to unpack .../05-libkeyutils1_1.6.3-2_amd64.deb ...
+#6 16.73 Unpacking libkeyutils1:amd64 (1.6.3-2) ...
+#6 16.81 Selecting previously unselected package libkrb5-3:amd64.
+#6 16.81 Preparing to unpack .../06-libkrb5-3_1.20.1-2+deb12u5_amd64.deb ...
+#6 16.82 Unpacking libkrb5-3:amd64 (1.20.1-2+deb12u5) ...
+#6 16.92 Selecting previously unselected package libgssapi-krb5-2:amd64.
+#6 16.92 Preparing to unpack .../07-libgssapi-krb5-2_1.20.1-2+deb12u5_amd64.deb ...
+#6 16.93 Unpacking libgssapi-krb5-2:amd64 (1.20.1-2+deb12u5) ...
+#6 17.00 Selecting previously unselected package libtirpc-common.
+#6 17.00 Preparing to unpack .../08-libtirpc-common_1.3.3+ds-1_all.deb ...
+#6 17.01 Unpacking libtirpc-common (1.3.3+ds-1) ...
+#6 17.09 Selecting previously unselected package libtirpc3:amd64.
+#6 17.09 Preparing to unpack .../09-libtirpc3_1.3.3+ds-1_amd64.deb ...
+#6 17.10 Unpacking libtirpc3:amd64 (1.3.3+ds-1) ...
+#6 17.20 Selecting previously unselected package libnsl2:amd64.
+#6 17.20 Preparing to unpack .../10-libnsl2_1.3.0-2_amd64.deb ...
+#6 17.21 Unpacking libnsl2:amd64 (1.3.0-2) ...
+#6 17.29 Selecting previously unselected package readline-common.
+#6 17.30 Preparing to unpack .../11-readline-common_8.2-1.3_all.deb ...
+#6 17.31 Unpacking readline-common (8.2-1.3) ...
+#6 17.39 Selecting previously unselected package libreadline8:amd64.
+#6 17.39 Preparing to unpack .../12-libreadline8_8.2-1.3_amd64.deb ...
+#6 17.41 Unpacking libreadline8:amd64 (8.2-1.3) ...
+#6 17.49 Selecting previously unselected package libsqlite3-0:amd64.
+#6 17.49 Preparing to unpack .../13-libsqlite3-0_3.40.1-2+deb12u2_amd64.deb ...
+#6 17.50 Unpacking libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+#6 17.60 Selecting previously unselected package libpython3.11-stdlib:amd64.
+#6 17.60 Preparing to unpack .../14-libpython3.11-stdlib_3.11.2-6+deb12u9_amd64.deb ...
+#6 17.61 Unpacking libpython3.11-stdlib:amd64 (3.11.2-6+deb12u9) ...
+#6 17.79 Selecting previously unselected package python3.11.
+#6 17.79 Preparing to unpack .../15-python3.11_3.11.2-6+deb12u9_amd64.deb ...
+#6 17.80 Unpacking python3.11 (3.11.2-6+deb12u9) ...
+#6 17.87 Selecting previously unselected package libpython3-stdlib:amd64.
+#6 17.87 Preparing to unpack .../16-libpython3-stdlib_3.11.2-1+b1_amd64.deb ...
+#6 17.88 Unpacking libpython3-stdlib:amd64 (3.11.2-1+b1) ...
+#6 17.94 Setting up python3-minimal (3.11.2-1+b1) ...
+#6 18.11 Selecting previously unselected package python3.
+#6 18.11 (Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6932 files and directories currently installed.)
+#6 18.13 Preparing to unpack .../0-python3_3.11.2-1+b1_amd64.deb ...
+#6 18.14 Unpacking python3 (3.11.2-1+b1) ...
+#6 18.22 Selecting previously unselected package openssl.
+#6 18.22 Preparing to unpack .../1-openssl_3.0.22-1~deb12u2_amd64.deb ...
+#6 18.23 Unpacking openssl (3.0.22-1~deb12u2) ...
+#6 18.37 Selecting previously unselected package ca-certificates.
+#6 18.37 Preparing to unpack .../2-ca-certificates_20250419~deb12u2_all.deb ...
+#6 18.38 Unpacking ca-certificates (20250419~deb12u2) ...
+#6 18.52 Selecting previously unselected package python3-lib2to3.
+#6 18.52 Preparing to unpack .../3-python3-lib2to3_3.11.2-3_all.deb ...
+#6 18.53 Unpacking python3-lib2to3 (3.11.2-3) ...
+#6 18.61 Selecting previously unselected package python3-distutils.
+#6 18.61 Preparing to unpack .../4-python3-distutils_3.11.2-3_all.deb ...
+#6 18.62 Unpacking python3-distutils (3.11.2-3) ...
+#6 18.70 Selecting previously unselected package python3-pip-whl.
+#6 18.70 Preparing to unpack .../5-python3-pip-whl_23.0.1+dfsg-1_all.deb ...
+#6 18.71 Unpacking python3-pip-whl (23.0.1+dfsg-1) ...
+#6 18.83 Selecting previously unselected package python3-setuptools-whl.
+#6 18.83 Preparing to unpack .../6-python3-setuptools-whl_66.1.1-1+deb12u2_all.deb ...
+#6 18.84 Unpacking python3-setuptools-whl (66.1.1-1+deb12u2) ...
+#6 18.96 Selecting previously unselected package python3.11-venv.
+#6 18.96 Preparing to unpack .../7-python3.11-venv_3.11.2-6+deb12u9_amd64.deb ...
+#6 18.97 Unpacking python3.11-venv (3.11.2-6+deb12u9) ...
+#6 19.02 Selecting previously unselected package python3-venv.
+#6 19.02 Preparing to unpack .../8-python3-venv_3.11.2-1+b1_amd64.deb ...
+#6 19.03 Unpacking python3-venv (3.11.2-1+b1) ...
+#6 19.10 Setting up media-types (10.0.0) ...
+#6 19.14 Setting up python3-setuptools-whl (66.1.1-1+deb12u2) ...
+#6 19.17 Setting up libkeyutils1:amd64 (1.6.3-2) ...
+#6 19.20 Setting up libtirpc-common (1.3.3+ds-1) ...
+#6 19.23 Setting up libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+#6 19.26 Setting up libkrb5support0:amd64 (1.20.1-2+deb12u5) ...
+#6 19.29 Setting up libncursesw6:amd64 (6.4-4) ...
+#6 19.33 Setting up libk5crypto3:amd64 (1.20.1-2+deb12u5) ...
+#6 19.35 Setting up libkrb5-3:amd64 (1.20.1-2+deb12u5) ...
+#6 19.38 Setting up openssl (3.0.22-1~deb12u2) ...
+#6 19.42 Setting up readline-common (8.2-1.3) ...
+#6 19.46 Setting up libreadline8:amd64 (8.2-1.3) ...
+#6 19.49 Setting up ca-certificates (20250419~deb12u2) ...
+#6 19.56 debconf: unable to initialize frontend: Dialog
+#6 19.56 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#6 19.56 debconf: falling back to frontend: Readline
+#6 19.56 debconf: unable to initialize frontend: Readline
+#6 19.56 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC contains: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.36.0 /usr/local/share/perl/5.36.0 /usr/lib/x86_64-linux-gnu/perl5/5.36 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.36 /usr/share/perl/5.36 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 7.)
+#6 19.56 debconf: falling back to frontend: Teletype
+#6 20.01 Updating certificates in /etc/ssl/certs...
+#6 20.68 148 added, 0 removed; done.
+#6 20.74 Setting up libgssapi-krb5-2:amd64 (1.20.1-2+deb12u5) ...
+#6 20.77 Setting up libtirpc3:amd64 (1.3.3+ds-1) ...
+#6 20.80 Setting up python3-pip-whl (23.0.1+dfsg-1) ...
+#6 20.83 Setting up libnsl2:amd64 (1.3.0-2) ...
+#6 20.86 Setting up libpython3.11-stdlib:amd64 (3.11.2-6+deb12u9) ...
+#6 20.89 Setting up libpython3-stdlib:amd64 (3.11.2-1+b1) ...
+#6 20.92 Setting up python3.11 (3.11.2-6+deb12u9) ...
+#6 21.44 Setting up python3 (3.11.2-1+b1) ...
+#6 21.47 running python rtupdate hooks for python3.11...
+#6 21.47 running python post-rtupdate hooks for python3.11...
+#6 21.54 Setting up python3-lib2to3 (3.11.2-3) ...
+#6 21.65 Setting up python3-distutils (3.11.2-3) ...
+#6 21.77 Setting up python3.11-venv (3.11.2-6+deb12u9) ...
+#6 21.83 Setting up python3-venv (3.11.2-1+b1) ...
+#6 21.87 Processing triggers for libc-bin (2.36-9+deb12u14) ...
+#6 21.92 Processing triggers for ca-certificates (20250419~deb12u2) ...
+#6 21.94 Updating certificates in /etc/ssl/certs...
+#6 22.44 0 added, 0 removed; done.
+#6 22.44 Running hooks in /etc/ca-certificates/update.d...
+#6 22.44 done.
+#6 DONE 22.8s
+
+#7 [ 3/10] WORKDIR /app
+#7 DONE 0.1s
+
+#8 [ 4/10] COPY package.json package-lock.json ./
+#8 DONE 0.1s
+
+#9 [ 5/10] RUN npm ci --omit=dev --ignore-scripts
+#9 3.458 npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+#9 5.509
+#9 5.509 added 39 packages, and audited 40 packages in 5s
+#9 5.509
+#9 5.509 7 packages are looking for funding
+#9 5.509   run `npm fund` for details
+#9 5.510
+#9 5.510 found 0 vulnerabilities
+#9 5.511 npm notice
+#9 5.511 npm notice New major version of npm available! 10.9.9 -> 12.2.2
+#9 5.511 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+#9 5.511 npm notice To update run: npm install -g npm@12.2.2
+#9 5.511 npm notice
+#9 DONE 5.7s
+
+#10 [ 6/10] COPY requirements.lock ./
+#10 DONE 0.1s
+
+#11 [ 7/10] RUN python3 -m venv /opt/login-venv && /opt/login-venv/bin/pip install --no-cache-dir -r requirements.lock
+#11 4.574 Collecting curl_cffi==0.15.0
+#11 5.135   Downloading curl_cffi-0.15.0-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (11.1 MB)
+#11 6.018      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.1/11.1 MB 12.4 MB/s eta 0:00:00
+#11 6.505 Collecting cffi==2.0.0
+#11 6.767   Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (215 kB)
+#11 6.788      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 215.6/215.6 kB 11.7 MB/s eta 0:00:00
+#11 7.077 Collecting pycparser==2.23
+#11 7.526   Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+#11 7.540      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.1/118.1 kB 10.9 MB/s eta 0:00:00
+#11 7.847 Collecting certifi==2026.2.25
+#11 8.107   Downloading certifi-2026.2.25-py3-none-any.whl (153 kB)
+#11 8.120      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.7/153.7 kB 14.7 MB/s eta 0:00:00
+#11 8.473 Collecting rich==15.0.0
+#11 8.744   Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+#11 8.776      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 310.7/310.7 kB 11.5 MB/s eta 0:00:00
+#11 9.067 Collecting markdown-it-py==4.2.0
+#11 9.329   Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+#11 9.576      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 91.7/91.7 kB 333.6 kB/s eta 0:00:00
+#11 9.855 Collecting Pygments==2.21.0
+#11 10.11   Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+#11 10.21      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 13.7 MB/s eta 0:00:00
+#11 10.49 Collecting mdurl==0.1.2
+#11 10.74   Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+#11 10.96 Installing collected packages: Pygments, pycparser, mdurl, certifi, markdown-it-py, cffi, rich, curl_cffi
+#11 13.02 Successfully installed Pygments-2.21.0 certifi-2026.2.25 cffi-2.0.0 curl_cffi-0.15.0 markdown-it-py-4.2.0 mdurl-0.1.2 pycparser-2.23 rich-15.0.0
+#11 DONE 14.0s
+
+#12 [ 8/10] COPY src ./src
+#12 DONE 0.2s
+
+#13 [ 9/10] COPY licenses ./licenses
+#13 DONE 0.1s
+
+#14 [10/10] COPY NOTICE.zh-CN.md ./
+#14 DONE 0.1s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 3.3s done
+#15 exporting manifest sha256:5466707470ba7f07c0dabb41563aa52f575212e82ada7d973b6a2b859d5fde91 0.0s done
+#15 exporting config sha256:30689442b2f61b2c7ff27eae008291b014fe7161e842a60202a6574c912be4dd 0.0s done
+#15 exporting attestation manifest sha256:e10eb12916fd606e8fabcbf0b7e17848c1763e2adc326ebd8b1a1334920e0b30
+#15 exporting attestation manifest sha256:e10eb12916fd606e8fabcbf0b7e17848c1763e2adc326ebd8b1a1334920e0b30 0.0s done
+#15 exporting manifest list sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758 0.0s done
+#15 naming to docker.io/library/mx-oauth-login:phase2-local-20261111 done
+#15 unpacking to docker.io/library/mx-oauth-login:phase2-local-20261111
+#15 unpacking to docker.io/library/mx-oauth-login:phase2-local-20261111 2.8s done
+#15 DONE 6.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/kfpzzllpf58w4ox3xu3wgi5an

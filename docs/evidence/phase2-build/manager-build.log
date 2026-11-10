@@ -1,0 +1,172 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.manager-server
+#1 transferring dockerfile: 1.64kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.10-alpine
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/node:22.23.4-alpine
+#3 DONE 2.1s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.10-alpine
+#2 DONE 2.2s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.21
+#4 DONE 2.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 201B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 resolve docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 ...
+
+#8 [stage-2 1/4] FROM docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab
+#8 resolve docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab 0.2s done
+#8 DONE 0.2s
+
+#8 [stage-2 1/4] FROM docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab
+#8 CACHED
+
+#9 [web-build 1/8] FROM docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+#9 resolve docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202 0.2s done
+#9 DONE 0.2s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 resolve docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 0.2s done
+#7 DONE 0.2s
+
+#6 [internal] load build context
+#6 transferring context: 19.96MB 1.8s done
+#6 DONE 1.9s
+
+#10 [web-build 2/8] WORKDIR /app
+#10 CACHED
+
+#11 [service-build 2/9] WORKDIR /src
+#11 CACHED
+
+#12 [service-build 3/9] COPY apps/manager-server ./apps/manager-server
+#12 ...
+
+#13 [web-build 3/8] COPY package*.json ./
+#13 DONE 0.3s
+
+#12 [service-build 3/9] COPY apps/manager-server ./apps/manager-server
+#12 DONE 0.3s
+
+#14 [web-build 4/8] COPY apps/web/package.json ./apps/web/package.json
+#14 DONE 0.1s
+
+#15 [stage-2 2/4] RUN apk add --no-cache ca-certificates wget tzdata
+#15 0.636 fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/APKINDEX.tar.gz
+#15 1.298 fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/community/x86_64/APKINDEX.tar.gz
+#15 2.337 (1/6) Installing ca-certificates (20261020-r0)
+#15 2.642 (2/6) Installing tzdata (2026f-r0)
+#15 3.011 (3/6) Installing libunistring (1.2-r0)
+#15 3.534 (4/6) Installing libidn2 (2.3.7-r0)
+#15 3.788 (5/6) Installing pcre2 (10.43-r1)
+#15 4.059 (6/6) Installing wget (1.25.0-r0)
+#15 4.574 Executing busybox-1.37.0-r14.trigger
+#15 4.591 Executing ca-certificates-20261020-r0.trigger
+#15 4.664 OK: 10 MiB in 21 packages
+#15 DONE 4.8s
+
+#16 [web-build 5/8] RUN npm ci
+#16 ...
+
+#17 [stage-2 3/4] WORKDIR /app
+#17 DONE 0.1s
+
+#16 [web-build 5/8] RUN npm ci
+#16 45.59
+#16 45.59 added 286 packages, and audited 289 packages in 45s
+#16 45.59
+#16 45.59 77 packages are looking for funding
+#16 45.59   run `npm fund` for details
+#16 45.80
+#16 45.80 8 vulnerabilities (7 moderate, 1 high)
+#16 45.80
+#16 45.80 To address issues that do not require attention, run:
+#16 45.80   npm audit fix
+#16 45.80
+#16 45.80 To address all issues (including breaking changes), run:
+#16 45.80   npm audit fix --force
+#16 45.80
+#16 45.80 Run `npm audit` for details.
+#16 45.80 npm notice
+#16 45.80 npm notice New major version of npm available! 10.9.9 -> 12.2.2
+#16 45.80 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+#16 45.80 npm notice To update run: npm install -g npm@12.2.2
+#16 45.80 npm notice
+#16 DONE 46.1s
+
+#18 [web-build 6/8] COPY apps/web ./apps/web
+#18 DONE 0.6s
+
+#19 [web-build 7/8] WORKDIR /app/apps/web
+#19 DONE 0.2s
+
+#20 [web-build 8/8] RUN VERSION=phase2-local-20261111 npm run build
+#20 0.649
+#20 0.649 > cpa-manager-plus-web@0.0.0 build
+#20 0.649 > tsc && vite build
+#20 0.649
+#20 47.45 (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#20 47.45   - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+#20 47.45 Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+#20 47.47 vite v8.3.5 building client environment for production...
+#20 47.49 transforming...
+#20 50.29 ✓ 1657 modules transformed.
+#20 50.52 rendering chunks...
+#20 51.17 [plugin vite:singlefile]
+#20 51.17
+#20 51.18 [plugin vite:singlefile] Inlining: index-6f1WSot9.js
+#20 51.20 [plugin vite:singlefile] Inlining: style-BekbbpXN.css
+#20 51.22 computing gzip size...
+#20 51.29 dist/index.html  6,506.23 kB │ gzip: 1,772.51 kB
+#20 51.29
+#20 51.29 ✓ built in 3.82s
+#20 DONE 51.4s
+
+#21 [service-build 4/9] COPY --from=web-build /app/apps/web/dist/index.html ./apps/manager-server/internal/httpapi/web/management.html
+#21 DONE 0.1s
+
+#22 [service-build 5/9] COPY --from=web-build /app/apps/web/dist/favicon.ico ./apps/manager-server/internal/httpapi/web/favicon.ico
+#22 DONE 0.1s
+
+#23 [service-build 6/9] COPY --from=web-build /app/apps/web/dist/apple-touch-icon.png ./apps/manager-server/internal/httpapi/web/apple-touch-icon.png
+#23 DONE 0.1s
+
+#24 [service-build 7/9] WORKDIR /src/apps/manager-server
+#24 DONE 0.1s
+
+#25 [service-build 8/9] RUN go mod download
+#25 DONE 12.0s
+
+#26 [service-build 9/9] RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.Version=phase2-local-20261111 -X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.SourceCommit=95dd9ca2c16d5469c43ce7c910f38ff271af45e3" -o /out/cpa-manager-plus ./cmd/cpa-manager-plus
+#26 DONE 21.6s
+
+#27 [stage-2 4/4] COPY --from=service-build /out/cpa-manager-plus /usr/local/bin/cpa-manager-plus
+#27 DONE 0.1s
+
+#28 exporting to image
+#28 exporting layers
+#28 exporting layers 1.3s done
+#28 exporting manifest sha256:5d6c38a3cf1d19b832f15eeda092ced5d158a1e80c4706a33d85a36fd4e72e76 0.0s done
+#28 exporting config sha256:7bdea60748a116b1e192b51ac5c60417a8177e640e79c9c83f1bd6e5732662cd 0.0s done
+#28 exporting attestation manifest sha256:6fd61fbc9f797aa188f3873379046b89727243d22e15ad1cf21f2d399c49ad82
+#28 exporting attestation manifest sha256:6fd61fbc9f797aa188f3873379046b89727243d22e15ad1cf21f2d399c49ad82 0.1s done
+#28 exporting manifest list sha256:de4775de2a5345c199ff96034d647b0076b0791a30bb8ed04143497ca35c7429 0.0s done
+#28 naming to docker.io/library/mx-cpamp:phase2-local-20261111 done
+#28 unpacking to docker.io/library/mx-cpamp:phase2-local-20261111
+#28 unpacking to docker.io/library/mx-cpamp:phase2-local-20261111 0.4s done
+#28 DONE 1.9s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/q4wpza915xx2jn0nwavwn5jr1
