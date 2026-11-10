@@ -1,0 +1,836 @@
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth	11.880s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor	0.237s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/config	3.845s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/watcher/synthesizer	0.698s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	16.098s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	13.907s
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |            0s |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-265f-7121-8a92-5aa4a7bf5dd5
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           4ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-267a-7caa-a05a-ff8798013e6f
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-267f-7837-94c1-261af7beca42
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-2687-72f7-9562-9c2ce5318eed
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-2690-7bfc-91eb-c1e79a39750d
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           3ms |       192.0.2.1 | POST    \"/v1/messages\"" request_id=01a1c67f-2699-75b5-8848-b8e44f4808f3
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           3ms |       192.0.2.1 | POST    \"/v1beta/models/gemini-2.5-pro:generateContent\"" request_id=01a1c67f-26a0-7588-a7ad-9ad5f6d1a619
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           3ms |       192.0.2.1 | POST    \"/v1beta/interactions\"" request_id=01a1c67f-26a8-7486-8baa-2cafe91cafda
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-26b3-7287-82e5-cd665a7c3145
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |          43ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-26bb-7a5b-982f-78c5da4ce0cb
+time="2026-11-11T01:26:24+08:00" level=warning msg="400 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-26eb-7ee0-9a51-34e21be055cd
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |            0s |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-26f0-7c21-84af-3cf34a0229a0
+time="2026-11-11T01:26:24+08:00" level=warning msg="400 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-26f5-79f3-84e1-ea680f6f5f51
+time="2026-11-11T01:26:24+08:00" level=warning msg="400 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-26fe-7497-829d-4c554657f07e
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           3ms |       192.0.2.1 | POST    \"/v1/images/edits\"" request_id=01a1c67f-2706-7b6a-b7f6-3acdfc3f6dd6
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |           5ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-2716-7a42-ae4b-2b17fd42416e
+time="2026-11-11T01:26:24+08:00" level=warning msg="400 |           5ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-2722-7332-93ef-bcf1648a7ab3
+time="2026-11-11T01:26:24+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |          54ms |       192.0.2.1 | POST    \"/v8/management/plugins/store/demo/install\"" request_id=--------
+time="2026-11-11T01:26:24+08:00" level=warning msg="413 |          54ms |       192.0.2.1 | PUT     \"/v8/management/config\"" request_id=--------
+time="2026-11-11T01:26:24+08:00" level=warning msg="transient accept error on shared listener: accept tcp 127.0.0.1:3984: accept4: too many open files; retrying in 5ms"
+time="2026-11-11T01:26:24+08:00" level=warning msg="transient accept error on shared listener: accept tcp 127.0.0.1:3984: accept4: too many open files; retrying in 10ms"
+time="2026-11-11T01:26:24+08:00" level=warning msg="transient accept error on shared listener: accept tcp 127.0.0.1:3984: accept4: too many open files; retrying in 20ms"
+time="2026-11-11T01:26:24+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           9ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-2877-798b-9850-f311774ec0ee
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           2ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-2881-77a7-93e8-686c8b282163
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           2ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-2885-71b8-85a7-1a18bbcf0a80
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           2ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-2888-7dd5-832b-7f8e755fe3a0
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           2ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-288c-7930-8537-b382258b80b2
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           2ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-288f-7b6c-95f6-1d6c3d783654
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           2ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-2893-732a-9ba0-44f12e4b319f
+time="2026-11-11T01:26:24+08:00" level=info msg="204 |            0s |       127.0.0.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-2895-7d98-8f28-cbc396c354ee
+time="2026-11-11T01:26:24+08:00" level=info msg="204 |            0s |       127.0.0.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-2897-704d-8354-81ce58389d71
+time="2026-11-11T01:26:24+08:00" level=warning msg="400 |           6ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-289a-77a0-a02e-4f67ed21b352
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           4ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28ac-74d2-9150-71278fff24ae
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           4ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28b2-731c-9dfa-a1e498d04d85
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           5ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28b7-79a1-9cd0-1aee1e722f58
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           3ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28bf-7311-bf06-8c28b9647c39
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           4ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28c4-7133-8331-a8835976b48a
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           4ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28c9-73f0-a2a4-eabc3daaf9e2
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |           4ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28cf-755e-9638-70c5e513677b
+time="2026-11-11T01:26:24+08:00" level=info msg="204 |           3ms |       127.0.0.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-28d4-7ac1-836a-900bb65d9843
+time="2026-11-11T01:26:24+08:00" level=info msg="204 |           2ms |       127.0.0.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-28d8-7d0f-81d4-06ca0f6e1880
+time="2026-11-11T01:26:24+08:00" level=warning msg="400 |           5ms |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28df-73d3-92da-06a55e0e234e
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28ed-7880-bc1b-7c9afaf90e40
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28ef-7443-8ad9-d97567192697
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28f0-700a-a215-8a02c93166a5
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28f0-7a39-a078-f8c9f20dd740
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28f0-7a3a-864f-75cc136af2a5
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28f1-7a57-9164-8ace8f0eb637
+time="2026-11-11T01:26:24+08:00" level=warning msg="401 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28f2-72ce-b664-453b882596a1
+time="2026-11-11T01:26:24+08:00" level=info msg="204 |            0s |       127.0.0.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-28f3-73b4-b57b-b3f7996bbb9b
+time="2026-11-11T01:26:24+08:00" level=info msg="204 |            0s |       127.0.0.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-28f3-7b8d-9223-e266ad4045d8
+time="2026-11-11T01:26:24+08:00" level=warning msg="400 |            0s |       127.0.0.1 | POST    \"/v1/chat/completions\"" request_id=01a1c67f-28f6-7beb-a313-c6a0a0bfe87c
+time="2026-11-11T01:26:24+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:24+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:24+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:24+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:24+08:00" level=info msg="management routes registered after secret key configuration"
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/compression-test\"" request_id=--------
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/compression-test\"" request_id=--------
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/compression-test\"" request_id=--------
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/compression-test\"" request_id=--------
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="responses websocket: client connected id=c1da9463-6136-4290-87e0-3fc6caf0ab96 remote=127.0.0.1"
+time="2026-11-11T01:26:24+08:00" level=info msg="responses websocket: upstream execution session closed id=c1da9463-6136-4290-87e0-3fc6caf0ab96"
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       127.0.0.1 | GET     \"/v1/responses\"" request_id=01a1c67f-297c-7527-94d9-53f5a1bcf293
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="responses websocket: client connected id=0873dc04-87e2-4318-b9a6-e48fd4001e1d remote=127.0.0.1"
+time="2026-11-11T01:26:24+08:00" level=info msg="responses websocket: upstream execution session closed id=0873dc04-87e2-4318-b9a6-e48fd4001e1d"
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |           3ms |       127.0.0.1 | GET     \"/v1/responses\"" request_id=01a1c67f-297e-7527-b30a-456172379c32
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="responses websocket: client connected id=5f89cc65-f28d-4882-9a5e-6a67f67003fd remote=127.0.0.1"
+time="2026-11-11T01:26:24+08:00" level=info msg="responses websocket: upstream execution session closed id=5f89cc65-f28d-4882-9a5e-6a67f67003fd"
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       127.0.0.1 | GET     \"/v1/responses\"" request_id=01a1c67f-2984-71f5-bdc5-ad64c2d3ea23
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7bdc-b4fb-0dec1331be86
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7bdd-8021-02c438628d0a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7bde-baf4-b50fd77e7dc5
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7bdf-9f09-6de349956338
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7be0-91df-0641742af7f6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7be1-85ec-78900228b24f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7be2-bb96-d06b6872aedb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7be3-87d8-677b20539f42
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7be4-8a5b-8c8dfa96ffe4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2993-7be5-9ca8-9eb23fca1800
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-744e-9416-fbb8652a857b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-744f-bf0b-32aebc4b8738
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7450-b409-22999d05de03
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7451-aa4f-84e438df6e5a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7452-ae6a-266854208b0a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7453-adb9-4c4626c0a5f9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7454-995b-fa878e28d5b7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7455-8000-cbae6c8a3d6f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7456-bf83-1db47927c743
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7457-9159-1270b872a416
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7458-a0a8-818c98302667
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7459-97d8-ce27ffd39cc9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-745a-9a97-c80395ea068e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-745b-b045-3a548a323592
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-745c-9ebd-e0f4dacdf6ae
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-745d-8db4-a8f37efea682
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-745e-9270-d3ab83ba60e7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-745f-90c5-8fd5213315f0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7460-a590-bb267c8ed719
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7461-9bf0-0947c77fa07c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7462-82e7-3aa4314498da
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7463-88ac-b7d5e23297e1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7464-91bd-b0c9b4c775bd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7465-9ea9-376d0da33577
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7466-9fc4-31891f9efedf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7467-9fb0-6bb065973c75
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7468-8124-ccb98d493382
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7469-92fd-e0bc12f834e8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-746a-858e-7ef58461fa19
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-746b-8f61-1191d33eac89
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-746c-ac4c-73ea272458bb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-746d-82ab-4b6d12ac210e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-746e-a0bb-2ed748980569
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-746f-92af-9f27f36e3e0a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7470-bb0f-f823fca1bfe9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7471-ad7e-810d8d29aa62
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7472-8811-b79d6b02c5d9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7473-8d6f-dfc19aae3b03
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7474-80f8-2a5f35771d02
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7475-a418-2e1fb872812e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c97-a1b7-01ae08fa9b39
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c98-b373-f23685a5ca3e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c99-8d64-00caee95cae2
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c9a-83fa-46062087da61
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c9b-81d3-726831ac40ac
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c9c-9ad6-85d46c347d58
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c9d-8938-af5890c7d41c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c9e-bd4f-0f5d2d8d473a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7c9f-b6c3-7eff7336b729
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca0-a46f-3fac0e895a0b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca1-b516-a464c70e06b7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca2-9a4d-2316de5facaa
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca3-9451-6295b89e44dd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca4-a8f0-ca1a512965e4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca5-8721-bcc8c91a270f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca6-be87-f7adb9140150
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca7-8ba9-6a0a141cb78b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca8-84e7-a76d4883f700
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7ca9-a592-0ce0079317ca
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7caa-9171-42a06732fd94
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cab-a6b1-591ac0338c0a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cac-8b00-e06679e1bc97
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cad-84d9-5a2f4984cde1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cae-8ad6-3c5299c0658d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7caf-8dae-fa4b1cbcd7e9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb0-b7ae-e85bdbc98418
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb1-8aa0-669a6323e5d4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb2-8302-b8323da72d40
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb3-8a59-f33c4051a3d8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb4-984a-0d72736d703d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb5-92cf-2e61804107ba
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb6-ab88-681d5ce2b65d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb7-8dc2-d3a1d850b6ea
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb8-ad32-c6edfc96114d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cb9-8a8e-ab6753a6d8a1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cba-8f23-4d8a59ac1988
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cbb-b1d3-f3b9d44684cf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cbc-8789-ad2a10939730
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cbd-8089-64aafb347789
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cbe-8ae1-700e112c7a51
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2994-7cbf-bd5b-7c30d4de46f9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-761d-ac10-9f4a57f027d0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-761e-b9e2-ada2456f36ba
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-761f-9151-368fce07a872
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7620-bcdf-11f15195549f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7621-b61f-741561036f36
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7622-8f95-e89b816f83e8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7623-8003-8eaf5186b491
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7624-aec2-dd7fa8ee16f9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7625-b107-30eb3ee23a05
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7626-b60b-81d93b6259c6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7627-a0fd-95c02c3b1438
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7628-809c-5009b4f775a8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7629-b2ce-95705f0ccb5b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-762a-bb3b-0e082ec54f4f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-762b-8340-3d01bab9bb8a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-762c-b244-d714489ec527
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-762d-bd6c-fcfa3a35557e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-762e-81e6-4ecf6dc56fe5
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-762f-a0aa-118df646f228
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7630-b22d-7f91d7501f1b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7631-85b7-85a98d8eb03d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7632-95f5-3bd889a38312
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7633-b860-fb5c09586dfb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7634-9de9-c77427b07a60
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7635-a33b-101b409f6715
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7636-acea-de5cea5390c0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7637-bb49-2b0e34a1d959
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7638-a75d-1ff3a947d8d3
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7639-b01f-bdb4ebd3e3d1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-763a-ab77-1162642769b3
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-763b-90da-1f8ea2af4d5d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-763c-bdcc-75ef4f2422c9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-763d-be96-6689576deb4e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-763e-91b8-efee65770b34
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-763f-8510-32caf2875bfc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7640-924e-4bab649127c8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7641-82e3-3f550428874b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7642-b6c4-25c922c5f270
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7643-b24b-bd877a6324bc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7644-9579-71588e8b78d8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7645-be42-c3800ddc8fef
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e20-8feb-63b490a1c0fa
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e21-bc11-b2e9c4d7ec09
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e22-973f-cd48226de29a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e23-8d45-fafa84fb5035
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e24-ac9d-fa3fd2ad49bf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e25-98f2-d09385ec9aa8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e26-a16f-4178a00b692b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e27-9c3d-46b1079ba941
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e28-9930-8e4ed6deb0b8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e29-8381-5680c70d4b85
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e2a-82ab-0f7784fd4918
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e2b-aa1d-beca7c64abce
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e2c-a346-6b609c6bdd5d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e2d-ad02-e06f910a24c6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e2e-8714-28a4dbfeb7e6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e2f-b646-d51cd0ba8fcb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e30-ac27-4dd452e6ef4e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e31-9ec2-d44b00994629
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e32-8ded-faec973c57dd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e33-8d19-c38777c59433
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e34-b77a-622ec48d3721
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e35-a019-cba3c6ce150b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e36-860c-350bf11c0199
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e37-8646-73ba03df9342
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e38-8d0d-84321ee11bea
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e39-b417-d40eaff4cf88
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e3a-95f5-8d3016d8a429
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e3b-82df-6e9749eaa1cc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e3c-a907-156d9b236f33
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e3d-90c8-fcf3c026914d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e3e-a927-69afd7205e1e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e3f-97bf-9970f13d1f78
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e40-9351-fe7559cb43cc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e41-b043-fccab0e70f4c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e42-83d2-0867e9a158ab
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e43-868d-18e3ec6b31fe
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e44-b319-a1f16e1f6d99
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2995-7e45-aafe-4b67dbde5e8d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76bd-99ad-208963200268
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76be-b33a-016eeffef640
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76bf-9513-79c13b2b2107
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c0-86fd-3c7ae576a704
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c1-ad05-fa22461bbb40
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c2-86e3-f2ca326fa0f1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c3-801b-00c6e7a5f0b4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c4-bc4a-93867d51563c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c5-884f-587d865f6ccb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c6-ab81-ae7cec6950fc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c7-a6ff-1f0bc0e94c43
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c8-a2eb-79a84e0675f1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76c9-bc1e-4f20e2860b1e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76ca-9ace-fd8d9368bb13
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76cb-8f3a-8b2bea64a302
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76cc-954e-585b18b3247e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76cd-b660-e13dd8caed39
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76ce-b9b3-5215e08b98b7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76cf-aea7-ad3b41f92ee0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d0-9d67-5078300de599
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d1-a83c-6a15d498e2f5
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d2-9b49-71a33b8d30c9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d3-925a-d74007502913
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d4-986c-29d9ab0cb6b8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d5-a0c7-a1665212d393
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d6-ad87-5ad1e5ec8d7f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d7-927e-b541236070b9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d8-acb5-4ace27e0bd9f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76d9-9ea5-ce67b20193b8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76da-ae01-36944ff6047c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76db-942f-d1a96d4d227d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76dc-8fb7-2b4b84749ad4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76dd-85fb-60188d558c25
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76de-ba78-707ac252317f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76df-8d60-be4527f95911
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76e0-8dc4-753aab37fb22
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76e1-af67-cead010b0a87
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76e2-aba4-1761f364e4e1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76e3-afec-bd76b621e733
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76e4-84ac-2e8e251ac3b5
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-76e5-8358-c18ac7635a5b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7e9e-ad6d-5f9cc77f3e90
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7e9f-af2f-c091be916d5c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea0-a82e-04050535f509
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea1-bc47-fcaf0af74b74
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea2-bad8-4485465b4c62
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea3-9dcf-4509911950a5
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea4-b2df-2bffd7d48f19
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea5-a147-bf7f7b15626b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea6-93ad-88438b14a608
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea7-a9c6-b90a3290d2bb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea8-b19e-b67025607602
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ea9-83e5-e5a89996d73d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eaa-b2ba-8b80c2a4e4cb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eab-b658-7f672b4495b2
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eac-ac81-ce3aca7e89bf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ead-9d5b-eb42303a05fb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eae-a252-ed408b81030b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eaf-9d08-45e626153899
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb0-b3e1-746e09b6ff92
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb1-bcf6-f1810d18ec41
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb2-8945-33180768949a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb3-8508-1c3c599cf47c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb4-ba2d-ee23b48377fd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb5-a72b-ab30472db92f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb6-97eb-e3ec977309a1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb7-89b7-259a0839e531
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb8-8b8a-9b67825fe77c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eb9-944b-3425283269cb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7eba-b2e3-3c831791f640
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ebb-89fc-ff615da88362
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ebc-ad7c-c0b91acb6490
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ebd-934f-4a0fd670e9ca
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ebe-a882-1b12f20477ac
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ebf-bdb2-56774ce8abaa
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ec0-8388-1a24a8d4e57a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ec1-86bf-2598a6b44849
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2996-7ec2-b0b8-76edaf0cbd27
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-774e-bd47-2d868991fc76
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-774f-b18f-850df03b2fc1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7750-9b63-7363d889801a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7751-ab8a-805aba75d93b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7752-8b6b-4158954d399e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7753-adcf-fd75721dba6e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7754-8fad-dc68b3dd9513
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7755-9dc8-9147d8603aa9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7756-884b-8eede7f441f8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7757-975f-d8bc156c2729
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7758-9980-f7d502004592
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7759-a3c9-42c42ba2072b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-775a-98df-7d3edc920397
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-775b-a56f-ce85d7f3332c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-775c-a7c4-fa8a170447db
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-775d-9ff9-db9e0cccf924
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-775e-9cc1-8a40c81e0805
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-775f-9c0e-8f8221de1dce
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7760-a2c4-9597ddf6ab7c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7761-9720-9b7fbcddd9a0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7762-9291-207ce563bc02
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7763-b13e-4f164b449ba5
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7764-a713-6023c5784344
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7765-88b8-6f069d64afae
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7766-9943-f26e659399b7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7767-9ccb-aa723822bc02
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7768-bae2-80ceeffb98cf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7769-939b-d2f16f209394
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-776a-801d-b3adaf2b507f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-776b-b3d8-1620bb564960
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-776c-9952-f8b1ff15f19a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-776d-abf1-5e608fdb2b9e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-776e-b58c-da730dcdc14a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-776f-bcfc-f6994e7a93c1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7770-b1ff-920f84872365
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7771-9489-c6c39e3b5d12
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7772-874e-6b6f9556054f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7773-93ee-4b92cfaf3b46
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7774-b753-c40f8ce1aeda
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7775-8d90-31fb0772b0a6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2997-7776-8b18-6466d0fe7e3b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7014-a985-99d5575eddba
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7015-a86a-6d7c50acde56
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7016-9230-ffc4aa01ea1d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7017-acc0-2ca18418a93f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7018-9d1c-2d8c1502b6e5
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7019-8e00-336d5ccc4249
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-701a-ad43-0ec46971d82b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-701b-a2b5-aac351410a5c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-701c-8dc8-a8d1cbfac196
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-701d-9351-e9f17d1b6ab1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-701e-897f-038443d8d862
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-701f-bb03-34e90227e6fe
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7020-a35c-e4219021c763
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7021-a622-0909741e411e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7022-acc4-4f2585a59a66
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7023-8b6d-6afd47123e24
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7024-ac71-cfe95ac0e336
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7025-9821-a95a64c5c084
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7026-9037-cdacbb398356
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7027-b73f-23c673178e2a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7028-bcd5-89e9ae71d427
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7029-a7e6-0c8ec335a720
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-702a-af78-5190bc7acda4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-702b-ae14-ff6bae1b421b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-702c-b161-e65094dd1224
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-702d-af5f-09ce2e605043
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-702e-a757-055d2d13f33b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-702f-884f-3c084567439e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7030-9cc6-19261cfcd2b1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7031-976d-6bbf6063c8fe
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7032-88a7-74d8d616452e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7033-b69e-68acbb87fcd0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7034-9371-0d02519b60ac
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7035-b833-23969366f17d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7036-bb18-0a1f8b45ebdc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7037-afd2-15a004e2b829
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7038-90bf-eb78962f9246
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7039-9fc6-4890156d1fe6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-703a-85d9-5d9f8b3c415a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-703b-8bbd-1bbe364772d3
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-703c-8e7d-d2ad81edc3b1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-703d-9fbd-6282575e833c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-703e-819d-5f4b234f0be4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-782f-aa19-0d46fe34637f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7830-9c0b-b80383962ad0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7831-a5d6-5e450a49fb29
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7832-ba37-7586429b8233
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7833-bb79-e7812b43c767
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7834-a131-326c0a3126cf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7835-a9c1-dc8d2f12cbc7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7836-b9a0-39c04c919362
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7837-9995-5e49d277b8a9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7838-81ec-37c4356d37f2
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7839-91dd-1f01a7d8d951
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-783a-a660-e95e7d2ba310
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-783b-a787-065e9ca63846
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-783c-abd2-09fecb2a09ed
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-783d-bfd6-785c494f56a2
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-783e-97da-b9f7d022d042
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-783f-8459-04d9c77378e8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7840-9a7b-acd772abc2f4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7841-b93d-8c88e6816589
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7842-aa5d-f5f747549a99
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7843-9e38-8f876c091271
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7844-bde2-45ff38cec736
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7845-8849-3ede2a878baf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7846-bc62-6b98709a0b48
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7847-9113-140c5c3b1e8c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7848-a8fa-23f7d77a32ec
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-7849-b5bb-cbca823507ac
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-784a-8f4f-77376309b733
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2998-784b-a307-162e27a92f15
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70e4-8265-e0b8812ba48b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70e5-bda6-e9435d2173bc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70e6-a16d-0814a3db48d4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70e7-a09d-2bc0b6fd5cb1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70e8-9ff7-31c18b025625
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70e9-bbb3-28f4e42bb294
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70ea-9bc1-5e22d3867ee7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70eb-83ea-fc57e75d4786
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70ec-bd24-0c3ad31a2239
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70ed-b6b1-105cd8bed8f4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70ee-9b84-44b04b890871
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70ef-978f-4da30c3052b3
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f0-95ce-d1dfc3e6db8e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f1-9460-90e52c412a8f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f2-8a08-09a28e90acec
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f3-b53a-78191ca81615
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f4-bfa1-b9fc0d51ff73
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f5-ae5d-064cfccb138e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f6-b61a-8fd37c1ed164
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f7-96ef-8544666b5f20
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f8-9d3e-86a9455d24e3
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70f9-ab5f-52e75b001a2c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70fa-b8e6-4f5ee79c0a47
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70fb-9a9b-b3ce05fdd107
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70fc-aa71-d178bc1571fe
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70fd-824a-613ab912b29b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70fe-b1b1-ee60b0adc2e9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-70ff-b162-895c3a324ff6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7100-a256-59af447e2a5b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7101-8e39-9783012f45ed
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7102-b35c-3f262449bbb1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7103-89dc-8a6bd0855ae0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7104-8ff9-ab2e2b6c4382
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7105-83b7-0904aad0dbc0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7106-9867-cac45abee65d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7107-9ae8-54ecb8d2b7bd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7108-b1a0-96b8296b29d1
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7109-b6e6-0e10d1572b79
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-710a-888f-f82dab5fb535
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-710b-9573-5135b00a5231
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-710c-9630-d6d66d74f14f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a34-b244-8722ee508ed7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a35-9859-84d8caa2e8fb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a36-a771-0770e5a62acc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a37-86d6-6621320c6f26
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a38-a0ee-60d3fda7bf1f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a39-9f6c-8b4a3cfbd403
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a3a-bfe4-0d03c775785a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a3b-9a3f-144511125e59
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a3c-926d-8581d1138ffb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a3d-a8ea-29eb972c09cc
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a3e-b2c3-249ceb331db0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a3f-88ab-909bb4d37046
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a40-bcc3-3013a12fca23
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a41-b6c4-df06108d3e1c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a42-9161-4cd076a9126e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a43-ab01-9e18cbb5d756
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a44-bba0-d80b04bf6427
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a45-88ca-d59fddd0759d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a46-aed0-8309a051e6cd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a47-8d71-aa7edeb455aa
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a48-ba31-5d6acde7b641
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a49-b47d-35732ffbaae6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a4a-83c8-d4cdc7b9c74e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a4b-9fe2-6ba71010a95e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a4c-9c84-00c0502eb744
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a4d-9ba4-39491af83be8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a4e-9da3-8765140e565c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a4f-b782-5036fee52e81
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a50-ad99-9d00e2796622
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a51-a62c-3a20c203d716
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a52-81e5-afd4a66974dd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a53-978b-4221afed4e12
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a54-8903-dfce9960367b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a55-aadb-18278403e926
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2999-7a56-a8fe-1ed844b1c5e7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72ec-80df-f15cbc9eb69b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72ed-afe0-98469bdc8fc0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72ee-8081-503404bd2b1c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72ef-b11f-e14cca676de4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f0-bf47-326756168bd9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f1-a787-a2189f346a82
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f2-96fd-abb8b8fbd962
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f3-b942-8a2de8d86ce4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f4-91dc-311ffc454a46
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f5-a0b0-d9176ed4ee8d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f6-a2c7-89c4ecdbf3df
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f7-a8c9-9a175aff7127
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f8-af2d-fc17f2a748ef
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72f9-a609-afe7c429d167
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72fa-b022-1ce860c8c52b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72fb-9ff8-efc6657f534a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72fc-b066-f9520f0aa170
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72fd-88c3-3f47272a5d7c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72fe-bcba-756f4e6b1b06
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-72ff-946a-8b4a3dd23e74
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7300-9118-d384cb5db031
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7301-be2c-25568f785eaf
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7302-b550-724fc863c7fd
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7303-9732-960c2d48ee9e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7304-b969-3c2364350219
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7afd-9baf-30c6d1783261
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7afe-a954-4e7849389d58
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7aff-b887-6e6307550342
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b00-b9a0-df44aa69cc18
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b01-ab81-59dec755a900
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b02-8360-6ae62b9da91d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b03-a5f7-1db836bf4ccb
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b04-b49d-644ad093bdc6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b05-959c-57574645c8d7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b06-8a7d-abae0d6a14f6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b07-ae01-5d48565a9851
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b08-97c3-63a975c751a8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299a-7b09-9265-241d41e3107e
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73b9-855b-6ef23633bf92
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73ba-9239-f8296471e647
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73bb-a6a5-4c90ded70885
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73bc-9d6c-0619320e9be2
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73bd-b939-3bc85d3f7d8d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73be-8ede-5e01d343ead6
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73bf-bf18-aa94ff864f6c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c0-bb74-44482219f0ef
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c1-a93d-7cbf85d1db2a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c2-95e1-9881dac9c90c
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c3-97e5-c1c41a5c7f68
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c4-a709-925fd4a0d230
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c5-bab4-6faee75c3f5d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c6-8ff9-0615f1b2b968
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c7-a9bc-97971f404458
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c8-837b-70d2b6face9d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73c9-955d-b9014660788b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73ca-839d-4d505efea4d9
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73cb-8f9c-8d7a0dd0552f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73cc-a653-9ef45a4bee01
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73cd-9aac-7845c3c84116
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73ce-8c1b-d06f8423bbac
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73cf-94f9-a30deae4727d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73d0-8c14-10625fbd61ff
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-299b-73d1-bf16-7db537f6b27b
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-29a2-7395-994b-8a3fd1c91b91
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-29a3-7cc7-8a05-dba40397b7a0
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-29a4-7dae-a6b7-0477724373ce
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-29a6-7735-bf59-732e60b69896
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-29a8-7afa-a07d-2a3251c4967f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-29a9-7abc-9b29-6ab4557c3bad
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-29aa-7b58-a016-32f2a4164a09
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-29ac-7680-913e-c92c9ffe96c5
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-29ae-7c3c-b4a3-1c8ae1410ce4
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-29b0-7ab0-89b6-b1ee5fed6724
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-29b1-7aeb-a97b-bb6082016b9a
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-29b3-78f4-a346-8c7778f42753
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-29b5-779f-a2e7-5bfb322bfcf8
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-29b7-7e10-af4c-3e7d48e69248
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-29b9-769b-8be6-e95c34c8fd0f
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-29bb-7edd-9e64-3c40a0415d83
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-29bf-73b3-a62e-427b6e9f45d7
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-29c0-7cb0-b72d-812a01dcb379
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-29c1-7db9-9a9a-b075b5aa8654
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-29c4-704e-82bb-29d7df1319d0
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-29c6-7c96-ab37-c80717b4e58d
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-29c8-7e02-8887-c2e8da328990
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-29ca-7597-9a37-9bf2e7ef1b66
+time="2026-11-11T01:26:24+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-29cc-796f-9154-8e165631fa2d
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2a15-750d-b6ec-25e6fd334bd0
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/backend-api/codex/alpha/search\"" request_id=01a1c67f-2a19-7970-b285-a8ef401ef027
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2a1d-74b9-a474-8fe549e101ef
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v8/management/config.yaml\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="412 |            0s |       192.0.2.1 | PUT     \"/v8/management/config.yaml\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           2ms |       192.0.2.1 | PUT     \"/v8/management/config.yaml\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="204 |            0s |       192.0.2.1 | OPTIONS \"/v1/models\"" request_id=01a1c67f-2a29-7c8d-88e9-0c04fe8ecf31
+time="2026-11-11T01:26:25+08:00" level=info msg="204 |            0s |       192.0.2.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-2a2a-7553-a86a-f7a236dafbdb
+time="2026-11-11T01:26:25+08:00" level=info msg="204 |            0s |       192.0.2.1 | OPTIONS \"/v1/models\"" request_id=01a1c67f-2a2a-7554-903a-c5a580aa5ba7
+time="2026-11-11T01:26:25+08:00" level=info msg="204 |            0s |       192.0.2.1 | OPTIONS \"/v1/messages\"" request_id=01a1c67f-2a2a-7555-a570-f6017d080a4c
+time="2026-11-11T01:26:25+08:00" level=info msg="204 |            0s |       192.0.2.1 | OPTIONS \"/v1/chat/completions\"" request_id=01a1c67f-2a2f-71d7-bbdb-10b68c3eb2f5
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v0/management/devin-auth-url\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           2ms |       192.0.2.1 | GET     \"/callback?state=devin-route-success&code=test-code\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/devin/callback?state=devin-route-success-legacy-path&code=test-code\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           2ms |       192.0.2.1 | GET     \"/callback?state=devin-route-denied&error=access_denied\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="400 |            0s |       192.0.2.1 | GET     \"/callback?state=devin-route-wrong-provider&code=test-code\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="400 |            0s |       192.0.2.1 | GET     \"/callback?state=devin-route-missing-code&\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="400 |            0s |       192.0.2.1 | GET     \"/callback?state=devin-route-unknown-state&code=test-code\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version\"" request_id=01a1c67f-2a3f-7649-a4a2-18f84ab14a14
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version\"" request_id=01a1c67f-2a3f-764a-86df-bf0733777611
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2a43-7414-837b-22e5fd5c286f
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v0/management/kimi-auth-url\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v0/management/kimi-ai-auth-url\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+--- FAIL: TestManagementV8IndependentContract (0.06s)
+    server_management_v8_test.go:141: POST /v8/management/oauth/import?provider=codex: status=400 body={"error":"invalid_credentials","status":"error"}
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models/visible\"" request_id=01a1c67f-2ba7-7189-83bc-05f7ec6e3b04
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       192.0.2.1 | GET     \"/v1/models/visible\"" request_id=01a1c67f-2baa-74a6-987f-f2ff1809240e
+time="2026-11-11T01:26:25+08:00" level=error msg="502 |            0s |       192.0.2.1 | GET     \"/v1/models/visible\"" request_id=01a1c67f-2bae-7055-9c25-25be6a340cb1
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models/vendor/visible\"" request_id=01a1c67f-2bb2-724f-9fe2-afc3e3399ad7
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       192.0.2.1 | GET     \"/v1/models/hidden\"" request_id=01a1c67f-2bb2-7250-9f32-a3e16ef10619
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models/local/only\"" request_id=01a1c67f-2bb6-7dd2-9506-090ae21b11f5
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v1/models/local/only\"" request_id=01a1c67f-2bb7-77ac-991d-4badeb81a976
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2bc2-7c47-8bfa-d492f331048d
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2bc8-7556-ae46-c79233f12366
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1beta/models\"" request_id=01a1c67f-2bcb-7e77-b615-30c3b32de0e5
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-2bd2-7c42-8c8e-9cd766cea485
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2be4-7724-8bd0-89f9f701d71e
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2be8-72ee-928c-bf893f927238
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2bf3-7a6f-b9c9-4dd152cc99da
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2bf6-75a2-aea1-167e91bdf56b
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2bf8-7a1d-9d7f-135c15c1d39c
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2bfa-7408-a5f6-052f2b7d2a8c
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2bfd-7d48-9df6-bc7c21d9cf74
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2bff-76be-937f-0f270e212142
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2c01-7090-8010-e60c74652544
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           2ms |       127.0.0.1 | POST    \"/v8/management/oauth/siwc/bind\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="409 |            0s |       192.0.2.1 | GET     \"/codex/callback?client_id=oaiapp_issued&code=issued-code&state=YrjDwUaoetmB3Ev7pHD7YJisApJ4v71gxkNM5RzuK68\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       127.0.0.1 | GET     \"/v8/management/oauth/siwc/status\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       127.0.0.1 | GET     \"/v8/management/credentials/siwc/status?name=codex.json\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       127.0.0.1 | GET     \"/v8/management/oauth/siwc/status\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       127.0.0.1 | GET     \"/v8/management/oauth/siwc/status\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       127.0.0.1 | GET     \"/v8/management/oauth/siwc/status\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="400 |            0s |       127.0.0.1 | GET     \"/v8/management/oauth/siwc/status\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       127.0.0.1 | GET     \"/v8/management/oauth/siwc/status\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="429 |           4ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-2c44-7af0-9379-584c644441c1
+time="2026-11-11T01:26:25+08:00" level=warning msg="429 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-2c4e-79cb-b285-08cebca4889d
+time="2026-11-11T01:26:25+08:00" level=warning msg="429 |           3ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2c57-7a64-9baa-2c9f43f8e058
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2c60-7df1-be4a-597b52a59744
+time="2026-11-11T01:26:25+08:00" level=warning msg="codex alpha search upstream request failed: {\"error\":{\"message\":\"access token expired\"}}" status=401
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2c69-7cb5-b823-b93c4736f945
+time="2026-11-11T01:26:25+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2c70-7be7-b48e-591aece6f756
+time="2026-11-11T01:26:25+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2c7b-757e-92bf-e082e4195648
+time="2026-11-11T01:26:25+08:00" level=error msg="502 |           4ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2c85-71f8-92d2-12653bdb464d
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2c90-75f7-8ba4-1cced75df688
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |     203.0.113.5 | GET     \"/test-client-ip\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |   198.51.100.20 | GET     \"/test-client-ip\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |   198.51.100.20 | GET     \"/test-client-ip\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       192.0.2.1 | GET     \"/healthz-access-log-control\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       192.0.2.1 | GET     \"/healthz-access-log-control\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |            0s |       192.0.2.1 | GET     \"/healthz\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |            0s |       192.0.2.1 | GET     \"/healthz-access-log-control\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | HEAD    \"/healthz\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |            0s |       192.0.2.1 | GET     \"/healthz-access-log-control\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |           2ms |       192.0.2.1 | POST    \"/v1/live\"" request_id=01a1c67f-2caa-7687-a82c-d362631bded6
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/live\"" request_id=01a1c67f-2cad-70d9-a193-5e5169cb7b7b
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/calls\"" request_id=01a1c67f-2caf-7b3d-8807-2c0d7249dfae
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/calls\"" request_id=01a1c67f-2cb1-7d2d-ba35-9afaabf14a8a
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v1/live/call-123\"" request_id=01a1c67f-2cb4-7744-9e77-21eb1ccb9b68
+time="2026-11-11T01:26:25+08:00" level=warning msg="426 |            0s |       192.0.2.1 | GET     \"/v1/live/call-123\"" request_id=01a1c67f-2cb4-7745-957f-65871a21ba65
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v1/realtime/calls/call-123\"" request_id=01a1c67f-2cb4-7746-b869-cd046ce9e180
+time="2026-11-11T01:26:25+08:00" level=warning msg="426 |            0s |       192.0.2.1 | GET     \"/v1/realtime/calls/call-123\"" request_id=01a1c67f-2cb4-7747-9cfd-4b5a866103b1
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v1/realtime?call_id=call-123\"" request_id=01a1c67f-2cb4-7748-b324-0eb6ae21c0f8
+time="2026-11-11T01:26:25+08:00" level=warning msg="426 |            0s |       192.0.2.1 | GET     \"/v1/realtime?call_id=call-123\"" request_id=01a1c67f-2cb4-7749-9504-8aba3d3a57ae
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/client_secrets\"" request_id=01a1c67f-2cb9-7ba5-9b4e-3464eee7dfdd
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/realtime/client_secrets\"" request_id=01a1c67f-2cbc-794e-8d0a-281f8938fae4
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/calls\"" request_id=01a1c67f-2cbc-794f-9114-93c472ce89da
+time="2026-11-11T01:26:25+08:00" level=warning msg="426 |            0s |       192.0.2.1 | GET     \"/v1/realtime?model=gpt-realtime\"" request_id=01a1c67f-2cbf-704f-90e8-c18fcc9492c2
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/realtime\"" request_id=01a1c67f-2cbf-7050-90fa-f5355081aaec
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/realtime/sessions\"" request_id=01a1c67f-2cc1-71ad-acfd-9fb3934db55c
+time="2026-11-11T01:26:25+08:00" level=error msg="501 |           3ms |       192.0.2.1 | POST    \"/v1/realtime/transcription_sessions\"" request_id=01a1c67f-2cc1-71ae-b0ba-48c25ee92178
+time="2026-11-11T01:26:25+08:00" level=error msg="501 |            0s |       192.0.2.1 | GET     \"/v1/realtime/translations\"" request_id=01a1c67f-2cc4-78ca-9ae0-c085e0a5de88
+time="2026-11-11T01:26:25+08:00" level=error msg="501 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/translations\"" request_id=01a1c67f-2cc4-78cb-91dd-bc053ba26496
+time="2026-11-11T01:26:25+08:00" level=error msg="501 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/translations/client_secrets\"" request_id=01a1c67f-2cc7-72cf-acf9-87608d1228be
+time="2026-11-11T01:26:25+08:00" level=error msg="501 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/calls/call-123/accept\"" request_id=01a1c67f-2cc9-74c1-a32a-5486b65a6d22
+time="2026-11-11T01:26:25+08:00" level=error msg="501 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/calls/call-123/reject\"" request_id=01a1c67f-2ccb-7a33-8191-033599be1ca4
+time="2026-11-11T01:26:25+08:00" level=error msg="501 |           2ms |       192.0.2.1 | POST    \"/v1/realtime/calls/call-123/refer\"" request_id=01a1c67f-2ccd-7be6-b0d0-f943da07fbaf
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |           1ms |       192.0.2.1 | POST    \"/v1/realtime/calls/call-123/hangup\"" request_id=01a1c67f-2ccf-7d30-bdc6-104d9c55883a
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2cd8-7d57-aec1-c8d27f1b6a89
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search?key=te...ey\"" request_id=01a1c67f-2cdd-733b-89d3-b68bf267784a
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/backend-api/codex/alpha/search?key=te...ey\"" request_id=01a1c67f-2cdd-733c-87b3-32859b0811f5
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2ce1-777a-ab51-88d42959a33f
+time="2026-11-11T01:26:25+08:00" level=warning msg="codex alpha search: model router returned an unsupported target" error="unsupported Codex Alpha Search model route target \"self\" (\"user-routing\")"
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2ce5-7a62-a331-7058aa5be820
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2cee-70f8-8886-dcc59d8f4658
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/backend-api/codex/alpha/search\"" request_id=01a1c67f-2cee-78ed-a467-e5e73c8c2230
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2cf3-75a2-b23a-58ac3678539b
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2cf7-71c7-98b7-908c05933551
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           1ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2cfe-7e2a-98f0-8b4efff1555a
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2d04-7a0c-a74c-0cc3343cff45
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2d0a-7edb-afee-01d7c8b971d1
+time="2026-11-11T01:26:25+08:00" level=error msg="503 |           3ms |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2d10-7082-bcb4-c1d22f2cb0f9
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search?key=home...-key\"" request_id=01a1c67f-2d19-763e-8441-bf25f45fc37c
+time="2026-11-11T01:26:25+08:00" level=info msg="session-affinity: cache miss, new binding | session=header:session-a auth=codex-auth-a provider=codex model=gpt-5.6-luna" request_id=01a1c67f-2d1d-7a57-b78f-f088e50c77d7
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2d1d-7a57-b78f-f088e50c77d7
+time="2026-11-11T01:26:25+08:00" level=info msg="session-affinity: cache miss, new binding | session=header:session-b auth=codex-auth-b provider=codex model=gpt-5.6-luna" request_id=01a1c67f-2d1e-722e-a3cf-601d8f2cb88a
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2d1e-722e-a3cf-601d8f2cb88a
+time="2026-11-11T01:26:25+08:00" level=info msg="session-affinity: cache hit | session=header:session-a auth=codex-auth-a provider=codex model=gpt-5.6-luna" request_id=01a1c67f-2d1e-722f-a8b2-cdae1a140285
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/alpha/search\"" request_id=01a1c67f-2d1e-722f-a8b2-cdae1a140285
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v0/management/config\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           2ms |       192.0.2.1 | GET     \"/v0/management/oauth-callback?state=server-plugin-oauth-state&code=test-code\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=warning msg="401 |            0s |       192.0.2.1 | GET     \"/v0/management/usage-queue?count=2\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       192.0.2.1 | GET     \"/v0/management/usage?count=2\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v0/management/usage-queue?count=2\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v0/management/plugins\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v0/management/plugins/sample/config\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |           1ms |       192.0.2.1 | DELETE  \"/v0/management/plugins/sample\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="400 |           6ms |       192.0.2.1 | POST    \"/v1/videos\"" request_id=01a1c67f-2d45-7647-a53f-104d48bbfa2f
+time="2026-11-11T01:26:25+08:00" level=warning msg="400 |           3ms |       192.0.2.1 | POST    \"/openai/v1/videos\"" request_id=01a1c67f-2d4c-7465-b72e-2a58b3902206
+time="2026-11-11T01:26:25+08:00" level=warning msg="400 |            0s |       192.0.2.1 | GET     \"/openai/v1/videos/video_123/content?variant=thumbnail\"" request_id=01a1c67f-2d4f-7a1f-a504-8f1173a616f4
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       192.0.2.1 | GET     \"/v0/management/config\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=warning msg="404 |            0s |       192.0.2.1 | GET     \"/management.html\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="management routes registered after secret key configuration"
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/management.html\"" request_id=--------
+time="2026-11-11T01:26:25+08:00" level=info msg="200 |            0s |       192.0.2.1 | HEAD    \"/management.html\"" request_id=--------
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |         119ms |       192.0.2.1 | GET     \"/management.html?safe-mode=configure\"" request_id=--------
+time="2026-11-11T01:26:26+08:00" level=warning msg="403 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2dd4-715a-8880-d897f99d2c43
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v0/management/config\"" request_id=--------
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2dd6-7b38-834b-558491427e5a
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2ddd-76a7-b947-df7477c3e514
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2ddd-76a8-8a1a-bfdca8b49d39
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2de2-7632-98ce-fbce562e72d9
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2de3-7ee8-8e1a-c7e9c6173b54
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version\"" request_id=01a1c67f-2de9-7f06-95be-6ddeb34ee573
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-2df8-72df-8229-e4cf1626bacc
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-2dff-7815-b371-eeb68fe8b927
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.149.1\"" request_id=01a1c67f-2e00-711a-a5c5-8fb31bfeecbb
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-2e00-793a-bfb9-3404538067f6
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=pi\"" request_id=01a1c67f-2e01-722c-94ce-f4ae22cbeda3
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=latest\"" request_id=01a1c67f-2e01-7a4d-ba93-1128dadf4636
+time="2026-11-11T01:26:26+08:00" level=warning msg="400 |          10ms |       192.0.2.1 | POST    \"/v1beta/interactions\"" request_id=01a1c67f-2e1b-761c-be48-f798055ac1bb
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |          12ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-2e35-7560-b823-7039b126ded5
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |          13ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c67f-2e49-7469-b760-66c4aa0da6e8
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2e5d-7af7-bfe5-f37997b93574
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |           1ms |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-2e5d-7af8-bff5-bc327e3716d6
+server clients and configuration updated: 0 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 0 OpenAI-compat)
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=\"" request_id=01a1c67f-2eac-739d-8aef-54f0b6dc5499
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.137.0\"" request_id=01a1c67f-2ead-7cf5-a682-3b67768bb7dd
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=0.153.4\"" request_id=01a1c67f-2eae-7d86-badb-6661b3bf73bd
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models?client_version=cpa\"" request_id=01a1c67f-2eaf-7e64-92b7-ac358fbe9682
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |            0s |       192.0.2.1 | GET     \"/v1/models\"" request_id=01a1c67f-2eb1-77b5-a3d1-3d16a122f645
+time="2026-11-11T01:26:26+08:00" level=info msg="responses websocket: client connected id=78df34d5-06c4-44c3-9fe6-1725f88621ef remote=127.0.0.1"
+time="2026-11-11T01:26:26+08:00" level=warning msg="401 |           4ms |       127.0.0.1 | GET     \"/v1/responses\"" request_id=01a1c67f-2eba-79ee-b9cf-9d81ff6abc95
+time="2026-11-11T01:26:26+08:00" level=info msg="responses websocket: downstream_out id=78df34d5-06c4-44c3-9fe6-1725f88621ef type=1 event=error payload={\"type\":\"error\",\"status\":401,\"error\":{\"message\":\"Invalid API key\",\"type\":\"authentication_error\",\"code\":\"invalid_api_key\"}}"
+time="2026-11-11T01:26:26+08:00" level=info msg="responses websocket: upstream execution session closed id=78df34d5-06c4-44c3-9fe6-1725f88621ef"
+time="2026-11-11T01:26:26+08:00" level=warning msg="failed to remove request body temp file" error="remove C:\\Users\\子羽\\AppData\\Local\\Temp\\TestServerResponsesWebsocketReauthorizesEachTurn4175539607\\001\\auth\\logs\\request-body-1481481450.tmp: The system cannot find the file specified."
+time="2026-11-11T01:26:26+08:00" level=info msg="200 |           9ms |       127.0.0.1 | GET     \"/v1/responses\"" request_id=01a1c67f-2eb9-78b1-bbbd-a9f4ff3607fd
+--- FAIL: TestServerResponsesWebsocketReauthorizesEachTurn (0.02s)
+    testing.go:1464: TempDir RemoveAll cleanup: unlinkat C:\Users\子羽\AppData\Local\Temp\TestServerResponsesWebsocketReauthorizesEachTurn4175539607\001\auth\logs: The directory is not empty.
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/api	2.498s
+FAIL
