@@ -8,7 +8,7 @@ import {sanitizeReceipt} from './diagnostics.mjs';
 
 const directory=path.dirname(fileURLToPath(import.meta.url));
 let options;
-try{options=parseArgs({options:{execute:{type:'boolean'},preflight:{type:'boolean'},'cpa-image':{type:'string',default:'mx-cpa:20261110-rc1'},'manager-image':{type:'string',default:'mx-cpamp:20261110-rc1'},'worker-image':{type:'string',default:'mx-oauth-login:20261110-rc1'},'worker-source':{type:'string'},'cpa-binary':{type:'string'},'manager-binary':{type:'string'},'source-revision':{type:'string'},'cpa-revision':{type:'string'},'manager-revision':{type:'string'},'worker-revision':{type:'string'}}}).values;}
+try{options=parseArgs({options:{execute:{type:'boolean'},preflight:{type:'boolean'},'cpa-image':{type:'string'},'manager-image':{type:'string'},'worker-image':{type:'string'},'worker-source':{type:'string'},'cpa-binary':{type:'string'},'manager-binary':{type:'string'},'source-revision':{type:'string'},'cpa-revision':{type:'string'},'manager-revision':{type:'string'},'worker-revision':{type:'string'}}}).values;}
 catch{process.stdout.write('{"stage":"harness","status":"failed","error_code":"invalid_options"}\n');process.exit(1);}
 const preflight=!options.execute;
 const images={cpa:options['cpa-image'],manager:options['manager-image'],worker:options['worker-image']};
@@ -30,7 +30,8 @@ function overlayFingerprint(role){
   }
   return digest.digest('hex');
 }
-let originalFingerprints;
+let originalFingerprints,harnessInputs;
+const harnessFiles=['run.mjs','check.mjs','payloads.mjs','diagnostics.mjs','worker.mjs','proxy-runner.mjs'];
 function docker(args,{input,allowFailure=false,timeout=60000}={}){
   return new Promise((resolve,reject)=>{
     const child=spawn('docker',args,{stdio:['pipe','pipe','pipe'],windowsHide:true});
@@ -59,12 +60,13 @@ try{
   if(options.execute&&options.preflight)throw new Error('invalid_options');
   for(const image of Object.values(images))if(!/^[a-zA-Z0-9][a-zA-Z0-9._/:@-]*$/.test(image))throw new Error('invalid_options');
   for(const revision of [options['source-revision'],...Object.values(revisions)])if(revision!==undefined&&!/^[a-f0-9]{40}$/.test(revision))throw new Error('invalid_options');
-  if((options.execute||Object.values(overlays).some(Boolean))&&!/^[a-f0-9]{40}$/.test(options['source-revision']||''))throw new Error('overlay_revision_required');
+  if(!/^[a-f0-9]{40}$/.test(options['source-revision']||''))throw new Error('source_revision_required');
   if(overlays.worker&&!fs.statSync(overlays.worker).isDirectory())throw new Error('invalid_overlay');
   if(overlays.manager&&!fs.statSync(overlays.manager).isFile())throw new Error('invalid_overlay');
   if(overlays.cpa&&!fs.statSync(overlays.cpa).isFile())throw new Error('invalid_overlay');
+  harnessInputs=harnessFiles.map(file=>fs.readFileSync(path.join(directory,file)));
   originalFingerprints=Object.fromEntries(['worker','cpa','manager'].map(role=>[role,overlayFingerprint(role)]));
-  report({stage:'inputs',profile:'bps',mode:preflight?'preflight':'execute',client_request_budget:preflight?0:2,source_revision:options['source-revision']||null,worker_source_overlay:Boolean(overlays.worker),cpa_binary_overlay:Boolean(overlays.cpa),manager_binary_overlay:Boolean(overlays.manager),overlay_fingerprints:originalFingerprints,production_network_equivalence:false});
+  report({stage:'inputs',profile:'bps',mode:preflight?'preflight':'execute',client_request_budget:preflight?0:4,source_revision:options['source-revision']||null,worker_source_overlay:Boolean(overlays.worker),cpa_binary_overlay:Boolean(overlays.cpa),manager_binary_overlay:Boolean(overlays.manager),overlay_fingerprints:originalFingerprints,production_network_equivalence:false});
   if(!preflight){
     const chunks=[];let size=0;
     for await(const chunk of process.stdin){size+=chunk.length;if(size>16384)throw new Error('invalid_input');chunks.push(chunk);}
@@ -82,7 +84,7 @@ try{
   stage='cpa_start';
   await create(names.cpa,['--tmpfs','/state:mode=0700,size=64m','--tmpfs','/tmp:mode=1777,size=32m',...(overlays.cpa?['--mount','type=bind,source='+overlays.cpa+',target=/candidate/CLIProxyAPI,readonly']:[]),'--entrypoint','/bin/sh',images.cpa,'-c','while [ ! -s /state/config.yaml ]; do sleep 0.1; done; exec '+(overlays.cpa?'/candidate/CLIProxyAPI':'/CLIProxyAPI/CLIProxyAPI')+' --config /state/config.yaml --local-model']);
   stage='cpa_config';
-  await put(names.cpa,'/state/config.yaml',JSON.stringify({'config-version':8,server:{host:'0.0.0.0',port:8317,'kv-store':{disabled:true}},management:{'allow-remote':true,'secret-key':keys.cpa,'disable-control-panel':true,'disable-auto-update-panel':true},access:{'api-keys':[keys.api]},requests:{'proxy-url':'http://host.docker.internal:7890'},routing:{retry:{'request-retry':0,'max-retry-interval':0}},oauth:{'auth-dir':'/state/auths',providers:{bps:{models:['gpt-6-astra','gpt-6.1-sol','gpt-5.6-sol']}}}}));
+  await put(names.cpa,'/state/config.yaml',JSON.stringify({'config-version':8,server:{host:'0.0.0.0',port:8317,'kv-store':{disabled:true}},management:{'allow-remote':true,'secret-key':keys.cpa,'disable-control-panel':true,'disable-auto-update-panel':true},access:{'api-keys':[keys.api]},requests:{'proxy-url':'http://host.docker.internal:7890'},routing:{retry:{'request-retry':0,'max-retry-interval':0}},oauth:{'auth-dir':'/state/auths',providers:{bps:{models:['gpt-6-luna']}}}}));
   stage='worker_start';
   await create(names.worker,['--init','--network','container:'+names.cpa,'--tmpfs','/tmp:mode=1777,size=64m','--tmpfs','/run/secrets:mode=0700,uid=1000,gid=1000,size=1m',...bind,...(overlays.worker?['--mount','type=bind,source='+overlays.worker+',target=/app/src,readonly']:[]),'--entrypoint','sh',images.worker,'-c','while [ ! -s /run/secrets/oauth_login_secret ] || [ ! -r /run/secrets/oauth_login_secret ]; do sleep 0.1; done; exec node /checks/worker.mjs']);
   stage='worker_config';
@@ -102,14 +104,14 @@ try{
   report({stage:'boundaries',readonly:true,tmpfs_state:true,docker_logging:false,published_ports:false,secret_argv_env:false,production_access:false});
   if(interrupted)throw new Error('interrupted');
   stage='check';
-  const result=await docker(['exec','-i',names.worker,'node','/checks/check.mjs'],{input:JSON.stringify({...keys,mode:preflight?'preflight':'execute',credentials}),timeout:32*60*1000,allowFailure:true});
+  const result=await docker(['exec','-i',names.worker,'node','/checks/check.mjs'],{input:JSON.stringify({...keys,mode:preflight?'preflight':'execute',credentials}),timeout:38*60*1000,allowFailure:true});
   for(const line of result.output.trim().split('\n').filter(Boolean)){
     const value=JSON.parse(line);
     report(sanitizeReceipt(value));
   }
   if(result.code!==0)process.exitCode=1;
 }catch(error){
-  const allowed=new Set(['invalid_options','overlay_revision_required','invalid_overlay','invalid_input','image_identity_invalid','image_revision_mismatch','container_boundary_invalid','interrupted','docker_start_failed','docker_command_failed']);
+  const allowed=new Set(['invalid_options','source_revision_required','invalid_overlay','invalid_input','image_identity_invalid','image_revision_mismatch','container_boundary_invalid','interrupted','docker_start_failed','docker_command_failed']);
   report({stage,status:'failed',error_code:allowed.has(error.message)?error.message:'harness_error'});process.exitCode=1;
 }finally{
   if(credentials){credentials.email=credentials.password=credentials.totp_secret='';credentials=undefined;}
@@ -120,7 +122,8 @@ try{
   if(!verified)process.exitCode=1;
   if(originalFingerprints){
     let unchanged=false;try{unchanged=['worker','cpa','manager'].every(role=>overlayFingerprint(role)===originalFingerprints[role]);}catch{}
-    report({stage:'input_recheck',unchanged});if(!unchanged)process.exitCode=1;
+    let harnessUnchanged=false;try{harnessUnchanged=harnessFiles.every((file,index)=>fs.readFileSync(path.join(directory,file)).equals(harnessInputs[index]));}catch{}
+    report({stage:'input_recheck',unchanged:unchanged&&harnessUnchanged,harness_unchanged:harnessUnchanged});if(!unchanged||!harnessUnchanged)process.exitCode=1;
   }
   for(const name of Object.keys(keys))keys[name]='';
 }

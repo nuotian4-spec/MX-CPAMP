@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {featureRequests} from './payloads.mjs';
+import {model,textRequest,toolRequest,toolResultRequest,imageRequest} from './payloads.mjs';
 import {errorCodes,taskDiagnostics,sanitizeReceipt,businessCodes,publicErrorDiagnostics} from './diagnostics.mjs';
 
-export const models=Object.freeze(['gpt-6-astra','gpt-6.1-sol','gpt-5.6-sol']);
+export const models=Object.freeze([model]);
 const bases={cpa:'http://127.0.0.1:8317',manager:'http://127.0.0.1:18317',worker:'http://127.0.0.1:18417'};
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function must(value,code){if(!value)throw new Error(code);}
@@ -53,32 +53,53 @@ export async function runBusiness(input,{request=transport,report=value=>process
   emit({stage:'refresh',same_auth:true,same_profile:true,same_client:true,same_identity:true,refresh_token_present:true,access_token_changed:after.access_token!==before.access_token,refresh_token_changed:after.refresh_token!==before.refresh_token,concurrency_preserved:true,refresh_endpoint_requests:1});
   before=null;for(const field of ['access_token','refresh_token','id_token'])after[field]='';
   const catalog=await request('cpa','/v1/models',input.api);const ids=catalog.value.data?.map(item=>item.id).sort();
-  must(catalog.status===200&&ids?.length===3&&ids.join(',')===[...models].sort().join(','),'catalog_mismatch');
+  must(catalog.status===200&&ids?.length===1&&ids.join(',')===[...models].sort().join(','),'catalog_mismatch');
   const original=await listing();const successes=Number(original.success);must(Number.isFinite(successes),'auth_target_unconfirmed');
-  let allSucceeded=true,accepted=0,clientRequests=0;
-  // 每类严格发一次；HTTP、传输或响应格式失败只影响本项，不阻断另一项。
-  for(const {feature,body} of featureRequests()){
-    clientRequests++;
+  let accepted=0,clientRequests=0,toolClientRequests=0,imageClientRequests=0;
+  const outputOf=value=>Array.isArray(value?.output)?value.output:[];
+  const textOf=value=>outputOf(value).filter(item=>item?.type==='message').flatMap(item=>Array.isArray(item.content)?item.content:[]).filter(item=>item?.type==='output_text'&&typeof item.text==='string').map(item=>item.text).join('').trim();
+  const callsOf=value=>outputOf(value).filter(item=>item?.type==='function_call');
+  const pingCall=value=>{
+    const calls=callsOf(value);if(calls.length!==1)return null;
+    const call=calls[0];if(call.name!=='ping'||typeof call.call_id!=='string'||!call.call_id.trim()||typeof call.arguments!=='string')return null;
+    try{const args=JSON.parse(call.arguments);if(!args||typeof args!=='object'||Array.isArray(args)||Object.keys(args).length)return null;}catch{return null;}
+    return call;
+  };
+  const probe=async(feature,body,validate,invalidCode)=>{
+    clientRequests++;if(feature==='tools'||feature==='tool_result')toolClientRequests++;if(feature==='image')imageClientRequests++;
     let response;
     try{response=await request('cpa','/v1/responses',input.api,'POST',body,120000);}
-    catch{allSucceeded=false;emit({stage:'business',feature,model:'gpt-5.6-sol',probe_outcome:'unconfirmed',error_code:'public_request_unconfirmed',client_requests:1,upstream_attempts:'unknown'});continue;}
+    catch{emit({stage:'business',feature,model,probe_outcome:'unconfirmed',error_code:'public_request_unconfirmed',client_requests:1,upstream_attempts:'unknown'});return{valid:false};}
     if(response.status!==200){
-      allSucceeded=false;
-      emit({stage:'business',feature,model:'gpt-5.6-sol',probe_outcome:'rejected',public_http_status:response.status,error_code:'public_request_rejected',client_requests:1,upstream_attempts:'unknown',...publicErrorDiagnostics(response.value)});
-      response.value=null;continue;
+      emit({stage:'business',feature,model,probe_outcome:'rejected',public_http_status:response.status,error_code:'public_request_rejected',client_requests:1,upstream_attempts:'unknown',...publicErrorDiagnostics(response.value)});
+      response.value=null;return{valid:false};
     }
     const normal=response.value?.status==='completed'&&typeof response.value.id==='string'&&response.value.id.startsWith('resp_bps_');
-    const functionCall=response.value?.output?.some(item=>item.type==='function_call'&&item.name==='ping');
-    const textOutput=response.value?.output?.some(item=>item.type==='message'&&item.content?.some(content=>content.type==='output_text'&&typeof content.text==='string'&&content.text.trim()));
-    const valid=Boolean(normal&&(feature==='tools'?functionCall:textOutput));
-    allSucceeded&&=valid;if(valid)accepted++;
-    emit({stage:'business',feature,model:'gpt-5.6-sol',probe_outcome:valid?'succeeded':'invalid',public_http_status:response.status,normal_terminal:Boolean(normal),function_call_present:Boolean(functionCall),text_output_nonempty:Boolean(textOutput),...(valid?{}:{error_code:normal?'public_output_empty':'public_terminal_invalid'}),client_requests:1,upstream_attempts:'unknown'});
-    response.value=null;
+    const facts=normal?validate(response.value):{valid:false};
+    const valid=Boolean(normal&&facts.valid);if(valid)accepted++;
+    emit({stage:'business',feature,model,probe_outcome:valid?'succeeded':'invalid',public_http_status:200,normal_terminal:Boolean(normal),text_output_nonempty:Boolean(textOf(response.value??{})),...(feature==='tools'?{function_call_present:callsOf(response.value??{}).length>0,function_call_valid:valid}:{}),...(feature==='image'?{image_red_confirmed:valid}:{}),...(feature==='tool_result'?{tool_result_confirmed:valid}:{}),...(feature==='text'?{text_gate_passed:valid}:{}),...(valid?{}:{error_code:normal?invalidCode:'public_terminal_invalid'}),client_requests:1,upstream_attempts:'unknown'});
+    if(!valid)response.value=null;
+    return{valid,value:response.value,call:facts.call};
+  };
+  const text=await probe('text',textRequest(),value=>({valid:callsOf(value).length===0&&textOf(value)==='OK'}),'public_text_semantics_invalid');
+  let toolComplete=false,imageComplete=false;
+  // 文本是唯一业务门禁；工具失败不阻断独立图片，工具只执行固定空参 ping。
+  if(text.valid){
+    text.value=null;
+    const first=await probe('tools',toolRequest(),value=>{const call=pingCall(value);return{valid:Boolean(call),call};},'public_tool_call_invalid');
+    if(first.valid){
+      const followup=toolResultRequest(first.value.output,first.call.call_id);first.value=null;first.call=null;
+      const result=await probe('tool_result',followup,value=>({valid:callsOf(value).length===0&&textOf(value).toLowerCase()==='pong'}),'public_tool_result_invalid');
+      toolComplete=result.valid;result.value=null;
+    }
+    const image=await probe('image',imageRequest(),value=>({valid:callsOf(value).length===0&&/^(?:red|红色|红)[.!。！]?$/i.test(textOf(value))}),'public_image_semantics_invalid');
+    imageComplete=image.valid;image.value=null;
   }
   if(accepted)await poll(async()=>Number((await listing()).success)>=successes+accepted,'auth_target_unconfirmed');
   else await listing();
   await poll(async()=>{const s=await snapshot();return s.pool_waiting===0&&s.credentials[0].active===0&&s.credentials[0].pinned_waiting===0;},'admission_not_drained');
-  emit({stage:'complete',...(allSucceeded?{result:'passed'}:{}),catalog_exact:true,probes_complete:true,all_requests_succeeded:allSucceeded,auth_target_confirmed:true,admission_drained:true,client_requests:clientRequests,upstream_attempts:'unknown'});
+  const allSucceeded=text.valid&&toolComplete&&imageComplete;
+  emit({stage:'complete',...(allSucceeded?{result:'passed'}:{}),catalog_exact:true,probes_complete:clientRequests===4,all_requests_succeeded:allSucceeded,text_gate_passed:text.valid,tool_roundtrip_complete:toolComplete,image_red_confirmed:imageComplete,auth_target_confirmed:true,admission_drained:true,client_requests:clientRequests,tool_client_requests:toolClientRequests,image_client_requests:imageClientRequests,upstream_attempts:'unknown'});
   expectedEmail='';return allSucceeded;
 }
 async function main(){

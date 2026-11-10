@@ -1,33 +1,35 @@
-# BPS 工具与图片各一次验收
+# BPS 文本、工具往返与图片验收
 
-状态：工具基础已冻结。用户最新指定 `gpt-6-luna`，并要求先核 D:/sub2api 的 Excel/BPS 图片支持与协议；本目录现有 payload 仍是前一轮 `gpt-5.6-sol` 基线，待主会话确定移植范围后再适配，不作为最新真实执行入口。真实工具、图片请求均未执行。
+本工具按 `docs/bps-tools-images-plan.zh-CN.md` 和 ADR 0003 验收 `gpt-6-luna`。登录、正常 refresh 各一次；公开客户端请求最多四次。工具源码和离线 fixture 已完成，真实镜像与完整 revision 由主会话统一绑定后再执行，当前没有真实工具或图片结果。
 
-本工具复用 `phase2-business-20261111` 的三组件隔离、单行 BPS 登录、保存注册核验、并发覆盖、正常刷新和清理流程。业务阶段仅提交工具、图片各一次客户端请求，无第三个文本请求，无工具结果后续轮次。当前交付仅完成离线验证，真实结果由主会话另记。
+## 请求顺序与成功条件
 
-## 固定请求与预算
+1. 文本一次：要求精确返回 `OK`。HTTP、传输、终态或语义任一失败即停止后续业务请求，包括 403。
+2. 工具首轮一次：仅定义空参 `ping`，`tool_choice=auto`。成功必须是正常 BPS completed 响应，且恰好一个 `ping` function_call、有非空 call_id、参数可解析为空对象。普通文本、未知函数、多个调用或非空参数均失败，不执行其中任何命令。
+3. 工具结果一次：只在合法首轮后固定产生本地 `pong`，回传首轮完整用户输入、原响应 output 与匹配原 call_id 的 function_call_output；`tool_choice=none`，不携 previous_response_id。结果必须 completed、没有新工具调用且文本精确为 pong，不继续第三轮。
+4. 独立图片一次：文本成功后，无论工具哪一轮结果如何仍执行；发送内嵌 32×32 纯红 PNG，提示仅要求识别主色，不在提示中泄漏红色答案。必须 completed、没有工具调用，且文本仅表示 red、红色或红（允许结尾句号/叹号）。HTTP 200 的蓝色、否定红色或多种颜色文本不算通过。
 
-两项均请求 `POST /v1/responses`，模型 `gpt-5.6-sol`、`reasoning.effort=low`、`stream=false`，不带任何 max token 参数。
+所有请求使用 `gpt-6-luna`、`reasoning.effort=low`、`stream=false`，无 max token 字段、客户端重试或重定向。登录/注册/刷新失败为零业务请求，文本失败一次，工具首轮失败而图片继续共三次，完整路径四次；工具单项最多两次，图片最多一次。单项失败进程最终 exit 1；全部语义通过才输出 result=passed。probes_complete 仅表示四次请求均已尝试，不代表通过。
 
-- `tools`：输入 `Call ping once.`，定义无参数、无外部副作用的 `ping` 函数，并以 `tool_choice` 指定该函数。工具只检查响应是否有该函数调用，不执行函数或提交函数结果。
-- `image`：用户输入一段颜色识别文本和 `input_image`；图片为本目录 `red-32.png` 对应的内嵌 32×32 纯红色 PNG，无外部图片 URL。
+每项输出固定 feature、probe_outcome、HTTP 整数与白名单错误分类；最终输出真实客户端计数、文本门禁、工具往返、红色语义和排空布尔值。不输出模型正文、图片、URL、原始错误消息、call_id、邮箱或凭证。上游实际尝试次数没有计量，保持 upstream_attempts=unknown。
 
-登录、注册或刷新失败时不提交业务请求。业务阶段进入后，无论工具请求的 HTTP、传输或终态校验结果如何，仍提交图片一次；没有客户端重试，重定向直接报错。每项单独输出 `feature`、`probe_outcome`、HTTP 整数和白名单诊断；失败导致进程 exit 1，最终仍核排空与清理。全部成功才有 `result=passed`。`probes_complete=true` 只表示两项均已尝试。
+## 隔离与入口
 
-现有 BPS 仅支持文本；预期工具、图片会在本地能力校验被拒绝。工具保留真实 HTTP 结果及固定错误分类，不输出原始错误消息、正文、URL、邮箱、凭证或生成内容。不绕过能力守卫、quota 或 challenge。CPA 内部上游尝试次数未计量，仍记录 `upstream_attempts=unknown`，不将客户端两次等同上游两次。
+复用三组件验收的单行 BPS 批次、保存注册、并发覆盖设为 3、正常单目标 refresh 及身份核验。没有重登、强造过期或切换账号。随机独立容器使用只读根、tmpfs 状态、log-driver=none、无端口发布、无生产挂载或 Docker socket；本机代理保持 host.docker.internal:7890。BPS 默认原生图片与 /state/bps-state 均落入隔离 /state tmpfs。
 
-## 执行入口
+所有镜像参数及 source-revision 必须显式提供。支持逐角色 revision 和既有只读叠加参数；OCI revision 按完整提交核验。结束复核叠加输入和六个运行脚本未漂移，finally 删除本轮 label 容器并查询确认；未确认时 token_state_retained=null。工具不构建或拉取镜像。
 
-在仓库根目录使用固定镜像与完整 revision。默认无凭证预检：
+在主会话给出最终参数后替换以下非秘密占位符；默认只预检，不读取凭证、不建登录批次、不刷新、不发业务请求：
 
 ```powershell
-node docs/evidence/phase2-tool-image-20261111/run.mjs --cpa-image mx-cpa:phase2-local-20261111-r2 --manager-image mx-cpamp:phase2-local-20261111-r2 --worker-image mx-oauth-login:phase2-local-20261111 --source-revision 4367adaf687ce336e81122fcdb530c0e66e6eb33 --manager-revision bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f --worker-revision 95dd9ca2c16d5469c43ce7c910f38ff271af45e3
+node docs/evidence/phase2-tool-image-20261111/run.mjs --cpa-image CPA_IMAGE --manager-image MANAGER_IMAGE --worker-image WORKER_IMAGE --source-revision CPA_REVISION_40 --manager-revision MANAGER_REVISION_40 --worker-revision WORKER_REVISION_40
 ```
 
-真实执行由主会话在同命令添加 `--execute`，经受控进程 stdin 输入 `email`、`password`、`totp_secret` JSON。真实材料不得写文件、argv、环境变量或 shell 历史。本工具不自动触发真实执行，不构建或拉取镜像，不推送或部署。
+真实执行由主会话在同命令加 --execute，并经受控进程 stdin 输入 email/password/totp_secret JSON。真实材料不进入文件、argv、环境变量或 shell 历史。镜像 revision 尚未绑定的模板不作为可执行发布命令。无推送、部署或生产数据动作。
 
-随机独立容器使用只读根、tmpfs 状态、`log-driver=none`、无端口发布、无生产挂载、无 Docker socket；本机代理保持 `host.docker.internal:7890`。镜像逐角色核完整 OCI revision。finally 删除本轮 label 下所有容器并查询确认；未确认时 `token_state_retained=null`。
+真实 JSONL 路径预留为 docs/evidence/phase2-tool-image-20261111/REAL-RECEIPT.jsonl，由主会话真实执行时保存白名单输出；当前未创建该文件，也未写任何真实回执。
 
-## 离线命令
+## 离线验证
 
 ```powershell
 node docs/evidence/phase2-tool-image-20261111/verify-fixture.mjs
@@ -35,4 +37,4 @@ node docs/evidence/phase2-tool-image-20261111/verify-diagnostics.mjs
 node docs/evidence/phase2-tool-image-20261111/verify-harness.mjs
 ```
 
-fixture 覆盖两次完整 payload 与预算、PNG 尺寸及像素、登录/索引/刷新失败短路、工具/图片各自 HTTP 400/403/500、传输失败、异常终态后继续下一项，以及秘密哨兵不输出。Docker CLI 替身覆盖创建成功但 CLI 返回失败、业务 exit 1 后清理、镜像 revision 不符及非法 revision 停止。所有离线测试均不访问 Docker、网络或真实账户，不证明真实 BPS 能力通过。
+fixture 覆盖完整请求结构、PNG 尺寸与纯红像素、0/1/3/4 实际总预算及工具单项 0/1/2、文本 403 等失败短路、两轮工具配对和完整历史、工具失败后图片继续、HTTP 200 非工具及错误颜色、畸形终态、秘密哨兵过滤。Docker/fetch 替身覆盖默认预检零凭据业务、创建回执失败或业务失败后的清理、revision 不符与非法值、工具脚本输入漂移。离线结果不代表真实 BPS 能力通过。
