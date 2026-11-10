@@ -1,6 +1,13 @@
 # 上线前只读预检
 
-在服务器以有 Docker 读取权限的账号运行固定提交中的脚本：
+在现有 OVH 服务器的 SSH 终端运行固定提交中的脚本：
+
+```bash
+set -o pipefail
+curl -fsSL 'https://raw.githubusercontent.com/nuotian4-spec/MX-CPAMP/0f12bdd81daad620d2d1d3624523d707fd575242/deploy/readonly-preflight.sh' | sudo bash
+```
+
+已在服务器检出该提交时，也可直接执行：
 
 ```bash
 bash /实际检出目录/deploy/readonly-preflight.sh

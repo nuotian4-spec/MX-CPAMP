@@ -4,9 +4,11 @@
 
 ## 仓库交付状态
 
-开发分支 `codex/openai-bps-login` 已推送，已创建 [草稿 PR #1](https://github.com/nuotian4-spec/MX-CPAMP/pull/1)。首批交付提交为 `3bc483f1a9e4319c9568dc216d7b68de6c8a1345`；后续交付记录只修改文档，不改变下列产品与镜像输入。
+开发分支 `codex/openai-bps-login` 已推送，已创建 [草稿 PR #1](https://github.com/nuotian4-spec/MX-CPAMP/pull/1)。首批交付提交为 `3bc483f1a9e4319c9568dc216d7b68de6c8a1345`；后续文档与只读预检材料不改变下列产品与镜像输入。
 
 CPA 上游自带的两项 Google OAuth 公开客户端常量，按用户授权完成本次推送放行，保留原有源码与 Google 登录行为。已通过 GitHub API 核实仓库 `secret_scanning`、`secret_scanning_push_protection` 均为 `enabled`。未发布镜像或切换生产服务；真实业务验收完成前保持 PR 草稿。
+
+上线接续从 [服务器只读预检](deployment-preflight.zh-CN.md) 开始。脚本已通过 Linux 四场景及真实 Docker 模板验证；等待服务器回执后，按实际 Compose、镜像与数据挂载准备发布材料。证据见 [预检回执](evidence/manager-login/PREFLIGHT.zh-CN.md)。
 
 ## 实现
 
