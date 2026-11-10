@@ -1,0 +1,14 @@
+go: downloading github.com/davecgh/go-spew v1.1.1
+go: downloading github.com/pmezard/go-difflib v1.0.0
+# github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints [setup failed]
+C:\Users\子羽\.codex\artifacts\mx-cpamp-toolchains\gomodcache\github.com\stretchr\testify@v1.11.1\assert\assertions.go:20:2: module lookup disabled by GOPROXY=off
+# github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints/urlvalidator
+C:\Users\子羽\.codex\artifacts\mx-cpamp-toolchains\gomodcache\github.com\stretchr\testify@v1.11.1\assert\assertions.go:20:2: module lookup disabled by GOPROXY=off
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints/urlvalidator [setup failed]
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/bpsbinding	0.079s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth	8.745s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor	0.148s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	13.342s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps	7.152s
+FAIL

@@ -12,6 +12,7 @@ import (
 
 	"github.com/MoeForge/moego/ojson"
 	"github.com/google/uuid"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints"
 )
 
 const BPSResponsesURL = "https://bps.openai.com/basispoints/api/responses"
@@ -80,6 +81,34 @@ func ApplyBPSHeaders(req *http.Request, token, accountID string) error {
 
 // ReadBPSEvents requires a real terminal event; an EOF never becomes success.
 func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]byte) error) error {
+	return readBPSEvents(ctx, response, false, consume)
+}
+
+func ReadBPSProtocolEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error) error {
+	upstream := response.Body
+	if !strings.Contains(strings.ToLower(response.Header.Get("Content-Type")), "text/event-stream") {
+		raw, err := io.ReadAll(io.LimitReader(upstream, (16<<20)+1))
+		if err != nil || len(raw) > 16<<20 || !ojson.ValidBytes(raw) {
+			return errors.New("invalid BPS JSON response")
+		}
+		doc := ojson.NewDocString(`{"type":"response.completed"}`)
+		_ = doc.SetRaw("response", string(raw))
+		upstream = io.NopCloser(bytes.NewReader(append(append([]byte("data: "), doc.Bytes()...), []byte("\n\n")...)))
+	}
+	// Nil callbacks ensure one accepted generation never triggers automatic model repair.
+	converted := bridge.StreamWithRepairs(ctx, upstream, nil, nil)
+	defer func() { _ = converted.Close() }()
+	public := &http.Response{Header: http.Header{"Content-Type": []string{"text/event-stream"}}, Body: converted}
+	return readBPSEvents(ctx, public, true, func(event []byte) error {
+		bound, err := bindings.Publish(event)
+		if err != nil {
+			return err
+		}
+		return consume(bound)
+	})
+}
+
+func readBPSEvents(ctx context.Context, response *http.Response, tools bool, consume func([]byte) error) error {
 	const max = 16 << 20
 	terminal := false
 	outputIndices := make(map[int64]int)
@@ -115,10 +144,13 @@ func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]
 		if kind == "response.failed" || kind == "response.incomplete" || kind == "error" {
 			return errors.New("BPS upstream response failed")
 		}
-		if strings.Contains(kind, "function_call") || strings.Contains(kind, "custom_tool") {
+		if !tools && (strings.Contains(kind, "function_call") || strings.Contains(kind, "custom_tool")) {
 			return errors.New("BPS returned an unsupported tool call")
 		}
-		if item := doc.Get("item.type").String(); item != "" && item != "message" && item != "reasoning" {
+		allowedItem := func(kind string) bool {
+			return kind == "message" || kind == "reasoning" || tools && (kind == "function_call" || kind == "custom_tool_call")
+		}
+		if item := doc.Get("item.type").String(); item != "" && !allowedItem(item) {
 			return errors.New("BPS returned an unsupported output item")
 		}
 		if index := doc.Get("output_index"); index.Exists() {
@@ -133,10 +165,10 @@ func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]
 		if source := doc.Get("response.output"); source.IsArray() {
 			output := []any{}
 			for upstreamIndex, item := range source.Array() {
-				if kind := item.Get("type").String(); kind != "message" && kind != "reasoning" {
+				if kind := item.Get("type").String(); !allowedItem(kind) {
 					return errors.New("BPS returned an unsupported output item")
 				}
-				if item.Get("type").String() == "message" {
+				if item.Get("type").String() != "reasoning" {
 					index := publicOutputIndex(int64(upstreamIndex))
 					for len(output) <= index {
 						output = append(output, nil)

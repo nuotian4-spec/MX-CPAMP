@@ -170,6 +170,11 @@ func (m *Manager) Execute(ctx context.Context, providers []string, req cliproxye
 	req, opts = cliproxysession.Enrich(req, opts)
 	ctx = WithCodexClientRequest(ctx, isOpenAIImageExecutionOptions(opts) || IsCodexClientRequest(ctx, opts.Headers))
 	ctx = coreusage.CaptureIdentity(ctx)
+	var errBinding error
+	providers, opts, errBinding = m.bindBPSToolHistory(providers, req, opts)
+	if errBinding != nil {
+		return cliproxyexecutor.Response{}, errBinding
+	}
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return cliproxyexecutor.Response{}, errBoundary
 	}
@@ -240,6 +245,11 @@ func (m *Manager) ExecuteCount(ctx context.Context, providers []string, req clip
 	req, opts = cliproxysession.Enrich(req, opts)
 	ctx = WithCodexClientRequest(ctx, IsCodexClientRequest(ctx, opts.Headers))
 	ctx = coreusage.CaptureIdentity(ctx)
+	var errBinding error
+	providers, opts, errBinding = m.bindBPSToolHistory(providers, req, opts)
+	if errBinding != nil {
+		return cliproxyexecutor.Response{}, errBinding
+	}
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return cliproxyexecutor.Response{}, errBoundary
 	}
@@ -308,6 +318,11 @@ func (m *Manager) ExecuteStream(ctx context.Context, providers []string, req cli
 		if unlockSession := m.lockHomeWebsocketSession(ctx, opts); unlockSession != nil {
 			defer unlockSession()
 		}
+	}
+	var errBinding error
+	providers, opts, errBinding = m.bindBPSToolHistory(providers, req, opts)
+	if errBinding != nil {
+		return nil, errBinding
 	}
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return nil, errBoundary

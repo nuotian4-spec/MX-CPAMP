@@ -54,9 +54,6 @@ func BPSUnsupportedReason(body []byte) string {
 	if background, _ := value["background"].(bool); background {
 		return "background responses are not supported"
 	}
-	if tools, ok := value["tools"].([]any); ok && len(tools) > 0 {
-		return "client tools require the original provider"
-	}
 	for _, key := range []string{"temperature", "top_p", "max_output_tokens", "max_tokens", "max_completion_tokens"} {
 		if v, exists := value[key]; exists && v != nil {
 			return "BPS does not support " + key
@@ -72,27 +69,23 @@ func BPSUnsupportedReason(body []byte) string {
 			if encrypted, _ := item["encrypted_content"].(string); encrypted != "" {
 				return true
 			}
-			if role, _ := item["role"].(string); role == "tool" || role == "function" {
-				return true
-			}
-			if calls, ok := item["tool_calls"].([]any); ok && len(calls) > 0 {
-				return true
-			}
 			if item["function_call"] != nil {
 				return true
 			}
+			// Tool payloads are application data; their nested type fields are not protocol items.
+			if role, _ := item["role"].(string); role == "tool" {
+				return false
+			}
 			if kind, _ := item["type"].(string); kind != "" {
 				switch kind {
-				case "message", "text", "input_text", "output_text", "reasoning":
+				case "function_call", "function_call_output", "custom_tool_call", "custom_tool_call_output":
+					return false
+				case "message", "text", "input_text", "output_text", "reasoning", "function", "input_image", "image_url", "image", "input_file":
 				default:
 					return true
 				}
 			}
-			for _, child := range item {
-				if inspect(child) {
-					return true
-				}
-			}
+			return inspect(item["content"])
 		case []any:
 			for _, child := range item {
 				if inspect(child) {
@@ -104,7 +97,7 @@ func BPSUnsupportedReason(body []byte) string {
 	}
 	for _, key := range []string{"input", "messages"} {
 		if inspect(value[key]) {
-			return "opaque, tool or non-text history requires the original provider and account"
+			return "opaque or unsupported history requires the original provider and account"
 		}
 	}
 	return ""

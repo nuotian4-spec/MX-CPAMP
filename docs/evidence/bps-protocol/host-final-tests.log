@@ -1,0 +1,5 @@
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/bpsbinding	0.080s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth	0.376s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor	0.319s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	0.337s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps	0.250s

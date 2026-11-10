@@ -12,6 +12,7 @@ import (
 
 	"github.com/MoeForge/moego/ojson"
 	bpsauth "github.com/router-for-me/CLIProxyAPI/v8/internal/auth/bps"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
@@ -69,31 +70,59 @@ func (e *BPSExecutor) HttpRequest(ctx context.Context, auth *coreauth.Auth, req 
 	return helps.NewProxyAwareHTTPClient(ctx, e.cfg, auth, 0).Do(req.WithContext(ctx))
 }
 
-func (e *BPSExecutor) build(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options) (*http.Request, []byte, error) {
+type bpsPrepared struct {
+	request  *http.Request
+	body     []byte
+	bridge   *basispoints.Bridge
+	bindings *helps.BPSBindings
+	release  func()
+}
+
+func (e *BPSExecutor) build(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options) (*bpsPrepared, error) {
+	if !e.cfg.IsBPSProtocolEnabled() {
+		return nil, bpsRequestError{message: "BPS protocol is disabled"}
+	}
 	if coreexecutor.DownstreamWebsocket(ctx) || coreexecutor.RequiredUpstreamWebsocket(ctx) {
-		return nil, nil, bpsRequestError{message: "BPS does not support WebSocket"}
+		return nil, bpsRequestError{message: "BPS does not support WebSocket"}
 	}
 	if reason := coreexecutor.BPSUnsupportedReason(req.Payload); reason != "" {
-		return nil, nil, bpsRequestError{message: reason}
+		return nil, bpsRequestError{message: reason}
+	}
+	if !e.cfg.IsBPSImagesEnabled() && helps.BPSContainsImages(req.Payload) {
+		return nil, bpsRequestError{message: "BPS image input is disabled"}
 	}
 	if opts.Alt != "" {
-		return nil, nil, bpsRequestError{message: "BPS does not support this operation"}
+		return nil, bpsRequestError{message: "BPS does not support this operation"}
 	}
 	if opts.SourceFormat != sdktranslator.FormatOpenAI && opts.SourceFormat != sdktranslator.FormatOpenAIResponse && opts.SourceFormat != sdktranslator.FormatCodex {
-		return nil, nil, bpsRequestError{message: "BPS supports OpenAI text requests only"}
+		return nil, bpsRequestError{message: "BPS supports OpenAI Responses and Chat Completions requests only"}
 	}
 	model := thinking.ParseSuffix(req.Model).ModelName
 	body, err := helps.TranslateRequestReturningError(ctx, opts.Headers, e.cfg, opts.SourceFormat, sdktranslator.FormatCodex, model, bytes.Clone(req.Payload), true, false)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	doc := ojson.NewDoc(body)
 	if err = helps.ApplyRequestThinkingDoc(doc, req, opts, opts.SourceFormat.String(), sdktranslator.FormatCodex.String(), e.Identifier()); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	if err = helps.PrepareBPSDoc(doc, model); err != nil {
-		return nil, nil, bpsRequestError{message: err.Error()}
+	bindings := helps.NewBPSBindings(e.cfg, auth, opts)
+	if err = bindings.Restore(doc); err != nil {
+		return nil, coreauth.NewRequestScopedError(err.Error(), 409)
 	}
+	_ = doc.Set("model", model)
+	_ = doc.Set("stream", opts.Stream)
+	wire, bridge, release, err := helps.PrepareBPSImages(ctx, e.cfg, auth, doc.Bytes(), bindings.Scope(opts))
+	if err != nil {
+		return nil, bpsRequestError{message: err.Error()}
+	}
+	prepared := &bpsPrepared{bridge: bridge, bindings: bindings, release: release}
+	defer func() {
+		if prepared.request == nil && release != nil {
+			release()
+		}
+	}()
+	doc = ojson.NewDoc(wire)
 	original := opts.OriginalRequest
 	if len(original) == 0 {
 		original = req.Payload
@@ -103,46 +132,59 @@ func (e *BPSExecutor) build(ctx context.Context, auth *coreauth.Auth, req coreex
 	body = doc.Bytes()
 	// Validation after user rules is read-only; it never restores filtered fields.
 	if reason := coreexecutor.BPSUnsupportedReason(body); reason != "" {
-		return nil, nil, bpsRequestError{message: reason}
+		return nil, bpsRequestError{message: reason}
+	}
+	if !e.cfg.IsBPSImagesEnabled() && helps.BPSContainsImages(body) {
+		return nil, bpsRequestError{message: "BPS image input is disabled"}
 	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, helps.BPSResponsesURL, bytes.NewReader(body))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if err = e.PrepareRequest(httpReq, auth); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return httpReq, body, nil
+	prepared.request, prepared.body = httpReq, body
+	return prepared, nil
 }
 
-func (e *BPSExecutor) send(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options, reporter *helps.UsageReporter) (*http.Response, []byte, error) {
-	httpReq, body, err := e.build(ctx, auth, req, opts)
+func (e *BPSExecutor) send(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options, reporter *helps.UsageReporter) (*http.Response, *bpsPrepared, error) {
+	prepared, err := e.build(ctx, auth, req, opts)
 	if err != nil {
 		return nil, nil, err
 	}
 	client := reporter.TrackHTTPClient(helps.NewProxyAwareHTTPClient(ctx, e.cfg, auth, 0))
-	response, err := client.Do(httpReq)
+	response, err := client.Do(prepared.request)
 	if err != nil {
+		if prepared.release != nil {
+			prepared.release()
+		}
 		return nil, nil, err
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 1<<20))
 		_ = response.Body.Close()
+		if prepared.release != nil {
+			prepared.release()
+		}
 		return nil, nil, statusErr{code: response.StatusCode, msg: fmt.Sprintf("BPS upstream returned HTTP %d", response.StatusCode)}
 	}
-	return response, body, nil
+	return response, prepared, nil
 }
 
 func (e *BPSExecutor) Execute(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options) (result coreexecutor.Response, err error) {
 	reporter := helps.NewExecutorUsageReporter(ctx, e, req.Model, auth)
 	defer reporter.TrackFailure(ctx, &err)
-	response, body, err := e.send(ctx, auth, req, opts, reporter)
+	response, prepared, err := e.send(ctx, auth, req, opts, reporter)
 	if err != nil {
 		return result, err
 	}
 	defer func() { _ = response.Body.Close() }()
+	if prepared.release != nil {
+		defer prepared.release()
+	}
 	var terminal []byte
-	err = helps.ReadBPSEvents(ctx, response, func(event []byte) error {
+	err = helps.ReadBPSProtocolEvents(ctx, response, prepared.bridge, prepared.bindings, func(event []byte) error {
 		if ojson.GetBytes(event, "type").String() == "response.completed" {
 			terminal = bytes.Clone(event)
 		}
@@ -155,7 +197,7 @@ func (e *BPSExecutor) Execute(ctx context.Context, auth *coreauth.Auth, req core
 		reporter.Publish(ctx, detail)
 	}
 	var parameter any
-	payload := sdktranslator.TranslateNonStream(ctx, sdktranslator.FormatCodex, coreexecutor.ResponseFormatOrSource(opts), req.Model, opts.OriginalRequest, body, terminal, &parameter)
+	payload := sdktranslator.TranslateNonStream(ctx, sdktranslator.FormatCodex, coreexecutor.ResponseFormatOrSource(opts), req.Model, opts.OriginalRequest, prepared.body, terminal, &parameter)
 	if len(payload) == 0 {
 		return result, statusErr{code: 502, msg: "BPS response translation failed"}
 	}
@@ -165,7 +207,8 @@ func (e *BPSExecutor) Execute(ctx context.Context, auth *coreauth.Auth, req core
 func (e *BPSExecutor) ExecuteStream(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options) (_ *coreexecutor.StreamResult, err error) {
 	reporter := helps.NewExecutorUsageReporter(ctx, e, req.Model, auth)
 	reporter.SetStream(true)
-	response, body, err := e.send(ctx, auth, req, opts, reporter)
+	opts.Stream = true
+	response, prepared, err := e.send(ctx, auth, req, opts, reporter)
 	if err != nil {
 		reporter.PublishFailure(ctx, err)
 		return nil, err
@@ -174,12 +217,15 @@ func (e *BPSExecutor) ExecuteStream(ctx context.Context, auth *coreauth.Auth, re
 	go func() {
 		defer close(chunks)
 		defer func() { _ = response.Body.Close() }()
+		if prepared.release != nil {
+			defer prepared.release()
+		}
 		var parameter any
 		started := false
 		var lifecycle helps.BPSStreamLifecycle
 		emit := func(event []byte) error {
 			line := append([]byte("data: "), event...)
-			translated := sdktranslator.TranslateStream(ctx, sdktranslator.FormatCodex, coreexecutor.ResponseFormatOrSource(opts), req.Model, opts.OriginalRequest, body, line, &parameter)
+			translated := sdktranslator.TranslateStream(ctx, sdktranslator.FormatCodex, coreexecutor.ResponseFormatOrSource(opts), req.Model, opts.OriginalRequest, prepared.body, line, &parameter)
 			for _, payload := range translated {
 				select {
 				case chunks <- coreexecutor.StreamChunk{Payload: payload}:
@@ -189,7 +235,7 @@ func (e *BPSExecutor) ExecuteStream(ctx context.Context, auth *coreauth.Auth, re
 			}
 			return nil
 		}
-		streamErr := helps.ReadBPSEvents(ctx, response, func(event []byte) error {
+		streamErr := helps.ReadBPSProtocolEvents(ctx, response, prepared.bridge, prepared.bindings, func(event []byte) error {
 			if detail, ok := helps.ParseCodexUsage(event); ok {
 				reporter.Publish(ctx, detail)
 			}

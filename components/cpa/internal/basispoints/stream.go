@@ -98,6 +98,12 @@ func (b *Bridge) transformWithRepairs(ctx context.Context, reader io.Reader, wri
 	emitted := make(map[string]bool)
 	pendingTools := make(map[string]bool)
 	emit := func(kind string, payload object) error {
+		// Buffered terminal tools still need their response identity on the first public event.
+		if payload["response"] == nil && payload["response_id"] == nil && terminalResponse != nil {
+			if id := text(terminalResponse["id"]); id != "" {
+				payload["response_id"] = id
+			}
+		}
 		payload["type"] = kind
 		payload["sequence_number"] = sequence
 		sequence++
