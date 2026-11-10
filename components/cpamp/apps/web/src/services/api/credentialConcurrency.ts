@@ -18,6 +18,7 @@ export type ConcurrencySnapshot =
   | { mode: 'home'; credentials: [] }
   | {
       mode: 'local';
+      connection_ref: string;
       default_limit: number;
       pool_waiting: number;
       credentials: CredentialConcurrency[];
@@ -29,10 +30,15 @@ const config = (scope: ApiClientRequestScope) => ({
 export const credentialConcurrencyApi = {
   list: (scope: ApiClientRequestScope) =>
     apiClient.get<ConcurrencySnapshot>('/credential-concurrency', config(scope)),
-  update: (auth_id: string, concurrency_limit: number | null, scope: ApiClientRequestScope) =>
+  update: (
+    auth_id: string,
+    concurrency_limit: number | null,
+    connection_ref: string,
+    scope: ApiClientRequestScope
+  ) =>
     apiClient.patch<{ status: 'saved' }>(
       '/credential-concurrency',
-      { auth_id, concurrency_limit },
+      { auth_id, concurrency_limit, connection_ref },
       config(scope)
     ),
 };

@@ -1,0 +1,5 @@
+--- FAIL: TestStaleDisplayedConnectionCannotWriteOtherCPA (0.00s)
+    service_test.go:212: 旧快照写入新CPA: status=502 writesA=0 writesB=1
+FAIL
+FAIL	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/credentialconcurrency	0.084s
+FAIL

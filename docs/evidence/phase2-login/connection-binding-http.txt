@@ -1,0 +1,1 @@
+ok  	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/credentialconcurrency	0.084s

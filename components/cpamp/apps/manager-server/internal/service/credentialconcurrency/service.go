@@ -3,11 +3,14 @@ package credentialconcurrency
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/cpaauthfiles"
@@ -18,9 +21,12 @@ type SetupResolver interface {
 	ResolveSetup(context.Context) (store.Setup, bool, error)
 }
 type Service struct {
-	resolver  SetupResolver
-	mutations *cpaauthfiles.MutationCoordinator
-	client    *http.Client
+	resolver        SetupResolver
+	mutations       *cpaauthfiles.MutationCoordinator
+	client          *http.Client
+	connectionMu    sync.Mutex
+	connectionRef   string
+	connectionSetup store.Setup
 }
 type Credential struct {
 	AuthID         string `json:"auth_id"`
@@ -37,14 +43,16 @@ type Credential struct {
 	PinnedWaiting  int    `json:"pinned_waiting"`
 }
 type Snapshot struct {
-	Mode         string       `json:"mode"`
-	DefaultLimit *int         `json:"default_limit,omitempty"`
-	PoolWaiting  *int         `json:"pool_waiting,omitempty"`
-	Credentials  []Credential `json:"credentials"`
+	Mode          string       `json:"mode"`
+	ConnectionRef string       `json:"connection_ref,omitempty"`
+	DefaultLimit  *int         `json:"default_limit,omitempty"`
+	PoolWaiting   *int         `json:"pool_waiting,omitempty"`
+	Credentials   []Credential `json:"credentials"`
 }
 type Input struct {
-	AuthID string          `json:"auth_id"`
-	Limit  json.RawMessage `json:"concurrency_limit"`
+	AuthID        string          `json:"auth_id"`
+	ConnectionRef string          `json:"connection_ref"`
+	Limit         json.RawMessage `json:"concurrency_limit"`
 }
 type Error struct {
 	Status  int
@@ -74,11 +82,47 @@ func (s *Service) List(ctx context.Context) (Snapshot, error) {
 	if err != nil {
 		return Snapshot{}, err
 	}
-	return s.listBound(ctx, setup)
+	result, err := s.listBound(ctx, setup)
+	if err != nil || result.Mode == "home" {
+		return result, err
+	}
+	result.ConnectionRef, err = s.bindConnection(ctx, setup)
+	return result, err
+}
+func sameConnection(a, b store.Setup) bool {
+	return strings.TrimRight(a.CPAUpstreamURL, "/") == strings.TrimRight(b.CPAUpstreamURL, "/") && a.ManagementKey == b.ManagementKey
+}
+func (s *Service) bindConnection(ctx context.Context, shown store.Setup) (string, error) {
+	current, err := s.setup(ctx)
+	if err != nil {
+		return "", err
+	}
+	if !sameConnection(current, shown) {
+		return "", failure(409, "cpa_target_changed", "CPA连接已变更，请刷新凭证列表")
+	}
+	s.connectionMu.Lock()
+	defer s.connectionMu.Unlock()
+	if s.connectionRef == "" || !sameConnection(s.connectionSetup, shown) {
+		var token [16]byte
+		if _, err := rand.Read(token[:]); err != nil {
+			return "", failure(503, "connection_reference_unavailable", "连接引用暂不可用，请刷新凭证列表")
+		}
+		s.connectionRef = hex.EncodeToString(token[:])
+		s.connectionSetup = shown
+	}
+	return s.connectionRef, nil
+}
+func (s *Service) checkConnectionRef(reference string, current store.Setup) error {
+	s.connectionMu.Lock()
+	defer s.connectionMu.Unlock()
+	if reference == "" || reference != s.connectionRef || !sameConnection(s.connectionSetup, current) {
+		return failure(409, "cpa_target_changed", "CPA连接已变更或页面已过期，请刷新凭证列表")
+	}
+	return nil
 }
 func (s *Service) listBound(ctx context.Context, setup store.Setup) (Snapshot, error) {
 	var result Snapshot
-	_, err := s.request(ctx, setup, http.MethodGet, "/credentials/concurrency", "", nil, &result)
+	_, err := s.request(ctx, setup, http.MethodGet, "/credentials/concurrency", "", "", nil, &result)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -112,6 +156,12 @@ func (s *Service) Update(ctx context.Context, input Input) error {
 	if strings.TrimSpace(input.AuthID) == "" {
 		return failure(400, "invalid_auth_id", "请选择凭证")
 	}
+	if len(input.ConnectionRef) != 32 {
+		return failure(400, "connection_reference_required", "请刷新凭证列表后再保存并发设置")
+	}
+	if _, err := hex.DecodeString(input.ConnectionRef); err != nil {
+		return failure(400, "connection_reference_invalid", "连接引用无效，请刷新凭证列表")
+	}
 	release, err := s.mutations.AcquireAll(ctx)
 	if err != nil {
 		return failure(409, "mutation_busy", "凭证正在更新，请稍后刷新")
@@ -119,6 +169,9 @@ func (s *Service) Update(ctx context.Context, input Input) error {
 	defer release()
 	setup, err := s.setup(ctx)
 	if err != nil {
+		return err
+	}
+	if err := s.checkConnectionRef(input.ConnectionRef, setup); err != nil {
 		return err
 	}
 	snapshot, err := s.listBound(ctx, setup)
@@ -144,14 +197,14 @@ func (s *Service) Update(ctx context.Context, input Input) error {
 		return failure(409, "credential_read_only", "该凭证来源仅支持查看并发")
 	}
 	if selected.Source == "file" {
-		_, err = s.request(ctx, setup, http.MethodPatch, "/credentials/fields", "", map[string]any{"name": selected.AuthID, "concurrency_limit": limit}, nil)
+		_, err = s.request(ctx, setup, http.MethodPatch, "/credentials/fields", "", input.ConnectionRef, map[string]any{"name": selected.AuthID, "concurrency_limit": limit}, nil)
 		return err
 	}
 	if selected.Source != "config" || selected.AuthIndex == "" {
 		return failure(409, "credential_read_only", "该凭证来源仅支持查看并发")
 	}
 	var config map[string]any
-	etag, err := s.request(ctx, setup, http.MethodGet, "/config/api-keys", "", nil, &config)
+	etag, err := s.request(ctx, setup, http.MethodGet, "/config/api-keys", "", "", nil, &config)
 	if err != nil {
 		return err
 	}
@@ -184,17 +237,20 @@ func (s *Service) Update(ctx context.Context, input Input) error {
 	} else {
 		matched["concurrency-limit"] = *limit
 	}
-	_, err = s.request(ctx, setup, http.MethodPut, "/config/api-keys", etag, config, nil)
+	_, err = s.request(ctx, setup, http.MethodPut, "/config/api-keys", etag, input.ConnectionRef, config, nil)
 	return err
 }
-func (s *Service) request(ctx context.Context, expected store.Setup, method, path, etag string, input, output any) (string, error) {
+func (s *Service) request(ctx context.Context, expected store.Setup, method, path, etag, reference string, input, output any) (string, error) {
 	if method != http.MethodGet {
 		current, err := s.setup(ctx)
 		if err != nil {
 			return "", err
 		}
-		if strings.TrimRight(current.CPAUpstreamURL, "/") != strings.TrimRight(expected.CPAUpstreamURL, "/") || current.ManagementKey != expected.ManagementKey {
+		if !sameConnection(current, expected) {
 			return "", failure(409, "cpa_target_changed", "CPA连接已变更，请重新选择凭证")
+		}
+		if err := s.checkConnectionRef(reference, current); err != nil {
+			return "", err
 		}
 	}
 	var body io.Reader

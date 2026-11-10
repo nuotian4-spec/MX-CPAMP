@@ -13,11 +13,13 @@ import {
 function CredentialCard({
   credential,
   defaultLimit,
+  connectionRef,
   scope,
   onSaved,
 }: {
   credential: CredentialConcurrency;
   defaultLimit: number;
+  connectionRef: string;
   scope: ApiClientRequestScope;
   onSaved: () => Promise<void>;
 }) {
@@ -37,7 +39,12 @@ function CredentialCard({
     setBusy(true);
     setMessage('');
     try {
-      await credentialConcurrencyApi.update(credential.auth_id, raw ? Number(raw) : null, scope);
+      await credentialConcurrencyApi.update(
+        credential.auth_id,
+        raw ? Number(raw) : null,
+        connectionRef,
+        scope
+      );
       await onSaved();
       setMessage('设置已保存');
     } catch (error) {
@@ -179,9 +186,10 @@ export function CredentialConcurrencyPanel({ scope }: { scope: ApiClientRequestS
           >
             {snapshot.credentials.map((credential) => (
               <CredentialCard
-                key={credential.auth_id}
+                key={`${snapshot.connection_ref}:${credential.auth_id}`}
                 credential={credential}
                 defaultLimit={snapshot.default_limit}
+                connectionRef={snapshot.connection_ref}
                 scope={scope}
                 onSaved={load}
               />

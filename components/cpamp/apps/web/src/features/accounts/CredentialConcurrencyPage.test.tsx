@@ -19,7 +19,13 @@ const credential = {
   active: 3,
   pinned_waiting: 2,
 };
-const snapshot = { mode: 'local', default_limit: 20, pool_waiting: 7, credentials: [credential] };
+const snapshot = {
+  mode: 'local',
+  connection_ref: 'a'.repeat(32),
+  default_limit: 20,
+  pool_waiting: 7,
+  credentials: [credential],
+};
 describe('凭证并发页面', () => {
   let renderer: ReactTestRenderer;
   beforeEach(() => {
@@ -57,14 +63,19 @@ describe('凭证并发页面', () => {
     await act(async () => {
       await renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
     });
-    expect(mocks.update).toHaveBeenLastCalledWith('codex.json', 8, scope);
+    expect(mocks.update).toHaveBeenLastCalledWith('codex.json', 8, snapshot.connection_ref, scope);
     await act(async () => {
       renderer.root.findByType('input').props.onChange({ target: { value: '' } });
     });
     await act(async () => {
       await renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
     });
-    expect(mocks.update).toHaveBeenLastCalledWith('codex.json', null, scope);
+    expect(mocks.update).toHaveBeenLastCalledWith(
+      'codex.json',
+      null,
+      snapshot.connection_ref,
+      scope
+    );
   });
   it('拒绝小数和零，配置冲突如实显示', async () => {
     await render();
@@ -83,6 +94,21 @@ describe('凭证并发页面', () => {
       await renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
     });
     expect(JSON.stringify(renderer.toJSON())).toContain('配置已被其他操作更新');
+  });
+  it('轮询切换实例后重建同名凭证表单，提交绑定新快照引用', async () => {
+    await render();
+    await act(async () => {
+      renderer.root.findByType('input').props.onChange({ target: { value: '8' } });
+    });
+    mocks.list.mockResolvedValue({ ...snapshot, connection_ref: 'b'.repeat(32) });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5100);
+    });
+    expect(renderer.root.findByType('input').props.value).toBe('');
+    await act(async () => {
+      await renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
+    });
+    expect(mocks.update).toHaveBeenLastCalledWith('codex.json', null, 'b'.repeat(32), scope);
   });
   it('Home不显示本地计数或编辑；运行时和keyless只读', async () => {
     mocks.list.mockResolvedValue({ mode: 'home', credentials: [] });
