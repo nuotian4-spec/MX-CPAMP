@@ -8,6 +8,7 @@ import (
 	accountactioncontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/accountaction"
 	apikeyaliascontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/apikeyalias"
 	automationcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/automation"
+	bpssettingscontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/bpssettings"
 	codexinspectioncontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/codexinspection"
 	concurrencycontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/credentialconcurrency"
 	dashboardcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/dashboard"
@@ -48,7 +49,10 @@ func New(appCtx *app.Context) http.Handler {
 	panelHandler := &panelcontroller.Handler{App: appCtx}
 
 	mux := http.NewServeMux()
-	concurrencyHandler := &concurrencycontroller.Handler{Service: concurrencysvc.New(appCtx.ManagerConfigService, appCtx.AuthFileMutationCoordinator), Auth: appCtx.AdminAuthService}
+	connectionService := concurrencysvc.New(appCtx.ManagerConfigService, appCtx.AuthFileMutationCoordinator)
+	concurrencyHandler := &concurrencycontroller.Handler{Service: connectionService, Auth: appCtx.AdminAuthService}
+	bpsSettingsHandler := &bpssettingscontroller.Handler{Service: connectionService, Auth: appCtx.AdminAuthService}
+	mux.HandleFunc("/api/bps/settings", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.Handle))
 	mux.HandleFunc("/api/credential-concurrency", middleware.WithCORS(appCtx.Config, concurrencyHandler.Handle))
 	loginHandler := &logincontroller.Handler{Service: appCtx.OAuthLoginService, Auth: appCtx.AdminAuthService}
 	mux.HandleFunc("/api/oauth-login/", middleware.WithCORS(appCtx.Config, loginHandler.Handle))

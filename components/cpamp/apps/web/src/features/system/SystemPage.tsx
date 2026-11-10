@@ -39,6 +39,7 @@ import iconDeepseek from '@/assets/icons/deepseek.svg';
 import iconMinimax from '@/assets/icons/minimax.svg';
 import iconMeta from '@/assets/icons/meta.svg';
 import { DatabaseStatusCard } from './components/DatabaseStatusCard';
+import { BPSSettingsCard } from './components/BPSSettingsCard';
 import { useManagerUpdates } from './ManagerUpdates';
 import styles from './SystemPage.module.scss';
 
@@ -431,6 +432,7 @@ function SystemPageContent() {
           )}
         </Card>
 
+        {featureAvailability.managerServiceAvailable && <BPSSettingsCard />}
         <Card title={t('system_info.clear_login_title')}>
           <p className={styles.sectionDescription}>{t('system_info.clear_login_desc')}</p>
           <div className={styles.clearLoginActions}>
