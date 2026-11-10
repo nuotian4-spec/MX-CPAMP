@@ -295,6 +295,8 @@ func (s *Service) registerExecutorForAuth(a *coreauth.Auth, forceReplace bool) {
 		return
 	}
 	switch strings.ToLower(a.Provider) {
+	case "bps":
+		s.coreManager.RegisterExecutor(executor.NewBPSExecutor(cfg))
 	case constant.Gemini:
 		s.coreManager.RegisterExecutor(executor.NewGeminiExecutor(cfg))
 	case constant.GeminiInteractions:

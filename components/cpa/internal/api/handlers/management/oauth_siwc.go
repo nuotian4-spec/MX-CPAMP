@@ -343,6 +343,10 @@ func (h *Handler) handleOAuthCallbackV8(c *gin.Context, req siwcCallbackRequest)
 		}
 	}
 	session, ok := oauthSessions.Get(state)
+	if ok && session.BPS != nil {
+		h.handleBPSOAuthCallback(c, req, state, session)
+		return
+	}
 	if !ok || session.SIWC == nil {
 		h.handleOAuthCallback(c, req.oauthCallbackRequest)
 		return

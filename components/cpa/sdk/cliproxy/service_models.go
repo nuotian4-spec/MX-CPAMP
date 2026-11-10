@@ -183,6 +183,18 @@ func (s *Service) registerModelsForAuthWithConfigAndCache(ctx context.Context, c
 			models = registry.GetCodexProModels()
 		}
 		models = applyExcludedModels(models, excluded)
+	case "bps":
+		if cfg != nil {
+			seen := make(map[string]bool)
+			for _, configured := range cfg.BPS.Models {
+				id := strings.TrimSpace(configured)
+				if id != "" && !seen[id] {
+					seen[id] = true
+					models = append(models, &ModelInfo{ID: id, Object: "model", OwnedBy: "bps", Type: "bps", DisplayName: id})
+				}
+			}
+		}
+		models = applyExcludedModels(models, excluded)
 	case "kimi", "kimi-ai", "kimi.ai", "kimi.com":
 		models = registry.GetKimiModels()
 		models = applyExcludedModels(models, excluded)

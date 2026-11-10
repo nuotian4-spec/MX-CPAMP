@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+
 	"encoding/json"
 	"fmt"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/auth/bps"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -116,6 +118,15 @@ func (s *FileTokenStore) Save(ctx context.Context, auth *cliproxyauth.Auth) (str
 		}
 	} else {
 		switch {
+		case strings.EqualFold(strings.TrimSpace(auth.Provider), "bps"):
+			if auth.Metadata == nil {
+				return "", fmt.Errorf("BPS credential metadata is missing")
+			}
+			auth.Metadata["disabled"] = auth.Disabled
+			storage := &bps.TokenStorage{Metadata: auth.Metadata}
+			if err = storage.SaveTokenToFile(path); err != nil {
+				return "", err
+			}
 		case auth.Storage != nil:
 			if auth.Metadata == nil {
 				auth.Metadata = make(map[string]any)

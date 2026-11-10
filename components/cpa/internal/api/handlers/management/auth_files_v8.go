@@ -407,6 +407,8 @@ func (h *Handler) StartOAuthV8(c *gin.Context) {
 		h.RequestAnthropicToken(c)
 	case "codex":
 		h.RequestCodexToken(c)
+	case "bps":
+		h.requestBPSToken(c)
 	case "antigravity":
 		h.RequestAntigravityToken(c)
 	case "kimi":
@@ -534,6 +536,8 @@ func (h *Handler) ImportOAuthV8(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "provider is required"})
 	case "vertex":
 		h.ImportVertexCredential(c)
+	case "codex", "bps":
+		h.importOpenAIOAuthV8(c, strings.ToLower(strings.TrimSpace(c.Query("provider"))))
 	default:
 		c.JSON(http.StatusNotFound, gin.H{"error": "provider_not_found"})
 	}

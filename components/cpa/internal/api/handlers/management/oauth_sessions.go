@@ -56,6 +56,7 @@ type oauthSession struct {
 	ProxyURL        string
 	Metadata        map[string]any
 	SIWC            *siwcBindSession
+	BPS             *bpsOAuthSession
 	Target          *oauthRecoveryTarget
 	AuthID          string
 	SavedGrantHash  string
@@ -102,6 +103,9 @@ func (s *oauthSessionStore) purgeExpiredLocked(now time.Time) {
 		if (session.Completed || (!session.Committing && !session.SIWCCommitting)) && !session.ExpiresAt.IsZero() && now.After(session.ExpiresAt) {
 			if session.SIWC != nil {
 				session.SIWC.cancel()
+			}
+			if session.BPS != nil {
+				session.BPS.cancel()
 			}
 			delete(s.sessions, state)
 		}
@@ -464,6 +468,9 @@ func (s *oauthSessionStore) Cancel(state string) bool {
 		session.SIWC.cancel()
 		session.SIWC.pkce = nil
 	}
+	if session.BPS != nil {
+		session.BPS.cancel()
+	}
 	delete(s.sessions, state)
 	return true
 }
@@ -648,6 +655,8 @@ func NormalizeOAuthProvider(provider string) (string, error) {
 		return "anthropic", nil
 	case "codex", "openai":
 		return "codex", nil
+	case "bps":
+		return "bps", nil
 	case "antigravity", "anti-gravity":
 		return "antigravity", nil
 	case "xai", "x-ai", "x.ai", "grok":

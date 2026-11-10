@@ -169,7 +169,10 @@ func (m *Manager) Execute(ctx context.Context, providers []string, req cliproxye
 	req, opts = cliproxysession.Enrich(req, opts)
 	ctx = WithCodexClientRequest(ctx, isOpenAIImageExecutionOptions(opts) || IsCodexClientRequest(ctx, opts.Headers))
 	ctx = coreusage.CaptureIdentity(ctx)
-	normalized := m.normalizeProviders(providers)
+	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
+		return cliproxyexecutor.Response{}, errBoundary
+	}
+	normalized := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
 	if len(normalized) == 0 {
 		return cliproxyexecutor.Response{}, &Error{Code: "provider_not_found", Message: "no provider supplied"}
 	}
@@ -232,7 +235,10 @@ func (m *Manager) ExecuteCount(ctx context.Context, providers []string, req clip
 	req, opts = cliproxysession.Enrich(req, opts)
 	ctx = WithCodexClientRequest(ctx, IsCodexClientRequest(ctx, opts.Headers))
 	ctx = coreusage.CaptureIdentity(ctx)
-	normalized := m.normalizeProviders(providers)
+	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
+		return cliproxyexecutor.Response{}, errBoundary
+	}
+	normalized := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
 	if len(normalized) == 0 {
 		return cliproxyexecutor.Response{}, &Error{Code: "provider_not_found", Message: "no provider supplied"}
 	}
@@ -294,7 +300,10 @@ func (m *Manager) ExecuteStream(ctx context.Context, providers []string, req cli
 			defer unlockSession()
 		}
 	}
-	normalized := m.normalizeProviders(providers)
+	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
+		return nil, errBoundary
+	}
+	normalized := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
 	if len(normalized) == 0 {
 		return nil, &Error{Code: "provider_not_found", Message: "no provider supplied"}
 	}

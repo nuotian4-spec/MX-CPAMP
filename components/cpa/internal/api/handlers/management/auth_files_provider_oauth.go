@@ -1313,6 +1313,12 @@ func (h *Handler) CancelAuthSession(c *gin.Context) {
 		return
 	}
 	cancelled := CancelOAuthSession(state)
+	if !cancelled {
+		if session, ok := oauthSessions.Get(state); ok && session.BPS != nil && session.Committing {
+			c.JSON(http.StatusConflict, gin.H{"status": "error", "error": "oauth_commit_in_progress"})
+			return
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "cancelled": cancelled})
 }
 

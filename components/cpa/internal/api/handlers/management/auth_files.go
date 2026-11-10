@@ -792,6 +792,13 @@ func (h *Handler) buildAuthFileEntryLocked(auth *coreauth.Auth, quota authFileQu
 		entry["request_retry"] = requestRetry
 	}
 	if quota.v8 {
+		if auth.Provider == "codex" || auth.Provider == "bps" {
+			for _, key := range []string{"login_method", "profile"} {
+				if value, ok := auth.Metadata[key].(string); ok && value != "" {
+					entry[key] = value
+				}
+			}
+		}
 		// OAuth login entry the credential was signed in through; multi-entry plugins store it
 		// next to the provider, and the deprecated v0 route keeps its frozen response shape.
 		if oauthProvider := authOAuthProvider(auth); oauthProvider != "" {

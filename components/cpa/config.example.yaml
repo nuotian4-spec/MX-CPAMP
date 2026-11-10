@@ -1146,6 +1146,10 @@ oauth:
   # Provider options below apply to OAuth/file-backed credentials.
   # API-key credentials use their own group/key options.
   providers:
+    # Explicit BPS catalog. Empty means no BPS models are advertised.
+    bps:
+      models: []
+
     aistudio:
       # When true, enable authentication for the WebSocket API (/v1/ws).
       ws-auth: true

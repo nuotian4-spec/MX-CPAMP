@@ -182,7 +182,7 @@ func responsesWebsocketProviderSetForModel(resolvedModelName string) (map[string
 	providerSet := make(map[string]struct{}, len(providers))
 	for _, provider := range providers {
 		providerKey := strings.TrimSpace(strings.ToLower(provider))
-		if providerKey == "" {
+		if providerKey == "" || providerKey == "bps" {
 			continue
 		}
 		providerSet[providerKey] = struct{}{}
