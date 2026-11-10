@@ -44,10 +44,10 @@ Bash 语法、Linux 实际确认/失败处理、真实 Compose 合并与旧卷�
 
 候选通过 GitHub prerelease 的 Docker 镜像归档分发，不重新构建产品。版本 `mx-cpamp-20261110-rc1`，归档 `mx-cpamp-images-linux-amd64.tar.gz`，配套 manifest 中的摘要由准备脚本实际消费。
 
-仅本次切换备份 Manager 数据与 CPA 凭据/KV，以及恢复所需配置和密钥；保存于服务器 root 私有目录，不上传仓库。无新增 SQL/schema 迁移。应用运行及后续账号登录会写现有数据目录；生产切换和真实业务验收尚未执行。
+仅本次切换备份 Manager 数据与 CPA 凭据/KV，以及恢复所需配置和密钥；保存于服务器 root 私有目录，不上传仓库。无新增 SQL/schema 迁移。生产切换脚本已完成；应用运行及后续账号登录会写现有数据目录，真实业务仍待验收。
 
 P8 部署材料提交 `e71421cb6c6111360095bc6e91f3258b3ac0cd26` 已整合为 `0f50941`；独立审查无剩余 P1/P2。Linux 部署专项退出 0，P9 核对整合后三脚本与审阅字节相同、产品输入不变。候选版已公开发布，远端 tag 与固定交付提交同为 `3baeb518da2dbbff14befe386701a9d2815c9a9c`；公开 raw 脚本及 manifest 下载核对通过。
 
-用户已回传固定提交 `3baeb518da2dbbff14befe386701a9d2815c9a9c` 的生产 prepare 成功回执：依次完成 prepare_bundle、prepare_load、prepare_site、publishing_prepared、prepared，末行为 `prepared=/opt/cpa-stack/.mx-upgrade-20261110-rc1 maintenance_started=no`。准备完成，尚未停服、备份或切换。
+用户已回传固定提交 `3baeb518da2dbbff14befe386701a9d2815c9a9c` 的生产 prepare 成功回执，并在 TTY 输入 DEPLOY 完成 apply：漂移检查、停 CPA/Manager、备份、启动候选、内部鉴权检查，最终 `stage=complete`、`release_complete`。备份位置 `/opt/cpa-stack/.mx-upgrade-20261110-rc1/backup`。详见 [生产回执](../evidence/deployment/server-release.zh-CN.md)。
 
-当前责任人：P9 核 prepared 回执并交付 TTY apply 命令；下一责任人：用户执行 apply、输入 DEPLOY 并回传阶段结果，P9 核证上线与备份结果。
+当前责任人：P9 核生产完成回执并记录结果；下一责任人：用户补实际运行镜像与备份元数据、原管理面板页面验收，P9 接续核证。真实登录、刷新和模型业务待验收。

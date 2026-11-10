@@ -1,14 +1,14 @@
 # 四入口与 BPS 本地候选
 
-日期：2026-11-10。范围：本地二改、验证与仓库交付。状态：本地候选通过，真实业务与生产验收待安排。
+日期：2026-11-10。范围：二改、验证、仓库交付与生产切换。状态：生产发布脚本完成，内部鉴权检查通过；页面与真实业务待验收。
 
 ## 仓库交付状态
 
 开发分支 `codex/openai-bps-login` 已推送，已创建 [草稿 PR #1](https://github.com/nuotian4-spec/MX-CPAMP/pull/1)。首批交付提交为 `3bc483f1a9e4319c9568dc216d7b68de6c8a1345`；后续文档与只读预检材料不改变下列产品与镜像输入。
 
-CPA 上游自带的两项 Google OAuth 公开客户端常量，按用户授权完成本次推送放行，保留原有源码与 Google 登录行为。已通过 GitHub API 核实仓库 `secret_scanning`、`secret_scanning_push_protection` 均为 `enabled`。三镜像归档已作为 [mx-cpamp-20261110-rc1](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261110-rc1) 分发；生产服务尚未切换，真实业务验收完成前保持 PR 草稿。
+CPA 上游自带的两项 Google OAuth 公开客户端常量，按用户授权完成本次推送放行，保留原有源码与 Google 登录行为。已通过 GitHub API 核实仓库 `secret_scanning`、`secret_scanning_push_protection` 均为 `enabled`。三镜像归档已作为 [mx-cpamp-20261110-rc1](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261110-rc1) 分发；用户已完成生产切换脚本，真实业务验收完成前保持 PR 草稿。
 
-用户已回传 [服务器只读预检](deployment-preflight.zh-CN.md)，确认既有 cpa-stack、完整镜像和数据挂载。匹配现场的 [准备与切换材料](deployment-release.zh-CN.md) 已通过 Linux 专项及 [独立审查](evidence/deployment-review.zh-CN.md)。当前等待用户执行准备阶段，回传后再进入一次性备份与受控切换。
+用户已回传 [服务器只读预检](deployment-preflight.zh-CN.md)，并按已审 [准备与切换材料](deployment-release.zh-CN.md) 完成 prepare、TTY DEPLOY、一次性备份和受控切换，最终 `release_complete`。见 [生产回执](evidence/deployment/server-release.zh-CN.md)。当前待补运行镜像身份、备份元数据和页面验收。
 
 ## 实现
 
@@ -61,7 +61,7 @@ docker build -t mx-oauth-login:local --build-arg "SOURCE_COMMIT=$sourceCommit" -
 
 ## 数据与业务验收
 
-本次没有 SQL schema/migration 或线上数据库动作。测试假账号仅写入隔离临时卷；未来真实登录会新增或更新 CPA 凭据文件。现有域名、Base URL、API Key、数据目录与定时任务均未在服务器修改。
+本次无新增 SQL schema/migration。用户已完成生产切换脚本与一次性备份，服务复用既有 Manager 数据库及 CPA 凭据目录；现有域名、Base URL、API Key 和定时任务保留。真实账号登录尚未验收，后续登录会新增或更新 CPA 凭据文件。
 
 已知限制：
 
@@ -69,4 +69,4 @@ docker build -t mx-oauth-login:local --build-arg "SOURCE_COMMIT=$sourceCommit" -
 - BPS 模型清单默认空；只填写已确认可用的模型，不以历史默认列表代替当前能力。
 - 首期 BPS 不接原生 WebSocket、工具、媒体、opaque/compaction、background、服务端 `previous_response_id` 或 token counting。
 - 自动续期由 CPA 执行；刷新失效后人工补登录，不保存密码/TOTP 作无人值守重登。
-- 候选镜像已发布；生产准备、切换与本次必要备份尚未执行。分发身份见 [归档核证](evidence/deployment/archive-verification.zh-CN.md)。
+- 候选镜像已发布；生产准备、切换与本次必要备份已收到完成回执。待补运行身份和页面验收，分发身份见 [归档核证](evidence/deployment/archive-verification.zh-CN.md)。
