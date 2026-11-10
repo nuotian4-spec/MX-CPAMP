@@ -1,0 +1,9 @@
+{
+  "tool_revision": "02a3f24d98337956edef32aa1cef42b9c2bdb1bb",
+  "product_revision": "95dd9ca2c16d5469c43ce7c910f38ff271af45e3",
+  "command": "node docs/evidence/phase2-integration/run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:phase2-local-20261111 --worker-image mx-oauth-login:phase2-local-20261111 --source-revision 95dd9ca2c16d5469c43ce7c910f38ff271af45e3",
+  "started_at": "2026-11-10T17:53:31.7015229Z",
+  "finished_at": "2026-11-10T17:53:37.9445105Z",
+  "exit_code": 1,
+  "receipt": "final-candidate-20261111.jsonl"
+}
