@@ -49,6 +49,7 @@ export function BatchPasswordLogin({
     setError('');
     if (input.current) input.current.value = '';
     const apply = (next: LoginBatch) => {
+      current.current = next;
       setBatch(next);
       for (const row of next.items) {
         if (row.status === 'succeeded' && row.auth_id && !published.current.has(row.id)) {
@@ -89,6 +90,14 @@ export function BatchPasswordLogin({
         polling = false;
       }
     };
+    void (async () => {
+      try {
+        const latest = await loginBatchesApi.latest(profile, scope);
+        if (!disposed && !current.current && latest) apply(latest);
+      } catch {
+        if (!disposed && !current.current) setError('最近批次摘要暂不可读，请稍后刷新。');
+      }
+    })();
     void poll();
     const timer = window.setInterval(() => {
       void poll();

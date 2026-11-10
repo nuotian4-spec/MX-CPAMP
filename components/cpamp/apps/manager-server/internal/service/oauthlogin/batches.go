@@ -175,6 +175,28 @@ func (s *Service) ActiveBatch() (*Batch, error) {
 	out := s.batchViewLocked(b)
 	return &out, nil
 }
+func (s *Service) LatestBatch(profile string) (*Batch, error) {
+	if profile != "codex" && profile != "bps" {
+		return nil, ErrInput
+	}
+	setup, ok, err := s.resolver.ResolveSetup(context.Background())
+	if err != nil || !ok {
+		return nil, ErrUnavailable
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var latest *batchState
+	for _, batch := range s.batches {
+		if batch.Profile == profile && sameSetup(batch.setup, setup) && (latest == nil || batch.CreatedAt.After(latest.CreatedAt)) {
+			latest = batch
+		}
+	}
+	if latest == nil {
+		return nil, nil
+	}
+	out := s.batchViewLocked(latest)
+	return &out, nil
+}
 func (s *Service) batchViewLocked(b *batchState) Batch {
 	out := batchSnapshot(b)
 	for i := range out.Items {

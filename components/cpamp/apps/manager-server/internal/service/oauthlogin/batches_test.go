@@ -265,3 +265,46 @@ func TestBatchCancellationWaitsForImportResult(t *testing.T) {
 		t.Fatalf("导入结果被取消覆盖: %+v", b)
 	}
 }
+
+func TestLatestBatchRetainsTerminalAndBindsConnectionProfile(t *testing.T) {
+	f := newBatchFixture(t)
+	b, err := f.service.CreateBatch(batchInput("one@example.invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitBatch(t, f.service, b.ID, func(b Batch) bool { return !batchActive(b.Status) })
+	active, err := f.service.ActiveBatch()
+	if err != nil || active != nil {
+		t.Fatal("活动接口混入已完成批次")
+	}
+	latest, err := f.service.LatestBatch("codex")
+	if err != nil || latest == nil || latest.ID != b.ID || latest.Status != "completed" {
+		t.Fatalf("未恢复完成摘要: %+v %v", latest, err)
+	}
+	other, err := f.service.LatestBatch("bps")
+	if err != nil || other != nil {
+		t.Fatal("跨profile返回摘要")
+	}
+	if _, err = f.service.LatestBatch("other"); err != ErrInput {
+		t.Fatal("接受未知profile")
+	}
+	f.resolver.setURL("http://other.invalid")
+	other, err = f.service.LatestBatch("codex")
+	if err != nil || other != nil {
+		t.Fatal("跨CPA返回摘要")
+	}
+}
+func TestLatestBatchExpiresWithSummaryRetention(t *testing.T) {
+	f := newBatchFixture(t)
+	f.service.batchRetention = 20 * time.Millisecond
+	b, err := f.service.CreateBatch(batchInput("one@example.invalid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitBatch(t, f.service, b.ID, func(b Batch) bool { return !batchActive(b.Status) })
+	time.Sleep(35 * time.Millisecond)
+	latest, err := f.service.LatestBatch("codex")
+	if err != nil || latest != nil {
+		t.Fatal("终态保留期后未清理摘要")
+	}
+}

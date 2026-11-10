@@ -94,6 +94,8 @@ export const loginBatchesApi = {
     apiClient.get<LoginBatch>(`/batches/${encodeURIComponent(id)}`, config(scope)),
   active: (scope: ApiClientRequestScope) =>
     apiClient.get<LoginBatch | null>('/batches/active', config(scope)),
+  latest: (profile: LoginProfile, scope: ApiClientRequestScope) =>
+    apiClient.get<LoginBatch | null>('/batches/latest', { ...config(scope), params: { profile } }),
   cancel: (id: string, scope: ApiClientRequestScope) =>
     apiClient.delete<LoginBatch>(`/batches/${encodeURIComponent(id)}`, config(scope)),
 };

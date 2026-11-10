@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   get: vi.fn(),
   active: vi.fn(),
+  latest: vi.fn(),
   cancel: vi.fn(),
   startBPS: vi.fn(),
   status: vi.fn(),
@@ -54,6 +55,7 @@ describe('批量与BPS授权入口', () => {
     vi.stubGlobal('crypto', { randomUUID: () => '11111111-1111-4111-8111-111111111111' });
     vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
     mocks.active.mockResolvedValue(null);
+    mocks.latest.mockResolvedValue(null);
     mocks.cancelOAuth.mockResolvedValue({ status: 'ok' });
     mocks.get.mockResolvedValue(running);
   });
@@ -139,6 +141,32 @@ describe('批量与BPS授权入口', () => {
     expect(mocks.cancel).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
   });
+  it.each(['completed', 'interrupted'] as const)(
+    '离页期间%s后重新进入恢复终态摘要',
+    async (status) => {
+      mocks.active.mockResolvedValue(running);
+      await render();
+      await act(async () => renderer.unmount());
+      mocks.active.mockResolvedValue(null);
+      mocks.latest.mockImplementation(async (profile: string) =>
+        profile === 'codex'
+          ? {
+              ...running,
+              status,
+              items: [{ ...running.items[0], status: 'succeeded', auth_id: 'saved.json' }],
+            }
+          : null
+      );
+      await render();
+      expect(mocks.latest).toHaveBeenCalledWith('codex', scope);
+      expect(JSON.stringify(renderer.toJSON())).toContain(
+        status === 'completed' ? '批次已完成' : '批次已中断'
+      );
+      expect(JSON.stringify(renderer.toJSON())).toContain('saved.json');
+      expect(mocks.create).not.toHaveBeenCalled();
+      expect(mocks.cancel).not.toHaveBeenCalled();
+    }
+  );
   it('创建响应丢失按已知编号查询，不自动重交；404后停止', async () => {
     mocks.create.mockRejectedValue(new Error('lost'));
     mocks.get.mockRejectedValue({ status: 404 });

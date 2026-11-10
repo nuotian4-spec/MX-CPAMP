@@ -34,6 +34,8 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		result, err = h.Service.CreateBatch(input)
 	case path == "batches/active" && r.Method == http.MethodGet:
 		result, err = h.Service.ActiveBatch()
+	case path == "batches/latest" && r.Method == http.MethodGet:
+		result, err = h.Service.LatestBatch(r.URL.Query().Get("profile"))
 	case strings.HasPrefix(path, "batches/") && !strings.Contains(strings.TrimPrefix(path, "batches/"), "/"):
 		id := strings.TrimPrefix(path, "batches/")
 		if r.Method == http.MethodGet {
