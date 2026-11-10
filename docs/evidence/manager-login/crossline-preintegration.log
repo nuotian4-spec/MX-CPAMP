@@ -1,0 +1,9 @@
+mx-cpa:integration sha256:43ccae3ac3033b513131cf64f625cc6b9658c57a67a384c7fccd95d0afff64c3
+mx-cpamp:integration sha256:85a8f76852c08de220ba132490cbdf234b87f1bdeba91a6e0d9bfa905769a25c
+mx-oauth-login:candidate sha256:64168881ce990f58d24736d1f8488549457ed2c775a072c1d0572bd524b7926b
+isolated_fake_configuration=prepared
+{"profile":"codex","status":"succeeded","provider":"codex","refresh_token_preserved":true,"registered_model_count":18,"browser_secrets":false}
+{"profile":"bps","status":"succeeded","provider":"bps","refresh_token_preserved":true,"registered_model_count":1,"browser_secrets":false}
+{"manager_health":true,"cpa_models_health":true,"unauthorized_status":401,"channel_files":2,"shared_model_deduplicated":true,"source_visible":true,"external_network":"none","result":"passed"}
+crossline_exit=0
+isolated_resources_cleanup=attempted

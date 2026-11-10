@@ -41,3 +41,7 @@ Worker 容器测试覆盖两通道假上游认证、TOTP/workspace/PKCE、独立
 本线完成 Manager/Worker 与假 CPA 契约验证。A 线真实 CPA v8 导入/保存/刷新及 BPS Executor 的跨线整合由 P9 接续；本线假 CPA 通过不等于真 CPA 全链通过。BPS 手工官方回调可兑换性、四入口真实登录与刷新、模型/SSE真实业务仍待另行用户授权验收。
 
 下一责任人：P9 独立审查并整合 A/B 两线，复用同输入证据；不据此执行生产切换。
+
+## 后续整改与跨线证据
+
+B独审两项整改产品为 `07572357832b69a30e3ee6c45f9f0cc2c3350e0c`，已补受影响专项与构建。真实CPA85de32f/Manager0757235/Worker42b04ac预集成已通过；A后续SSE整改的最终镜像仍待接续。详情见同目录 `REVIEW-AND-CROSSLINE.zh-CN.md`，不把预集成写成最终A验收。
