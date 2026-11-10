@@ -25,7 +25,8 @@ describe('四入口新增卡片', () => {
   let renderer: ReactTestRenderer;
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.cancelOAuth.mockResolvedValue({status:'ok'});
+    vi.stubGlobal('crypto', { randomUUID: () => '11111111-1111-4111-8111-111111111111' });
+    mocks.cancelOAuth.mockResolvedValue({ status: 'ok' });
     vi.useFakeTimers();
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     vi.stubGlobal('window', { setInterval, clearInterval });
@@ -86,7 +87,13 @@ describe('四入口新增卡片', () => {
         .props.onSubmit({ preventDefault() {}, currentTarget: {} });
     });
     expect(mocks.create).toHaveBeenCalledWith(
-      { profile: 'codex', email: 'fake@example.invalid', password: '', totp_secret: '' },
+      {
+        task_id: '11111111-1111-4111-8111-111111111111',
+        profile: 'codex',
+        email: 'fake@example.invalid',
+        password: '',
+        totp_secret: '',
+      },
       scope
     );
     await act(async () => {
@@ -141,5 +148,37 @@ describe('四入口新增卡片', () => {
     });
     expect(mocks.startBPS).toHaveBeenCalledWith(scope);
     expect(renderer.root.findByType('a').props.rel).toContain('noreferrer');
+  });
+  it('创建已接受但响应丢失时离页仍按预知编号取消', async () => {
+    let accepted = '';
+    mocks.create.mockImplementation(async (input: { task_id: string }) => {
+      accepted = input.task_id;
+      throw new Error('response_lost');
+    });
+    mocks.cancel.mockResolvedValue({ status: 'cancelled' });
+    vi.stubGlobal(
+      'FormData',
+      class {
+        get(name: string) {
+          return name === 'email' ? 'fake@example.invalid' : 'CANARY';
+        }
+        delete() {}
+      }
+    );
+    await act(async () => {
+      renderer = create(<InternalLoginCards scope={scope} />);
+    });
+    await act(async () => {
+      await renderer.root
+        .findAllByType('form')[0]
+        .props.onSubmit({ preventDefault() {}, currentTarget: {} });
+    });
+    expect(JSON.stringify(renderer.toJSON())).toContain('回执未确认');
+    await act(async () => {
+      renderer.unmount();
+    });
+    expect(mocks.cancel).toHaveBeenCalledWith(accepted, scope);
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.publish).not.toHaveBeenCalled();
   });
 });

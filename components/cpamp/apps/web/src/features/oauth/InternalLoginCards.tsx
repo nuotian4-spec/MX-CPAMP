@@ -71,7 +71,11 @@ function PasswordLogin({
     setBusy(true);
     setError('');
     const data = new FormData(event.currentTarget);
+    const knownTask: LoginTask = { id: crypto.randomUUID(), profile, status: 'created' };
+    liveTask.current = knownTask;
+    setTask(knownTask);
     const input = {
+      task_id: knownTask.id,
       profile,
       email: String(data.get('email') || ''),
       password: String(data.get('password') || ''),
@@ -87,7 +91,7 @@ function PasswordLogin({
       }
       setTask(created);
     } catch {
-      setError('登录任务创建失败，检查管理员权限或内部登录服务。');
+      setError('创建回执未确认，正在按任务编号查询；请勿重复提交，可取消当前任务。');
     } finally {
       input.password = '';
       input.totp_secret = '';

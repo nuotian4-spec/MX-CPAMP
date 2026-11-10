@@ -20,6 +20,7 @@ export interface LoginTask {
   auth_id?: string;
 }
 export interface LoginInput {
+  task_id?: string;
   profile: LoginProfile;
   email: string;
   password: string;

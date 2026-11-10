@@ -56,6 +56,24 @@ type workerTask struct {
 	ErrorCode string       `json:"error_code"`
 	Result    *credentials `json:"result"`
 }
+type upstreamError struct {
+	status int
+	code   string
+}
+
+func (e *upstreamError) Error() string { return "上游拒绝登录请求" }
+func callbackDefinitelyRejected(err error) bool {
+	var upstream *upstreamError
+	if !errors.As(err, &upstream) || upstream.status != http.StatusBadRequest {
+		return false
+	}
+	switch upstream.code {
+	case "invalid_callback_url", "invalid_callback_query", "conflicting_callback_parameters", "callback_state_mismatch", "callback_code_required", "oauth_provider_mismatch", "invalid_body", "invalid_state", "unsupported_provider":
+		return true
+	}
+	return false
+}
+
 type Service struct {
 	mu                sync.Mutex
 	tasks             map[string]*Task
@@ -113,6 +131,17 @@ func (s *Service) Create(input Input) (Task, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if input.TaskID != "" {
+		if !validTaskID(input.TaskID) {
+			return Task{}, ErrInput
+		}
+		if existing := s.tasks[input.TaskID]; existing != nil {
+			if existing.Profile != "" && existing.Profile != input.Profile {
+				return Task{}, ErrInput
+			}
+			return snapshot(existing), nil
+		}
+	}
 	for id, t := range s.tasks {
 		if terminal(t.Status) && time.Since(t.CreatedAt) > 30*time.Minute {
 			delete(s.tasks, id)
@@ -131,6 +160,9 @@ func (s *Service) Create(input Input) (Task, error) {
 	key[8] = (key[8] & 0x3f) | 0x80
 	rawID := hex.EncodeToString(key)
 	taskID := rawID[:8] + "-" + rawID[8:12] + "-" + rawID[12:16] + "-" + rawID[16:20] + "-" + rawID[20:]
+	if input.TaskID != "" {
+		taskID = input.TaskID
+	}
 	t := &Task{ID: taskID, Profile: input.Profile, Status: "created", CreatedAt: time.Now().UTC(), cancel: cancel, setup: setup}
 	s.tasks[t.ID] = t
 	go s.run(ctx, t.ID, input)
@@ -150,7 +182,12 @@ func (s *Service) Cancel(id string) (Task, error) {
 	defer s.mu.Unlock()
 	t := s.tasks[id]
 	if t == nil {
-		return Task{}, ErrNotFound
+		if !validTaskID(id) {
+			return Task{}, ErrNotFound
+		}
+		t = &Task{ID: id, Status: "cancelled", CreatedAt: time.Now().UTC()}
+		s.tasks[id] = t
+		return snapshot(t), nil
 	}
 	if t.Status == "importing" {
 		return snapshot(t), ErrImporting
@@ -365,7 +402,21 @@ func (s *Service) request(ctx context.Context, method, target, key string, input
 		return nil
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return ErrUnavailable
+		var payload struct {
+			Code  string `json:"code"`
+			Error string `json:"error"`
+		}
+		_ = json.NewDecoder(io.LimitReader(res.Body, 4096)).Decode(&payload)
+		code := payload.Code
+		if code == "" {
+			code = payload.Error
+		}
+		switch code {
+		case "invalid_callback_url", "invalid_callback_query", "conflicting_callback_parameters", "callback_state_mismatch", "callback_code_required", "oauth_provider_mismatch", "invalid_body", "invalid_state", "unsupported_provider":
+		default:
+			code = "upstream_rejected"
+		}
+		return &upstreamError{status: res.StatusCode, code: code}
 	}
 	if output == nil {
 		return nil
@@ -445,7 +496,7 @@ func (s *Service) OAuth(ctx context.Context, method, action string, input map[st
 		s.mu.Unlock()
 	}
 	if err := s.cpaBound(ctx, expected, method, action, query, payload, &raw); err != nil {
-		if action == "callback" && errors.Is(err, ErrTargetChanged) {
+		if action == "callback" && (errors.Is(err, ErrTargetChanged) || callbackDefinitelyRejected(err)) {
 			s.mu.Lock()
 			if session := s.sessions[state]; session != nil {
 				if session.release != nil {
