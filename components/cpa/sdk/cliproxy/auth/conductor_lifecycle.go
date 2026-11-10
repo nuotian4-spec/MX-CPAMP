@@ -129,6 +129,16 @@ func (m *Manager) Register(ctx context.Context, auth *Auth) (*Auth, error) {
 	m.authEpochs[auth.ID]++
 	auth.RegistrationEpoch = m.authEpochs[auth.ID]
 	if existing, exists := m.auths[auth.ID]; exists && existing != nil {
+		if auth.AuthSourceKind() != AuthSourceConfig && !concurrencyAuthIdentity(existing).conflicts(concurrencyAuthIdentity(auth)) {
+			if _, supplied := auth.Metadata[AttributeConcurrencyLimit]; !supplied {
+				if limit, ok := existing.Metadata[AttributeConcurrencyLimit]; ok {
+					if auth.Metadata == nil {
+						auth.Metadata = make(map[string]any)
+					}
+					auth.Metadata[AttributeConcurrencyLimit] = limit
+				}
+			}
+		}
 		auth.CredentialVersion = max(auth.CredentialVersion, existing.CredentialVersion) + 1
 	} else if auth.CredentialVersion == 0 {
 		auth.CredentialVersion = 1
@@ -810,6 +820,14 @@ func (m *Manager) Load(ctx context.Context) error {
 		cfg = &internalconfig.Config{}
 	}
 	m.rebuildAPIKeyModelAliasLocked(cfg)
+	for id := range previousAuths {
+		m.concurrency.changed(id, m.auths[id])
+	}
+	for id, a := range m.auths {
+		if _, existed := previousAuths[id]; !existed {
+			m.concurrency.changed(id, a)
+		}
+	}
 	for id := range m.authChangeWatchers {
 		m.notifyAuthChangeLocked(id)
 	}

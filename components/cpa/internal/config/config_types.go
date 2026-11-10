@@ -722,6 +722,9 @@ type ClaudeKey struct {
 	// An omitted value defaults to 1; non-positive values exclude this credential; maximum 1,000,000.
 	Weight *int `yaml:"weight,omitempty" json:"weight,omitempty"`
 
+	// ConcurrencyLimit caps simultaneous generations across all models; nil inherits 20.
+	ConcurrencyLimit *int `yaml:"concurrency-limit,omitempty" json:"concurrency-limit,omitempty"`
+
 	// Prefix optionally namespaces models for this credential (e.g., "teamA/claude-sonnet-4").
 	Prefix string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
 
@@ -847,6 +850,9 @@ type CodexKey struct {
 	// An omitted value defaults to 1; non-positive values exclude this credential; maximum 1,000,000.
 	Weight *int `yaml:"weight,omitempty" json:"weight,omitempty"`
 
+	// ConcurrencyLimit caps simultaneous generations across all models; nil inherits 20.
+	ConcurrencyLimit *int `yaml:"concurrency-limit,omitempty" json:"concurrency-limit,omitempty"`
+
 	// Prefix optionally namespaces models for this credential (e.g., "teamA/gpt-5-codex").
 	Prefix string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
 
@@ -969,6 +975,9 @@ type GeminiKey struct {
 	// Weight controls proportional selection under weighted-round-robin.
 	// An omitted value defaults to 1; non-positive values exclude this credential; maximum 1,000,000.
 	Weight *int `yaml:"weight,omitempty" json:"weight,omitempty"`
+
+	// ConcurrencyLimit caps simultaneous generations across all models; nil inherits 20.
+	ConcurrencyLimit *int `yaml:"concurrency-limit,omitempty" json:"concurrency-limit,omitempty"`
 
 	// Prefix optionally namespaces models for this credential (e.g., "teamA/gemini-3-pro-preview").
 	Prefix string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
@@ -1104,6 +1113,9 @@ type OpenAICompatibilityAPIKey struct {
 	// Weight controls proportional selection under weighted-round-robin.
 	// An omitted value defaults to 1; non-positive values exclude this credential; maximum 1,000,000.
 	Weight *int `yaml:"weight,omitempty" json:"weight,omitempty"`
+
+	// ConcurrencyLimit caps simultaneous generations across all models; nil inherits 20.
+	ConcurrencyLimit *int `yaml:"concurrency-limit,omitempty" json:"concurrency-limit,omitempty"`
 
 	// ProxyURL overrides the global proxy setting for this API key if provided.
 	ProxyURL string `yaml:"proxy-url,omitempty" json:"proxy-url,omitempty"`

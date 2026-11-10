@@ -1484,7 +1484,19 @@ func (m *Manager) tryAntigravityCreditsExecute(ctx context.Context, req cliproxy
 	if errCandidates != nil {
 		return cliproxyexecutor.Response{}, false, errCandidates
 	}
-	for _, c := range candidates {
+	var localLease *credentialLease
+	defer func() { localLease.release() }()
+	for len(candidates) > 0 {
+		localLease.release()
+		localLease = nil
+		index, lease, errAdmission := m.acquireCreditsCandidate(ctx, candidates)
+		if errAdmission != nil {
+			return cliproxyexecutor.Response{}, false, errAdmission
+		}
+		localLease = lease
+		c := candidates[index]
+		candidates = append(candidates[:index], candidates[index+1:]...)
+
 		if ctx.Err() != nil {
 			return cliproxyexecutor.Response{}, false, nil
 		}
@@ -1550,7 +1562,19 @@ func (m *Manager) tryAntigravityCreditsExecuteStream(ctx context.Context, req cl
 	if errCandidates != nil {
 		return nil, false, errCandidates
 	}
-	for _, c := range candidates {
+	var localLease *credentialLease
+	defer func() { localLease.release() }()
+	for len(candidates) > 0 {
+		localLease.release()
+		localLease = nil
+		index, lease, errAdmission := m.acquireCreditsCandidate(ctx, candidates)
+		if errAdmission != nil {
+			return nil, false, errAdmission
+		}
+		localLease = lease
+		c := candidates[index]
+		candidates = append(candidates[:index], candidates[index+1:]...)
+
 		if ctx.Err() != nil {
 			return nil, false, nil
 		}
@@ -1578,6 +1602,8 @@ func (m *Manager) tryAntigravityCreditsExecuteStream(ctx context.Context, req cl
 		if errStream != nil {
 			continue
 		}
+		result = holdCredentialStream(ctx, result, localLease)
+		localLease = nil
 		return result, true, nil
 	}
 	return nil, false, nil

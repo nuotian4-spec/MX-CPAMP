@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/MoeForge/moego/ojson"
 	"github.com/gorilla/websocket"
@@ -56,6 +57,14 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 	// Explicit creates have their own request settings. Automatic successors
 	// inherit the preceding response settings, just as they do upstream.
 	var metadataMu sync.Mutex
+	admission := cliproxyexecutor.ClaimGenerationAdmission(ctx)
+	preparedLeases := make(map[*codexWebsocketPrepared]*codexGenerationLease)
+	responseLeases := make(map[string]*codexGenerationLease)
+	finishedResponses := make(map[string]bool)
+	if admission != nil {
+		preparedLeases[initial] = &codexGenerationLease{release: admission.ReleaseInitial}
+	}
+
 	pending := []*codexWebsocketPrepared{initial}
 	// Serialize explicit creates against steering continuations. A response.created
 	// alone does not identify whether upstream created it automatically.
@@ -65,6 +74,24 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 	type codexAcceptedSteer struct{ parent, eventID, successorID string }
 	var unacknowledgedSteers []codexSteerSubmission
 	acceptedSteers := make(map[string]codexAcceptedSteer)
+	// Caller holds metadataMu. Accepted steering transfers the same generation
+	// reservation into its automatic successor; required-input waits release it.
+	releaseIdleGeneration := func(id string) {
+		if !finishedResponses[id] {
+			return
+		}
+		for _, submission := range unacknowledgedSteers {
+			if submission.parent == id {
+				return
+			}
+		}
+		for _, accepted := range acceptedSteers {
+			if accepted.parent == id && accepted.successorID == "" {
+				return
+			}
+		}
+		responseLeases[id].Release()
+	}
 	current := initial
 	responseID := ""
 	responseSettings := make(map[string]*codexWebsocketPrepared)
@@ -117,10 +144,21 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 	inputReady := make(chan struct{})
 	writerDone := make(chan struct{})
 	var pendingCreates [][]byte
+	type admittedCreate struct {
+		prepared   *codexWebsocketPrepared
+		payload    []byte
+		generation *codexGenerationLease
+		err        error
+	}
+	admissionResults := make(chan admittedCreate, 1)
+	var admissionWG sync.WaitGroup
+	pendingAdmission := false
+	var pendingAdmissionPayload []byte
+	var readyCreate *admittedCreate
 	// Only the writer mutates this; the loss path reads it after joining writerDone.
 	// A message the writer took from input but neither sent nor queued was never written.
 	var consumedPayload []byte
-	readyForCreate := func() bool {
+	createOrderingReady := func() bool {
 		metadataMu.Lock()
 		defer metadataMu.Unlock()
 		if len(unacknowledgedSteers) > 0 || automaticActive {
@@ -133,8 +171,20 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 		}
 		return true
 	}
+	readyForCreate := func() bool { return !pendingAdmission && createOrderingReady() }
 	go func() {
 		defer close(writerDone)
+		defer func() {
+			admissionWG.Wait()
+			if readyCreate != nil {
+				readyCreate.generation.Release()
+			}
+			select {
+			case result := <-admissionResults:
+				result.generation.Release()
+			default:
+			}
+		}()
 		fail := func(err error) {
 			select {
 			case writeErrors <- err:
@@ -156,6 +206,42 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 			case <-streamCtx.Done():
 				return false
 			}
+		}
+		reportAdmissionError := func(payload []byte, err error) bool {
+			if streamCtx.Err() != nil {
+				return false
+			}
+			doc := ojson.NewDoc([]byte("{}"))
+			_ = doc.Set("type", "error")
+			_ = doc.Set("status", 429)
+			code := "credential_concurrency_timeout"
+			var authErr *cliproxyauth.Error
+			if errors.As(err, &authErr) {
+				code = authErr.Code
+			}
+			_ = doc.Set("error.code", code)
+			_ = doc.Set("error.message", err.Error())
+			if eventID := ojson.GetBytesNoCopy(payload, "event_id").String(); eventID != "" {
+				_ = doc.Set("event_id", eventID)
+			}
+			select {
+			case out <- cliproxyexecutor.StreamChunk{Payload: doc.Bytes()}:
+				consumedPayload = nil
+				return true
+			case <-streamCtx.Done():
+				return false
+			}
+		}
+		acquireGeneration := func(payload []byte) (*codexGenerationLease, bool) {
+			if admission == nil {
+				return nil, true
+			}
+			release, err := admission.Acquire(streamCtx)
+			if err != nil {
+				reportAdmissionError(payload, err)
+				return nil, false
+			}
+			return &codexGenerationLease{release: release}, true
 		}
 		initialModel := ""
 		if initial != nil {
@@ -300,6 +386,34 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 			}
 			return payload, curHeaders, true, true
 		}
+		writePreparedCreate := func(prepared *codexWebsocketPrepared, payload []byte, generation *codexGenerationLease) bool {
+			metadataMu.Lock()
+			preparedLeases[prepared] = generation
+			if len(pending) >= 16 {
+				metadataMu.Unlock()
+				fail(fmt.Errorf("too many outstanding response.create requests"))
+				return false
+			}
+			pending = append(pending, prepared)
+			consumedPayload = nil // pending owns it now, including a possibly partial write
+			metadataMu.Unlock()
+			if prepared.optimizeMultiAgentV2 || prepared.multiAgentV2Conflict {
+				sess.setMultiAgentV2Optimized(conn, prepared.optimizeMultiAgentV2 && !prepared.multiAgentV2Conflict)
+			}
+			if !cliproxyexecutor.WebsocketAuthEnabled(streamCtx, auth.ID) {
+				fail(fmt.Errorf("websocket credential is no longer enabled"))
+				return false
+			}
+			helps.RecordAPIWebsocketRequest(streamCtx, e.cfg, helps.UpstreamRequestLog{
+				URL: initial.wsURL, Method: "WEBSOCKET", Body: payload, Provider: e.Identifier(), AuthID: auth.ID,
+			})
+			if errWrite := writeCodexWebsocketMessage(sess, conn, payload); errWrite != nil {
+				fail(mapCodexWebsocketWriteError(sess, conn, errWrite))
+				return false
+			}
+			log.Infof("codex websockets: request forwarded session=%s auth=%s url=%s event=%s", sess.sessionID, auth.ID, initial.wsURL, ojson.GetBytesNoCopy(payload, "type").String())
+			return true
+		}
 		processCreatePayload := func(payload []byte) bool {
 			consumedPayload = payload
 			if allowed, keepOpen := authorizePayload(payload, false); !allowed {
@@ -384,30 +498,27 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 				return false
 			}
 			payload = frameCodexWebsocketRequestBody(prepared.clientBody)
-			metadataMu.Lock()
-			if len(pending) >= 16 {
-				metadataMu.Unlock()
-				fail(fmt.Errorf("too many outstanding response.create requests"))
-				return false
+			if admission == nil {
+				return writePreparedCreate(prepared, payload, nil)
 			}
-			pending = append(pending, prepared)
-			consumedPayload = nil // pending owns it now, including a possibly partial write
-			metadataMu.Unlock()
-			if prepared.optimizeMultiAgentV2 || prepared.multiAgentV2Conflict {
-				sess.setMultiAgentV2Optimized(conn, prepared.optimizeMultiAgentV2 && !prepared.multiAgentV2Conflict)
-			}
-			if !cliproxyexecutor.WebsocketAuthEnabled(streamCtx, auth.ID) {
-				fail(fmt.Errorf("websocket credential is no longer enabled"))
-				return false
-			}
-			helps.RecordAPIWebsocketRequest(streamCtx, e.cfg, helps.UpstreamRequestLog{
-				URL: initial.wsURL, Method: "WEBSOCKET", Body: payload, Provider: e.Identifier(), AuthID: auth.ID,
-			})
-			if errWrite := writeCodexWebsocketMessage(sess, conn, payload); errWrite != nil {
-				fail(mapCodexWebsocketWriteError(sess, conn, errWrite))
-				return false
-			}
-			log.Infof("codex websockets: request forwarded session=%s auth=%s url=%s event=%s", sess.sessionID, auth.ID, initial.wsURL, ojson.GetBytesNoCopy(payload, "type").String())
+			pendingAdmission = true
+			pendingAdmissionPayload = prepared.originalPayload
+			consumedPayload = nil
+			admissionWG.Add(1)
+			go func() {
+				defer admissionWG.Done()
+				release, err := admission.Acquire(streamCtx)
+				var generation *codexGenerationLease
+				if release != nil {
+					generation = &codexGenerationLease{release: release}
+				}
+				result := admittedCreate{prepared: prepared, payload: payload, generation: generation, err: err}
+				select {
+				case admissionResults <- result:
+				case <-streamCtx.Done():
+					generation.Release()
+				}
+			}()
 			return true
 		}
 		flushPendingCreates := func() bool {
@@ -427,12 +538,32 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 		case <-inputReady:
 		}
 		for {
+			if readyCreate != nil && createOrderingReady() {
+				result := readyCreate
+				readyCreate = nil
+				pendingAdmission = false
+				pendingAdmissionPayload = nil
+				if !writePreparedCreate(result.prepared, result.payload, result.generation) {
+					return
+				}
+			}
 			if !flushPendingCreates() {
 				return
 			}
 			select {
 			case <-streamCtx.Done():
 				return
+			case result := <-admissionResults:
+				if result.err != nil {
+					pendingAdmission = false
+					pendingAdmissionPayload = nil
+					if !reportAdmissionError(result.payload, result.err) {
+						return
+					}
+					continue
+				}
+				readyCreate = &result
+				continue
 			case <-stateChanged:
 				if !flushPendingCreates() {
 					return
@@ -510,6 +641,24 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 						metadataMu.Unlock()
 					}
 					metadataMu.Lock()
+					generation := responseLeases[parent]
+					if admission != nil && !generation.Active() {
+						metadataMu.Unlock()
+						acquired, admitted := acquireGeneration(payload)
+						if !admitted {
+							if streamCtx.Err() != nil {
+								return
+							}
+							continue
+						}
+						metadataMu.Lock()
+						if responseLeases[parent].Active() {
+							acquired.Release()
+						} else {
+							responseLeases[parent] = acquired
+							finishedResponses[parent] = true
+						}
+					}
 					unacknowledgedSteers = append(unacknowledgedSteers, codexSteerSubmission{parent: parent, eventID: steerEventID})
 					consumedPayload = nil
 					if settings != nil {
@@ -565,6 +714,12 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 			// releasing the execution session. No goroutine outlives its socket.
 			e.invalidateUpstreamConnWithoutDisconnectNotify(sess, conn, "duplex_closed", nil)
 			<-writerDone
+			for _, lease := range preparedLeases {
+				lease.Release()
+			}
+			for _, lease := range responseLeases {
+				lease.Release()
+			}
 			sess.clearActive(conn, readCh)
 			unlock()
 		}()
@@ -599,7 +754,7 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 						cancel()
 						<-writerDone
 						metadataMu.Lock()
-						idle := !firstResponse && !responseActive && len(pending) == 0 && len(unacknowledgedSteers) == 0 && len(acceptedSteers) == 0 && len(pendingCreates) == 0 && len(consumedPayload) == 0
+						idle := !firstResponse && !responseActive && len(pending) == 0 && len(unacknowledgedSteers) == 0 && len(acceptedSteers) == 0 && len(pendingCreates) == 0 && len(consumedPayload) == 0 && len(pendingAdmissionPayload) == 0
 						turnErr := &cliproxyexecutor.UpstreamWebsocketTurnError{Cause: errRead, Idle: idle}
 						if firstResponse || responseActive {
 							turnErr.EventID = strings.Clone(ojson.GetBytesNoCopy(current.originalPayload, "event_id").String())
@@ -633,11 +788,12 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 							abandon(queued, true)
 						}
 						abandon(consumedPayload, true)
+						abandon(pendingAdmissionPayload, true)
 						if !firstResponse && !responseActive && len(turnErr.Abandoned) > 0 {
 							// No running turn owns the loss: the correlated errors report it.
 							turnErr.Idle = true
 						}
-						known := terminalBusinessRejection && !responseActive && len(pending) == 0 && len(unacknowledgedSteers) == 0 && len(acceptedSteers) == 0 && len(pendingCreates) == 0 && len(consumedPayload) == 0
+						known := terminalBusinessRejection && !responseActive && len(pending) == 0 && len(unacknowledgedSteers) == 0 && len(acceptedSteers) == 0 && len(pendingCreates) == 0 && len(consumedPayload) == 0 && len(pendingAdmissionPayload) == 0
 						metadataMu.Unlock()
 						if known {
 							// Already forwarded; EOF only ends the finished operation. Drop the loss marker.
@@ -690,8 +846,19 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 				}
 				waitingParent = ""
 				automaticActive = !firstResponse && len(pending) == 0
+				if automaticActive && admission != nil {
+					generation := responseLeases[parent]
+					if !generation.Active() {
+						metadataMu.Unlock()
+						send(cliproxyexecutor.StreamChunk{Err: &codexDuplexConnectionError{cause: fmt.Errorf("automatic successor has no admitted generation")}})
+						return
+					}
+					responseLeases[createdResponseID] = generation
+				}
 				if len(pending) > 0 {
 					current, pending = pending[0], pending[1:]
+					responseLeases[createdResponseID] = preparedLeases[current]
+					delete(preparedLeases, current)
 				}
 				responseID = createdResponseID
 				// Retain response settings, not request history or authorization headers.
@@ -713,6 +880,8 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 				responseOrder = append(responseOrder, responseID)
 				if len(responseOrder) > 16 {
 					delete(responseSettings, responseOrder[0])
+					delete(finishedResponses, responseOrder[0])
+					delete(responseLeases, responseOrder[0])
 					responseOrder = responseOrder[1:]
 				}
 				releaseSteeringSettings(parent)
@@ -759,10 +928,14 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 						consumeSubmission()
 					}
 					releaseSteeringSettings(parent)
+					releaseIdleGeneration(parent)
 				case "response.steer.pending":
 					// Tool results may already be waiting in the writer. No automatic
 					// successor can start until an explicit continuation supplies them.
 					waitingParent = parent
+					if finishedResponses[parent] {
+						responseLeases[parent].Release()
+					}
 				}
 				metadataMu.Unlock()
 				wakeWriter()
@@ -804,6 +977,8 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 				ambiguous := failedID == "" && ((len(pending) > 0 && responseActive) || len(unacknowledgedSteers) > 0)
 				if len(pending) > 0 && !currentFailure && !ambiguous {
 					eventPrepared, pending = pending[0], pending[1:]
+					preparedLeases[eventPrepared].Release()
+					delete(preparedLeases, eventPrepared)
 					eventReporter = helps.NewExecutorUsageReporter(followupCtx, e, req.Model, auth)
 					eventReporter.SetTranslatedReasoningEffort(eventPrepared.clientBody, eventPrepared.to.String())
 				} else if !ambiguous {
@@ -861,7 +1036,7 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 				if endedID == "" {
 					endedID = ojson.GetBytesNoCopy(payload, "response_id").String()
 				}
-				if endedID == "" && !responseActive {
+				if endedID == "" && (!responseActive || eventPrepared == current) {
 					// An id-less failure that ended the running response.
 					endedID = responseID
 				}
@@ -871,6 +1046,12 @@ func (e *CodexWebsocketsExecutor) streamCodexDuplex(
 					if endedID != "" && accepted.successorID == endedID {
 						removeAcceptedSteer(id)
 					}
+				}
+				finishedResponses[endedID] = true
+				if endedID == waitingParent {
+					responseLeases[endedID].Release()
+				} else {
+					releaseIdleGeneration(endedID)
 				}
 				metadataMu.Unlock()
 			}
@@ -914,4 +1095,17 @@ func isCodexTerminalEventType(eventType string) bool {
 		return true
 	}
 	return false
+}
+
+// A lease may be referenced by both a steering parent and its automatic successor.
+type codexGenerationLease struct {
+	release  func()
+	released atomic.Bool
+}
+
+func (l *codexGenerationLease) Active() bool { return l != nil && !l.released.Load() }
+func (l *codexGenerationLease) Release() {
+	if l != nil && l.released.CompareAndSwap(false, true) && l.release != nil {
+		l.release()
+	}
 }

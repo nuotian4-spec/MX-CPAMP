@@ -94,6 +94,14 @@ func TestCodexDuplexSteeringLifecycle(t *testing.T) {
 			defer server.Close()
 			ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 			defer cancel()
+			var active, acquired atomic.Int32
+			active.Store(1)
+			admission := &core.GenerationAdmission{InitialRelease: func() { active.Add(-1) }, Acquire: func(context.Context) (func(), error) {
+				active.Add(1)
+				acquired.Add(1)
+				return func() { active.Add(-1) }, nil
+			}}
+			ctx = core.WithGenerationAdmission(ctx, admission)
 			input := make(chan core.WebsocketInput, 8)
 			ctx = core.WithWebsocketInput(core.WithDownstreamWebsocket(ctx), input)
 			ctx = coreusage.WithRequestedModelAlias(ctx, t.Name())
@@ -110,6 +118,7 @@ func TestCodexDuplexSteeringLifecycle(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			admission.Transfer()
 			seen := map[string]bool{}
 			for !seen["failed"] {
 				select {
@@ -131,16 +140,25 @@ func TestCodexDuplexSteeringLifecycle(t *testing.T) {
 						}
 						seen["accepted"] = true
 					case event == boundary && id == "r1":
+						if active.Load() != 1 {
+							t.Fatalf("steering boundary lost lease: %d", active.Load())
+						}
 						seen["boundary"] = true
 					case event == "response.created" && id == "r2":
 						input <- core.WebsocketInput{Payload: []byte(`{"type":"response.steer","previous_response_id":"r2","input":"Use tool result"}`)}
 					case event == "response.steer.pending":
+						if active.Load() != 0 {
+							t.Fatalf("tool input wait retained lease: %d", active.Load())
+						}
 						if !bytes.Equal(chunk.Payload, pending) {
 							t.Fatal("pending event changed")
 						}
 						seen["pending"] = true
 						input <- core.WebsocketInput{Payload: []byte(`{"type":"response.create","previous_response_id":"r2","instructions":"New settings","input":[{"type":"function_call_output","call_id":"c1","output":"ok"}]}`)}
 					case event == "response.completed" && id == "r3":
+						if active.Load() != 0 {
+							t.Fatalf("idle socket retained lease: %d", active.Load())
+						}
 						if ojson.GetBytes(chunk.Payload, "response.output.0.content.0.text").String() != "STEER_OK" {
 							t.Fatal("successor output missing or contaminated by preceding response")
 						}
@@ -151,6 +169,9 @@ func TestCodexDuplexSteeringLifecycle(t *testing.T) {
 							t.Fatal("failed input changed")
 						}
 						seen["failed"] = true
+						if active.Load() != 0 {
+							t.Fatalf("failed idle steer retained lease: %d", active.Load())
+						}
 					}
 				case <-ctx.Done():
 					t.Fatal(ctx.Err())
@@ -163,6 +184,9 @@ func TestCodexDuplexSteeringLifecycle(t *testing.T) {
 				t.Fatal("upstream did not close")
 			}
 			for range result.Chunks {
+			}
+			if active.Load() != 0 || acquired.Load() != 2 {
+				t.Fatalf("generation admission active=%d acquired=%d", active.Load(), acquired.Load())
 			}
 			if connections.Load() != 1 {
 				t.Fatalf("connections=%d", connections.Load())

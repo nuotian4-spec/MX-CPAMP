@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/credentialweight"
 	"gopkg.in/yaml.v3"
@@ -70,6 +71,17 @@ func validateWeightMappingNode(mapping *yaml.Node, path string) error {
 		return nil
 	}
 	for index := 0; index+1 < len(mapping.Content); index += 2 {
+		if mapping.Content[index].Value == "concurrency-limit" {
+			value := mapping.Content[index+1]
+			if value.Tag == "!!null" {
+				continue
+			}
+			n, err := strconv.ParseInt(value.Value, 10, 32)
+			if value.Kind != yaml.ScalarNode || value.Tag != "!!int" || err != nil || n < 1 {
+				return fmt.Errorf("%s.concurrency-limit must be an integer between 1 and 2147483647", path)
+			}
+			continue
+		}
 		if mapping.Content[index].Value != "weight" {
 			continue
 		}
@@ -113,6 +125,9 @@ func validateOpenAICompatibilityWeightNodes(sequence *yaml.Node) error {
 func (cfg *Config) ValidateCredentialWeights() error {
 	if cfg == nil {
 		return nil
+	}
+	if err := cfg.ValidateCredentialConcurrency(); err != nil {
+		return err
 	}
 	for index := range cfg.GeminiKey {
 		if errValidate := ValidateCredentialWeight(cfg.GeminiKey[index].Weight); errValidate != nil {

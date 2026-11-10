@@ -307,6 +307,10 @@ func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 		}
 	}
 
+	if _, editing := req[coreauth.AttributeConcurrencyLimit]; editing && h.authManager.HomeEnabled() {
+		c.JSON(http.StatusConflict, gin.H{"error": "Home manages credential concurrency"})
+		return
+	}
 	ctx := c.Request.Context()
 
 	// Find auth by name or ID
@@ -326,6 +330,10 @@ func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 	// Config-sourced credentials are managed through config endpoints, not as auth files.
 	if targetAuth == nil || targetAuth.AuthSourceKind() == coreauth.AuthSourceConfig {
 		c.JSON(http.StatusNotFound, gin.H{"error": "auth file not found"})
+		return
+	}
+	if _, editing := req[coreauth.AttributeConcurrencyLimit]; editing && (targetAuth.AuthSourceKind() == coreauth.AuthSourceMemory || targetAuth.AuthSourceKind() == "") {
+		c.JSON(http.StatusConflict, gin.H{"error": "runtime credential concurrency is read-only"})
 		return
 	}
 	if coreauth.IsPluginVirtualAuth(targetAuth) {
@@ -403,7 +411,20 @@ func applyAuthFileFieldsPatch(targetAuth *coreauth.Auth, req map[string]json.Raw
 			targetAuth.Metadata = make(map[string]any)
 		}
 
-		if fieldPath == coreauth.AttributeWeight {
+		if rootAuthFileField(fieldPath) == coreauth.AttributeConcurrencyLimit {
+			if fieldPath != coreauth.AttributeConcurrencyLimit {
+				return &authFileFieldPatchError{message: "concurrency_limit does not support nested fields"}
+			}
+			if value == nil {
+				delete(targetAuth.Metadata, coreauth.AttributeConcurrencyLimit)
+			} else {
+				limit, errLimit := coreauth.ParseConcurrencyLimit(value)
+				if errLimit != nil {
+					return &authFileFieldPatchError{message: errLimit.Error()}
+				}
+				targetAuth.Metadata[coreauth.AttributeConcurrencyLimit] = limit
+			}
+		} else if fieldPath == coreauth.AttributeWeight {
 			if value == nil {
 				delete(targetAuth.Metadata, coreauth.AttributeWeight)
 			} else {
@@ -1176,4 +1197,13 @@ func adoptLegacyXAIFileName(record, legacy *coreauth.Auth) {
 			delete(record.Attributes, key)
 		}
 	}
+}
+
+// GetCredentialConcurrency returns local admission state without credential material.
+func (h *Handler) GetCredentialConcurrency(c *gin.Context) {
+	if h.authManager == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "core auth manager unavailable"})
+		return
+	}
+	c.JSON(http.StatusOK, h.authManager.CredentialConcurrencySnapshot())
 }

@@ -2,6 +2,7 @@ package management
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -169,6 +170,10 @@ func (h *Handler) ConfigV8(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "read_only_field", "field": field})
 			return
 		}
+	}
+	if h.authManager != nil && h.authManager.HomeEnabled() && !reflect.DeepEqual(configConcurrencyFields(before), configConcurrencyFields(root)) {
+		c.JSON(http.StatusConflict, gin.H{"error": "Home manages credential concurrency"})
+		return
 	}
 	stripAPIKeysAuthIndexesFromRoot(root)
 	config.NormalizeCollectionNodeStyles(root)
@@ -376,4 +381,31 @@ func mergeConfigV8Patch(dst, src *yaml.Node) {
 			dst.Content = append(dst.Content, key, value)
 		}
 	}
+}
+
+// configConcurrencyFields extracts only local policy values for Home ownership checks.
+func configConcurrencyFields(node *yaml.Node) map[string]string {
+	out := make(map[string]string)
+	var walk func(*yaml.Node, string)
+	walk = func(n *yaml.Node, path string) {
+		if n == nil {
+			return
+		}
+		if n.Kind == yaml.MappingNode {
+			for i := 0; i+1 < len(n.Content); i += 2 {
+				k := n.Content[i].Value
+				v := n.Content[i+1]
+				if k == "concurrency-limit" {
+					out[path+"/"+k] = v.Tag + ":" + v.Value
+				}
+				walk(v, path+"/"+k)
+			}
+		} else if n.Kind == yaml.SequenceNode {
+			for i, v := range n.Content {
+				walk(v, fmt.Sprintf("%s/%d", path, i))
+			}
+		}
+	}
+	walk(configV8Node(node, []string{"api-keys"}), "api-keys")
+	return out
 }
