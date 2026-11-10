@@ -27,7 +27,7 @@ upstream:
 
 ## 图片处理
 
-`helps.PrepareBPSImages(ctx,cfg,auth,raw,scope)`在原凭证准入后处理规范化Responses请求，返回供体wire、Bridge和释放函数。完整协议与全部内联图片在上传前校验。普通消息内联图片上传为BPS附件；上传成功严格读取供体`openai_file_id`，回执上限64KiB。工具内联截图经校验后保留在工具结果中，继续由原生图片计划进入协议，保留调用关联、文字和顺序。
+`helps.PrepareBPSImages(ctx,cfg,auth,raw,scope)`在原凭证准入后处理规范化Responses请求，返回供体wire、Bridge和释放函数。完整协议与全部内联图片在上传前校验。普通消息内联图片上传为BPS附件；上传成功严格读取供体`openai_file_id`，回执上限64KiB。附件上传沿用供体60秒时限和固定`Mozilla/5.0` User-Agent；更短父截止时间优先，时限覆盖HTTP请求与响应体读取，结束后释放子context。工具内联截图经校验后保留在工具结果中，继续由原生图片计划进入协议，保留调用关联、文字和顺序。
 
 原生附件缓存只保留附件ID，沿用供体30分钟/512项限制；键作用域包括受信调用者/会话、CPA凭证引用、上游账号及令牌。空会话作用域禁用跨请求复用。同请求重复图片只上传一次。任意图片校验或上传失败时不产生模型wire，不自动重放、不换凭证；多图第二次上传失败也直接收口。
 
@@ -45,12 +45,13 @@ upstream:
 |---|---|---|
 | 开关默认/显式false、独立克隆、HTTPS origin、默认/显式状态隔离 | CPA目录：`go test ./internal/config -run TestBPSProtocol -count=1` | exit0，`7ab7ff3`输入；[配置路径证据](config-path-tests.log) |
 | 落盘与即时快照、并发读取、附件缓存/回执/截图/关图/多图/中转 | CPA目录：`go test ./internal/api/handlers/management ./internal/runtime/executor/helps -run 'TestBPSSettings\|TestBPSImage' -count=1` | exit0，`993eaf8`输入；[图片宿主证据](cpa-host-tests.log) |
+| 附件60秒截止、较短父截止、供体User-Agent、响应头/响应体阶段父取消及同作用域释放 | CPA目录：`go test ./internal/runtime/executor/helps -run 'TestBPSImageUploadContextDeadline\|TestBPSImageUploadParentCancellation' -count=1 -timeout 20s` | exit0；本提交附件上下文实现与专项输入，见[限时上传证据](cpa-upload-context-tests.log) |
 | 真实CPA路由鉴权与只读图片入口 | CPA目录：`go test ./internal/api -run TestBPSSettingsAndImageReadRoutes -count=1` | exit0；[路由证据](cpa-routes-tests.log) |
 | Manager管理员门禁、字段白名单、旧连接引用零写入、HTTPS前置拒绝 | Manager目录：`go test ./internal/service/credentialconcurrency ./internal/http/controller/bpssettings ./internal/http/router -run TestBPSSettings -count=1` | exit0；[Manager证据](manager-tests.log) |
 | 供体图片TTL、容量、读权限、尺寸及工具图片顺序 | A线：`go test ./internal/basispoints ./internal/basispoints/urlvalidator -count=1 -timeout 120s` | 复用A线同核心输入记录；图片项未报失败，整包exit1，见下方已知问题与[核心日志](../bps-protocol/core-tests.log) |
 | 页面保存/HTTPS/切换作用域及API固定入口 | `BPSSettingsCard.test.tsx`、`bpsSettings.test.ts` | 已加入专项；本工作树无既有Node依赖，未执行。最终统一Manager构建含tsc与Vite，由主会话执行 |
 
-路由证据与Manager证据绑定的产品输入在后续仅有测试或注释变化，适用证据复用。图片宿主日志绑定最终相关代码；配置路径专项绑定`7ab7ff3`，该配置之后未变。本地测试全部使用临时目录与合成凭证，未真实登录或调用模型，未推送或部署。
+路由证据与Manager证据绑定的产品输入在后续仅有测试或注释变化，适用证据复用。原图片宿主日志绑定`993eaf8`；附件上下文与User-Agent变化由新增限时专项覆盖，其余宿主输入未变。配置路径专项绑定`7ab7ff3`，该配置之后未变。本地测试全部使用临时目录与合成凭证，未真实登录或调用模型，未推送或部署。
 
 ## 已知问题与发布边界
 

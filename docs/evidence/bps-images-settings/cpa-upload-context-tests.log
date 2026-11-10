@@ -1,0 +1,10 @@
+基线: 1df26ebe7c1438422f800c5bd0e4660ae8ede77b
+代码输入: 本提交的components/cpa/internal/runtime/executor/helps/bps_images.go与bps_images_test.go
+工作目录: D:/MX-CPAMP-worktrees/bps-images-settings/components/cpa
+工具链: C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/gomodcache/golang.org/toolchain@v0.0.1-go1.26.10.windows-amd64/bin/go.exe
+环境: GOTOOLCHAIN=local; GOMODCACHE=C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/gomodcache; GOPROXY=off; GOSUMDB=off
+命令: go test ./internal/runtime/executor/helps -run 'TestBPSImageUploadContextDeadline|TestBPSImageUploadParentCancellation' -count=1 -timeout 20s
+ok  github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps  0.296s
+exit=0
+
+覆盖: 60秒子截止存在; 较短父截止不被延长; User-Agent为Mozilla/5.0; 成功后子context取消; headers/body两个阶段父取消结束上传; body关闭; 同scope后续上传成功; 无60秒等待。

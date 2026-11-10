@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/MoeForge/moego/ojson"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints"
@@ -183,6 +184,8 @@ func PrepareBPSImages(ctx context.Context, cfg *config.Config, auth *coreauth.Au
 }
 
 func uploadBPSImage(ctx context.Context, client *http.Client, token, account string, img basispoints.InlineAttachment) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 	body, contentType, size, err := img.Multipart()
 	if err != nil {
 		return "", err
@@ -196,6 +199,7 @@ func uploadBPSImage(ctx context.Context, client *http.Client, token, account str
 	}
 	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "Mozilla/5.0")
 	req.ContentLength = size
 	// 附件重定向不携带凭证，也不自动重试其他账号。
 	transport := *client

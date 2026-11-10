@@ -12,7 +12,9 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/MoeForge/moego/base64"
 	"github.com/MoeForge/moego/ojson"
@@ -24,6 +26,126 @@ import (
 type bpsImageTransport func(*http.Request) (*http.Response, error)
 
 func (f bpsImageTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+type bpsImageCancelBody struct {
+	ctx    context.Context
+	closed chan struct{}
+}
+
+func (body *bpsImageCancelBody) Read([]byte) (int, error) {
+	<-body.ctx.Done()
+	return 0, body.ctx.Err()
+}
+func (body *bpsImageCancelBody) Close() error { close(body.closed); return nil }
+
+func TestBPSImageUploadContextDeadline(t *testing.T) {
+	for _, shortParent := range []bool{false, true} {
+		t.Run(map[bool]string{false: "60秒子截止", true: "保留较短父截止"}[shortParent], func(t *testing.T) {
+			parent := context.Background()
+			cancel := func() {}
+			if shortParent {
+				parent, cancel = context.WithTimeout(parent, 5*time.Second)
+			}
+			defer cancel()
+			start := time.Now()
+			var uploadedContext context.Context
+			ctx := context.WithValue(parent, "cliproxy.roundtripper", bpsImageTransport(func(r *http.Request) (*http.Response, error) {
+				uploadedContext = r.Context()
+				deadline, present := uploadedContext.Deadline()
+				if !present {
+					t.Fatal("附件上传没有截止时间")
+				}
+				if parentDeadline, ok := parent.Deadline(); ok {
+					if !deadline.Equal(parentDeadline) {
+						t.Fatal("未保留更短父截止时间")
+					}
+				} else if deadline.Before(start.Add(60*time.Second)) || deadline.After(time.Now().Add(60*time.Second)) {
+					t.Fatal("上传时限不是60秒", deadline)
+				}
+				if r.Header.Get("User-Agent") != "Mozilla/5.0" {
+					t.Fatal("附件User-Agent未沿用供体")
+				}
+				return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"openai_file_id":"file-deadline"}`))}, nil
+			}))
+			wire, _, _, err := PrepareBPSImages(ctx, &config.Config{}, bpsTestAuth(), bpsImageBody(t, bpsImagePart(bpsTestImage(t, 20))), "")
+			if err != nil || len(wire) == 0 {
+				t.Fatal(err)
+			}
+			if uploadedContext == nil || uploadedContext.Err() != context.Canceled {
+				t.Fatal("上传完成后未释放子context")
+			}
+		})
+	}
+}
+
+func TestBPSImageUploadParentCancellation(t *testing.T) {
+	for _, stage := range []string{"headers", "body"} {
+		t.Run(stage, func(t *testing.T) {
+			bpsAttachmentIDs = basispoints.AttachmentCache{}
+			parent, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			started := make(chan struct{})
+			closed := make(chan struct{})
+			var calls atomic.Int32
+			transport := bpsImageTransport(func(r *http.Request) (*http.Response, error) {
+				if calls.Add(1) > 1 {
+					return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"openai_file_id":"file-recovered"}`))}, nil
+				}
+				close(started)
+				if stage == "headers" {
+					<-r.Context().Done()
+					return nil, r.Context().Err()
+				}
+				return &http.Response{StatusCode: 200, Header: make(http.Header), Body: &bpsImageCancelBody{ctx: r.Context(), closed: closed}}, nil
+			})
+			ctx := context.WithValue(parent, "cliproxy.roundtripper", transport)
+			raw := bpsImageBody(t, bpsImagePart(bpsTestImage(t, 21)))
+			results := make(chan error, 2)
+			upload := func(requestContext context.Context) {
+				_, _, _, err := PrepareBPSImages(requestContext, &config.Config{}, bpsTestAuth(), raw, "cancel-scope")
+				results <- err
+			}
+			go upload(ctx)
+			select {
+			case <-started:
+			case <-time.After(2 * time.Second):
+				t.Fatal("附件上传未开始")
+			}
+			go upload(ctx)
+			cancel()
+			for range 2 {
+				select {
+				case err := <-results:
+					if err == nil {
+						t.Fatal("父取消后仍成功")
+					}
+				case <-time.After(2 * time.Second):
+					t.Fatal("父取消后上传或同作用域等待未释放")
+				}
+			}
+			if stage == "body" {
+				select {
+				case <-closed:
+				default:
+					t.Fatal("响应体未关闭")
+				}
+			}
+			fresh := context.WithValue(context.Background(), "cliproxy.roundtripper", transport)
+			go upload(fresh)
+			select {
+			case err := <-results:
+				if err != nil {
+					t.Fatal("同作用域取消后未恢复上传", err)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("取消后同作用域flight仍占用")
+			}
+			if calls.Load() != 2 {
+				t.Fatal("取消或重试改变上传次数", calls.Load())
+			}
+		})
+	}
+}
 func bpsTestImage(t *testing.T, red uint8) string {
 	t.Helper()
 	img := image.NewRGBA(image.Rect(0, 0, 2, 3))
