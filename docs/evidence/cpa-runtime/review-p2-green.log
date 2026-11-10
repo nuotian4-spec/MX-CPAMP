@@ -1,0 +1,134 @@
+SOURCE=4bca838c3e65be79dc5743d417571b99f6f5f55e
+PATTERN=^TestBPS|^TestPayloadBarrierCodexImageFilter$|^TestEnsureExecutorsForAuth_CodexDoesNotReplaceInNormalMode$|^TestEnsureExecutorsForAuthWithMode_CodexForceReplace$
+COMMAND=go test ./internal/runtime/executor/helps ./internal/runtime/executor ./sdk/cliproxy -run PATTERN -count=1 -v
+=== RUN   TestBPSPrepareTextAndHeaders
+--- PASS: TestBPSPrepareTextAndHeaders (0.00s)
+=== RUN   TestBPSReadEventsTerminalAndFailures
+=== RUN   TestBPSReadEventsTerminalAndFailures/complete
+=== RUN   TestBPSReadEventsTerminalAndFailures/truncated
+=== RUN   TestBPSReadEventsTerminalAndFailures/failed
+=== RUN   TestBPSReadEventsTerminalAndFailures/tool
+=== RUN   TestBPSReadEventsTerminalAndFailures/done-only
+=== RUN   TestBPSReadEventsTerminalAndFailures/unary
+=== RUN   TestBPSReadEventsTerminalAndFailures/unary-invalid
+--- PASS: TestBPSReadEventsTerminalAndFailures (0.00s)
+    --- PASS: TestBPSReadEventsTerminalAndFailures/complete (0.00s)
+    --- PASS: TestBPSReadEventsTerminalAndFailures/truncated (0.00s)
+    --- PASS: TestBPSReadEventsTerminalAndFailures/failed (0.00s)
+    --- PASS: TestBPSReadEventsTerminalAndFailures/tool (0.00s)
+    --- PASS: TestBPSReadEventsTerminalAndFailures/done-only (0.00s)
+    --- PASS: TestBPSReadEventsTerminalAndFailures/unary (0.00s)
+    --- PASS: TestBPSReadEventsTerminalAndFailures/unary-invalid (0.00s)
+=== RUN   TestBPSReadEventsReindexesVisibleOutput
+--- PASS: TestBPSReadEventsReindexesVisibleOutput (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps	0.225s
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=false
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=true
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=false
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=true
+--- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier (0.00s)
+    --- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=false (0.00s)
+    --- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=true (0.00s)
+    --- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=false (0.00s)
+    --- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=true (0.00s)
+=== RUN   TestBPSExecutorStreamTruncation
+--- PASS: TestBPSExecutorStreamTruncation (0.00s)
+=== RUN   TestBPSExecutorBufferedTerminalProducesChatText
+--- PASS: TestBPSExecutorBufferedTerminalProducesChatText (0.00s)
+=== RUN   TestBPSExecutorResponsesStreamLifecycle
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/terminal-sse
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/unary
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/complete-sse
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/missing-done-sse
+--- PASS: TestBPSExecutorResponsesStreamLifecycle (0.00s)
+    --- PASS: TestBPSExecutorResponsesStreamLifecycle/terminal-sse (0.00s)
+    --- PASS: TestBPSExecutorResponsesStreamLifecycle/unary (0.00s)
+    --- PASS: TestBPSExecutorResponsesStreamLifecycle/complete-sse (0.00s)
+    --- PASS: TestBPSExecutorResponsesStreamLifecycle/missing-done-sse (0.00s)
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix-over-body
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/body
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-override
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-filter
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix-over-body
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/body
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-override
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-filter
+--- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix-over-body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-override (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-filter (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix-over-body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-override (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-filter (0.00s)
+=== RUN   TestPayloadBarrierCodexImageFilter
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-5.4/execute
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-5.5/execute
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-6-astra/execute
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-6-sol/execute
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-5.4/stream
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-5.5/stream
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-6-astra/stream
+=== RUN   TestPayloadBarrierCodexImageFilter/http/gpt-6-sol/stream
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/execute
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/execute url=ws://127.0.0.1:1120/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/execute url=ws://127.0.0.1:1120/responses session_object=ephemeral reason=upstream_disconnected last_event=response.completed is_terminal=true err=websocket: close 1006 (abnormal closure): unexpected EOF"
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/execute
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/execute url=ws://127.0.0.1:1122/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/execute url=ws://127.0.0.1:1122/responses session_object=ephemeral reason=completed last_event=response.completed is_terminal=true"
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/execute
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/execute url=ws://127.0.0.1:1124/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/execute url=ws://127.0.0.1:1124/responses session_object=ephemeral reason=upstream_disconnected last_event=response.completed is_terminal=true err=websocket: close 1006 (abnormal closure): unexpected EOF"
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/execute
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/execute url=ws://127.0.0.1:1126/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/execute url=ws://127.0.0.1:1126/responses session_object=ephemeral reason=upstream_disconnected last_event=response.completed is_terminal=true err=websocket: close 1006 (abnormal closure): unexpected EOF"
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/stream
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/stream url=ws://127.0.0.1:1128/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/stream url=ws://127.0.0.1:1128/responses session_object=ephemeral reason=upstream_disconnected last_event=response.completed is_terminal=true err=websocket: close 1006 (abnormal closure): unexpected EOF"
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/stream
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/stream url=ws://127.0.0.1:1130/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/stream url=ws://127.0.0.1:1130/responses session_object=ephemeral reason=upstream_disconnected last_event=response.completed is_terminal=true err=websocket: close 1006 (abnormal closure): unexpected EOF"
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/stream
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/stream url=ws://127.0.0.1:1132/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/stream url=ws://127.0.0.1:1132/responses session_object=ephemeral reason=completed last_event=response.completed is_terminal=true"
+=== RUN   TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/stream
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream connected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/stream url=ws://127.0.0.1:1134/responses session_object=ephemeral reused=false"
+time="2026-11-10T19:27:08+08:00" level=info msg="codex websockets: upstream disconnected session= auth=TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/stream url=ws://127.0.0.1:1134/responses session_object=ephemeral reason=upstream_disconnected last_event=response.completed is_terminal=true err=websocket: close 1006 (abnormal closure): unexpected EOF"
+--- PASS: TestPayloadBarrierCodexImageFilter (0.05s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-5.4/execute (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-5.5/execute (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-6-astra/execute (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-6-sol/execute (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-5.4/stream (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-5.5/stream (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-6-astra/stream (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/http/gpt-6-sol/stream (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/execute (0.03s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/execute (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/execute (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/execute (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-5.4/stream (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-5.5/stream (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-6-astra/stream (0.00s)
+    --- PASS: TestPayloadBarrierCodexImageFilter/websocket/gpt-6-sol/stream (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	0.399s
+=== RUN   TestBPSModelRegistrationIsExplicitAndDeduplicated
+--- PASS: TestBPSModelRegistrationIsExplicitAndDeduplicated (0.00s)
+=== RUN   TestBPSRegisteredModelsApplyReasoningSuffix
+--- PASS: TestBPSRegisteredModelsApplyReasoningSuffix (0.00s)
+=== RUN   TestEnsureExecutorsForAuth_CodexDoesNotReplaceInNormalMode
+--- PASS: TestEnsureExecutorsForAuth_CodexDoesNotReplaceInNormalMode (0.00s)
+=== RUN   TestEnsureExecutorsForAuthWithMode_CodexForceReplace
+--- PASS: TestEnsureExecutorsForAuthWithMode_CodexForceReplace (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy	0.259s
+EXIT=0

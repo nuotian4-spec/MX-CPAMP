@@ -1,5 +1,7 @@
 # CPA 独立 BPS 通道候选回执
 
+最新产品候选为 `4bca838c3e65be79dc5743d417571b99f6f5f55e`，复审专项与边界见 [复审修复回执](review-p2.zh-CN.md)。本页保留初始候选的验证记录。
+
 - 日期：2026-11-10。
 - 工作树：`D:/MX-CPAMP-worktrees/runtime`；分支：`codex/bps-runtime`。
 - 输入基线：`22d0f16cfcd741a95dd34810aca61ea688390f10`。

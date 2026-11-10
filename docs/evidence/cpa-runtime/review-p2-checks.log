@@ -1,0 +1,6 @@
+SOURCE=4bca838c3e65be79dc5743d417571b99f6f5f55e
+COMMAND=git diff --check aeba9ee7cd7429ec271f1ff1f4a006762f244483...4bca838c3e65be79dc5743d417571b99f6f5f55e
+EXIT=0
+COMMAND=git diff --name-only BASE...SOURCE -- **/migrations/** **/schema.prisma *.sql
+EXIT=0
+MATCH_COUNT=0
