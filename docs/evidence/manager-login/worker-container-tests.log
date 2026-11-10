@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: codex 单profile、TOTP、PKCE与独立token端点
+ok 1 - codex 单profile、TOTP、PKCE与独立token端点
+  ---
+  duration_ms: 123.507222
+  type: 'test'
+  ...
+# Subtest: bps 单profile、TOTP、PKCE与独立token端点
+ok 2 - bps 单profile、TOTP、PKCE与独立token端点
+  ---
+  duration_ms: 39.836738
+  type: 'test'
+  ...
+# Subtest: 额外验证停止，不取token、不自动重试
+ok 3 - 额外验证停止，不取token、不自动重试
+  ---
+  duration_ms: 23.236756
+  type: 'test'
+  ...
+# Subtest: 错误client身份拒绝
+ok 4 - 错误client身份拒绝
+  ---
+  duration_ms: 38.214144
+  type: 'test'
+  ...
+# Subtest: 鉴权、单任务与HTTP结果清理
+ok 5 - 鉴权、单任务与HTTP结果清理
+  ---
+  duration_ms: 132.285572
+  type: 'test'
+  ...
+# Subtest: 需要人工验证与失败只回枚举
+ok 6 - 需要人工验证与失败只回枚举
+  ---
+  duration_ms: 168.056386
+  type: 'test'
+  ...
+# Subtest: 取消与超时结束整个进程组
+ok 7 - 取消与超时结束整个进程组
+  ---
+  duration_ms: 467.52227
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 909.297815

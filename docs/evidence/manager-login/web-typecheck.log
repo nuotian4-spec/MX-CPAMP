@@ -1,0 +1,15 @@
+
+> cpa-manager-plus-web@0.0.0 type-check
+> tsc --noEmit
+
+src/features/oauth/InternalLoginCards.tsx(39,15): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/features/oauth/InternalLoginCards.tsx(161,15): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+npm error Lifecycle script `type-check` failed with error:
+npm error code 2
+npm error path D:\MX-CPAMP-worktrees\login\components\cpamp\apps\web
+npm error workspace cpa-manager-plus-web@0.0.0
+npm error location D:\MX-CPAMP-worktrees\login\components\cpamp\apps\web
+npm error command failed
+npm error command C:\Windows\system32\cmd.exe /d /s /c tsc --noEmit

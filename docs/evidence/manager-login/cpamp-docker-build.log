@@ -1,0 +1,213 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.manager-server
+#1 transferring dockerfile: 1.56kB done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/node:22.23.4-alpine
+#2 DONE 2.5s
+
+#3 [internal] load metadata for docker.io/library/golang:1.26.10-alpine
+#3 DONE 3.7s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.21
+#4 DONE 4.3s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 210B done
+#5 DONE 0.1s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 resolve docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 0.1s done
+#7 ...
+
+#8 [web-build 1/8] FROM docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+#8 resolve docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202 0.1s done
+#8 DONE 0.5s
+
+#9 [stage-2 1/4] FROM docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab
+#9 resolve docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab 0.1s done
+#9 sha256:871d48e9bf6b789a439a4a19c1e152009924d818e60f7c51e498573223cd7cda 0B / 3.63MB 0.3s
+#9 ...
+
+#6 [internal] load build context
+#6 transferring context: 20.42MB 1.1s done
+#6 DONE 1.2s
+
+#9 [stage-2 1/4] FROM docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab
+#9 sha256:871d48e9bf6b789a439a4a19c1e152009924d818e60f7c51e498573223cd7cda 3.63MB / 3.63MB 1.3s done
+#9 extracting sha256:871d48e9bf6b789a439a4a19c1e152009924d818e60f7c51e498573223cd7cda
+#9 extracting sha256:871d48e9bf6b789a439a4a19c1e152009924d818e60f7c51e498573223cd7cda 0.1s done
+#9 DONE 1.7s
+
+#8 [web-build 1/8] FROM docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+#8 sha256:071409a402546fea9e56af710d951a9e0c9bb205e4b1186811677d2c9dcad115 443B / 443B 0.6s done
+#8 sha256:df11f9b3da94f640e357ccc86df09a574dc04df1ad95e012f511f4a02b566cd3 1.26MB / 1.26MB 1.3s done
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 0B / 56.22MB 1.2s
+#8 sha256:881fc932939efef04ca120ad44bbd2c0917851eb247aa4995428afb1e80ede17 0B / 3.85MB 0.6s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 5.24MB / 56.22MB 2.1s
+#8 sha256:881fc932939efef04ca120ad44bbd2c0917851eb247aa4995428afb1e80ede17 1.05MB / 3.85MB 1.5s
+#8 sha256:881fc932939efef04ca120ad44bbd2c0917851eb247aa4995428afb1e80ede17 3.85MB / 3.85MB 1.6s done
+#8 extracting sha256:881fc932939efef04ca120ad44bbd2c0917851eb247aa4995428afb1e80ede17
+#8 extracting sha256:881fc932939efef04ca120ad44bbd2c0917851eb247aa4995428afb1e80ede17 0.1s done
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 8.39MB / 56.22MB 2.7s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 13.63MB / 56.22MB 3.2s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 18.87MB / 56.22MB 3.8s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 23.07MB / 56.22MB 4.1s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 26.21MB / 56.22MB 4.5s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 30.41MB / 56.22MB 5.0s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 33.55MB / 56.22MB 5.3s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 36.70MB / 56.22MB 5.7s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 39.85MB / 56.22MB 6.0s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 44.04MB / 56.22MB 6.3s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 49.28MB / 56.22MB 6.8s
+#8 ...
+
+#10 [stage-2 2/4] RUN apk add --no-cache ca-certificates wget tzdata
+#10 0.353 fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/APKINDEX.tar.gz
+#10 1.483 fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/community/x86_64/APKINDEX.tar.gz
+#10 2.739 (1/6) Installing ca-certificates (20261020-r0)
+#10 3.028 (2/6) Installing tzdata (2026f-r0)
+#10 3.390 (3/6) Installing libunistring (1.2-r0)
+#10 4.047 (4/6) Installing libidn2 (2.3.7-r0)
+#10 4.562 (5/6) Installing pcre2 (10.43-r1)
+#10 5.100 (6/6) Installing wget (1.25.0-r0)
+#10 5.621 Executing busybox-1.37.0-r14.trigger
+#10 5.634 Executing ca-certificates-20261020-r0.trigger
+#10 5.702 OK: 10 MiB in 21 packages
+#10 DONE 6.0s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 sha256:938c48435f2c0b41279f6db704d52892177f88935ace8b66ee0a443ffd126daf 126B / 126B 0.6s done
+#7 sha256:f64d732997a02e45cca29ef334d56f89f7599c8937c2617b6467edd19bc037d6 44.04MB / 67.35MB 5.9s
+#7 sha256:350517c3be7d98583bf8add1014f6abb38dbc851e5ff8d53b7e4995414bdedfb 244.47kB / 244.47kB 1.8s done
+#7 extracting sha256:350517c3be7d98583bf8add1014f6abb38dbc851e5ff8d53b7e4995414bdedfb 0.1s done
+#7 ...
+
+#11 [stage-2 3/4] WORKDIR /app
+#11 DONE 0.1s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 ...
+
+#8 [web-build 1/8] FROM docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 53.48MB / 56.22MB 7.2s
+#8 sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 56.22MB / 56.22MB 7.5s done
+#8 extracting sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c
+#8 extracting sha256:2a9491572f6e8f9c3be47a2d17b7dcd30f264003f2cbeedf9359544b3ca5396c 1.5s done
+#8 extracting sha256:df11f9b3da94f640e357ccc86df09a574dc04df1ad95e012f511f4a02b566cd3 0.1s done
+#8 extracting sha256:071409a402546fea9e56af710d951a9e0c9bb205e4b1186811677d2c9dcad115 0.0s done
+#8 DONE 9.7s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 sha256:f64d732997a02e45cca29ef334d56f89f7599c8937c2617b6467edd19bc037d6 65.01MB / 67.35MB 7.8s
+#7 sha256:f64d732997a02e45cca29ef334d56f89f7599c8937c2617b6467edd19bc037d6 67.35MB / 67.35MB 7.9s done
+#7 extracting sha256:f64d732997a02e45cca29ef334d56f89f7599c8937c2617b6467edd19bc037d6
+#7 ...
+
+#12 [web-build 2/8] WORKDIR /app
+#12 DONE 0.2s
+
+#13 [web-build 3/8] COPY package*.json ./
+#13 DONE 0.2s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 ...
+
+#14 [web-build 4/8] COPY apps/web/package.json ./apps/web/package.json
+#14 DONE 0.1s
+
+#15 [web-build 5/8] RUN npm ci
+#15 ...
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 extracting sha256:f64d732997a02e45cca29ef334d56f89f7599c8937c2617b6467edd19bc037d6 3.7s done
+#7 DONE 13.5s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 extracting sha256:938c48435f2c0b41279f6db704d52892177f88935ace8b66ee0a443ffd126daf 0.0s done
+#7 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 0.0s done
+#7 DONE 13.6s
+
+#16 [service-build 2/9] WORKDIR /src
+#16 DONE 0.3s
+
+#15 [web-build 5/8] RUN npm ci
+#15 ...
+
+#17 [service-build 3/9] COPY apps/manager-server ./apps/manager-server
+#17 DONE 0.2s
+
+#15 [web-build 5/8] RUN npm ci
+#15 50.55
+#15 50.55 added 286 packages, and audited 289 packages in 50s
+#15 50.55
+#15 50.55 77 packages are looking for funding
+#15 50.55   run `npm fund` for details
+#15 50.70
+#15 50.70 8 vulnerabilities (7 moderate, 1 high)
+#15 50.70
+#15 50.70 To address issues that do not require attention, run:
+#15 50.70   npm audit fix
+#15 50.70
+#15 50.70 To address all issues (including breaking changes), run:
+#15 50.70   npm audit fix --force
+#15 50.70
+#15 50.70 Run `npm audit` for details.
+#15 50.71 npm notice
+#15 50.71 npm notice New major version of npm available! 10.9.9 -> 12.2.2
+#15 50.71 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+#15 50.71 npm notice To update run: npm install -g npm@12.2.2
+#15 50.71 npm notice
+#15 DONE 50.9s
+
+#18 [web-build 6/8] COPY apps/web ./apps/web
+#18 DONE 0.4s
+
+#19 [web-build 7/8] WORKDIR /app/apps/web
+#19 DONE 0.1s
+
+#20 [web-build 8/8] RUN VERSION=local-four-entry npm run build
+#20 0.580
+#20 0.580 > cpa-manager-plus-web@0.0.0 build
+#20 0.580 > tsc && vite build
+#20 0.580
+#20 37.79 src/features/oauth/InternalLoginCards.tsx(52,15): error TS2322: Type 'string | null' is not assignable to type 'string'.
+#20 37.79   Type 'null' is not assignable to type 'string'.
+#20 37.79 src/features/oauth/InternalLoginCards.tsx(195,15): error TS2322: Type 'string | null' is not assignable to type 'string'.
+#20 37.79   Type 'null' is not assignable to type 'string'.
+#20 37.94 npm error Lifecycle script `build` failed with error:
+#20 37.94 npm error code 2
+#20 37.94 npm error path /app/apps/web
+#20 37.94 npm error workspace cpa-manager-plus-web@0.0.0
+#20 37.94 npm error location /app/apps/web
+#20 37.94 npm error command failed
+#20 37.94 npm error command sh -c tsc && vite build
+#20 ERROR: process "/bin/sh -c VERSION=$VERSION npm run build" did not complete successfully: exit code: 2
+------
+ > [web-build 8/8] RUN VERSION=local-four-entry npm run build:
+37.79   Type 'null' is not assignable to type 'string'.
+37.79 src/features/oauth/InternalLoginCards.tsx(195,15): error TS2322: Type 'string | null' is not assignable to type 'string'.
+37.79   Type 'null' is not assignable to type 'string'.
+37.94 npm error Lifecycle script `build` failed with error:
+37.94 npm error code 2
+37.94 npm error path /app/apps/web
+37.94 npm error workspace cpa-manager-plus-web@0.0.0
+37.94 npm error location /app/apps/web
+37.94 npm error command failed
+37.94 npm error command sh -c tsc && vite build
+------
+Dockerfile.manager-server:9
+--------------------
+   7 |     COPY apps/web ./apps/web
+   8 |     WORKDIR /app/apps/web
+   9 | >>> RUN VERSION=$VERSION npm run build
+  10 |
+  11 |     FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine AS service-build
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c VERSION=$VERSION npm run build" did not complete successfully: exit code: 2
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/lp0blsphi8zne4lijt5ox2c0f

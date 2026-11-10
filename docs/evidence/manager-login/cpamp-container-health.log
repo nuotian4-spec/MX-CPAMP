@@ -1,0 +1,16 @@
+{"ok":true,"service":"cpa-manager-plus"}
+--2026-11-10 11:13:47--  http://127.0.0.1:18317/api/oauth-login/tasks
+Connecting to 127.0.0.1:18317... connected.
+HTTP request sent, awaiting response...
+  HTTP/1.1 401 Unauthorized
+  Access-Control-Allow-Headers: Authorization, Content-Type, X-Usage-Import-Prefix-SHA256
+  Access-Control-Allow-Methods: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS
+  Access-Control-Allow-Origin: *
+  Cache-Control: no-store
+  Content-Type: application/json
+  Date: Tue, 10 Nov 2026 11:13:47 GMT
+  Content-Length: 57
+
+Username/Password Authentication Failed.
+
+health_and_admin_gate=ok

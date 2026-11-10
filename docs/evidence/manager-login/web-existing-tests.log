@@ -1,0 +1,17 @@
+
+> cpa-manager-plus-web@0.0.0 test
+> vitest run src/features/oauth/OAuthPage.test.tsx src/features/accounts/model/accountReauth.test.ts src/features/accounts/model/accountsPagePresentation.test.ts
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+The system cannot find the path specified.
+The system cannot find the path specified.
+
+ RUN  v4.1.12 D:/MX-CPAMP-worktrees/login/components/cpamp/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  61 passed (61)
+   Start at  19:01:15
+   Duration  2.16s (transform 3.11s, setup 0ms, import 5.03s, tests 105ms, environment 0ms)
