@@ -97,7 +97,7 @@ try{
   const result=await docker(['exec','-i',names.worker,'node','/checks/check.mjs'],{input:JSON.stringify({...keys,preflight:Boolean(preflight)}),timeout:180000,allowFailure:true});
   for(const line of result.output.trim().split('\n').filter(Boolean)){
     const value=JSON.parse(line);
-    const permitted=['stage','error_code','result','services_healthy','unauthorized_status','external_network','serial','failure_continued','latest_terminal_recovered','duplicate_not_replayed','synthetic_only','oauth_set_default_restored','oauth_persisted','config_set_default_restored','config_identity_stable','other_credential_unchanged','cross_model_shared','independent_credentials','pool_wait_observed','queued_cancel_removed','active_cancel_upstream_exit','release_woke_waiter','all_drained','real_upstream_called','synthetic_login','synthetic_upstream'];
+    const permitted=['stage','error_code','result','services_healthy','unauthorized_status','external_network','serial','failure_continued','latest_terminal_recovered','duplicate_not_replayed','mapped_registered_saved','synthetic_only','oauth_set_default_restored','oauth_persisted','config_set_default_restored','config_identity_stable','other_credential_unchanged','cross_model_shared','independent_credentials','pool_wait_observed','queued_cancel_removed','active_cancel_upstream_exit','release_woke_waiter','all_drained','real_upstream_called','synthetic_login','synthetic_upstream'];
     report(Object.fromEntries(Object.entries(value).filter(([key])=>permitted.includes(key))));
   }
   if(result.code!==0)process.exitCode=1;

@@ -7,7 +7,7 @@
 默认或`--preflight`仅启动隔离三组件、核健康及管理鉴权，不读取凭证，不创建登录批次，不刷新令牌，不发模型请求。只有显式`--execute`才从stdin接收`{"email":"EMAIL","password":"PASSWORD","totp_secret":"BASE32_SEED"}`并执行以下流程：
 
 1. Manager一次POST创建单行BPS批次，等待真实终态；POST回执丢失只按预知batch_id查询，不重POST。
-2. CPA当前注册列表与保存文件一致，且仅有这一份BPS授权；核profile=excel和固定Excel client。
+2. 批次成功项仅有16hex `auth_index`，没有`auth_id`或原邮箱；CPA列表按索引与provider唯一定位真实ID，工具只在内部使用该ID。当前注册列表与保存文件一致，且仅有这一份BPS授权；核profile=excel、固定Excel client、同输入邮箱与账号身份。
 3. Manager GET取得当前32hex connection_ref，PATCH把该凭证并发覆盖设为3；核保存。
 4. CPA受支持的`POST /v8/management/credentials/refresh`仅指定该auth name，正常刷新一次；核同auth、账号身份、profile/client、refresh token保留及并发覆盖不丢失。不修改过期字段或强造401。
 5. 显式BPS目录仅包含用户确认的`gpt-6-astra`、`gpt-6.1-sol`、`gpt-5.6-sol`。公开`/v1/responses`只发一次客户端请求：模型`gpt-5.6-sol`、小文本、非流式、最多128输出token、`reasoning.effort=low`；核completed终态、BPS响应ID、非空文本和同auth成功计数增加，最后核active/waiting排空。正文和token均不输出。
@@ -34,7 +34,9 @@ node run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:p
 
 ## 已通过与待验
 
-`node --check`通过。`node verify-fixture.mjs`通过两种无网络场景：成功路径恰好1次batch、1次单目标refresh、1次公开请求；needs_user_action路径没有refresh和公开请求；脱敏结果不含fixture秘密标记或邮箱。
+`node --check`通过。`node verify-fixture.mjs`覆盖成功与停止场景：成功路径恰好1次batch、1次单目标refresh、1次公开请求；needs_user_action路径没有refresh和公开请求；脱敏结果不含fixture秘密标记或邮箱。
+
+索引契约反例覆盖`credential_mapping_unconfirmed`的failed/interrupted结果，工具保留该固定诊断并立即停止；索引不符、索引不唯一或批次出现raw auth_id也停止。所有失败路径都是1次batch、0次refresh、0次模型请求。成功fixture中的内部凭证ID刻意包含完整合成邮箱，输出仍不含该ID、邮箱或秘密标记。
 
 容器预生成名称在`docker run`之前登记，CLI回执失败也进入清理。`node ../phase2-integration/verify-cleanup.mjs`已通过两个工具的CLI替身反例：daemon已建容器但run返回失败，必须主动删除并核无残留；反例不启动Docker，不读取凭据。
 

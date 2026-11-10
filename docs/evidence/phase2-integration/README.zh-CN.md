@@ -7,6 +7,7 @@
 采用真实CPA、Manager和Worker的HTTP接口、任务管理、导入保存热注册、配置写入、账号调度与执行准入。仅将官方登录进程替换为本目录合成runner，将模型上游替换为本目录hold服务器；三组件共享`network none`命名空间，唯一通信为localhost。合成Key one/two是两份独立身份；两个合成模型共享同一份凭证的上限。
 
 - 批次：三行成功/确定失败/成功，核逐条串行、失败后继续；latest按profile恢复已结束摘要；同batch_id返回原回执且不重放进程。
+- 批次成功项只接受16hex `auth_index`，要求DTO完全没有`auth_id`，所有批次响应继续严格排除原邮箱/密码/TOTP/token。通过CPA管理列表按索引与provider唯一定位真实ID，仅在工具内存中用于下载；逐份核真实注册、保存文件的profile/client、输入邮箱与非空账号/令牌。`credential_mapping_unconfirmed`立即终止，不继续BFF或调度请求。
 - BFF：OAuth文件上限设置、真实保存与恢复默认20；配置Key上限设置、恢复默认、runtime AuthID不变；其他凭证额度保持独立。每次PATCH先GET取得32hex的connection_ref并原样回传，确认同一连接引用持续稳定，不绕过实例绑定验证。
 - CPA准入：两份配置凭证各上限1，不同模型请求分别占满；第三个请求进入公共等待，第四个等待后取消且未发送上游；取消在途请求后等待**模拟上游真实close事件**，再核额度/等待者推进；完成剩余响应后同时核上游pending与CPA active/waiting排空。
 

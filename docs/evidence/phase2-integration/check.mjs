@@ -13,17 +13,29 @@ async function limit(auth_id,value){const before=await snapshot();const result=a
 async function batch(){
  const batch_id=crypto.randomUUID(),password=crypto.randomBytes(24).toString('hex'),totp_secret='JBSWY3DPEHPK3PXP';
  const emails=['first-phase2@example.invalid','fail-phase2@example.invalid','last-phase2@example.invalid'];
+ const redacted=value=>{const raw=JSON.stringify(value);must(![...emails,password,totp_secret,'access_token','refresh_token','e30.'].some(marker=>raw.includes(marker)),'batch_redaction');must(value.items?.every(item=>!Object.hasOwn(item,'auth_id')),'batch_redaction');};
  const created=await request(manager,'/api/oauth-login/batches',input.admin,'POST',{batch_id,profile:'codex',items:emails.map((email,index)=>({line_no:index+1,email,password,totp_secret}))});
- must(created.status===200&&created.value.id===batch_id,'batch_create');
- const done=await poll(async()=>{const result=await request(manager,'/api/oauth-login/batches/'+batch_id,input.admin);must(result.status===200,'batch_query');const raw=JSON.stringify(result.value);must(![...emails,password,totp_secret,'access_token','refresh_token','e30.'].some(marker=>raw.includes(marker)),'batch_redaction');return result.value.status==='completed'?result.value:null;},'batch_terminal');
+ must(created.status===200&&created.value.id===batch_id,'batch_create');redacted(created.value);
+ const done=await poll(async()=>{const result=await request(manager,'/api/oauth-login/batches/'+batch_id,input.admin);must(result.status===200,'batch_query');redacted(result.value);if(result.value.error_code==='credential_mapping_unconfirmed'||result.value.items?.some(item=>item.error_code==='credential_mapping_unconfirmed'))throw new Error('credential_mapping_unconfirmed');return result.value.status==='completed'?result.value:null;},'batch_terminal');
  must(done.items?.map(item=>item.status).join(',')==='succeeded,failed,succeeded','batch_continue');
  const tracked=(await state()).tasks;must(tracked.max_active===1&&tracked.events.length===6,'batch_serial');
  for(let i=0;i<6;i++)must(tracked.events[i].event===(i%2?'finished':'created'),'batch_serial_order');
- const latest=await request(manager,'/api/oauth-login/batches/latest?profile=codex',input.admin);must(latest.status===200&&latest.value?.id===batch_id&&latest.value.status==='completed'&&latest.value.items?.[2]?.status==='succeeded','batch_latest_terminal');
- const duplicate=await request(manager,'/api/oauth-login/batches',input.admin,'POST',{batch_id,profile:'codex',items:[{line_no:1,email:emails[0],password,totp_secret}]});must(duplicate.status===200,'batch_dedup_receipt');
+ const latest=await request(manager,'/api/oauth-login/batches/latest?profile=codex',input.admin);must(latest.status===200&&latest.value?.id===batch_id&&latest.value.status==='completed'&&latest.value.items?.[2]?.status==='succeeded','batch_latest_terminal');redacted(latest.value);
+ const duplicate=await request(manager,'/api/oauth-login/batches',input.admin,'POST',{batch_id,profile:'codex',items:[{line_no:1,email:emails[0],password,totp_secret}]});must(duplicate.status===200,'batch_dedup_receipt');redacted(duplicate.value);
  must((await state()).tasks.events.length===6,'batch_no_replay');
- report({stage:'batch',serial:true,failure_continued:true,latest_terminal_recovered:true,duplicate_not_replayed:true,synthetic_only:true});
- return done.items.filter(item=>item.status==='succeeded').map(item=>item.auth_id);
+ const listing=await request(cpa,'/v8/management/credentials',input.cpa);must(listing.status===200&&Array.isArray(listing.value.files),'batch_registration');
+ const ids=[];
+ for(const item of done.items.filter(item=>item.status==='succeeded')){
+  must(/^[a-f0-9]{16}$/.test(item.auth_index||''),'batch_index');
+  const matches=listing.value.files.filter(entry=>entry.auth_index===item.auth_index&&entry.provider==='codex');
+  must(matches.length===1&&typeof matches[0].id==='string'&&matches[0].id&&matches[0].login_method==='2fa','batch_registration');
+  const id=matches[0].id,stored=await request(cpa,'/v8/management/credentials/download?name='+encodeURIComponent(id),input.cpa);
+  must(stored.status===200&&stored.value.type==='codex'&&stored.value.profile==='codex'&&stored.value.client_id==='app_EMoamEEZ73f0CkXaXp7hrann'&&stored.value.email===emails[item.line_no-1]&&stored.value.account_id&&stored.value.access_token&&stored.value.refresh_token,'batch_saved_identity');
+  stored.value=null;ids.push(id);
+ }
+ must(ids.length===2&&new Set(ids).size===2,'batch_registration');
+ report({stage:'batch',serial:true,failure_continued:true,latest_terminal_recovered:true,duplicate_not_replayed:true,mapped_registered_saved:true,synthetic_only:true});
+ return ids;
 }
 function launch(marker,model){const controller=new AbortController();controllers.push(controller);const result=fetch(cpa+'/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer '+input.api,'content-type':'application/json'},body:JSON.stringify({model,messages:[{role:'user',content:marker}],stream:false}),signal:controller.signal}).then(async res=>({status:res.status,value:await res.json()})).catch(()=>({aborted:true}));return{controller,result};}
 async function concurrency(){

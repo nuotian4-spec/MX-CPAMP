@@ -24,15 +24,19 @@ export async function runBusiness(input,{request=transport,report=value=>process
   finally{row.email=row.password=row.totp_secret='';input.credentials.email=input.credentials.password=input.credentials.totp_secret='';}
   must(created.status===200&&created.value.id===batch_id,'batch_create_rejected');
   const done=await poll(async()=>{const result=await request('manager','/api/oauth-login/batches/'+batch_id,input.admin);must(result.status===200,'batch_query_unconfirmed');return ['completed','cancelled','interrupted'].includes(result.value.status)?result.value:null;},'batch_timeout_unconfirmed',26*60*1000);
-  must(done.profile==='bps'&&done.items?.length===1,'batch_result_invalid');
+  must(done.profile==='bps'&&done.items?.length===1&&!Object.hasOwn(done.items[0],'auth_id')&&!JSON.stringify(done).toLowerCase().includes(expectedEmail.toLowerCase()),'batch_result_invalid');
   const task=done.items[0],observed=readWorker(task.id),a=taskDiagnostics(task),b=taskDiagnostics(observed);
   emit({stage:'batch',status:task.status,error_code:errorCodes.has(task.error_code)?task.error_code:null,worker_error_code:errorCodes.has(observed.error_code)?observed.error_code:null,login_stage:a.stage,login_reason:a.reason,worker_stage:b.stage,worker_reason:b.reason});
   if(done.status!=='completed'||task.status!=='succeeded')return false;
-  must(typeof task.auth_id==='string'&&task.auth_id,'batch_result_invalid');
-  const authID=task.auth_id;
-  const listing=async()=>{const result=await request('cpa','/v8/management/credentials',input.cpa);must(result.status===200&&result.value.files?.length===1,'registration_unconfirmed');const only=result.value.files[0];must((only.id===authID||only.name===authID)&&only.provider==='bps'&&only.login_method==='2fa','registration_unconfirmed');return only;};
+  must(/^[a-f0-9]{16}$/.test(task.auth_index||''),'batch_result_invalid');
+  const registered=await request('cpa','/v8/management/credentials',input.cpa);
+  must(registered.status===200&&registered.value.files?.length===1,'registration_unconfirmed');
+  const matches=registered.value.files.filter(entry=>entry.auth_index===task.auth_index&&entry.provider==='bps');
+  must(matches.length===1&&typeof matches[0].id==='string'&&matches[0].id&&matches[0].login_method==='2fa','registration_unconfirmed');
+  const authID=matches[0].id;
+  const listing=async()=>{const result=await request('cpa','/v8/management/credentials',input.cpa);must(result.status===200&&result.value.files?.length===1,'registration_unconfirmed');const only=result.value.files[0];must(only.id===authID&&only.auth_index===task.auth_index&&only.provider==='bps'&&only.login_method==='2fa','registration_unconfirmed');return only;};
   const saved=async()=>{const result=await request('cpa','/v8/management/credentials/download?name='+encodeURIComponent(authID),input.cpa);must(result.status===200&&result.value.type==='bps'&&result.value.profile==='excel'&&result.value.client_id==='app_fnr0pYvVwwFDocDumLG3H2Bp'&&result.value.email?.toLowerCase()===expectedEmail.toLowerCase()&&typeof result.value.access_token==='string'&&Boolean(result.value.access_token)&&typeof result.value.refresh_token==='string'&&Boolean(result.value.refresh_token)&&Boolean(result.value.account_id),'saved_file_unconfirmed');return result.value;};
-  await listing();let before=await saved();emit({stage:'saved_registered',saved:true,registered:true,single_bps_credential:true});
+  let before=await saved();emit({stage:'saved_registered',saved:true,registered:true,single_bps_credential:true});
   const snapshot=async()=>{const result=await request('manager','/api/credential-concurrency',input.admin);must(result.status===200&&result.value.mode==='local'&&/^[a-f0-9]{32}$/.test(result.value.connection_ref)&&result.value.credentials?.length===1,'snapshot_invalid');const only=result.value.credentials[0];must(only.auth_id===authID&&only.provider==='bps','snapshot_invalid');return result.value;};
   const shown=await snapshot();
   let update;try{update=await request('manager','/api/credential-concurrency',input.admin,'PATCH',{auth_id:authID,connection_ref:shown.connection_ref,concurrency_limit:3});}catch{throw new Error('concurrency_write_unconfirmed');}
