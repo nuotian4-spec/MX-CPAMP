@@ -48,4 +48,6 @@ Bash 语法、Linux 实际确认/失败处理、真实 Compose 合并与旧卷�
 
 P8 部署材料提交 `e71421cb6c6111360095bc6e91f3258b3ac0cd26` 已整合为 `0f50941`；独立审查无剩余 P1/P2。Linux 部署专项退出 0，P9 核对整合后三脚本与审阅字节相同、产品输入不变。候选版已公开发布，远端 tag 与固定交付提交同为 `3baeb518da2dbbff14befe386701a9d2815c9a9c`；公开 raw 脚本及 manifest 下载核对通过。
 
-当前责任人：P9 交付固定版本准备命令；下一责任人：用户在 VPS 执行 prepare 并回传，随后 P9 核证并接续受控切换。生产准备、备份与切换尚未执行。
+用户已回传固定提交 `3baeb518da2dbbff14befe386701a9d2815c9a9c` 的生产 prepare 成功回执：依次完成 prepare_bundle、prepare_load、prepare_site、publishing_prepared、prepared，末行为 `prepared=/opt/cpa-stack/.mx-upgrade-20261110-rc1 maintenance_started=no`。准备完成，尚未停服、备份或切换。
+
+当前责任人：P9 核 prepared 回执并交付 TTY apply 命令；下一责任人：用户执行 apply、输入 DEPLOY 并回传阶段结果，P9 核证上线与备份结果。
