@@ -1,7 +1,7 @@
 # CPA 四入口登录与 BPS 通道方案
 
 日期：2026-11-10（北京时间）  
-状态：本地候选实现、Linux 构建、三容器集成与独立审查已通过；真实登录、模型调用、生产部署尚未执行。实际接口以 `docs/contracts/` 为准，验证状态见 `docs/local-candidate.zh-CN.md` 与组件回执。
+状态：首期候选已完成生产部署和内部认证核验，真实登录、令牌刷新与模型业务待验收；生产事实见[生产回执](evidence/deployment/server-release.zh-CN.md)。批量 2FA、BPS OAuth 交互与凭证并发的后续设计见[二期方案](phase2-plan.zh-CN.md)。实际接口以 `docs/contracts/` 为准。
 
 独立设计审查：未发现新增结构性问题。BPS 手工 OAuth 的回调兑换仍是前置可行性待证，不属于已通过项。
 
