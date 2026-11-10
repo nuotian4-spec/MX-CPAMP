@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {errorCodes,taskDiagnostics,sanitizeReceipt,businessCodes} from './diagnostics.mjs';
+import {errorCodes,taskDiagnostics,sanitizeReceipt,businessCodes,publicErrorDiagnostics} from './diagnostics.mjs';
 
 export const models=Object.freeze(['gpt-6-astra','gpt-6.1-sol','gpt-5.6-sol']);
 const bases={cpa:'http://127.0.0.1:8317',manager:'http://127.0.0.1:18317',worker:'http://127.0.0.1:18417'};
@@ -55,7 +55,7 @@ export async function runBusiness(input,{request=transport,report=value=>process
   must(catalog.status===200&&ids?.length===3&&ids.join(',')===[...models].sort().join(','),'catalog_mismatch');
   const original=await listing();const successes=Number(original.success);must(Number.isFinite(successes),'auth_target_unconfirmed');
   let response;try{response=await request('cpa','/v1/responses',input.api,'POST',{model:'gpt-5.6-sol',input:'Reply with OK.',max_output_tokens:128,reasoning:{effort:'low'},stream:false},120000);}catch{throw new Error('public_request_unconfirmed');}
-  emit({stage:'business',model:'gpt-5.6-sol',public_http_status:response.status,client_requests:1,upstream_attempts:'unknown'});
+  emit({stage:'business',model:'gpt-5.6-sol',public_http_status:response.status,client_requests:1,upstream_attempts:'unknown',...(response.status===200?{}:publicErrorDiagnostics(response.value))});
   must(response.status===200,'public_request_rejected');must(response.value.status==='completed'&&typeof response.value.id==='string'&&response.value.id.startsWith('resp_bps_'),'public_terminal_invalid');
   const nonempty=response.value.output?.some(item=>item.type==='message'&&item.content?.some(content=>content.type==='output_text'&&typeof content.text==='string'&&content.text.trim()));
   must(nonempty,'public_output_empty');response.value=null;

@@ -21,14 +21,19 @@ async function scenario(mode='complete'){
     }
     if(path==='/v8/management/credentials/refresh'&&method==='POST'){posts.refresh++;assert.deepEqual(body,{name:authID});refreshDone=true;return{status:200,value:{ok:true,auth:entry()}};}
     if(path==='/v1/models')return{status:200,value:{data:models.map(id=>({id}))}};
-    if(path==='/v1/responses'&&method==='POST'){posts.model++;assert.equal(body.model,'gpt-5.6-sol');assert.equal(body.max_output_tokens,128);assert.deepEqual(body.reasoning,{effort:'low'});success++;return{status:200,value:{id:'resp_bps_fixture',status:'completed',output:[{type:'message',content:[{type:'output_text',text:'SECRET_OUTPUT_MARKER'}]}]}};}
+    if(path==='/v1/responses'&&method==='POST'){posts.model++;assert.equal(body.model,'gpt-5.6-sol');assert.equal(body.max_output_tokens,128);assert.deepEqual(body.reasoning,{effort:'low'});if(mode==='http500')return{status:500,value:{error:{code:'internal_server_error',type:'server_error',message:'SECRET_UPSTREAM_MESSAGE_MARKER https://fixture.invalid/SECRET_URL_MARKER'},debug:'SECRET_BODY_MARKER',upstream_status:401}};success++;return{status:200,value:{id:'resp_bps_fixture',status:'completed',output:[{type:'message',content:[{type:'output_text',text:'SECRET_OUTPUT_MARKER'}]}]}};}
     throw new Error('unexpected_fixture_call');
   };
   let result,error;
   try{result=await runBusiness(input,{request,report:value=>reports.push(value),wait:async()=>{},readWorker:()=>({})});}catch(value){error=value;}
-  if(['index_mismatch','duplicate_index','raw_id'].includes(mode))assert.equal(error?.message,mode==='raw_id'?'batch_result_invalid':'registration_unconfirmed');
+  if(mode==='http500')assert.equal(error?.message,'public_request_rejected');
+  else if(['index_mismatch','duplicate_index','raw_id'].includes(mode))assert.equal(error?.message,mode==='raw_id'?'batch_result_invalid':'registration_unconfirmed');
   else{assert.equal(error,undefined);assert.equal(result,mode==='complete');}
-  assert.deepEqual(posts,mode==='complete'?{batch:1,refresh:1,model:1}:{batch:1,refresh:0,model:0});
+  assert.deepEqual(posts,['complete','http500'].includes(mode)?{batch:1,refresh:1,model:1}:{batch:1,refresh:0,model:0});
+  if(mode==='http500'){
+    const failure=reports.find(item=>item.stage==='business');assert.equal(failure.public_http_status,500);assert.equal(failure.public_error_code,'internal_server_error');assert.equal(failure.public_error_type,'server_error');assert.equal(failure.public_error_category,'unknown');assert.equal(failure.public_upstream_http_status,null);
+    assert.equal(reports.some(item=>item.stage==='complete'),false);
+  }
   if(mappingFailed)assert.ok(reports.some(item=>item.stage==='batch'&&item.error_code==='credential_mapping_unconfirmed'&&item.status==='failed'));
   assert.equal(JSON.stringify(reports).includes('SECRET_'),false);assert.equal(JSON.stringify(reports).includes('fixture@example.invalid'),false);
   assert.equal(JSON.stringify(reports).includes(authID),false);
@@ -36,7 +41,7 @@ async function scenario(mode='complete'){
   return reports;
 }
 const complete=await scenario();assert.equal(complete.at(-1).result,'passed');
-for(const mode of ['needs_action','mapping_failed','index_mismatch','duplicate_index','raw_id'])await scenario(mode);
+for(const mode of ['needs_action','mapping_failed','index_mismatch','duplicate_index','raw_id','http500'])await scenario(mode);
 const redacted=sanitizeReceipt({stage:'business',status:'SECRET_MARKER',error_code:'SECRET_MARKER',text:'SECRET_MARKER',http_status:403,model:'SECRET_MARKER',public_http_status:200,upstream_attempts:'unknown'});
 assert.equal(JSON.stringify(redacted).includes('SECRET_MARKER'),false);assert.equal(redacted.public_http_status,200);assert.equal('http_status'in redacted,false);
 process.stdout.write('business_fixture_budget_redaction=passed\n');

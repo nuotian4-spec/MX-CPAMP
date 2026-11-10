@@ -32,11 +32,15 @@ node run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:p
 
 诊断只放行既有stage/reason/error_code枚举；任务stage/reason映射login_stage/login_reason与worker_stage/worker_reason，响应HTTP仅输出整数。未知字段、原异常、邮箱、密码、种子、token和生成正文均不转发。所有原始响应只在校验进程内存中检查；finally删除本次label容器，实际核清理，未核实时token清理状态为null。
 
+公开模型请求失败时追加固定的`public_error_code`、`public_error_type`、`public_error_category`和`public_upstream_http_status`，具体白名单见[错误诊断契约](diagnostics-contract.zh-CN.md)。消息只用于匹配固定规则，原文、正文、URL和未知字段不输出。顶层HTTP500或`internal_server_error`不代表已知上游HTTP失败，未知类别保持`unknown`、上游状态为`null`。
+
 ## 已通过与待验
 
 `node --check`通过。`node verify-fixture.mjs`覆盖成功与停止场景：成功路径恰好1次batch、1次单目标refresh、1次公开请求；needs_user_action路径没有refresh和公开请求；脱敏结果不含fixture秘密标记或邮箱。
 
-索引契约反例覆盖`credential_mapping_unconfirmed`的failed/interrupted结果，工具保留该固定诊断并立即停止；索引不符、索引不唯一或批次出现raw auth_id也停止。所有失败路径都是1次batch、0次refresh、0次模型请求。成功fixture中的内部凭证ID刻意包含完整合成邮箱，输出仍不含该ID、邮箱或秘密标记。
+索引契约反例覆盖`credential_mapping_unconfirmed`的failed/interrupted结果，工具保留该固定诊断并立即停止；索引不符、索引不唯一或批次出现raw auth_id也停止。这些批次或索引失败路径都是1次batch、0次refresh、0次模型请求。成功fixture中的内部凭证ID刻意包含完整合成邮箱，输出仍不含该ID、邮箱或秘密标记。
+
+公开请求HTTP500反例恰好1次batch、1次refresh、1次模型请求，失败后没有后续请求或完成回执。秘密哨兵、URL与伪造上游状态不回显。`node verify-diagnostics.mjs`核固定错误分类、未知值保留unknown及脱敏；这两项均为无网络fixture，不消耗真实请求预算。
 
 容器预生成名称在`docker run`之前登记，CLI回执失败也进入清理。`node ../phase2-integration/verify-cleanup.mjs`已通过两个工具的CLI替身反例：daemon已建容器但run返回失败，必须主动删除并核无残留；反例不启动Docker，不读取凭据。
 
