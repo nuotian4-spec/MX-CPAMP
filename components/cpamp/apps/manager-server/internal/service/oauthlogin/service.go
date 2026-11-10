@@ -29,17 +29,19 @@ type Input struct {
 	TOTPSecret string `json:"totp_secret"`
 }
 type Task struct {
-	ID        string    `json:"id"`
-	Profile   string    `json:"profile"`
-	Status    string    `json:"status"`
-	ErrorCode string    `json:"error_code,omitempty"`
-	Stage     string    `json:"stage,omitempty"`
-	Reason    string    `json:"reason,omitempty"`
-	AuthID    string    `json:"auth_id,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	workerID  string
-	cancel    context.CancelFunc
-	setup     store.Setup
+	ID               string    `json:"id"`
+	Profile          string    `json:"profile"`
+	Status           string    `json:"status"`
+	ErrorCode        string    `json:"error_code,omitempty"`
+	Stage            string    `json:"stage,omitempty"`
+	Reason           string    `json:"reason,omitempty"`
+	AuthID           string    `json:"auth_id,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
+	workerID         string
+	cancel           context.CancelFunc
+	setup            store.Setup
+	done             chan struct{}
+	cleanupConfirmed bool
 }
 type credentials struct {
 	LoginMethod  string `json:"login_method"`
@@ -89,6 +91,10 @@ type Service struct {
 	timeout, poll     time.Duration
 	workerResetMu     sync.Mutex
 	workerReady       bool
+	batches           map[string]*batchState
+	activeBatch       string
+	batchTTL          time.Duration
+	batchRetention    time.Duration
 }
 
 type oauthSession struct {
@@ -110,7 +116,7 @@ func New(resolver SetupResolver, mutations *cpaauthfiles.MutationCoordinator, wo
 	if mutations == nil {
 		mutations = cpaauthfiles.NewMutationCoordinator()
 	}
-	return &Service{tasks: map[string]*Task{}, sessions: map[string]*oauthSession{}, resolver: resolver, mutations: mutations,
+	return &Service{batches: map[string]*batchState{}, batchTTL: 30 * time.Minute, batchRetention: time.Hour, tasks: map[string]*Task{}, sessions: map[string]*oauthSession{}, resolver: resolver, mutations: mutations,
 		workerURL: strings.TrimRight(workerURL, "/"), secret: strings.TrimSpace(secret),
 		client: &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, timeout: 25 * time.Minute, poll: time.Second}
 }
@@ -119,6 +125,9 @@ func terminal(status string) bool {
 }
 func snapshot(t *Task) Task { out := *t; out.cancel = nil; out.workerID = ""; return out }
 func (s *Service) Create(input Input) (Task, error) {
+	return s.createBound(input, nil, "")
+}
+func (s *Service) createBound(input Input, expected *store.Setup, batchID string) (Task, error) {
 	if s.workerURL == "" || s.secret == "" {
 		return Task{}, ErrUnavailable
 	}
@@ -133,8 +142,20 @@ func (s *Service) Create(input Input) (Task, error) {
 	if err != nil || !ok || setup.CPAUpstreamURL == "" || setup.ManagementKey == "" {
 		return Task{}, ErrUnavailable
 	}
+	if expected != nil && !sameSetup(setup, *expected) {
+		return Task{}, ErrTargetChanged
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.activeBatch != "" && s.activeBatch != batchID {
+		return Task{}, ErrBusy
+	}
+	if batchID != "" {
+		b := s.batches[batchID]
+		if b == nil || b.Status == "cancelling" || b.Status == "interrupted" {
+			return Task{}, ErrBusy
+		}
+	}
 	if input.TaskID != "" {
 		if !validTaskID(input.TaskID) {
 			return Task{}, ErrInput
@@ -151,7 +172,7 @@ func (s *Service) Create(input Input) (Task, error) {
 			delete(s.tasks, id)
 			continue
 		}
-		if !terminal(t.Status) {
+		if !terminal(t.Status) || !taskDone(t) {
 			return Task{}, ErrBusy
 		}
 	}
@@ -167,7 +188,7 @@ func (s *Service) Create(input Input) (Task, error) {
 	if input.TaskID != "" {
 		taskID = input.TaskID
 	}
-	t := &Task{ID: taskID, Profile: input.Profile, Status: "created", CreatedAt: time.Now().UTC(), cancel: cancel, setup: setup}
+	t := &Task{ID: taskID, Profile: input.Profile, Status: "created", CreatedAt: time.Now().UTC(), cancel: cancel, setup: setup, done: make(chan struct{})}
 	s.tasks[t.ID] = t
 	go s.run(ctx, t.ID, input)
 	return snapshot(t), nil
@@ -216,9 +237,13 @@ func (s *Service) finish(id, status, code, authID string) {
 func (s *Service) run(ctx context.Context, id string, input Input) {
 	input.TaskID = id
 	defer func() {
-		cleanup, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = s.worker(cleanup, http.MethodDelete, "/tasks/"+url.PathEscape(id), nil, nil)
+		confirmed := s.cleanupWorker(id)
+		s.mu.Lock()
+		if t := s.tasks[id]; t != nil {
+			t.cleanupConfirmed = confirmed
+			close(t.done)
+		}
+		s.mu.Unlock()
 	}()
 	var created workerTask
 	err := s.worker(ctx, http.MethodPost, "/tasks", input, &created)
@@ -249,11 +274,7 @@ func (s *Service) run(ctx context.Context, id string, input Input) {
 		t.Status = "running"
 	}
 	s.mu.Unlock()
-	defer func() {
-		cleanup, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		_ = s.worker(cleanup, http.MethodDelete, "/tasks/"+url.PathEscape(created.ID), nil, nil)
-	}()
+
 	ticker := time.NewTicker(s.poll)
 	defer ticker.Stop()
 	for {
@@ -409,6 +430,9 @@ func (s *Service) request(ctx context.Context, method, target, key string, input
 	}
 	defer res.Body.Close()
 	if method == http.MethodDelete && res.StatusCode == http.StatusNotFound {
+		if cleared, ok := output.(*workerCleanupResponse); ok {
+			cleared.ResultCleared = true
+		}
 		return nil
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {

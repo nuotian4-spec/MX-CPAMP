@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   get: vi.fn(),
+  active: vi.fn(),
   cancel: vi.fn(),
   startBPS: vi.fn(),
   status: vi.fn(),
@@ -12,8 +13,12 @@ const mocks = vi.hoisted(() => ({
   cancelOAuth: vi.fn(),
   publish: vi.fn(),
 }));
-vi.mock('@/services/api/loginTasks', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/services/api/loginTasks')>()),
+vi.mock('@/services/api/loginBatches', async (original) => ({
+  ...(await original<typeof import('@/services/api/loginBatches')>()),
+  loginBatchesApi: mocks,
+}));
+vi.mock('@/services/api/loginTasks', async (original) => ({
+  ...(await original<typeof import('@/services/api/loginTasks')>()),
   loginTasksApi: mocks,
 }));
 vi.mock('@/stores', () => ({ publishAccountCredentialMutationRevision: mocks.publish }));
@@ -21,164 +26,176 @@ vi.mock('@/features/monitoring/codexInspection', () => ({
   createCodexInspectionConnectionFingerprint: () => 'connection',
 }));
 const scope = { apiBase: 'https://panel.invalid', managementKey: 'admin' };
-describe('四入口新增卡片', () => {
+const running = {
+  id: 'batch',
+  profile: 'codex',
+  status: 'running',
+  items: [
+    {
+      id: 'task',
+      profile: 'codex',
+      status: 'running',
+      line_no: 1,
+      email_hint: 'f***@example.invalid',
+    },
+  ],
+};
+describe('批量与BPS授权入口', () => {
   let renderer: ReactTestRenderer;
+  let textareas: Array<{ value: string }>;
+  let callbacks: Array<{ value: string }>;
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('crypto', { randomUUID: () => '11111111-1111-4111-8111-111111111111' });
-    mocks.cancelOAuth.mockResolvedValue({ status: 'ok' });
     vi.useFakeTimers();
+    textareas = [];
+    callbacks = [];
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     vi.stubGlobal('window', { setInterval, clearInterval });
+    vi.stubGlobal('crypto', { randomUUID: () => '11111111-1111-4111-8111-111111111111' });
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+    mocks.active.mockResolvedValue(null);
+    mocks.cancelOAuth.mockResolvedValue({ status: 'ok' });
+    mocks.get.mockResolvedValue(running);
   });
   afterEach(async () => {
     if (renderer) await act(async () => renderer.unmount());
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
-  it('显示三个新增入口且密码种子为一次性掩码输入', async () => {
+  async function render() {
     await act(async () => {
-      renderer = create(<InternalLoginCards scope={scope} />);
+      renderer = create(<InternalLoginCards scope={scope} />, {
+        createNodeMock: (element) => {
+          if (element.type === 'textarea') {
+            const node = { value: '' };
+            textareas.push(node);
+            return node;
+          }
+          if (element.type === 'input' && element.props.type === 'password') {
+            const node = { value: '' };
+            callbacks.push(node);
+            return node;
+          }
+          return null;
+        },
+      });
     });
+  }
+  async function submit() {
+    textareas[0].value = 'fake@example.invalid----PASSWORD_CANARY----ABCDEFGHIJKLMNOP';
+    await act(async () => {
+      await renderer.root.findAllByType('form')[0].props.onSubmit({ preventDefault() {} });
+    });
+  }
+  it('批量表单只保存掩码预览，提交后清空材料', async () => {
+    mocks.create.mockResolvedValue(running);
+    await render();
+    await submit();
+    expect(textareas[0].value).toBe('');
+    expect(mocks.create.mock.calls[0][0].items[0].password).toBe('');
     const text = JSON.stringify(renderer.toJSON());
-    expect(text).toContain('BPS OAuth');
-    expect(text).toContain('BPS 2FA');
-    expect(text).toContain('Codex 2FA');
-    expect(text).toContain('真实可兑换性待用户授权验收');
-    const inputs = renderer.root
-      .findAllByType('input')
-      .filter((node) => ['password', 'totp_secret'].includes(node.props.name));
-    expect(inputs).toHaveLength(4);
-    inputs.forEach((node) => {
-      expect(node.props.type).toBe('password');
-      expect(node.props.value).toBeUndefined();
-    });
+    expect(text).toContain('Codex 2FA 批量导入');
+    expect(text).toContain('BPS 2FA 批量导入');
+    expect(text).not.toContain('PASSWORD_CANARY');
+    expect(text).not.toContain('ABCDEFGHIJKLMNOP');
   });
-  it('额外验证如实显示且不发布成功事件', async () => {
-    mocks.create.mockResolvedValue({ id: 'task', profile: 'codex', status: 'running' });
+  it('额外验证保留实际阶段且不发成功事件', async () => {
+    mocks.create.mockResolvedValue(running);
     mocks.get.mockResolvedValue({
-      id: 'task',
-      profile: 'codex',
-      status: 'needs_user_action',
-      error_code: 'needs_user_action',
+      ...running,
+      status: 'completed',
+      items: [
+        {
+          ...running.items[0],
+          status: 'needs_user_action',
+          stage: 'password',
+          reason: 'security_check',
+        },
+      ],
     });
-    const values: Record<string, string> = {
-      email: 'fake@example.invalid',
-      password: 'PASSWORD_CANARY',
-      totp_secret: 'TOTP_CANARY',
-    };
-    vi.stubGlobal(
-      'FormData',
-      class {
-        get(name: string) {
-          return values[name];
-        }
-        delete(name: string) {
-          delete values[name];
-        }
-      }
-    );
+    await render();
+    await submit();
     await act(async () => {
-      renderer = create(<InternalLoginCards scope={scope} />);
+      await vi.advanceTimersByTimeAsync(1600);
     });
-    await act(async () => {
-      await renderer.root
-        .findAllByType('form')[0]
-        .props.onSubmit({ preventDefault() {}, currentTarget: {} });
-    });
-    expect(mocks.create).toHaveBeenCalledWith(
-      {
-        task_id: '11111111-1111-4111-8111-111111111111',
-        profile: 'codex',
-        email: 'fake@example.invalid',
-        password: '',
-        totp_secret: '',
-      },
-      scope
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1100);
-    });
-    expect(JSON.stringify(renderer.toJSON())).toContain('需要在官方页面完成额外验证');
+    expect(JSON.stringify(renderer.toJSON())).toContain('官方安全检查');
     expect(mocks.publish).not.toHaveBeenCalled();
-    expect(JSON.stringify(renderer.toJSON())).not.toContain('PASSWORD_CANARY');
   });
-  it('离页与切实例取消旧任务，正常轮询不取消', async () => {
-    mocks.create.mockResolvedValue({ id: 'old-task', profile: 'codex', status: 'running' });
-    mocks.get.mockResolvedValue({ id: 'old-task', profile: 'codex', status: 'running' });
-    mocks.cancel.mockResolvedValue({ id: 'old-task', profile: 'codex', status: 'cancelling' });
-    vi.stubGlobal(
-      'FormData',
-      class {
-        get(name: string) {
-          return name === 'email' ? 'fake@example.invalid' : 'CANARY';
-        }
-        delete() {}
-      }
-    );
-    await act(async () => {
-      renderer = create(<InternalLoginCards scope={scope} />);
-    });
-    await act(async () => {
-      await renderer.root
-        .findAllByType('form')[0]
-        .props.onSubmit({ preventDefault() {}, currentTarget: {} });
-    });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1100);
-    });
-    expect(mocks.cancel).not.toHaveBeenCalled();
+  it('离页与切实例不取消批次，重新进入查询活动批次', async () => {
+    mocks.active.mockResolvedValue(running);
+    await render();
+    expect(JSON.stringify(renderer.toJSON())).toContain('正在逐条登录');
     await act(async () => {
       renderer.update(
         <InternalLoginCards scope={{ apiBase: 'https://other.invalid', managementKey: 'other' }} />
       );
     });
-    expect(mocks.cancel).toHaveBeenCalledWith('old-task', scope);
+    expect(mocks.cancel).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
   });
-  it('BPS OAuth仅创建固定BPS授权', async () => {
-    mocks.startBPS.mockResolvedValue({ url: 'https://auth.invalid/authorize', state: 'state' });
-    await act(async () => {
-      renderer = create(<InternalLoginCards scope={scope} />);
-    });
-    const button = renderer.root
-      .findAllByType(Button)
-      .find((node) => node.props.children === '打开授权入口');
-    await act(async () => {
-      await button?.props.onClick();
-    });
-    expect(mocks.startBPS).toHaveBeenCalledWith(scope);
-    expect(renderer.root.findByType('a').props.rel).toContain('noreferrer');
-  });
-  it('创建已接受但响应丢失时离页仍按预知编号取消', async () => {
-    let accepted = '';
-    mocks.create.mockImplementation(async (input: { task_id: string }) => {
-      accepted = input.task_id;
-      throw new Error('response_lost');
-    });
-    mocks.cancel.mockResolvedValue({ status: 'cancelled' });
-    vi.stubGlobal(
-      'FormData',
-      class {
-        get(name: string) {
-          return name === 'email' ? 'fake@example.invalid' : 'CANARY';
-        }
-        delete() {}
-      }
-    );
-    await act(async () => {
-      renderer = create(<InternalLoginCards scope={scope} />);
-    });
-    await act(async () => {
-      await renderer.root
-        .findAllByType('form')[0]
-        .props.onSubmit({ preventDefault() {}, currentTarget: {} });
-    });
+  it('创建响应丢失按已知编号查询，不自动重交；404后停止', async () => {
+    mocks.create.mockRejectedValue(new Error('lost'));
+    mocks.get.mockRejectedValue({ status: 404 });
+    await render();
+    await submit();
     expect(JSON.stringify(renderer.toJSON())).toContain('回执未确认');
     await act(async () => {
-      renderer.unmount();
+      await vi.advanceTimersByTimeAsync(1600);
     });
-    expect(mocks.cancel).toHaveBeenCalledWith(accepted, scope);
+    expect(mocks.get).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', scope);
+    expect(JSON.stringify(renderer.toJSON())).toContain('batch_not_found');
     expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.cancel).not.toHaveBeenCalled();
+  });
+  it('取消剩余条目并等待当前真实结果', async () => {
+    mocks.create.mockResolvedValue(running);
+    mocks.cancel.mockResolvedValue({ ...running, status: 'cancelling' });
+    await render();
+    await submit();
+    await act(async () => {
+      await renderer.root
+        .findAllByType(Button)
+        .find((node) => node.props.children === '取消剩余条目')
+        ?.props.onClick();
+    });
+    expect(mocks.cancel).toHaveBeenCalledWith('batch', scope);
+    expect(JSON.stringify(renderer.toJSON())).toContain('等待当前条目收敛');
+  });
+  it('BPS生成可打开和复制的授权链接，回调ACK不算保存成功', async () => {
+    mocks.startBPS.mockResolvedValue({ url: 'https://auth.invalid/authorize', state: 'state' });
+    mocks.callback.mockResolvedValue({ status: 'ok' });
+    mocks.status.mockResolvedValue({ status: 'wait' });
+    await render();
+    await act(async () => {
+      await renderer.root
+        .findAllByType(Button)
+        .find((node) => node.props.children === '生成授权链接')
+        ?.props.onClick();
+    });
+    expect(mocks.startBPS).toHaveBeenCalledWith(scope);
+    expect(renderer.root.findByType('a').props.href).toBe('https://auth.invalid/authorize');
+    expect(renderer.root.findByType('a').props.rel).toContain('noreferrer');
+    await act(async () => {
+      await renderer.root
+        .findAllByType(Button)
+        .find((node) => node.props.children === '复制授权链接')
+        ?.props.onClick();
+    });
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://auth.invalid/authorize');
+    callbacks[0].value = 'https://callback.invalid/?code=CODE&state=state';
+    await act(async () => {
+      await renderer.root
+        .findAllByType(Button)
+        .find((node) => node.props.children === '提交回调')
+        ?.props.onClick();
+    });
+    expect(callbacks[0].value).toBe('');
     expect(mocks.publish).not.toHaveBeenCalled();
+    expect(JSON.stringify(renderer.toJSON())).toContain('等待 CPA 保存注册结果');
+    mocks.status.mockResolvedValue({ status: 'ok' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1600);
+    });
+    expect(mocks.publish).toHaveBeenCalledTimes(1);
   });
 });

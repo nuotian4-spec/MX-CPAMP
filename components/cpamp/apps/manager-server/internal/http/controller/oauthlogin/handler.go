@@ -26,6 +26,24 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	var result any
 	var err error
 	switch {
+	case path == "batches" && r.Method == http.MethodPost:
+		var input login.BatchInput
+		if !decodeLimit(w, r, &input, 1024*1024) {
+			return
+		}
+		result, err = h.Service.CreateBatch(input)
+	case path == "batches/active" && r.Method == http.MethodGet:
+		result, err = h.Service.ActiveBatch()
+	case strings.HasPrefix(path, "batches/") && !strings.Contains(strings.TrimPrefix(path, "batches/"), "/"):
+		id := strings.TrimPrefix(path, "batches/")
+		if r.Method == http.MethodGet {
+			result, err = h.Service.GetBatch(id)
+		} else if r.Method == http.MethodDelete {
+			result, err = h.Service.CancelBatch(id)
+		} else {
+			response.MethodNotAllowed(w)
+			return
+		}
 	case path == "tasks" && r.Method == http.MethodPost:
 		var input login.Input
 		if !decode(w, r, &input) {
@@ -73,7 +91,10 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, result)
 }
 func decode(w http.ResponseWriter, r *http.Request, target any) bool {
-	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 32*1024))
+	return decodeLimit(w, r, target, 32*1024)
+}
+func decodeLimit(w http.ResponseWriter, r *http.Request, target any, limit int64) bool {
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
 		response.JSON(w, http.StatusBadRequest, map[string]string{"error": "登录输入无效"})

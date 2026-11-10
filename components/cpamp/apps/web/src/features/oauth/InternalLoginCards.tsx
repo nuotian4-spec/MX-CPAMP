@@ -1,175 +1,41 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { BatchPasswordLogin } from './BatchPasswordLogin';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { publishAccountCredentialMutationRevision } from '@/stores';
-import {
-  loginTasksApi,
-  isLoginTaskActive,
-  loginTaskLabel,
-  loginDiagnosticLabel,
-  type LoginProfile,
-  type LoginTask,
-} from '@/services/api/loginTasks';
+import { loginTasksApi } from '@/services/api/loginTasks';
 import type { ApiClientRequestScope } from '@/services/api/client';
 import { createCodexInspectionConnectionFingerprint } from '@/features/monitoring/codexInspection';
 
-function PasswordLogin({
-  profile,
-  scope,
-}: {
-  profile: LoginProfile;
-  scope: ApiClientRequestScope;
-}) {
-  const [task, setTask] = useState<LoginTask>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const form = useRef<HTMLFormElement>(null);
-  const liveTask = useRef<LoginTask | undefined>(undefined);
-  const generation = useRef(0);
-  liveTask.current = task;
-  const active = isLoginTaskActive(task);
-  const taskID = task?.id;
-  useEffect(
-    () => () => {
-      generation.current += 1;
-      const previous = liveTask.current;
-      if (previous && isLoginTaskActive(previous) && previous.status !== 'importing') {
-        void loginTasksApi.cancel(previous.id, scope).catch(() => {});
-      }
-    },
-    [scope]
-  );
-  useEffect(() => {
-    if (!taskID || !active) return;
-    let disposed = false;
-    const timer = window.setInterval(() => {
-      loginTasksApi
-        .get(taskID, scope)
-        .then((next) => {
-          if (disposed) return;
-          setTask(next);
-          if (next.status === 'succeeded')
-            publishAccountCredentialMutationRevision({
-              connectionFingerprint:
-                createCodexInspectionConnectionFingerprint(scope.apiBase, scope.managementKey) ||
-                '',
-              provider: profile,
-              kind: 'oauth',
-            });
-        })
-        .catch(() => {
-          if (!disposed) setError('任务状态暂不可读，请稍后查询；不要重复提交账号。');
-        });
-    }, 1000);
-    return () => {
-      disposed = true;
-      window.clearInterval(timer);
-    };
-  }, [taskID, active, scope, profile]);
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setBusy(true);
-    setError('');
-    const data = new FormData(event.currentTarget);
-    const knownTask: LoginTask = { id: crypto.randomUUID(), profile, status: 'created' };
-    liveTask.current = knownTask;
-    setTask(knownTask);
-    const input = {
-      task_id: knownTask.id,
-      profile,
-      email: String(data.get('email') || ''),
-      password: String(data.get('password') || ''),
-      totp_secret: String(data.get('totp_secret') || ''),
-    };
-    form.current?.reset();
-    const attempt = generation.current;
-    try {
-      const created = await loginTasksApi.create(input, scope);
-      if (attempt !== generation.current) {
-        void loginTasksApi.cancel(created.id, scope).catch(() => {});
-        return;
-      }
-      setTask(created);
-    } catch {
-      setError('创建回执未确认，正在按任务编号查询；请勿重复提交，可取消当前任务。');
-    } finally {
-      input.password = '';
-      input.totp_secret = '';
-      data.delete('password');
-      data.delete('totp_secret');
-      setBusy(false);
-    }
-  };
-  const cancel = async () => {
-    if (!task) return;
-    try {
-      setTask(await loginTasksApi.cancel(task.id, scope));
-      setError('');
-    } catch {
-      setError('导入已开始或服务暂不可达，请查询真实结果。');
-    }
-  };
+function InputURL({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
   return (
-    <div id={`oauth-provider-${profile}-2fa`}>
-      <Card title={`${profile === 'bps' ? 'BPS' : 'Codex'} 2FA`}>
-        <p>
-          本次仅申请 {profile === 'bps' ? 'Excel/BPS' : 'Codex'} 授权。密码与 TOTP
-          种子仅当次使用，不用于无人值守重登。
-        </p>
-        <form ref={form} onSubmit={submit} autoComplete="off">
-          <Input
-            name="email"
-            type="email"
-            label="邮箱"
-            required
-            disabled={busy || active}
-            autoComplete="off"
-          />
-          <Input
-            name="password"
-            type="password"
-            label="密码"
-            required
-            disabled={busy || active}
-            autoComplete="new-password"
-          />
-          <Input
-            name="totp_secret"
-            type="password"
-            label="TOTP 种子"
-            required
-            disabled={busy || active}
-            autoComplete="off"
-          />
-          <Button type="submit" disabled={busy || active}>
-            {busy ? '正在创建' : '开始登录'}
-          </Button>
-          {active && (
-            <Button
-              type="button"
-              onClick={cancel}
-              disabled={task?.status === 'importing' || task?.status === 'cancelling'}
-            >
-              取消
-            </Button>
-          )}
-        </form>
-        {task && (
-          <p role="status">
-            {loginTaskLabel(task)}
-            {loginDiagnosticLabel(task) ? ` · ${loginDiagnosticLabel(task)}` : ''}
-            {task.auth_id ? ` · ${task.auth_id}` : ''}
-            {task.error_code
-              ? ` · ${task.error_code === 'password_rejected' ? '密码校验失败，请重新输入' : task.error_code === 'totp_rejected' ? 'TOTP校验失败，请检查种子' : task.error_code}`
-              : ''}
-          </p>
-        )}
-        {error && <p role="alert">{error}</p>}
-      </Card>
+    <div>
+      <label>
+        授权链接
+        <input
+          readOnly
+          value={value}
+          aria-label="BPS 授权链接"
+          onFocus={(event) => event.target.select()}
+        />
+      </label>
+      <Button
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+          } catch {
+            setCopied(false);
+          }
+        }}
+      >
+        {copied ? '已复制' : '复制授权链接'}
+      </Button>
     </div>
   );
 }
+
 function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
   const [session, setSession] = useState<{ url: string; state: string }>();
   const [status, setStatus] = useState('');
@@ -243,8 +109,13 @@ function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
     try {
       await loginTasksApi.callback(session.state, value, scope);
       setStatus('回调已接收，等待 CPA 保存注册结果');
-    } catch {
-      setStatus('回调提交失败；官方页面可能已消费授权码，不自动重试。');
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      setStatus(
+        status === 400
+          ? '回调地址未通过校验，请核对完整地址和本次授权会话。'
+          : '回调结果未确认，请查询状态；不会自动重复兑换授权码。'
+      );
     } finally {
       value = '';
       setBusy(false);
@@ -263,17 +134,18 @@ function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
   return (
     <div id="oauth-provider-bps">
       <Card title="BPS OAuth">
-        <p>仅申请 Excel/BPS 授权。官方回调可能先消费授权码；真实可兑换性待用户授权验收。</p>
+        <p>生成链接后前往官方页面授权，再提交完整回调地址。仅申请 BPS 授权。</p>
         <Button onClick={start} disabled={busy || Boolean(session)}>
-          打开授权入口
+          生成授权链接
         </Button>
         {session && (
           <>
             <p>
               <a href={session.url} target="_blank" rel="noopener noreferrer">
-                前往官方授权页面
+                打开 BPS 授权链接
               </a>
             </p>
+            <InputURL value={session.url} />
             <label>
               完整回调 URL
               <input ref={callback} type="password" autoComplete="off" />
@@ -294,9 +166,9 @@ function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
 export function InternalLoginCards({ scope }: { scope: ApiClientRequestScope }) {
   return (
     <>
-      <PasswordLogin profile="codex" scope={scope} />
+      <BatchPasswordLogin profile="codex" scope={scope} />
       <BPSOAuth scope={scope} />
-      <PasswordLogin profile="bps" scope={scope} />
+      <BatchPasswordLogin profile="bps" scope={scope} />
     </>
   );
 }
