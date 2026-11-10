@@ -12,7 +12,8 @@ type ServerResponseCompression = ResponseCompressionConfig
 
 // Config represents the application's configuration, loaded from a YAML file.
 type Config struct {
-	BPS BPSConfig `yaml:"bps" json:"bps"`
+	BPS         BPSConfig         `yaml:"bps" json:"bps"`
+	BPSProtocol BPSProtocolConfig `yaml:"bps-protocol" json:"bps-protocol"`
 	// ServerResponseCompression is the JSON-visible mirror of the downstream
 	// response compression settings (YAML: server.response-compression).
 	ServerResponseCompression ResponseCompressionConfig `yaml:"-" json:"response-compression"`
