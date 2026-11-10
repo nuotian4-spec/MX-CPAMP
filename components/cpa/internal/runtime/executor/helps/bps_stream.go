@@ -8,7 +8,7 @@ type bpsStreamEventKey struct {
 	content int
 }
 
-// BPSStreamLifecycle completes only events absent from a real terminal response.
+// BPSStreamLifecycle establishes text before deltas and completes absent terminal events.
 type BPSStreamLifecycle struct {
 	seen map[bpsStreamEventKey]bool
 }
@@ -21,9 +21,6 @@ func (s *BPSStreamLifecycle) Events(event []byte) ([][]byte, error) {
 	kind := root.Get("type").String()
 	key := bpsStreamEventKey{kind: kind, output: int(root.Get("output_index").Int()), content: int(root.Get("content_index").Int())}
 	s.seen[key] = true
-	if kind != "response.completed" {
-		return [][]byte{event}, nil
-	}
 	var events [][]byte
 	appendMissing := func(kind string, output, content int, fields map[string]any) error {
 		key := bpsStreamEventKey{kind: kind, output: output, content: content}
@@ -42,6 +39,22 @@ func (s *BPSStreamLifecycle) Events(event []byte) ([][]byte, error) {
 		events = append(events, doc.Bytes())
 		s.seen[key] = true
 		return nil
+	}
+	if kind == "response.output_text.delta" {
+		outputIndex, contentIndex := key.output, key.content
+		responseID, itemID := root.Get("response_id").String(), root.Get("item_id").String()
+		item := map[string]any{"id": itemID, "type": "message", "role": "assistant", "status": "in_progress", "content": []any{}}
+		if err := appendMissing("response.output_item.added", outputIndex, 0, map[string]any{"response_id": responseID, "output_index": outputIndex, "item": item}); err != nil {
+			return nil, err
+		}
+		fields := map[string]any{"response_id": responseID, "item_id": itemID, "output_index": outputIndex, "content_index": contentIndex, "part": map[string]any{"type": "output_text", "text": "", "annotations": []any{}}}
+		if err := appendMissing("response.content_part.added", outputIndex, contentIndex, fields); err != nil {
+			return nil, err
+		}
+		return append(events, event), nil
+	}
+	if kind != "response.completed" {
+		return [][]byte{event}, nil
 	}
 	responseID := root.Get("response.id").String()
 	for outputIndex, item := range root.Get("response.output").Array() {

@@ -67,11 +67,29 @@ func TestBPSExecutorTextProtocolsAndFinalBarrier(t *testing.T) {
 						t.Fatal(err)
 					}
 					var output strings.Builder
+					var responseEvents []string
 					for chunk := range result.Chunks {
 						if chunk.Err != nil {
 							t.Fatal(chunk.Err)
 						}
 						output.Write(chunk.Payload)
+						if format == sdktranslator.FormatOpenAIResponse {
+							root := ojson.ParseBytes([]byte(strings.TrimSpace(strings.TrimPrefix(string(chunk.Payload), "data:"))))
+							kind := root.Get("type").String()
+							responseEvents = append(responseEvents, kind)
+							if kind == "response.output_text.delta" && (len(responseEvents) < 3 || responseEvents[len(responseEvents)-2] != "response.content_part.added" || responseEvents[len(responseEvents)-3] != "response.output_item.added") {
+								t.Fatalf("first upstream delta preceded message/content establishment: %v", responseEvents)
+							}
+							if kind == "response.output_item.added" && root.Get("item.id").String() != "msg_1" {
+								t.Fatalf("message identity changed: %s", chunk.Payload)
+							}
+							if kind == "response.content_part.added" && (root.Get("item_id").String() != "msg_1" || root.Get("output_index").Int() != 0 || root.Get("content_index").Int() != 0) {
+								t.Fatalf("content coordinates changed: %s", chunk.Payload)
+							}
+						}
+					}
+					if format == sdktranslator.FormatOpenAIResponse && strings.Join(responseEvents, ",") != "response.created,response.output_item.added,response.content_part.added,response.output_text.delta,response.output_text.done,response.content_part.done,response.output_item.done,response.completed" {
+						t.Fatalf("first-delta lifecycle incomplete or duplicated: %v", responseEvents)
 					}
 					if !strings.Contains(output.String(), "resp_bps_native_test") {
 						t.Fatalf("missing BPS response correlation: %s", output.String())
