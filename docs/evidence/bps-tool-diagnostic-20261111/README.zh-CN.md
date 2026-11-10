@@ -35,11 +35,14 @@ node docs/evidence/bps-tool-diagnostic-20261111/run.mjs --cpa-image CPA_IMAGE --
 
 ```powershell
 node docs/evidence/bps-tool-diagnostic-20261111/verify-fixture.mjs
+node docs/evidence/bps-tool-diagnostic-20261111/verify-diagnostics.mjs
 node docs/evidence/bps-tool-diagnostic-20261111/verify-harness.mjs
 ```
 
 业务fixture共27场景，覆盖零刷新与零设置写入、单批次、创建回执丢失后查询、唯一凭证映射、首轮403/502/传输失败短路、畸形工具与任意命令拒绝、首轮或续轮夹带custom_tool_call拒绝、完整历史与call_id配对、续轮失败和精确输出、0/1/2次请求计数及秘密哨兵过滤。
 
 Docker替身覆盖ID/revision不符或非法值时零启动、不可变ID启动、容器Image不符时停止、默认预检零业务、创建回执失败/业务失败/清理失败、两个目录的运行输入漂移与双层脱敏。预检fetch替身只允许四次GET健康/鉴权请求。
+
+诊断适配专项覆盖实际上游HTTP状态与带内语义状态的区别、工具验证/绑定身份/绑定存储失败分类，及两次白名单过滤后的字段保留；未知枚举与非法状态值不会泄漏自由文本。该专项依赖新增诊断模块，不以旧模块的预算专项代替。
 
 这些结果只证明验收工具的执行边界。没有进行真实登录、刷新、模型请求、生产操作或数据库迁移。
