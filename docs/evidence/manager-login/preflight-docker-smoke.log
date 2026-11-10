@@ -1,0 +1,10 @@
+id=ee7e9358479d444e36456ce490215ecc095a920ea079e03cfb274748c5c2d620 name=/mx-preflight-smoke-f176b894a3-container image_ref=eceasy/cli-proxy-api:v8.0.63 image_id=sha256:8377845ba3ec132c3bc41765d348e693703dc88e232d37f7a7eafc2721bff553 status=created health=not_configured
+local_model_cli_tokens=
+ports=
+sha256:8377845ba3ec132c3bc41765d348e693703dc88e232d37f7a7eafc2721bff553
+image_identity=sha256:8377845ba3ec132c3bc41765d348e693703dc88e232d37f7a7eafc2721bff553 os=linux arch=amd64 revision=not_declared
+volume	mx-preflight-smoke-f176b894a3-data	/var/lib/docker/volumes/mx-preflight-smoke-f176b894a3-data/_data	/fixture-volume	true
+bind	-	/run/desktop/mnt/host/d/MX-CPAMP-worktrees/login/docs/evidence/manager-login	/fixture-bind	false
+
+actual_docker_formats_exit=0 labels=absent env_sentinel=absent
+actual_docker_fixture_cleanup=verified

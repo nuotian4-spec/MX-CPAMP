@@ -1,0 +1,6 @@
+bash_syntax_exit=0
+scenario=none exit=0 secret_sentinels=absent
+scenario=single exit=0 secret_sentinels=absent
+scenario=multi exit=0 secret_sentinels=absent
+scenario=standalone exit=0 secret_sentinels=absent
+preflight_fixture_exit=0
