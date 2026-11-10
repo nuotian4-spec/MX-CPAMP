@@ -31,3 +31,17 @@ docker run --rm --network none -e GOTOOLCHAIN=local -e GOPROXY=off -e CGO_ENABLE
 退出0；auth包1.126s、executor包1.165s，无race报告。原始输出：`linux-race.log`。覆盖新增准入共享状态与WS真实loopback生命周期；不是全仓race或真实账号压测。
 
 本轮仅本地构建与定向检测，没有推送、生产操作或数据库迁移。隔离跨线、真实业务、手工OAuth和生产状态分别以对应回执为准。
+
+## 批次索引修复后的Manager
+
+后续产品提交 `bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f` 只改变Manager及页面的批次成功引用。按组件比较确认CPA和Worker相对 `95dd9ca` 没有产品diff，因此复用上述两个镜像、专项及Linux race证据。
+
+Manager使用相同Dockerfile与Version参数，SourceCommit改为完整 `bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f`，仅重建为 `mx-cpamp:phase2-local-20261111-r2`。退出0，实际ID为 `sha256:f72b39c0ff1759c14ced75c511a35ab0d97935249cd0446b47becd30a5c9b6b9`，OCI revision与内嵌SourceCommit均绑定该提交。最终Web产物6,506.44kB，包含tsc和Vite，随后嵌入Manager。日志为 `manager-r2-build.log`。
+
+仓库内构建日志副本仅去除行尾空白，原始本机副本保留在 `C:/Users/子羽/.codex/artifacts/mx-phase2-*-build.log`。各组件按自己的实际revision验收；未把复用镜像标成新源码构建。
+
+## BPS能力错误修复后的CPA
+
+当前产品输入为 `4367adaf687ce336e81122fcdb530c0e66e6eb33`。仅CPA增加BPS能力过滤空池的明确400，专项与独审见[诊断回执](../phase2-model-diagnostic/RECEIPT.zh-CN.md)。没有改变并发共享状态、计数生命周期或配置；已有并发专项及Linux race按未变的相关实现复用。Manager相对bb14、Worker相对95dd产品目录完全无diff，继续复用上述镜像。
+
+CPA以原Dockerfile、相同Version和BuildDate参数，仅把Commit及revision改为完整4367，构建 `mx-cpa:phase2-local-20261111-r2`，exit0；完整ID为 `sha256:c7867d233d8f17e97b720de49c12b0d0fdbb52bc45e91e78310d3a1131a32487`。日志：`cpa-r2-build.log`。修正后的三镜像无凭证预检退出0，见[预检](../phase2-business-20261111/corrected-preflight-20261111.jsonl)，实际revision、健康、管理鉴权及清理均通过。没有发起新的登录、刷新或模型请求。

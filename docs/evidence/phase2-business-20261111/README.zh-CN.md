@@ -19,7 +19,7 @@
 五个参数固定候选，以下命令默认只预检；P9执行真实验收时另加`--execute`，通过受控进程stdin送入材料，不把真实值写到shell命令：
 
 ```text
-node run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:phase2-local-20261111 --worker-image mx-oauth-login:phase2-local-20261111 --source-revision 95dd9ca2c16d5469c43ce7c910f38ff271af45e3
+node run.mjs --cpa-image mx-cpa:phase2-local-20261111-r2 --manager-image mx-cpamp:phase2-local-20261111-r2 --worker-image mx-oauth-login:phase2-local-20261111 --source-revision 4367adaf687ce336e81122fcdb530c0e66e6eb33 --manager-revision bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f --worker-revision 95dd9ca2c16d5469c43ce7c910f38ff271af45e3
 ```
 
 亦可通过`--cpa-binary`、`--manager-binary`、`--worker-source`只读叠加Linux产物/源码；叠加必须提供完整40位revision，记录有效输入摘要并在结束复核未漂移。无叠加时逐镜像要求OCI revision与所给完整revision一致，记录实际镜像ID和revision。工具不构建、不拉镜像，不使用尚未完成的tag。
@@ -46,4 +46,4 @@ node run.mjs --cpa-image mx-cpa:phase2-local-20261111 --manager-image mx-cpamp:p
 
 容器预生成名称在`docker run`之前登记，CLI回执失败也进入清理。`node ../phase2-integration/verify-cleanup.mjs`已通过两个工具的CLI替身反例：daemon已建容器但run返回失败，必须主动删除并核无残留；反例不启动Docker，不读取凭据。
 
-fixture只验证工具预算、短路与输出契约，不证明产品或真实BPS可用。真实批次保存注册、所属client正常刷新、一次公开模型请求与最终镜像均待P9真实回执。
+fixture只验证工具预算、短路与输出契约，不证明产品或真实BPS可用。当前[真实回执](RECEIPT.zh-CN.md)已证明批次保存注册、所属client正常刷新及并发设置保留；首次模型HTTP500未通过。修正工具与新CPA镜像完成预检，额外一次真实模型请求仍待用户预算确认，未自动执行。
