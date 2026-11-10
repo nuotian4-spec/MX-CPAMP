@@ -1,6 +1,6 @@
 # BPS 文本、工具往返与图片验收
 
-本工具按 `docs/bps-tools-images-plan.zh-CN.md` 和 ADR 0003 验收 `gpt-6-luna`。登录、正常 refresh 各一次；公开客户端请求最多四次。工具源码和离线 fixture 已完成，真实镜像与完整 revision 由主会话统一绑定后再执行，当前没有真实工具或图片结果。
+本工具按 `docs/bps-tools-images-plan.zh-CN.md` 和 ADR 0003 验收 `gpt-6-luna`。登录、正常 refresh 各一次；公开客户端模型请求最多四次。工具源码和离线fixture完成并独审通过；主会话已绑定最终镜像执行本轮，文本和原生图片通过，工具首轮HTTP502，真实结果见[业务回执](../bps-tools-images-final/BUSINESS.zh-CN.md)。
 
 ## 请求顺序与成功条件
 
@@ -27,7 +27,7 @@ node docs/evidence/phase2-tool-image-20261111/run.mjs --cpa-image CPA_IMAGE --ma
 
 真实执行由主会话在同命令加 --execute，并经受控进程 stdin 输入 email/password/totp_secret JSON。真实材料不进入文件、argv、环境变量或 shell 历史。镜像 revision 尚未绑定的模板不作为可执行发布命令。无推送、部署或生产数据动作。
 
-真实 JSONL 路径预留为 docs/evidence/phase2-tool-image-20261111/REAL-RECEIPT.jsonl，由主会话真实执行时保存白名单输出；当前未创建该文件，也未写任何真实回执。
+真实JSONL为 [REAL-RECEIPT.jsonl](REAL-RECEIPT.jsonl)，由主会话执行后保存白名单输出，退出码及预算见 [REAL-RECEIPT.meta.json](REAL-RECEIPT.meta.json)。本轮实际3次模型请求，首轮工具失败没有发续轮；没有把该状态写成四次全部成功。
 
 ## 离线验证
 

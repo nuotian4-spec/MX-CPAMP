@@ -1,0 +1,22 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/app/apps/web[39m
+
+ [32m✓[39m src/services/api/bpsSettings.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+stderr | src/features/system/components/BPSSettingsCard.test.tsx > BPS协议与图片设置 > 默认原生，关闭图片明确告知历史和工具截图被拒绝
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/system/components/BPSSettingsCard.test.tsx > BPS协议与图片设置 > 中转模式没有HTTPS基址时零写入
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/system/components/BPSSettingsCard.test.tsx > BPS协议与图片设置 > 切换实例时重新装载引用并保留每次请求的作用域
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+ [32m✓[39m src/features/system/components/BPSSettingsCard.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 19:27:39
+[2m   Duration [22m 649ms[2m (transform 489ms, setup 0ms, import 607ms, tests 45ms, environment 0ms)[22m

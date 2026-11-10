@@ -23,7 +23,7 @@ upstream:
       state-dir: /state/bps-state
 ```
 
-`config.BPSStateDirectory(cfg)`统一执行空白裁剪、`~`展开、clean和绝对路径解析。缺省目录为有效`auth-dir`父目录下的`bps-state`，例如`/state/auths`对应`/state/bps-state`。默认与显式目录均拒绝进入凭证扫描树；若`auth-dir`自身名为`bps-state`导致默认同名，应显式配置另一个私有目录。工具绑定使用`tool-bindings`，图片使用`image-relay`，两者独立。
+`config.BPSStateDirectory(cfg)`统一执行空白裁剪、`~`展开、clean和绝对路径解析。缺省目录为有效`auth-dir`父目录下的`bps-state`，例如`/state/auths`对应`/state/bps-state`。默认与显式目录均拒绝进入凭证扫描树；若`auth-dir`自身名为`bps-state`导致默认同名，应显式配置另一个私有目录。工具绑定使用`bindings`，图片使用`image-relay`，两者独立。
 
 ## 图片处理
 

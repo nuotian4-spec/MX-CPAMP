@@ -1,0 +1,8 @@
+go version go1.26.11 linux/amd64
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/bpsbinding	1.047s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth	1.190s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	1.299s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps	1.240s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/config	1.129s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	1.349s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	1.343s
