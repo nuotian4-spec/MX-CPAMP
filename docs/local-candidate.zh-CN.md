@@ -2,6 +2,12 @@
 
 日期：2026-11-10。范围：本地二改、验证与仓库交付。状态：本地候选通过，真实业务与生产验收待安排。
 
+## 仓库交付状态
+
+开发分支 `codex/openai-bps-login` 已推送，已创建 [草稿 PR #1](https://github.com/nuotian4-spec/MX-CPAMP/pull/1)。首批交付提交为 `3bc483f1a9e4319c9568dc216d7b68de6c8a1345`；后续交付记录只修改文档，不改变下列产品与镜像输入。
+
+CPA 上游自带的两项 Google OAuth 公开客户端常量，按用户授权完成本次推送放行，保留原有源码与 Google 登录行为。已通过 GitHub API 核实仓库 `secret_scanning`、`secret_scanning_push_protection` 均为 `enabled`。未发布镜像或切换生产服务；真实业务验收完成前保持 PR 草稿。
+
 ## 实现
 
 - 保留 Codex OAuth，增加 Codex 2FA、BPS OAuth、BPS 2FA。每次仅申请所选通道授权，账号固定使用自己的通道与 client。
