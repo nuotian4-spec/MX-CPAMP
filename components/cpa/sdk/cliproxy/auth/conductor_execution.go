@@ -173,7 +173,10 @@ func (m *Manager) Execute(ctx context.Context, providers []string, req cliproxye
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return cliproxyexecutor.Response{}, errBoundary
 	}
-	normalized := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	normalized, errCapability := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	if errCapability != nil {
+		return cliproxyexecutor.Response{}, errCapability
+	}
 	if len(normalized) == 0 {
 		return cliproxyexecutor.Response{}, &Error{Code: "provider_not_found", Message: "no provider supplied"}
 	}
@@ -240,7 +243,10 @@ func (m *Manager) ExecuteCount(ctx context.Context, providers []string, req clip
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return cliproxyexecutor.Response{}, errBoundary
 	}
-	normalized := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	normalized, errCapability := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	if errCapability != nil {
+		return cliproxyexecutor.Response{}, errCapability
+	}
 	if len(normalized) == 0 {
 		return cliproxyexecutor.Response{}, &Error{Code: "provider_not_found", Message: "no provider supplied"}
 	}
@@ -306,7 +312,10 @@ func (m *Manager) ExecuteStream(ctx context.Context, providers []string, req cli
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return nil, errBoundary
 	}
-	normalized := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	normalized, errCapability := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	if errCapability != nil {
+		return nil, errCapability
+	}
 	if len(normalized) == 0 {
 		return nil, &Error{Code: "provider_not_found", Message: "no provider supplied"}
 	}

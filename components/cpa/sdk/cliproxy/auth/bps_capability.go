@@ -26,12 +26,18 @@ func validateBPSReplayBoundary(providers []string, req coreexecutor.Request, opt
 }
 
 // filterBPSProviders runs before account selection, including Home and mixed pools.
-func filterBPSProviders(ctx context.Context, providers []string, req coreexecutor.Request, opts coreexecutor.Options) []string {
-	exclude := coreexecutor.DownstreamWebsocket(ctx) || coreexecutor.RequiredUpstreamWebsocket(ctx) || opts.Alt != ""
-	exclude = exclude || (opts.SourceFormat != sdktranslator.FormatOpenAI && opts.SourceFormat != sdktranslator.FormatOpenAIResponse && opts.SourceFormat != sdktranslator.FormatCodex)
-	exclude = exclude || coreexecutor.BPSUnsupportedReason(req.Payload) != ""
-	if !exclude {
-		return providers
+func filterBPSProviders(ctx context.Context, providers []string, req coreexecutor.Request, opts coreexecutor.Options) ([]string, error) {
+	reason := coreexecutor.BPSUnsupportedReason(req.Payload)
+	switch {
+	case coreexecutor.DownstreamWebsocket(ctx) || coreexecutor.RequiredUpstreamWebsocket(ctx):
+		reason = "BPS does not support WebSocket"
+	case opts.Alt != "":
+		reason = "BPS does not support this operation"
+	case opts.SourceFormat != sdktranslator.FormatOpenAI && opts.SourceFormat != sdktranslator.FormatOpenAIResponse && opts.SourceFormat != sdktranslator.FormatCodex:
+		reason = "BPS supports OpenAI text requests only"
+	}
+	if reason == "" {
+		return providers, nil
 	}
 	out := make([]string, 0, len(providers))
 	for _, provider := range providers {
@@ -39,5 +45,8 @@ func filterBPSProviders(ctx context.Context, providers []string, req coreexecuto
 			out = append(out, provider)
 		}
 	}
-	return out
+	if len(providers) > 0 && len(out) == 0 {
+		return nil, NewRequestScopedError(reason, 400)
+	}
+	return out, nil
 }
