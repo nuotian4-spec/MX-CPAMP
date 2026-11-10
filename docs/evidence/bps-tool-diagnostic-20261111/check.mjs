@@ -48,10 +48,10 @@ export async function runBusiness(input,{request=transport,report=value=>process
   let accepted=0,clientRequests=0;
   const outputOf=value=>Array.isArray(value?.output)?value.output:[];
   const textOf=value=>outputOf(value).filter(item=>item?.type==='message').flatMap(item=>Array.isArray(item.content)?item.content:[]).filter(item=>item?.type==='output_text'&&typeof item.text==='string').map(item=>item.text).join('').trim();
-  const callsOf=value=>outputOf(value).filter(item=>item?.type==='function_call');
+  const callsOf=value=>outputOf(value).filter(item=>typeof item?.type==='string'&&item.type.endsWith('_call'));
   const pingCall=value=>{
     const calls=callsOf(value);if(calls.length!==1)return null;
-    const call=calls[0];if(call.name!=='ping'||typeof call.call_id!=='string'||!call.call_id.trim()||typeof call.arguments!=='string')return null;
+    const call=calls[0];if(call.type!=='function_call'||call.name!=='ping'||typeof call.call_id!=='string'||!call.call_id.trim()||typeof call.arguments!=='string')return null;
     try{const args=JSON.parse(call.arguments);if(!args||typeof args!=='object'||Array.isArray(args)||Object.keys(args).length)return null;}catch{return null;}
     return call;
   };

@@ -45,6 +45,7 @@ async function scenario(mode='complete') {
         if(mode==='tools_multiple')output.push({...call,call_id:'SECRET_SECOND_CALL_MARKER'});
         firstOutput=structuredClone(output);
       }else output=mode==='tool_result_new_call'?[{type:'function_call',name:'ping',arguments:'{}',call_id:callID}]:[message(mode==='tool_result_semantics'?'not pong':'pong')];
+      if(mode===feature+'_custom_call')output.push({type:'custom_tool_call',name:'SECRET_CUSTOM_NAME_MARKER',call_id:'SECRET_CUSTOM_CALL_MARKER',input:'SECRET_CUSTOM_INPUT_MARKER'});
       if(mode===feature+'_malformed')output={content:'SECRET_MALFORMED_MARKER'};
       return{status:200,value:{id:'resp_bps_fixture',status:mode===feature+'_invalid'?'failed':'completed',output}};
     }
@@ -69,7 +70,7 @@ async function scenario(mode='complete') {
   assert.equal(input.credentials.password,'');
   return reports;
 }
-for(const mode of ['complete','create_transport','needs_action','index_mismatch','duplicate_credential','raw_id','wrong_client','tools_transport','tools_http403','tools_http502','tools_invalid','tools_wrong_name','tools_args','tools_bad_json','tools_no_id','tools_no_call','tools_multiple','tools_malformed','tool_result_transport','tool_result_http403','tool_result_http502','tool_result_invalid','tool_result_semantics','tool_result_new_call','tool_result_malformed'])await scenario(mode);
+for(const mode of ['complete','create_transport','needs_action','index_mismatch','duplicate_credential','raw_id','wrong_client','tools_transport','tools_http403','tools_http502','tools_invalid','tools_wrong_name','tools_args','tools_bad_json','tools_no_id','tools_no_call','tools_multiple','tools_malformed','tools_custom_call','tool_result_transport','tool_result_http403','tool_result_http502','tool_result_invalid','tool_result_semantics','tool_result_new_call','tool_result_malformed','tool_result_custom_call'])await scenario(mode);
 const forged=sanitizeReceipt({stage:'business',feature:'image',client_requests:3,tool_client_requests:3,login_batch_requests:2,refresh_endpoint_requests:1,image_client_requests:1,message:'SECRET_MARKER',bps_diagnostic_stage:'SECRET_MARKER',bps_diagnostic_code:'SECRET_MARKER',bps_upstream_http_status:700,bps_inband_status:700});
 assert.equal(JSON.stringify(forged).includes('SECRET_'),false);
 for(const field of ['feature','client_requests','tool_client_requests','login_batch_requests','refresh_endpoint_requests','image_client_requests'])assert.equal(field in forged,false);
