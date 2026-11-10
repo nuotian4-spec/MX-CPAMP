@@ -46,4 +46,4 @@ node run.mjs --cpa-image mx-cpa:phase2-local-20261111-r2 --manager-image mx-cpam
 
 容器预生成名称在`docker run`之前登记，CLI回执失败也进入清理。`node ../phase2-integration/verify-cleanup.mjs`已通过两个工具的CLI替身反例：daemon已建容器但run返回失败，必须主动删除并核无残留；反例不启动Docker，不读取凭据。
 
-fixture只验证工具预算、短路与输出契约，不证明产品或真实BPS可用。当前[真实回执](RECEIPT.zh-CN.md)已证明批次保存注册、所属client正常刷新及并发设置保留；首次模型HTTP500未通过。修正工具与新CPA镜像完成预检，额外一次真实模型请求仍待用户预算确认，未自动执行。
+fixture只验证工具预算、短路与输出契约，不证明产品或真实BPS可用。[首次真实回执](RECEIPT.zh-CN.md)证明批次保存注册、所属client正常刷新及并发设置保留，首次模型HTTP500未通过。用户追加一次预算后，[修正请求的独立回执](CORRECTED-RECEIPT.zh-CN.md)确认登录和刷新成功，模型返回BPS上游HTTP403、insufficient_quota；仍未取得正常推理输出，未再次发起客户端请求。

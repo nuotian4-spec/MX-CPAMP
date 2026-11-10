@@ -1,0 +1,9 @@
+{
+  "exit_code": 1,
+  "stderr_seen": false,
+  "source_revision": "4367adaf687ce336e81122fcdb530c0e66e6eb33",
+  "tool_revision": "ee3279150b7e40b92d40537584d6bd16ceaf9353",
+  "profile": "bps",
+  "client_request_budget": 1,
+  "supplemental_user_authorization": true
+}
