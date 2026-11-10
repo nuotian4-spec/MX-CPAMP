@@ -44,4 +44,4 @@ Worker 容器测试覆盖两通道假上游认证、TOTP/workspace/PKCE、独立
 
 ## 后续整改与跨线证据
 
-B独审两项整改产品为 `07572357832b69a30e3ee6c45f9f0cc2c3350e0c`，已补受影响专项与构建。中间 CPA `4bca838c3e65be79dc5743d417571b99f6f5f55e` Linux 镜像构建与 Manager0757235/Worker42b04ac 真实三容器集成均退出0，含丢响应取消零导入与临时资源清理核验。A首次delta事件顺序仍待整改，不作最终验收。完整镜像ID、实际revision、命令与证据见同目录 `REVIEW-AND-CROSSLINE.zh-CN.md`；真实登录与模型业务验收边界保持原口径。
+B独审两项整改产品为 `07572357832b69a30e3ee6c45f9f0cc2c3350e0c`，已补受影响专项与构建。最终 CPA `5c90a92eef27f450c7080bc8735c88d873fc8915` Linux 镜像构建与 Manager0757235/Worker42b04ac 真实三容器集成均退出0，含丢响应取消零导入与临时资源清理核验。完整镜像ID、实际revision、命令与最终证据见同目录 `REVIEW-AND-CROSSLINE.zh-CN.md` 末节，`4bca838` 日志仅为中间记录；真实登录与模型业务验收边界保持原口径。

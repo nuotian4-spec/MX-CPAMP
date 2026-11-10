@@ -1,6 +1,6 @@
 # 独审整改与真实跨线集成
 
-日期：2026-11-10。B 原产品 `42b04ac71df347e9c22fa35bad484c437da52d4b`；本次整改产品 `07572357832b69a30e3ee6c45f9f0cc2c3350e0c`。A 中间产品 `4bca838c3e65be79dc5743d417571b99f6f5f55e` 的 Linux 镜像构建与真实三容器跨线集成均 exit0；A 首次 delta 事件的生命周期顺序待整改，暂不作最终验收。原 `85de32f9d327d968cce7ea9178d6f557a850a93e` 预集成记录保留在下方。
+日期：2026-11-10。B 原产品 `42b04ac71df347e9c22fa35bad484c437da52d4b`；本次整改产品 `07572357832b69a30e3ee6c45f9f0cc2c3350e0c`。A 最终产品 `5c90a92eef27f450c7080bc8735c88d873fc8915` 的 Linux 镜像构建与真实三容器跨线集成均退出 `0`。预集成及 `4bca838` 中间记录保留，最终结论与镜像身份见末节。
 
 ## B 两项整改
 
@@ -70,4 +70,42 @@ CPAMP/Worker 镜像 ID 与既有构建记录一致，产品代码、依赖和构
 
 三个服务仅共享 `network none` 的命名空间，登录上游使用合成授权进程。此结果覆盖本地隔离集成；真实 OAuth/2FA、BPS手工回调兑换、真实刷新及模型/SSE业务仍待另行授权验收。
 
-本次无 SQL schema/migration 或线上数据库动作。本地假账号与配置仅在已清理的临时卷；未 push、发布镜像或部署。下一责任人：A完成首次 delta 事件顺序整改，P9重新派发后B按最新完整产品SHA补CPA构建与同脚本集成；CPAMP/Worker继续复用。
+本次无 SQL schema/migration 或线上数据库动作。本地假账号与配置仅在已清理的临时卷；未 push、发布镜像或部署。此镜像为中间产物，最终以如下 `5c90a92` 记录为准。
+
+## 最终 5c90a92 镜像与跨线集成
+
+A worktree `D:/MX-CPAMP-worktrees/runtime` 的 HEAD 为仅证据提交 `7f2b8069c8245c47a9f0c8038c58bc3672cab289`。构建前后 `components/cpa` 工作区均干净，`git diff 5c90a92eef27f450c7080bc8735c88d873fc8915 -- components/cpa` 均为空，构建输入等同固定产品提交。
+
+在 A worktree 执行一次受影响 CPA 构建：
+
+```powershell
+$env:http_proxy='http://127.0.0.1:7890'
+$env:https_proxy='http://127.0.0.1:7890'
+docker build -t mx-cpa:integration --label org.opencontainers.image.revision=5c90a92eef27f450c7080bc8735c88d873fc8915 --build-arg COMMIT=5c90a92eef27f450c7080bc8735c88d873fc8915 --build-arg VERSION=local-bps -f components/cpa/Dockerfile components/cpa
+```
+
+退出码 `0`，原始构建输出为 `cpa-linux-build-final.log`。revision 来自 CLI label，未修改 CPA Dockerfile。
+
+在 B worktree `D:/MX-CPAMP-worktrees/login` 执行身份核证与一次同脚本集成：
+
+```powershell
+docker image inspect mx-cpa:integration mx-cpamp:integration mx-oauth-login:candidate --format '{{index .RepoTags 0}} {{.Id}} {{index .Config.Labels "org.opencontainers.image.revision"}}'
+$env:PATH='C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/node-v22.23.4-win-x64;'+$env:PATH
+node docs/evidence/manager-login/crossline/run.mjs mx-cpa:integration mx-cpamp:integration mx-oauth-login:candidate
+```
+
+两条命令退出码均 `0`；对应 `final-image-identities.log`、`crossline-final.log`。实际身份：
+
+| 镜像 | 实际完整镜像ID | 实际 revision |
+|---|---|---|
+| `mx-cpa:integration` | `sha256:58d0177203d8f4e4968cebc60c59bdb0e236404a05c27656a38351dc1022ab93` | `5c90a92eef27f450c7080bc8735c88d873fc8915` |
+| `mx-cpamp:integration` | `sha256:85a8f76852c08de220ba132490cbdf234b87f1bdeba91a6e0d9bfa905769a25c` | `07572357832b69a30e3ee6c45f9f0cc2c3350e0c` |
+| `mx-oauth-login:candidate` | `sha256:64168881ce990f58d24736d1f8488549457ed2c775a072c1d0572bd524b7926b` | `42b04ac71df347e9c22fa35bad484c437da52d4b` |
+
+CPAMP/Worker 的产品、依赖与构建输入未变，inspect 的完整镜像ID及revision与原回执一致；本轮仅新增证据文档，复用原镜像、构建和对应专项，不重复 Web67 项、Worker7 项或其他包。
+
+最终跨线结果：Codex/BPS各一份账号持久化正确通道、refresh_token与login_method，分别热注册18/1个模型；BPS重复配置及公开同名模型去重通过；Manager health、CPA目录、两管理入口未认证401与回执/列表脱敏通过。真实POST被接受但响应体丢失后，按预知task_id成功取消，CPA账号文件仍仅两份，取消任务零导入。脚本定向查询本次随机前缀容器与卷为空，`isolated_resources_cleanup=verified`。
+
+本次为断网容器中的真实 Manager→Worker→CPA 本地集成，登录上游为合成授权进程，未执行真实登录、模型请求、线上数据库动作、镜像发布、push或生产部署。无SQL schema/migration变化。真实OAuth/2FA、BPS手工回调兑换、真实刷新及模型/SSE业务仍待另行授权验收。
+
+下一责任人：P9核验独审并整合最终证据，维护根文档。
