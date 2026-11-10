@@ -190,7 +190,7 @@ func (s *Service) registerModelsForAuthWithConfigAndCache(ctx context.Context, c
 				id := strings.TrimSpace(configured)
 				if id != "" && !seen[id] {
 					seen[id] = true
-					models = append(models, &ModelInfo{ID: id, Object: "model", OwnedBy: "bps", Type: "bps", DisplayName: id})
+					models = append(models, &ModelInfo{ID: id, Object: "model", OwnedBy: "bps", Type: "bps", DisplayName: id, UserDefined: true})
 				}
 			}
 		}

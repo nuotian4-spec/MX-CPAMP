@@ -82,6 +82,15 @@ func ApplyBPSHeaders(req *http.Request, token, accountID string) error {
 func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]byte) error) error {
 	const max = 16 << 20
 	terminal := false
+	outputIndices := make(map[int64]int)
+	publicOutputIndex := func(upstream int64) int {
+		if index, ok := outputIndices[upstream]; ok {
+			return index
+		}
+		index := len(outputIndices)
+		outputIndices[upstream] = index
+		return index
+	}
 	dispatch := func(data []byte) error {
 		if len(data) == 0 || bytes.Equal(data, []byte("[DONE]")) {
 			return nil
@@ -112,21 +121,30 @@ func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]
 		if item := doc.Get("item.type").String(); item != "" && item != "message" && item != "reasoning" {
 			return errors.New("BPS returned an unsupported output item")
 		}
+		if index := doc.Get("output_index"); index.Exists() {
+			_ = doc.Set("output_index", publicOutputIndex(index.Int()))
+		}
 		if kind == "response.completed" {
 			if status := doc.Get("response.status").String(); status != "completed" {
 				return errors.New("BPS terminal status is not completed")
 			}
+			terminal = true
+		}
+		if source := doc.Get("response.output"); source.IsArray() {
 			output := []any{}
-			for _, item := range doc.Get("response.output").Array() {
+			for upstreamIndex, item := range source.Array() {
 				if kind := item.Get("type").String(); kind != "message" && kind != "reasoning" {
 					return errors.New("BPS returned an unsupported output item")
 				}
 				if item.Get("type").String() == "message" {
-					output = append(output, item.Value())
+					index := publicOutputIndex(int64(upstreamIndex))
+					for len(output) <= index {
+						output = append(output, nil)
+					}
+					output[index] = item.Value()
 				}
 			}
 			_ = doc.Set("response.output", output)
-			terminal = true
 		}
 		return consume(doc.Bytes())
 	}

@@ -51,3 +51,36 @@ func TestBPSReadEventsTerminalAndFailures(t *testing.T) {
 		})
 	}
 }
+
+func TestBPSReadEventsReindexesVisibleOutput(t *testing.T) {
+	events := []string{
+		`{"type":"response.created","response":{"id":"resp_1","output":[]}}`,
+		`{"type":"response.output_item.added","output_index":0,"item":{"id":"rs_1","type":"reasoning","encrypted_content":"private"}}`,
+		`{"type":"response.output_item.added","output_index":1,"item":{"id":"msg_1","type":"message","role":"assistant","content":[]}}`,
+		`{"type":"response.content_part.added","item_id":"msg_1","output_index":1,"content_index":0,"part":{"type":"output_text","text":""}}`,
+		`{"type":"response.output_text.delta","item_id":"msg_1","output_index":1,"content_index":0,"delta":"hello"}`,
+		`{"type":"response.output_text.done","item_id":"msg_1","output_index":1,"content_index":0,"text":"hello"}`,
+		`{"type":"response.content_part.done","item_id":"msg_1","output_index":1,"content_index":0,"part":{"type":"output_text","text":"hello"}}`,
+		`{"type":"response.output_item.done","output_index":1,"item":{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"output_text","text":"hello"}]}}`,
+		`{"type":"response.completed","response":{"id":"resp_1","status":"completed","output":[{"id":"rs_1","type":"reasoning","encrypted_content":"private"},{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"output_text","text":"hello"}]}]}}`,
+	}
+	response := &http.Response{Body: io.NopCloser(strings.NewReader("data: " + strings.Join(events, "\n\ndata: ") + "\n\n")), Header: http.Header{"Content-Type": []string{"text/event-stream"}}}
+	visible := 0
+	err := ReadBPSEvents(context.Background(), response, func(event []byte) error {
+		visible++
+		root := ojson.ParseBytes(event)
+		if strings.Contains(string(event), "private") || strings.Contains(string(event), "rs_1") {
+			t.Fatal("hidden reasoning was published")
+		}
+		if index := root.Get("output_index"); index.Exists() && index.Int() != 0 {
+			t.Fatalf("visible message index=%d, terminal position must be 0: %s", index.Int(), event)
+		}
+		if root.Get("type").String() == "response.completed" && (root.Get("response.output.#").Int() != 1 || root.Get("response.output.0.id").String() != "msg_1") {
+			t.Fatalf("terminal message layout changed: %s", event)
+		}
+		return nil
+	})
+	if err != nil || visible != 8 {
+		t.Fatalf("error=%v visible=%d", err, visible)
+	}
+}

@@ -88,6 +88,9 @@ func (e *BPSExecutor) build(ctx context.Context, auth *coreauth.Auth, req coreex
 		return nil, nil, err
 	}
 	doc := ojson.NewDoc(body)
+	if err = helps.ApplyRequestThinkingDoc(doc, req, opts, opts.SourceFormat.String(), sdktranslator.FormatCodex.String(), e.Identifier()); err != nil {
+		return nil, nil, err
+	}
 	if err = helps.PrepareBPSDoc(doc, model); err != nil {
 		return nil, nil, bpsRequestError{message: err.Error()}
 	}
@@ -173,7 +176,7 @@ func (e *BPSExecutor) ExecuteStream(ctx context.Context, auth *coreauth.Auth, re
 		defer func() { _ = response.Body.Close() }()
 		var parameter any
 		started := false
-		sawTextDelta := false
+		var lifecycle helps.BPSStreamLifecycle
 		emit := func(event []byte) error {
 			line := append([]byte("data: "), event...)
 			translated := sdktranslator.TranslateStream(ctx, sdktranslator.FormatCodex, coreexecutor.ResponseFormatOrSource(opts), req.Model, opts.OriginalRequest, body, line, &parameter)
@@ -187,7 +190,6 @@ func (e *BPSExecutor) ExecuteStream(ctx context.Context, auth *coreauth.Auth, re
 			return nil
 		}
 		streamErr := helps.ReadBPSEvents(ctx, response, func(event []byte) error {
-			kind := ojson.GetBytes(event, "type").String()
 			if detail, ok := helps.ParseCodexUsage(event); ok {
 				reporter.Publish(ctx, detail)
 			}
@@ -208,27 +210,16 @@ func (e *BPSExecutor) ExecuteStream(ctx context.Context, auth *coreauth.Auth, re
 				}
 				started = true
 			}
-			if kind == "response.output_text.delta" {
-				sawTextDelta = true
+			events, errEvents := lifecycle.Events(event)
+			if errEvents != nil {
+				return errEvents
 			}
-			if kind == "response.completed" && !sawTextDelta {
-				responseID := ojson.GetBytes(event, "response.id").String()
-				for outputIndex, item := range ojson.GetBytes(event, "response.output").Array() {
-					for contentIndex, content := range item.Get("content").Array() {
-						if content.Get("type").String() != "output_text" {
-							continue
-						}
-						delta := ojson.NewDocString(`{"type":"response.output_text.delta"}`)
-						for key, value := range map[string]any{"response_id": responseID, "item_id": item.Get("id").String(), "output_index": outputIndex, "content_index": contentIndex, "delta": content.Get("text").String()} {
-							_ = delta.Set(key, value)
-						}
-						if errEmit := emit(delta.Bytes()); errEmit != nil {
-							return errEmit
-						}
-					}
+			for _, publicEvent := range events {
+				if errEmit := emit(publicEvent); errEmit != nil {
+					return errEmit
 				}
 			}
-			return emit(event)
+			return nil
 		})
 		if streamErr != nil {
 			reporter.PublishFailure(ctx, streamErr)
