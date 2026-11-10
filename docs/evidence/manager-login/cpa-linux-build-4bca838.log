@@ -1,0 +1,78 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 997B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/debian:bookworm
+#2 DONE 2.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.26-bookworm
+#3 DONE 2.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 546B done
+#4 DONE 0.0s
+
+#5 [builder 1/7] FROM docker.io/library/golang:1.26-bookworm@sha256:5de7c99eb78ca5e515a4c340235d0955ec5964a5071c492c15503d7c267da473
+#5 resolve docker.io/library/golang:1.26-bookworm@sha256:5de7c99eb78ca5e515a4c340235d0955ec5964a5071c492c15503d7c267da473 0.1s done
+#5 DONE 0.1s
+
+#6 [stage-1 1/7] FROM docker.io/library/debian:bookworm@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8
+#6 resolve docker.io/library/debian:bookworm@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8 0.1s done
+#6 DONE 0.1s
+
+#7 [internal] load build context
+#7 transferring context: 254.16kB 0.2s done
+#7 DONE 0.2s
+
+#8 [builder 2/7] WORKDIR /app
+#8 CACHED
+
+#9 [builder 3/7] RUN apt-get update && apt-get install -y --no-install-recommends build-essential git && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [builder 4/7] COPY go.mod go.sum ./
+#10 CACHED
+
+#11 [builder 5/7] RUN go mod download
+#11 CACHED
+
+#12 [builder 6/7] COPY . .
+#12 DONE 0.7s
+
+#13 [builder 7/7] RUN CGO_ENABLED=1 GOOS=linux go build -buildvcs=false -ldflags="-s -w -X 'main.Version=local-bps' -X 'main.Commit=4bca838c3e65be79dc5743d417571b99f6f5f55e' -X 'main.BuildDate=unknown'" -o ./CLIProxyAPI ./cmd/server/
+#13 DONE 36.6s
+
+#14 [stage-1 2/7] RUN apt-get update && apt-get install -y --no-install-recommends tzdata ca-certificates && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [stage-1 3/7] RUN mkdir /CLIProxyAPI
+#15 CACHED
+
+#16 [stage-1 4/7] COPY --from=builder ./app/CLIProxyAPI /CLIProxyAPI/CLIProxyAPI
+#16 DONE 0.1s
+
+#17 [stage-1 5/7] COPY config.example.yaml /CLIProxyAPI/config.example.yaml
+#17 DONE 0.1s
+
+#18 [stage-1 6/7] WORKDIR /CLIProxyAPI
+#18 DONE 0.1s
+
+#19 [stage-1 7/7] RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone
+#19 DONE 0.3s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 3.0s done
+#20 exporting manifest sha256:74f91f298765e8732e79828c960057d45f8facb20d93567694b7404aad6edbda 0.0s done
+#20 exporting config sha256:981218ab94265368e8f0a18c536e02977844dc10bc5b9f101e048e672468cd51 0.0s done
+#20 exporting attestation manifest sha256:6b7d900f7559d45f5223dfd2c7203cc6d759c6e297b70077d4bea0e9cb204efb
+#20 exporting attestation manifest sha256:6b7d900f7559d45f5223dfd2c7203cc6d759c6e297b70077d4bea0e9cb204efb 0.0s done
+#20 exporting manifest list sha256:777d933d7ea6f65d722acb4427147d5e7c0562d5bf30ff82779e3f4b55509623 0.0s done
+#20 naming to docker.io/library/mx-cpa:integration done
+#20 unpacking to docker.io/library/mx-cpa:integration
+#20 unpacking to docker.io/library/mx-cpa:integration 0.4s done
+#20 DONE 3.7s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/orgrlp4tzho3ji85bjszs45c9
