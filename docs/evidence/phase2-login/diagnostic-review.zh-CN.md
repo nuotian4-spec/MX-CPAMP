@@ -14,4 +14,4 @@ go build -ldflags "-X github.com/seakee/cpa-manager-plus/apps/manager-server/int
 
 退出0，产物24770628字节。该临时二进制使用现有嵌入页面，服务于API诊断复测；没有重新构建Web，也不作为最终页面发布产物。二进制内revision为短值 `a5eaebb`，源码完整提交如上，正式候选另绑定完整提交。
 
-用户已确认旧测试账号密码或2FA发生变更，原材料不再使用。真实登录及刷新/模型调用等待更新材料；本地实现继续。无新增SQL迁移或生产写入。
+用户已确认旧测试账号密码或2FA发生变更，原材料不再使用。2026-11-11使用更新材料完成单次隔离诊断：BPS成功保存注册，Codex在web_login返回security_check；见[真实回执](../real-2fa-20261111/RECEIPT.zh-CN.md)。刷新及模型调用仍待验；本地实现继续。无新增SQL迁移或生产写入。
