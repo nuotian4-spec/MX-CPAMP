@@ -19,6 +19,8 @@ func (s *Server) registerManagementV8Routes() {
 		c.Set(management.ConfigV8ContextKey, true)
 	})
 	v8.GET("/config", s.mgmt.ConfigV8)
+	v8.GET("/bps/settings", s.mgmt.GetBPSSettings)
+	v8.PUT("/bps/settings", s.mgmt.PutBPSSettings)
 	v8.PUT("/config", s.mgmt.ConfigV8)
 	v8.PATCH("/config", s.mgmt.ConfigV8)
 	v8.GET("/config.yaml", s.mgmt.ConfigV8)

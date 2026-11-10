@@ -383,6 +383,15 @@ func appendPath(path []string, key string) []string {
 // never carried it: pruning drops those zero-valued sub-keys. No management
 // endpoint mutates ProxyConnectionPool, so that path is reachable only from code.
 func isKnownDefaultValue(path []string, node *yaml.Node) bool {
+	// BPS开关的显式false与缺省开启不同，父节点也须保留。
+	if len(path) > 0 && path[0] == "bps-protocol" && node != nil {
+		if len(path) == 2 && (path[1] == "enabled" || path[1] == "images-enabled") && node.Kind == yaml.ScalarNode && node.Tag == "!!bool" {
+			return false
+		}
+		if len(path) == 1 && node.Kind == yaml.MappingNode && (findMapKeyIndex(node, "enabled") >= 0 || findMapKeyIndex(node, "images-enabled") >= 0) {
+			return false
+		}
+	}
 	if isPluginConfigsSubtreePath(path) {
 		return false
 	}

@@ -27,6 +27,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/managementasset"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/redisqueue"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	sdkaccess "github.com/router-for-me/CLIProxyAPI/v8/sdk/access"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/api/handlers"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/api/handlers/openai"
@@ -244,6 +245,8 @@ func NewServer(cfg *config.Config, authManager *auth.Manager, accessManager *sdk
 
 	// Setup routes
 	s.setupRoutes()
+	s.engine.GET("/api/bps-images/:token", func(c *gin.Context) { helps.ServeBPSImage(c.Writer, c.Request) })
+	s.engine.HEAD("/api/bps-images/:token", func(c *gin.Context) { helps.ServeBPSImage(c.Writer, c.Request) })
 
 	// Apply additional router configurators from options
 	if optionState.routerConfigurator != nil {

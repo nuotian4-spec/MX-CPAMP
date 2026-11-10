@@ -2,12 +2,13 @@ package config
 
 import (
 	"fmt"
-	"net/url"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints/urlvalidator"
+	"os"
 	"path/filepath"
 	"strings"
 )
 
-// BPSProtocolConfig controls new BPS requests. Active requests keep their snapshot.
+// BPSProtocolConfig控制新请求，在途请求继续使用原快照。
 type BPSProtocolConfig struct {
 	Enabled           *bool  `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 	ImagesEnabled     *bool  `yaml:"images-enabled,omitempty" json:"images_enabled,omitempty"`
@@ -37,23 +38,61 @@ func (c BPSProtocolConfig) Validate() error {
 	}
 	base := strings.TrimSpace(c.ImageRelayBaseURL)
 	if c.Transport() == "relay" || base != "" {
-		u, err := url.Parse(base)
-		if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" {
+		if err := urlvalidator.ValidateHTTPSOrigin(base); err != nil {
 			return fmt.Errorf("BPS图片中转需要有效的HTTPS基址，且不含凭据、路径、查询或片段")
 		}
 	}
 	return nil
 }
 
-// BPSStateDirectory keeps runtime records outside the credential scanner tree.
+// BPSStateDirectory将运行时记录放在凭证扫描目录之外。
 func BPSStateDirectory(cfg *Config) string {
 	if cfg != nil {
 		if path := strings.TrimSpace(cfg.BPSProtocol.StateDir); path != "" {
 			return filepath.Clean(path)
 		}
 		if authDir := strings.TrimSpace(cfg.AuthDir); authDir != "" {
+			authDir = expandBPSPath(authDir)
 			return filepath.Join(filepath.Dir(filepath.Clean(authDir)), "bps-state")
 		}
 	}
 	return filepath.Join("state", "bps")
+}
+
+func expandBPSPath(path string) string {
+	if path == "~" || strings.HasPrefix(path, "~/") || strings.HasPrefix(path, "~\\") {
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, strings.TrimLeft(path[1:], "/\\"))
+		}
+	}
+	return path
+}
+
+func (cfg *Config) ValidateBPSProtocol() error {
+	if cfg == nil {
+		return nil
+	}
+	if err := cfg.BPSProtocol.Validate(); err != nil {
+		return err
+	}
+	if cfg.BPSProtocol.StateDir == "" {
+		return nil
+	}
+	authDir := cfg.AuthDir
+	if strings.TrimSpace(authDir) == "" {
+		authDir = DefaultAuthDir
+	}
+	authPath, err := filepath.Abs(expandBPSPath(authDir))
+	if err != nil {
+		return err
+	}
+	statePath, err := filepath.Abs(expandBPSPath(cfg.BPSProtocol.StateDir))
+	if err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(authPath, statePath)
+	if err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("BPS状态目录必须位于凭证扫描目录之外")
+	}
+	return nil
 }
