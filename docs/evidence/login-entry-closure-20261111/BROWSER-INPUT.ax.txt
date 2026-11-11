@@ -1,0 +1,86 @@
+Browser tab: 7, Title: "CPA Manager Plus", URL: "http://127.0.0.1:11034/management.html#/oauth".
+0 AXWebArea CPA Manager Plus, URL: 127.0.0.1:11034/management.html#/oauth
+	1 container
+		2 button 展开侧边栏
+		3 container 导航
+			4 text OAuth 登录
+		5 container
+			6 button 刷新全部
+			7 link Description: 打开 GitHub 仓库, Value: github.com/seakee/CPA-Manager-Plus
+			8 pop up button (collapsed) Description: 语言, Secondary Actions: Expand
+			9 pop up button (collapsed) Description: 主题, Secondary Actions: Expand
+			10 pop up button (collapsed) Description: 视觉效果, Secondary Actions: Expand
+			11 button 登出
+		12 container
+			13 image CPA Manager Plus
+			14 link Description: 仪表盘, Value: 127.0.0.1:11034/management.html#/
+			15 link Description: 用量分析, Value: 127.0.0.1:11034/management.html#/usage-analytics
+			16 link Description: 请求监控, Value: 127.0.0.1:11034/management.html#/monitoring
+			17 link Description: 用量维护, Value: 127.0.0.1:11034/management.html#/usage-maintenance
+			18 link Description: 配置面板, Value: 127.0.0.1:11034/management.html#/config
+			19 link Description: AI 提供商, Value: 127.0.0.1:11034/management.html#/ai-providers
+			20 link Description: 凭证管理, Value: 127.0.0.1:11034/management.html#/accounts
+			21 link Description: 凭证并发, Value: 127.0.0.1:11034/management.html#/credential-concurrency
+			22 link Description: OAuth 登录, Value: 127.0.0.1:11034/management.html#/oauth
+			23 link Description: 日志查看, Value: 127.0.0.1:11034/management.html#/logs
+			24 link Description: 系统信息, Value: 127.0.0.1:11034/management.html#/system
+		25 container
+			26 container oauth-provider-codex-2fa
+				27 text Codex 2FA 批量导入
+				28 container
+					29 text 每批最多100行，逐条执行。仅申请 Codex 授权；密码与TOTP仅本次使用，未开始材料最多等待30分钟。关闭页面后继续执行，服务重启后不续跑。
+				30 container
+					31 text 账号列表
+					32 text entry area (settable) 账号列表, Value: 本地输入检查（不提交）
+					33 button 检查列表
+					34 button 开始批量登录
+			35 container oauth-provider-bps
+				36 text BPS OAuth
+				37 text 生成链接后前往官方页面授权，再提交完整回调地址。仅申请 BPS 授权。
+				38 button 生成授权链接
+			39 container oauth-provider-bps-2fa
+				40 text BPS 2FA 批量导入
+				41 container
+					42 text 每批最多100行，逐条执行。仅申请 BPS 授权；密码与TOTP仅本次使用，未开始材料最多等待30分钟。关闭页面后继续执行，服务重启后不续跑。
+				43 container
+					44 text 账号列表
+					45 text entry area (settable) 账号列表, Value: 本地输入检查（不提交）
+					46 button 检查列表
+					47 button 开始批量登录
+			48 container oauth-provider-codex
+				49 text Codex OAuth
+				50 button 开始 Codex 登录
+				51 text 通过 OAuth 流程登录 Codex 服务，自动获取并保存认证文件。
+			52 container oauth-provider-anthropic
+				53 text Anthropic OAuth
+				54 button 开始 Anthropic 登录
+				55 text 通过 OAuth 流程登录 Anthropic (Claude) 服务，自动获取并保存认证文件。
+			56 container oauth-provider-antigravity
+				57 text Antigravity OAuth
+				58 button 开始 Antigravity 登录
+				59 text 通过 OAuth 流程登录 Antigravity（Google 账号）服务，自动获取并保存认证文件。
+			60 container oauth-provider-kimi
+				61 text Kimi OAuth
+				62 button 开始 Kimi 登录
+				63 text 通过设备授权流程登录 Kimi 服务，自动获取并保存认证文件。
+			64 container oauth-provider-xai
+				65 text xAI OAuth
+				66 button 开始 xAI 登录
+				67 text 通过 OAuth 流程登录 xAI Grok 服务，自动获取并保存认证文件。
+			68 container oauth-provider-devin
+				69 text Devin
+				70 button 开始 Devin 登录
+				71 text 通过浏览器 OAuth 登录 Devin / Cognition，自动保存认证文件。需要 CLI Proxy API v7.3.1 或更高版本，请在五分钟内完成授权。
+			72 container oauth-provider-meta
+				73 text Muse (Meta) OAuth
+				74 button 使用 Muse 登录
+				75 text 打开授权链接，如有提示请输入设备码。授权完成后将自动获取并保存认证文件。
+			76 text Vertex JSON 登录
+			77 button 导入 Vertex 凭证
+			78 text 上传 Google 服务账号 JSON，使用 CLI vertex-import 同步规则写入 auth-dir/vertex-<project>.json。 目标区域 (可选)
+			79 text field (settable) 目标区域 (可选)
+			80 text 留空表示使用默认区域 us-central1。 服务账号密钥 JSON
+			81 button 选择文件
+			82 text 尚未选择文件 仅支持 Google Cloud service account key JSON 文件，私钥会自动规范化。
+
+The focused UI element is 45 text entry area (settable) 账号列表, Value: 本地输入检查（不提交）

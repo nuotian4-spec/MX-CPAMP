@@ -29,7 +29,7 @@
 
 ```powershell
 $taskNode = 'C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/node-v22.23.4-win-x64/node.exe'
-$taskScript = 'D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/full-login-manual-20261111/run.mjs'
+$taskScript = 'D:/MX-CPAMP/docs/evidence/full-login-manual-20261111/run.mjs'
 $taskLines = & $taskNode $taskScript start
 $taskStartExit = $LASTEXITCODE
 $taskLines
@@ -58,9 +58,9 @@ notepad.exe $taskReady.access_file
 ## 验证命令与责任
 
 ```powershell
-& $taskNode --check 'D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/full-login-manual-20261111/run.mjs'
-& $taskNode --check 'D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/full-login-manual-20261111/worker.mjs'
-& $taskNode --check 'D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/full-login-manual-20261111/proxy-runner.mjs'
+& $taskNode --check 'D:/MX-CPAMP/docs/evidence/full-login-manual-20261111/run.mjs'
+& $taskNode --check 'D:/MX-CPAMP/docs/evidence/full-login-manual-20261111/worker.mjs'
+& $taskNode --check 'D:/MX-CPAMP/docs/evidence/full-login-manual-20261111/proxy-runner.mjs'
 & $taskNode $taskScript preflight
 ```
 
