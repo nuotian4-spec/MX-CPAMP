@@ -1,0 +1,7 @@
+/cpa-stack-cli-proxy-api-1 image=sha256:eeb5bf17435a4c3d1a508188fd149eb8b2dbc5d9d20390cf4fd22d6e40f40d4b id=sha256:eeb5bf17435a4c3d1a508188fd149eb8b2dbc5d9d20390cf4fd22d6e40f40d4b status=running
+/cpa-stack-cpa-manager-plus-1 image=sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd id=sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd status=running
+/cpa-stack-oauth-login-1 image=sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758 id=sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758 status=running
+/cpa-stack-caddy-1 image=caddy:2.10.2-alpine id=sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d status=running
+backup_dir_mode=700
+receipt.json bytes=525 mode=600
+data.tar.gz bytes=21859 mode=600
