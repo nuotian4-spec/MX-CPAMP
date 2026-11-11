@@ -947,6 +947,7 @@ export const filterInspectionResults = (
 export type XaiInferenceState = 'success' | 'failed' | 'skipped' | 'not-applicable';
 
 export type InspectionProbeSource =
+  | 'bps_access'
   | 'codex_usage'
   | 'xai_billing'
   | 'xai_identity'
@@ -971,9 +972,10 @@ const HEALTHY_KEEP_KINDS = new Set([
 ]);
 
 export const shouldShowInspectionConclusionReason = (
-  item: Pick<CodexInspectionResultItem, 'action' | 'disabled' | 'errorKind' | 'statusCode'>
+  item: Pick<CodexInspectionResultItem, 'action' | 'disabled' | 'errorKind' | 'statusCode'> &
+    Partial<Pick<CodexInspectionResultItem, 'provider'>>
 ): boolean => {
-  if (item.action !== 'keep' || item.disabled) return true;
+  if (item.provider === 'bps' || item.action !== 'keep' || item.disabled) return true;
   const errorKind = item.errorKind?.trim() ?? '';
   if (!HEALTHY_KEEP_KINDS.has(errorKind)) return true;
   const statusCode = item.statusCode ?? null;
@@ -988,6 +990,12 @@ export const getInspectionProbePresentation = (
   const errorKind = item.errorKind ?? '';
   const statusCode = item.statusCode ?? null;
 
+  if (provider === 'bps')
+    return {
+      source: 'bps_access',
+      state: statusCode === 200 && !errorKind ? 'success' : 'failed',
+      statusCode,
+    };
   if (provider !== 'xai') {
     if (errorKind === 'missing_auth_index') {
       return { source: 'codex_usage', state: 'skipped', statusCode };
@@ -1044,6 +1052,7 @@ export const summarizeInspectionError = (
   t: TFunction,
   options: { xaiInferenceEnabled?: boolean } = {}
 ) => {
+  if (item.provider === 'bps') return item.errorKind ? `BPS权限查询未确认：${item.errorKind}` : '';
   if (item.action === 'reauth' || item.statusCode === 401) {
     return t('monitoring.codex_inspection_error_summary_reauth');
   }

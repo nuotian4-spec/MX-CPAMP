@@ -11,6 +11,7 @@ import (
 func (s *Service) inspectSingleBPSAccount(ctx context.Context, setup store.Setup, item account, logger runLogger) model.CodexInspectionResult {
 	base := resultFromAccount(item)
 	base.Action = "keep"
+	base.State = "bps_access_unknown"
 	base.AutoRecoverEligible = false
 	base.UsedPercent = nil
 	base.ActionReason = "BPS权限未确认；额度未知；推理未验证"

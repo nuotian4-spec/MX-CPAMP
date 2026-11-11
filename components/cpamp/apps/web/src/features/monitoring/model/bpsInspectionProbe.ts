@@ -13,6 +13,7 @@ export const inspectSingleBpsAccount = async (
 ): Promise<CodexInspectionResultItem> => {
   const base: CodexInspectionResultItem = {
     ...account,
+    state: 'bps_access_unknown',
     action: 'keep',
     actionReason: 'BPS权限未确认；额度未知；推理未验证',
     statusCode: null,
@@ -24,7 +25,11 @@ export const inspectSingleBpsAccount = async (
     quotaInventoryObserved: false,
   };
   try {
-    const result = await bpsAccessApi.query(account.authIndex ?? '', scope);
+    const result = await bpsAccessApi.query(
+      account.authIndex ?? '',
+      scope,
+      String(account.raw.bps_connection_ref ?? '')
+    );
     base.actionReason = bpsAccessMessage(result);
     base.statusCode = result.upstream_status;
     base.state = result.error

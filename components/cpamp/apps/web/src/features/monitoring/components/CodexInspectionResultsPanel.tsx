@@ -160,7 +160,9 @@ export function CodexInspectionResultsPanel({
   };
 
   const probeSourceLabel = (source: InspectionProbeSource) =>
-    t(`monitoring.codex_inspection_probe_source_${source}`);
+    source === 'bps_access'
+      ? 'BPS只读权限'
+      : t(`monitoring.codex_inspection_probe_source_${source}`);
   const probeStateLabel = (state: InspectionProbeState) =>
     t(`monitoring.codex_inspection_probe_state_${state}`);
   const probeStateClass: Record<InspectionProbeState, string> = {
@@ -343,11 +345,15 @@ export function CodexInspectionResultsPanel({
                     </section>
 
                     <section className={`${styles.resultCardSection} ${styles.resultQuotaSection}`}>
-                      <CodexInspectionQuotaWindows
-                        windows={quotaWindows}
-                        fallbackUsedPercent={item.usedPercent}
-                        t={t}
-                      />
+                      {item.provider === 'bps' ? (
+                        <span>额度未知；推理未验证</span>
+                      ) : (
+                        <CodexInspectionQuotaWindows
+                          windows={quotaWindows}
+                          fallbackUsedPercent={item.usedPercent}
+                          t={t}
+                        />
+                      )}
                     </section>
 
                     <section

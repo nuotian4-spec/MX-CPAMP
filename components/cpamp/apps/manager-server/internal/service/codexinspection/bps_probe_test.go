@@ -48,3 +48,43 @@ func TestBPSInspectionReadOnlyAndUnknownQuota(t *testing.T) {
 		})
 	}
 }
+
+func TestBPSRunPersistsUnknownQuotaWithoutAutomaticMutation(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v0/management/auth-files":
+			_, _ = w.Write([]byte(`{"files":[{"name":"bps.json","auth_index":"bps-one","provider":"bps","disabled":true}]}`))
+		case "/v8/management/bps/credentials/access":
+			_ = json.NewEncoder(w).Encode(map[string]any{"provider": "bps", "auth_index": "bps-one", "auth_id": "bps.json", "queried_at": "2026-11-11T00:00:00Z", "allowed": true, "models": []string{"PAGE_ONLY"}, "upstream_status": 200, "error": nil, "quota": nil, "inference_verified": false, "auto_recover_eligible": false})
+		default:
+			t.Errorf("意外请求: %s %s", r.Method, r.URL.Path)
+			http.NotFound(w, r)
+		}
+	}))
+	defer upstream.Close()
+	db := newCodexInspectionTestStore(t)
+	cfg := newCodexInspectionManagerConfig(upstream.URL)
+	cfg.CodexInspection.TargetTypes = []string{"bps"}
+	cfg.CodexInspection.TargetType = "bps"
+	cfg.CodexInspection.AutoActionMode = "delete"
+	cfg.CodexInspection.AutoRecoverEnabled = true
+	if err := db.SaveManagerConfig(context.Background(), cfg); err != nil {
+		t.Fatal(err)
+	}
+	service := newCodexInspectionTestService(t, db)
+	detail, err := service.Run(context.Background(), RunRequest{TriggerType: "manual"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := service.GetRun(context.Background(), detail.Run.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if persisted.Run.ProbeSetCount != 1 || len(persisted.Results) != 1 {
+		t.Fatal(persisted)
+	}
+	result := persisted.Results[0]
+	if result.Provider != "bps" || result.Action != "keep" || result.UsedPercent != nil || result.AutoRecoverEligible || !result.Disabled || strings.Contains(result.ErrorDetail, "PAGE_ONLY") {
+		t.Fatal(result)
+	}
+}

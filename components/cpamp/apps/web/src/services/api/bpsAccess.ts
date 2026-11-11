@@ -1,5 +1,4 @@
 import { apiClient, createScopedApiRequestConfig, type ApiClientRequestScope } from './client';
-import { bpsSettingsApi } from './bpsSettings';
 import { normalizeApiBase } from '@/utils/connection';
 
 export interface BPSAccess {
@@ -22,12 +21,15 @@ export const bpsRequestConfig = (scope: ApiClientRequestScope) => ({
 });
 
 export const bpsAccessApi = {
-  async query(authIndex: string, scope: ApiClientRequestScope): Promise<BPSAccess> {
-    if (!authIndex.trim()) throw new Error('缺少凭证引用');
-    const settings = await bpsSettingsApi.get(scope);
+  async query(
+    authIndex: string,
+    scope: ApiClientRequestScope,
+    connectionRef: string
+  ): Promise<BPSAccess> {
+    if (!authIndex.trim() || !connectionRef) throw new Error('请刷新凭证列表建立连接引用');
     const result = await apiClient.get<BPSAccess>('/bps/access', {
       ...bpsRequestConfig(scope),
-      params: { auth_index: authIndex, connection_ref: settings.connection_ref },
+      params: { auth_index: authIndex, connection_ref: connectionRef },
     });
     if (
       result.provider !== 'bps' ||

@@ -1,3 +1,4 @@
+import { loadBpsBoundAuthFiles } from '@/services/api/bpsCredentialSnapshot';
 import {
   useCallback,
   useEffect,
@@ -750,6 +751,7 @@ export const prepareAuthFilesForUpload = async (files: File[]): Promise<Prepared
 };
 
 type UseAuthFilesDataOptions = {
+  bindBpsAccess?: boolean;
   connectionFingerprint?: string | null;
   requestScope?: AuthFilesApiRequestScope;
   onCredentialMutation?: (mutation: AuthFilesCredentialMutation) => void;
@@ -760,6 +762,7 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
   const { showNotification, showConfirmation } = useNotificationStore();
   const connectionFingerprint = options.connectionFingerprint?.trim() ?? '';
   const requestScope = options.requestScope;
+  const bindBpsAccess = options.bindBpsAccess === true;
   const onCredentialMutation = options.onCredentialMutation;
 
   const [files, setFiles] = useState<AuthFileItem[]>([]);
@@ -972,7 +975,12 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
         let revision: number;
         do {
           revision = filesRevisionRef.current;
-          data = requestScope ? await authFilesApi.list(requestScope) : await authFilesApi.list();
+          data =
+            bindBpsAccess && requestScope
+              ? await loadBpsBoundAuthFiles(requestScope)
+              : requestScope
+                ? await authFilesApi.list(requestScope)
+                : await authFilesApi.list();
         } while (isCurrentRequest() && revision !== filesRevisionRef.current);
         if (!isCurrentRequest()) {
           if (options?.throwOnError) throw new Error(t('notification.refresh_failed'));
@@ -996,7 +1004,7 @@ export function useAuthFilesData(options: UseAuthFilesDataOptions = {}): UseAuth
         if (isCurrentRequest()) setLoading(false);
       }
     },
-    [commitFiles, connectionFingerprint, requestScope, t]
+    [bindBpsAccess, commitFiles, connectionFingerprint, requestScope, t]
   );
 
   const handleUploadClick = useCallback(() => {

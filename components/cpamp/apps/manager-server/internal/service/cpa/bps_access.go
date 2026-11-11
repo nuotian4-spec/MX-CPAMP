@@ -47,5 +47,16 @@ func FetchBPSAccess(ctx context.Context, client *http.Client, baseURL, key, auth
 	if result.Error != nil && (result.Allowed != nil || result.Models != nil) {
 		return model.BPSAccess{}, fmt.Errorf("invalid_response")
 	}
+
+	if result.Error != nil {
+		switch *result.Error {
+		case "credential_incomplete", "unauthorized", "forbidden", "rate_limited", "upstream_error", "redirect_rejected", "invalid_response", "timeout", "canceled", "transport_error", "credential_changed":
+		default:
+			return model.BPSAccess{}, fmt.Errorf("invalid_response")
+		}
+	}
+	if result.Error == nil && result.Allowed != nil && !*result.Allowed && len(result.Models) > 0 {
+		return model.BPSAccess{}, fmt.Errorf("invalid_response")
+	}
 	return result, nil
 }

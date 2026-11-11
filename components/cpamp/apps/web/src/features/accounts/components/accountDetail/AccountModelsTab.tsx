@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BPSAccountModelsSummary } from '@/features/system/components/BPSModelsPanel';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
@@ -112,6 +113,10 @@ export function AccountModelsTab({
 }: AccountModelsTabProps) {
   const { t } = useTranslation();
   const serverVersion = useAuthStore((state) => state.serverVersion);
+  const apiBase = useAuthStore((state) => state.apiBase);
+  const managementKey = useAuthStore((state) => state.managementKey);
+  const bpsScope = useMemo(() => ({ apiBase, managementKey }), [apiBase, managementKey]);
+  const isBps = normalizeProviderKey(fileType || row.provider) === 'bps';
   const exclusionPriority = getAccountModelExclusionPriority(serverVersion);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<AccountModelFilter>('all');
@@ -202,9 +207,7 @@ export function AccountModelsTab({
           ? model.ruleModelId.trim().toLowerCase()
           : model.id.trim().toLowerCase();
       return (
-        aliasesByModelId.get(lookupKey) ??
-        aliasesByModelId.get(model.id.trim().toLowerCase()) ??
-        []
+        aliasesByModelId.get(lookupKey) ?? aliasesByModelId.get(model.id.trim().toLowerCase()) ?? []
       );
     },
     [aliasesByModelId]
@@ -237,13 +240,16 @@ export function AccountModelsTab({
   const filterItems = useMemo(
     () => [
       { id: 'all' as const, label: t('accounts.model_filter_all') },
-      { id: 'available' as const, label: t('accounts.model_filter_available') },
+      {
+        id: 'available' as const,
+        label: isBps ? '规则未禁用' : t('accounts.model_filter_available'),
+      },
       {
         id: 'disabled' as const,
         label: t('accounts.model_filter_disabled', { count: disabledCount }),
       },
     ],
-    [disabledCount, t]
+    [disabledCount, isBps, t]
   );
 
   const updateExactRule = (model: AccountModelRuleRow, excluded: boolean) => {
@@ -340,9 +346,7 @@ export function AccountModelsTab({
         disabled={editingDisabled || !model.ruleModelIdResolved}
         onClick={() => updateExactRule(model, true)}
         title={
-          !model.ruleModelIdResolved
-            ? t('accounts.model_rule_mapping_unavailable')
-            : undefined
+          !model.ruleModelIdResolved ? t('accounts.model_rule_mapping_unavailable') : undefined
         }
       >
         {t('accounts.model_disable_for_credential')}
@@ -369,6 +373,14 @@ export function AccountModelsTab({
       aria-label={t('accounts.detail_tab_models')}
       aria-busy={loading || modelDefinitionsLoading || globalExcludedState === 'loading'}
     >
+      {isBps && (
+        <BPSAccountModelsSummary
+          scope={bpsScope}
+          authIndex={row.authIndex}
+          connectionRef={String(row.raw.bps_connection_ref ?? '')}
+          registeredModels={models.map((model) => model.id)}
+        />
+      )}
       <div className={styles.accountModelsHeader}>
         <div className={styles.accountModelsSummary}>
           <strong>
@@ -574,7 +586,11 @@ export function AccountModelsTab({
       ) : showLoadFailed ? null : showEmpty ? (
         <EmptyState
           title={t('auth_files.models_empty')}
-          description={t('auth_files.models_empty_desc')}
+          description={
+            isBps
+              ? '请前往系统设置中的BPS模型设置发布清单，并检查本凭证禁用规则。'
+              : t('auth_files.models_empty_desc')
+          }
         />
       ) : filteredRows.length === 0 ? (
         <EmptyState title={t('accounts.model_filter_empty')} />
@@ -604,7 +620,9 @@ export function AccountModelsTab({
                     <span
                       className={`${styles.accountModelScopeBadge} ${getScopeClassName(model.scope)}`}
                     >
-                      {t(getScopeTranslationKey(model.scope))}
+                      {isBps && model.scope === 'available'
+                        ? '规则未禁用；权限见上方'
+                        : t(getScopeTranslationKey(model.scope))}
                     </span>
                   </div>
                   {model.display_name && model.display_name !== model.id ? (

@@ -1748,6 +1748,12 @@ func (s *Service) inspectSingleAccount(
 		return s.inspectSingleBPSAccount(ctx, setup, item, logger)
 	}
 	base := resultFromAccount(item)
+	if item.Provider != "codex" {
+		base.Action = "keep"
+		base.State = "inspection_unknown"
+		base.ActionReason = "未支持的巡检通道，保留账号"
+		return base
+	}
 	if item.AuthIndex == "" {
 		base.Action = "keep"
 		base.ActionReason = "缺少 auth_index，保留账号"

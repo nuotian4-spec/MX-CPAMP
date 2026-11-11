@@ -33,6 +33,7 @@ import {
   inspectSingleAccount,
   toInspectionAccount,
 } from '@/features/monitoring/model/codexInspectionProbe';
+import { loadBpsBoundAuthFiles } from '@/services/api/bpsCredentialSnapshot';
 import { inspectSingleBpsAccount } from '@/features/monitoring/model/bpsInspectionProbe';
 import { inspectSingleXaiAccount } from '@/features/monitoring/model/xaiInspectionProbe';
 import {
@@ -547,7 +548,19 @@ export const createCodexInspectionSession = ({
           ? inspectSingleBpsAccount(account, requestScope, onLog)
           : account.provider === 'xai'
             ? inspectSingleXaiAccount(account, resolvedSettings, onLog, translate, requestConfig)
-            : inspectSingleAccount(account, resolvedSettings, onLog, translate, requestConfig)
+            : account.provider === 'codex'
+              ? inspectSingleAccount(account, resolvedSettings, onLog, translate, requestConfig)
+              : Promise.resolve<CodexInspectionResultItem>({
+                  ...account,
+                  state: 'inspection_unknown',
+                  action: 'keep',
+                  actionReason: '未支持的巡检通道，保留账号',
+                  statusCode: null,
+                  usedPercent: null,
+                  isQuota: false,
+                  autoRecoverEligible: false,
+                  error: '',
+                })
       )
         .then((inspectionResult) => {
           resultMap.set(inspectionResult.key, inspectionResult);
@@ -615,7 +628,9 @@ export const createCodexInspectionSession = ({
       }
     );
 
-    const authFilesResponse = await authFilesApi.list(requestScope);
+    const authFilesResponse = resolvedSettings.targetTypes.includes('bps')
+      ? await loadBpsBoundAuthFiles(requestScope)
+      : await authFilesApi.list(requestScope);
     files = Array.isArray(authFilesResponse.files) ? authFilesResponse.files : [];
     const accounts = files.map(toInspectionAccount);
     const connectionFingerprint = createCodexInspectionConnectionFingerprint(

@@ -1352,6 +1352,7 @@ export function AccountsPage() {
     batchDelete,
     reconcileAuthFileSource,
   } = useAuthFilesData({
+    bindBpsAccess: managerStorageAvailable,
     connectionFingerprint,
     requestScope: authFilesRequestScope,
     onCredentialMutation: handleCredentialMutation,
