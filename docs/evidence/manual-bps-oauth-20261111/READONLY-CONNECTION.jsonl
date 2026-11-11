@@ -1,0 +1,7 @@
+{"stage":"effective_connection","cpa_loopback_expected":true,"management_file_expected":true,"admin_file_expected":true,"oauth_worker_env_configured":false}
+{"stage":"readonly_get","route":"manager_health","http_status":200}
+{"stage":"readonly_get","route":"manager_info","http_status":200}
+{"stage":"readonly_get","route":"manager_config","http_status":200}
+{"stage":"readonly_get","route":"cpa_config_proxy","http_status":200}
+{"stage":"readonly_get","route":"unknown_oauth_state","http_status":404}
+{"stage":"scope","read_only":true,"probe_callback_submitted":false,"probe_exchange_attempted":false,"probe_session_created":false,"probe_account_credentials_read":false,"command_exit":0}

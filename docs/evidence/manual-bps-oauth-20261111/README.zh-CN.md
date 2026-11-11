@@ -35,8 +35,8 @@ $run='D:/MX-CPAMP/docs/evidence/manual-bps-oauth-20261111/run.mjs'
 & $node $run stop '本次回执中的绝对state_dir'
 ```
 
-verify 从容器 tmpfs 读取管理员密钥，经真实 Manager 代理取得认证文件列表，独立核磁盘 BPS 文件数量和 runtime 注册条目数量，再比较唯一条目、profile/client、oauth 标记与 access/refresh 存在性。只输出计数、布尔值与 passed/pending，不输出邮箱、账号 ID、文件名或令牌。它不创建 OAuth 会话、不兑换回调、不刷新、不调用模型；正向业务结果仍待用户本次授权。
+verify 从容器 tmpfs 读取管理员密钥，经真实 Manager 代理取得认证文件列表，独立核磁盘 BPS 文件数量和 runtime 注册条目数量，再比较唯一条目、profile/client、oauth 标记与 access/refresh 存在性。只输出计数、布尔值与 passed/pending，不输出邮箱、账号 ID、文件名或令牌。它不创建 OAuth 会话、不兑换回调、不刷新、不调用模型。
 
 stop 只删除本轮唯一 label 对应的两个容器与访问文件，保留不含秘密的 state/verification 回执；不操作其他项目资源。
 
-本轮无 SQL/schema 迁移、生产写入、push 或部署；运行时 Manager 临时库与 OAuth 凭据写入仅在隔离 tmpfs。下一责任人：主会话交用户入口，完成授权后核唯一保存注册并清理，记录真实结果。
+本轮无 SQL/schema 迁移、生产写入、push 或部署；运行时 Manager 临时库与 OAuth 凭据写入仅在隔离 tmpfs。[本次用户结果](USER-RESULT.zh-CN.md)为未完成：会话仍wait、保存/注册均0，随后归属清理确认。已结束的地址和访问文件不得当成当前入口。下一责任人：主会话收口诊断修复与独审，不重复本次授权。
