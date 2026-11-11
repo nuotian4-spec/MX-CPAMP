@@ -28,8 +28,8 @@ HTTP 404 的外部 `model_not_found / invalid_request_error` 与诊断照常显�
 | --- | --- | --- |
 | `exact-handler-matrix.log` | 基线、原 `toolRequest()` 的合成请求、13 种回包 | exit 0；确认规范包装、直接工具、JSON 成功和多种失败分支；每场景一次模拟上游调用 |
 | `diagnostic-contract-before.log` | 基线 + 新公开契约测试 | exit 1；32 组均准确捕获诊断字段缺失 |
-| `diagnostic-contract-after.log` | 诊断候选产品代码 | exit 0；Responses/Chat × 普通/SSE × 8 个分支全部通过 |
-| `bps-regression.log` | 候选最终产品、测试及格式化输入 | exit 0；helps、executor、api 三包 `TestBPS` 专项，包含增强的未知状态 `null` 断言 |
+| `diagnostic-contract-after.log` | `b8ad2cd` 产品代码 | exit 0；Responses/Chat × 普通/SSE × 8 个分支全部通过 |
+| `bps-regression.log` | `b8ad2cd` 产品、测试及格式化输入 | exit 0；helps、executor、api 三包 `TestBPS` 专项，包含增强的未知状态 `null` 断言 |
 | `node-diagnostics.log` | 候选 `diagnostics.mjs` 与 `verify-diagnostics.mjs` | exit 0；合法枚举、实际/带内状态分列、未知/越界反例及重复脱敏保留 |
 | `http404-before.log` | `087eeeb` + 404 调度对照测试 | exit 1；捕获内部分类变化以及原文本规则失配 |
 | `http404-after.log` | `46aa62c` 产品输入 | exit 0；四入口、有无原文本规则、旧/新错误路径，共 16 次模拟 dispatch，公开分类与内部状态对齐 |
