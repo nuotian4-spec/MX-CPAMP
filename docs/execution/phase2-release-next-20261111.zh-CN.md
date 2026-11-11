@@ -1,10 +1,10 @@
 # 二期发布前收口
 
-日期：2026-11-11。现场盘点来源基线 `a4eaecfe48efaa198d4c15d9165e61ac5da77443`。沿用完整验收后统一发布的决定；本地发布工具、分发归档与真实发布边界已完成，生产保持原状。本轮没有真实登录、刷新、模型请求、推送或部署。
+日期：2026-11-11。现场盘点来源基线 `a4eaecfe48efaa198d4c15d9165e61ac5da77443`。沿用完整验收后统一发布的决定；本地发布工具、旧候选分发归档与真实发布边界已完成，生产保持原状。修复版手工BPS OAuth在本机隔离环境完成一次真实保存注册验收及清理，未追加主动刷新或模型请求，未推送或部署。
 
 ## 已完成范围
 
-BPS 2FA、保存注册、同client正常刷新、gpt-6-luna文本、默认原生图片及Responses普通工具往返分别已有真实回执。批次、并发、Chat/Responses普通与SSE、关图、工具截图及历史图片语义已有对应离线证据；不逐协议重复真实调用，不将离线结果写成全形态真实成功。
+BPS手工OAuth、BPS 2FA、保存注册、同client正常刷新、gpt-6-luna文本、默认原生图片及Responses普通工具往返分别已有真实回执。批次、并发、Chat/Responses普通与SSE、关图、工具截图及历史图片语义已有对应离线证据；不逐协议重复真实调用，不将离线结果写成全形态真实成功。
 
 最新本地候选固定为[scope兼容回执](../evidence/bps-callback-scope-20261111/FINAL.zh-CN.md)中的CPA与Manager；Worker继续复用原产物。此前发布工具与分发归档的固定身份属于旧候选，未重新绑定，`write_release_ready=false`。
 
@@ -24,7 +24,7 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 | 项目 | 下一动作 | 边界 |
 |---|---|---|
-| 手工BPS OAuth | 生成可复制链接、实际官方授权、回调、兑换、唯一保存注册 | 原始问题的关键纵切；2FA成功不替代。新增真实登录前单独说明范围并取得确认 |
+| 手工BPS OAuth | 本机修复版一次真实授权、回调及唯一保存注册已通过，归属清理确认 | [最终回执](../evidence/bps-callback-scope-20261111/MANUAL-RESULT.zh-CN.md)；生产尚未切换 |
 | Codex 2FA | 保留web_login/security_check事实，先核受支持交互及可定位证据，再决定一次定向验证 | 不盲重试，不把更换账号或出口当成既定修复；刷新和模型正向结果仍待证 |
 | HTTPS中转 | 准备GET/HEAD精确Caddy路由至持图CPA，核真实HTTPS可达及取图，再按明确预算验证 | 用户已选双模式，不静默延期；native默认不需要改Caddy，中转不公开state或上传入口 |
 | 工具截图/历史图片 | 复用离线关联与顺序证据；若要宣称组合真实可用，再安排最小组合验收 | 不穷举协议和图片格式，不重复普通附件成功项 |
@@ -69,4 +69,4 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 当前责任人：主会话。新的15分钟手工OAuth入口材料已准备、固定上述候选身份，用户已明确确认该次验收；验收只含一次官方授权、提交回调及唯一保存注册，不主动刷新、不调用模型，不启动Worker或操作OVH。启动命令在CreateProcess前被自动审批拒绝，工具仅返回`blocked by policy`；只读核本轮容器为0、启动回执不存在，见[启动状态](../evidence/bps-callback-scope-20261111/MANUAL-START-STATUS.json)。没有新授权窗口或账号导入，不通过其他通道绕过拦截。
 
-用户随后已运行已审start，真实ready、独立状态核验及空池verify完成，见[当前窗口](../evidence/bps-callback-scope-20261111/MANUAL-SESSION.zh-CN.md)。本轮入口127.0.0.1:2702，截止06:26:08 UTC；保存/注册均0，尚未完成手工OAuth。当前责任人：用户在官方页面完成该次授权并提交新回调；下一责任人：主会话核唯一保存注册后归属清理。无需重复确认同一范围，旧会话、地址及访问文件不复用。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。
+用户随后运行已审start并完成该次官方授权；06:18:54 UTC最终verify确认唯一保存注册、profile/client、OAuth方法、令牌存在性及runtime active通过，exit0。实际配置模型清单未设，解释本轮模型0；随后stop归属清理通过、令牌状态不保留，独立核验完成，见[真实结果](../evidence/bps-callback-scope-20261111/MANUAL-RESULT.zh-CN.md)。用户新增巡检反馈已定位：读取到1份凭证，但targetTypes仅codex，且当前界面/后端/探针只支持Codex/xAI，BPS尚未接入，见[缺口记录](../evidence/bps-callback-scope-20261111/BPS-INSPECTION-GAP.zh-CN.md)。当前责任人：主会话，本轮登录验收已完成，BPS巡检待成套方案与实施边界。旧窗口、地址及访问文件不复用，不追加真实巡检或模型请求。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。

@@ -1,6 +1,6 @@
 # BPS 官方回调兼容候选
 
-日期：2026-11-11。本地修复已通过专项、独审、构建及无凭据预检；手工BPS OAuth的真实保存注册仍待验。生产未改动，未推送或重新分发归档。
+日期：2026-11-11。本地修复已通过专项、独审、构建及无凭据预检；手工BPS OAuth的[真实唯一保存注册验收](MANUAL-RESULT.zh-CN.md)已通过，归属清理确认。生产未改动，未推送或重新分发归档。
 
 ## 已核问题与修复
 
@@ -43,6 +43,6 @@ docker build --progress plain --build-arg 'HTTP_PROXY=http://host.docker.interna
 
 用户已明确确认手工BPS OAuth一轮：官方授权后提交一次回调，核唯一凭证文件、运行时注册、profile/client及令牌存在性后立即清理；不主动刷新、不调用模型、不启动Worker、不操作OVH。启动命令在CreateProcess前被工具自动审批拒绝，仅返回`blocked by policy`，脚本未执行；见[启动状态](MANUAL-START-STATUS.json)。只读核本轮label容器为0、START及exit回执均不存在，没有新授权窗口或账号导入。
 
-随后用户已在本机Windows PowerShell运行已审入口，交回真实ready JSON，见[本轮窗口](MANUAL-SESSION.zh-CN.md)。主会话核空池保存/注册均0，独审确认归属、镜像和预算一致；本轮入口为127.0.0.1:2702，截止06:26:08 UTC。当前责任人为用户完成该次手工授权；下一责任人为主会话核最终保存注册并执行归属清理。此前范围授权仍有效，无需重复确认。旧会话、地址、授权码及截图凭据不复用，尚无本轮真实OAuth通过结论。
+随后用户在本机Windows PowerShell运行已审入口并完成本轮一次官方授权，见[窗口记录](MANUAL-SESSION.zh-CN.md)。最终verify确认唯一凭证保存和运行时注册、profile/client、OAuth方法、令牌存在性与runtime active全部通过，exit0；独立核验通过。模型0来自实际临时配置未提供BPS清单。随后stop归属清理通过、令牌状态未保留，见[最终结果](MANUAL-RESULT.zh-CN.md)。当前责任人为主会话归档通过证据并核对新增巡检反馈；旧入口、授权码和访问文件不复用。
 
 此前两处2FA错误来自未配置Worker的手工专项窗口，诊断Manager已禁用相应入口；该修复不替代Codex正向2FA。Codex历史`security_check`、HTTPS中转及OVH现场仍待验。无SQL/schema迁移、数据清理或生产写入；旧分发包尚未重新绑定新CPA/Manager，`write_release_ready=false`。
