@@ -46,4 +46,6 @@ CPA须落实位于凭据扫描树之外的私有bps-state持久挂载与显式st
 - [状态持久化专项](../evidence/bps-state-durability-20261111/README.zh-CN.md)，源提交 `ad35bc8`，主线 `7a9001a`：固定CPA镜像、真实Compose原卷跨容器重建、最小绑定及合成工具续轮通过；错挂空卷被本轮验收guard阻断，清理确认，exit0，独审通过。该guard尚未接入生产发布工具；错误state-dir明确拒绝但CLI退出0的边界继续保留。
 - [服务器短盘点入口](../evidence/phase2-release-preflight/short-preflight.sh)，源提交 `3794ab3`，主线 `443988c`：43行未编码here-doc，实际只执行Docker元信息和文件元信息读取。真实Linux/双Compose/Caddy旧链反例、秘密哨兵与前后状态一致测试exit0，短入口独审通过。完整脚本的认证与路由能力另有边界，不归入短入口结论。
 
-当前责任人：主会话交付上述短命令；下一责任人：用户在OVH SSH终端运行一次并回传全部输出，主会话据实际四服务、各自Compose链及挂载制作新发布材料。短入口不读密钥或凭据正文，不下载或写入文件、不重启；登录及模型在途仍明确unknown，write_release_ready=false。尚无本轮生产现场回执，不交写入型升级命令，不重复真实业务测试。
+当前责任人：主会话。用户已回传[OVH现场基线](../evidence/phase2-release-preflight/SERVER-BASELINE.zh-CN.md)，18条JSON完整、独立核证通过：四服务running，旧rc1镜像及revision匹配；三应用双Compose链、Caddy原单链，原挂载与旧备份元信息齐备，可用约91.72GiB，指定bps-state目录不存在。无需重复这次盘点。
+
+下一责任人：主会话按真实链适配新版发布材料，并定向补有效配置/state-dir/KV来源、认证和路由缺口；不把指定目录不存在当成没有其他旧状态。登录与模型在途仍unknown，write_release_ready=false；未验证旧备份内容恢复，不把旧归档当新停态备份。手工OAuth等业务余项不变，适用证据未齐不交写入型升级命令，不推送部署。
