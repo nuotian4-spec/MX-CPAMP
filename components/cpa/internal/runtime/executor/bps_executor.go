@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -21,6 +22,13 @@ import (
 )
 
 type BPSExecutor struct{ cfg *config.Config }
+
+type bpsHTTPResponseError struct {
+	statusErr
+	publicBody string
+}
+
+func (e bpsHTTPResponseError) PublicErrorBody() string { return e.publicBody }
 
 type bpsRequestError struct{ message string }
 
@@ -171,7 +179,10 @@ func (e *BPSExecutor) send(ctx context.Context, auth *coreauth.Auth, req coreexe
 			prepared.release()
 		}
 		diagnostic := helps.WithBPSHTTPStatus(helps.NewBPSFailure("upstream_http", "http_rejected"), response.StatusCode)
-		return nil, nil, statusErr{code: response.StatusCode, msg: helps.BPSFailureBody(diagnostic, response.StatusCode)}
+		return nil, nil, bpsHTTPResponseError{
+			statusErr:  statusErr{code: response.StatusCode, msg: fmt.Sprintf("BPS upstream returned HTTP %d", response.StatusCode)},
+			publicBody: helps.BPSFailureBody(diagnostic, response.StatusCode),
+		}
 	}
 	return response, prepared, nil
 }

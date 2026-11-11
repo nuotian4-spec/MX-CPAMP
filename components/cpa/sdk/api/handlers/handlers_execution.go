@@ -362,6 +362,14 @@ func ExecutionErrorMessage(err error) *interfaces.ErrorMessage {
 	return executionErrorMessage(err)
 }
 
+type publicExecutionError struct {
+	message string
+	cause   error
+}
+
+func (e publicExecutionError) Error() string { return e.message }
+func (e publicExecutionError) Unwrap() error { return e.cause }
+
 func executionErrorMessage(err error) *interfaces.ErrorMessage {
 	var terminated *coreexecutor.RequestTerminatedError
 	if errors.As(err, &terminated) && terminated != nil {
@@ -404,6 +412,13 @@ func executionErrorMessage(err error) *interfaces.ErrorMessage {
 	if he, ok := err.(interface{ Headers() http.Header }); ok && he != nil {
 		if hdr := he.Headers(); hdr != nil {
 			addon = hdr.Clone()
+		}
+	}
+	// Presentation is applied after dispatch; schedulers keep the original error text.
+	var public interface{ PublicErrorBody() string }
+	if errors.As(err, &public) && public != nil {
+		if body := public.PublicErrorBody(); body != "" {
+			err = publicExecutionError{message: body, cause: err}
 		}
 	}
 	return &interfaces.ErrorMessage{StatusCode: status, Error: err, Addon: addon}
