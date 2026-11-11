@@ -1,0 +1,5 @@
+{"stage":"persisted","synthetic":true,"public_http":200,"record_count":1,"minimal_fields":true,"file_mode":"600","auth_scan_separate":true,"internal_network":true,"public_ports":false}
+{"stage":"recreated","container_id_changed":true,"volume_source_same":true,"volume_target_same":true,"volume_rw_same":true,"record_preserved":true,"continuation_http":200,"native_call_restored":true,"same_synthetic_identity":true,"synthetic_upstream_calls":2}
+{"stage":"wrong_state_dir","startup_rejected":true,"configuration_error_observed":true,"process_exit":0,"synthetic_upstream_calls":2}
+{"stage":"wrong_mount","pre_request_guard_rejected":true,"old_volume_preserved":true,"no_additional_upstream_calls":true}
+{"stage":"cleanup","verified":true,"own_project_only":true,"temporary_input_removed":true}
