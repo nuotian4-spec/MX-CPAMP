@@ -61,4 +61,6 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 本窗口已结束：[用户结果](../evidence/manual-bps-oauth-20261111/USER-RESULT.zh-CN.md)为未完成。既有Manager/CPA会话只读查询均wait，最终保存/注册为0；两处2FA误点由未配置Worker的本地503拒绝，不作为上游登录失败。05:26:11 UTC按归属清理两个容器与临时管理员访问文件，未重提回调或创建新授权。原截图/密码/TOTP/完整回调不入仓。
 
-当前责任人：执行席修补Manager明确回调输入400的错误分类，以及无Worker时前端可用性提示；独审席核白名单、未知提交锁和实例切换边界。主会话负责整合与候选核验。具体用户回调拒绝原因仍未证实，不把已定位的映射缺陷写成现场根因。新Manager输入将使旧固定分发包暂不适用于新候选；不重建CPA/Worker或以旧包发布修复。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。write_release_ready=false，完整验收后统一推送与发布，不交生产写入命令。
+当前责任人：主会话。上述Manager回调400分类与无Worker前端门控已修复、独审通过；[本地诊断候选](../evidence/oauth-input-diagnostics-20261111/FINAL.zh-CN.md)完成Go两包、Web30项、最终Manager构建及无凭据隔离预检，均有对应exit0；首构建TS2769的exit1保留，最小测试类型修复后补受影响项。CPA/Worker未重建。没有追加真实OAuth、刷新或模型请求。
+
+下一责任人：用户仅确认此前填的是官方登录后的回调地址，还是上方授权链接，不发送完整地址；主会话据此决定下一次明确范围，旧会话和访问文件均已清理。具体用户回调拒绝原因仍未证实，不把离线映射缺陷写成现场根因。新Manager使旧固定分发包不适用于本候选，不以旧包发布修复；业务余项和发布绑定仍待完成。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。write_release_ready=false，完整验收后统一推送与发布，不交生产写入命令。
