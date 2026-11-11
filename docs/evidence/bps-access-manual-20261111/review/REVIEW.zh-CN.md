@@ -43,3 +43,5 @@
 2026-11-11 进度核证：`MANUAL-VERIFY-PROGRESS.jsonl` 与对应退出码 `0` 显示 BPS 保存/注册各 `1`、唯一匹配且 active，发布/注册模型各 `2` 且一致；`manual_observation=null`，结果仍为 `pending`，脚本未额外调用 access。结合主会话已核截图中的 `targetTypes=[codex]`、`totalFiles=1`、`probeSetCount=0`，当前集合为空源于巡检目标尚未切换 BPS，不是凭证漏读；账号页 URL 的 `provider=bps` 仅为列表筛选，不改变巡检目标。无需产品重测、构建或活跃窗口镜像替换。
 
 下一步由用户在“巡检配置 → 巡检凭证提供商”选择“BPS（只读权限）”并保存，再手工执行一次巡检；这是额外一次只读 access，主会话及本席不自动执行。新增巡检观察与原单次模型发现验收分段记录，原 `verify pending` 不改写为通过。中文 target hint 仅列 Codex/xAI 属文案遗漏，记录为下一次打包前同步项，本活跃窗口不重建镜像。
+
+重启空窗口核证：`MANUAL-RESTART-1-CLEANUP` 与 `MANUAL-RESTART-1-START` 的脱敏记录及退出码均为 `0`，旧归属 `b32b2eaf5650` 清理 `verified=true`、`token_state_retained=false`；新归属 `6afd1f5dfa6d` 固定同双镜像，仅回环入口 `127.0.0.1:13958`，沿用 900 秒窗口，到期 `2026-11-11T09:08:56.055Z`。新凭证/模型均为 `0`，健康/页面 `200`、无鉴权 `401`、未知 state `404`，未建 OAuth 或主动调用 access/刷新/推理。原保存/注册 BPS `1`、发布/注册模型 `2` 仅保留为旧窗口事实，不代表真实巡检通过；新窗口由用户重新授权、在服务端巡检配置选择 BPS 后手工巡检一次，不重复模型发现与发布。本席仅核脱敏记录，未读访问文件、请求服务、测试、清理或改代码。
