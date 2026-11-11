@@ -1,6 +1,6 @@
 # BPS 模型配置与巡检修复方案
 
-日期：2026-11-11（北京时间）。项目：MX-CPAMP。源码基线：`ad27014c8d3301ea51ccb918929aaa1666b556bb`，分支`codex/openai-bps-login`。状态：Q1—Q5产品决定及整体方案已确认；用户要求“下一步”后，按固定实施基线`5d431b9be0828f94576d1807e1cc87b822cc1350`进入本地两线执行，见[执行包](execution/bps-inspection-repair-20261111.zh-CN.md)。生产保持原状，不追加真实请求。
+日期：2026-11-11（北京时间）。项目：MX-CPAMP。源码基线：`ad27014c8d3301ea51ccb918929aaa1666b556bb`，分支`codex/openai-bps-login`。状态：已按Q1—Q5及整体确认方案完成本地实施、专项、独立代码/安全审查、CPA与Manager最终构建及断网组合验收，见[最终回执](evidence/bps-inspection-repair-20261111/FINAL.zh-CN.md)。实施基线`5d431b9be0828f94576d1807e1cc87b822cc1350`，职责见[执行包](execution/bps-inspection-repair-20261111.zh-CN.md)。官方access在线实测待进行；生产保持原状，本轮无新真实请求。
 
 ## 1. 问题与目标
 
@@ -136,4 +136,4 @@ BPS结果始终采用只读动作，且`autoRecoverEligible=false`；不进入Co
 - Web `features/monitoring/components/InspectionConfigFields.tsx`、本地`codexInspection.ts`、`features/system/components/BPSSettingsCard.tsx`、`hooks/useVisualConfig.ts`及账号模型页。
 - 固定供体上述access实现及`openai_excel_oauth.go`的刷新/写回副作用，仅复用已经核明的低层契约。
 
-独立只读方案审阅已核模型配置保留、双巡检入口、既有存储和全局清单语义；专用探针超时例外与逐凭证权限不匹配的展示契约已纳入实施范围。方案阶段未运行测试，未声称产品实现或上游接口当前实测通过。
+独立只读方案审阅已核模型配置保留、双巡检入口、既有存储和全局清单语义。实施后的专项、构建、组合及独立审查结果以最终回执为准；本地合成验收不替代官方接口在线实测。

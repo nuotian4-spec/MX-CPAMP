@@ -6,7 +6,7 @@
 
 BPS手工OAuth、BPS 2FA、保存注册、同client正常刷新、gpt-6-luna文本、默认原生图片及Responses普通工具往返分别已有真实回执。批次、并发、Chat/Responses普通与SSE、关图、工具截图及历史图片语义已有对应离线证据；不逐协议重复真实调用，不将离线结果写成全形态真实成功。
 
-最新本地候选固定为[scope兼容回执](../evidence/bps-callback-scope-20261111/FINAL.zh-CN.md)中的CPA与Manager；Worker继续复用原产物。此前发布工具与分发归档的固定身份属于旧候选，未重新绑定，`write_release_ready=false`。
+最新本地候选固定为[BPS模型与巡检回执](../evidence/bps-inspection-repair-20261111/FINAL.zh-CN.md)中的CPA与Manager，包含已通过的scope兼容修复；Worker继续复用原产物。此前发布工具与分发归档的固定身份属于旧候选，未重新绑定，`write_release_ready=false`。
 
 ## 接续顺序
 
@@ -37,7 +37,7 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 ## 当前责任
 
-下一责任人：主会话先准备最小生产只读盘点入口与新版发布执行包，协调手工BPS OAuth的受控验收；独审席只核新增挂载、路由、恢复及发布边界。现有产品和业务通过项不重开，旧403/502及供体三项基线失败继续保留。
+下一责任人：主会话准备最新候选的一次定向真实BPS access与模型页面验收材料，再绑定明确范围。既有生产只读盘点、发布工具及挂载/恢复证据按输入复用，分发资产待最终候选验收后重新绑定。现有业务通过项不重开，旧403/502及供体三项基线失败继续保留。
 
 ## 当前接续回执
 
@@ -71,4 +71,4 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 用户随后运行已审start并完成该次官方授权；06:18:54 UTC最终verify确认唯一保存注册、profile/client、OAuth方法、令牌存在性及runtime active通过，exit0。实际配置模型清单未设，解释本轮模型0；随后stop归属清理通过、令牌状态不保留，独立核验完成，见[真实结果](../evidence/bps-callback-scope-20261111/MANUAL-RESULT.zh-CN.md)。用户新增巡检反馈已定位：读取到1份凭证，但targetTypes仅codex，且当前界面/后端/探针只支持Codex/xAI，BPS尚未接入，见[缺口记录](../evidence/bps-callback-scope-20261111/BPS-INSPECTION-GAP.zh-CN.md)。当前责任人：主会话，本轮登录验收已完成，BPS巡检待成套方案与实施边界。旧窗口、地址及访问文件不复用，不追加真实巡检或模型请求。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。
 
-最新实施接续：[BPS模型配置与巡检修复方案](../bps-inspection-repair-plan.zh-CN.md)完成Q1—Q5确认、整体确认及独立只读审阅后，用户要求“下一步”，已按[执行包](bps-inspection-repair-20261111.zh-CN.md)在两份隔离工作树派发CPA与Manager/Web实施，独审并行核新增契约和稳定diff。范围为显式模型配置入口/空提示与BPS巡检；采用只读access查询、人工确认全局发布清单，各凭证单独显示官方允许模型，巡检只检测记录，不自动删启停或修改调度。无新增SQL/schema，已有SQLite巡检记录和CPA配置保存复用。当前责任人：A/B两线实施、独审核新增边界、主会话跟进；下一责任人：主会话整合、统一构建和隔离验收。尚无新真实access请求、推送或部署，`write_release_ready=false`。
+最新实施接续：[BPS模型与巡检本地候选](../evidence/bps-inspection-repair-20261111/FINAL.zh-CN.md)已完成两线实施、专项与独立代码/安全审查；CPA/Manager各一次最终构建exit0，最终镜像断网组合exit0并确认归属清理。模型发现与人工发布分离、各凭证权限展示、BPS只检测记录及未知额度均已接入；无新增SQL/schema，沿用既有SQLite记录和CPA配置。当前责任人：主会话本地收口；下一责任人：主会话准备新候选定向真实access及页面验收材料。官方接口在线结果待证，旧窗口与令牌不复用；无新真实请求、推送或部署，`write_release_ready=false`。

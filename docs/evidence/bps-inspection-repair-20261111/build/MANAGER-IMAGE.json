@@ -1,0 +1,9 @@
+{
+  "ref": "mx-cpamp:bps-inspection-repair-20261111",
+  "id": "sha256:54648d3ce33cfa9b1361eb7f0d99568f2f62497e5dea78124feaaa17c8f73429",
+  "revision": "de1c4356cd80363c6b28384fdf3e3a704380ec26",
+  "os": "linux",
+  "architecture": "amd64",
+  "runtime_proxy_env_count": 0,
+  "build_exit": 0
+}

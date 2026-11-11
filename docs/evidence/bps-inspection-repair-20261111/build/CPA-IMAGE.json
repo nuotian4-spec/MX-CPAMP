@@ -1,0 +1,9 @@
+{
+  "ref": "mx-cpa:bps-inspection-repair-20261111",
+  "id": "sha256:54e47035d502e2875d4fb5bd63f62cb7f69e5bdf8532a0d2ab5a85eb87666abc",
+  "revision": "06a2f9f121b06e8609c5f9d148213dc6ceeaea6b",
+  "os": "linux",
+  "architecture": "amd64",
+  "runtime_proxy_env_count": 0,
+  "build_exit": 0
+}

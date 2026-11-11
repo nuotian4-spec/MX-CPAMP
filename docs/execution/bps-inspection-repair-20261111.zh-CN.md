@@ -27,4 +27,6 @@ DON'T：不新增SQL/schema或新目录缓存，不改变OAuth/刷新、推理�
 
 无新增SQL/schema迁移。未来人工保存模型会写CPA现有配置；巡检结果沿用既有SQLite记录，这是运行时记录写入，不是修改凭证或发布模型。
 
-当前责任人：A/B两线实施，独审等待首份契约与稳定diff；主会话协调和跟进。下一责任人：主会话核证、整合、统一构建与隔离验收。本地候选未完成、生产未动，`write_release_ready=false`。
+当前结论：本地候选完成。A/B产品及专项已整合，独立代码/安全审查通过；CPA与Manager最终构建exit0，断网最终镜像组合exit0，BPS集合1、只记录/未知额度、模型保存注册与清空、SQLite往返及归属清理通过。产品、证据与镜像身份见[最终回执](../evidence/bps-inspection-repair-20261111/FINAL.zh-CN.md)。
+
+当前责任人：主会话完成本地收口。下一责任人：主会话准备本次候选的定向真实access及页面验收材料，绑定新授权范围；官方access在线实测、生产验收仍待完成。无新真实登录/access/刷新/推理，无推送或部署，`write_release_ready=false`。
