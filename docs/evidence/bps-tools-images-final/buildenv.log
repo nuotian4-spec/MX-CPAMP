@@ -1,0 +1,53 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 960B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26-bookworm
+#2 DONE 1.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 505B done
+#3 DONE 0.0s
+
+#4 [builder 1/7] FROM docker.io/library/golang:1.26-bookworm@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d018310feb93cd98fc0
+#4 resolve docker.io/library/golang:1.26-bookworm@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d018310feb93cd98fc0 0.0s done
+#4 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 176.19kB 0.1s done
+#5 DONE 0.2s
+
+#6 [builder 2/7] WORKDIR /app
+#6 CACHED
+
+#7 [builder 4/7] COPY go.mod go.sum ./
+#7 CACHED
+
+#8 [builder 6/7] COPY . .
+#8 CACHED
+
+#9 [builder 3/7] RUN apt-get update && apt-get install -y --no-install-recommends build-essential git && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [builder 5/7] RUN go mod download
+#10 CACHED
+
+#11 [builder 7/7] RUN CGO_ENABLED=1 GOOS=linux go build -buildvcs=false -ldflags="-s -w -X 'main.Version=bps-tools-images-20261111' -X 'main.Commit=2f51beb7c8f9ed7ecb3c91562fe94824192c6990' -X 'main.BuildDate=2026-11-11'" -o ./CLIProxyAPI ./cmd/server/
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 18.5s done
+#12 exporting manifest sha256:6722aaf5839a18ab8136ed9cb7ff038022ffa56cd6a89c808b710f5a5c14c930 0.0s done
+#12 exporting config sha256:c9d1513d6d985f21c3d9a77fe9fa2af1a1178c61807dc844e1f4730006b4a8e4 0.0s done
+#12 exporting attestation manifest sha256:e828564d1ffa657b5b057821fa352e878f6d39f7de5cc1f0b26dbec15924e249 0.0s done
+#12 exporting manifest list sha256:75195664cd12258c72160cf4121c931ae4176719d6545a9e5f35fabfe2abbc55
+#12 exporting manifest list sha256:75195664cd12258c72160cf4121c931ae4176719d6545a9e5f35fabfe2abbc55 0.0s done
+#12 naming to docker.io/library/mx-cpa-buildenv:bps-tools-images-20261111 done
+#12 unpacking to docker.io/library/mx-cpa-buildenv:bps-tools-images-20261111
+#12 unpacking to docker.io/library/mx-cpa-buildenv:bps-tools-images-20261111 11.0s done
+#12 DONE 29.7s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/0nof598nbd2dn9oqf5no7i6l7

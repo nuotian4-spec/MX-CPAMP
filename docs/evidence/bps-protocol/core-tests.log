@@ -1,0 +1,33 @@
+--- FAIL: TestCatalogContractLongHistoryMismatchFailsClosed (0.01s)
+    --- FAIL: TestCatalogContractLongHistoryMismatchFailsClosed/cached=false/stream=false (0.00s)
+        catalog_contract_test.go:111:
+                Error Trace:    D:/MX-CPAMP-worktrees/bps-protocol-tools/components/cpa/internal/basispoints/catalog_contract_test.go:111
+                Error:          Should be zero, but was 1
+                Test:           TestCatalogContractLongHistoryMismatchFailsClosed/cached=false/stream=false
+                Messages:       已有历史时不能增加模型请求或伪造执行结果
+    --- FAIL: TestCatalogContractLongHistoryMismatchFailsClosed/cached=false/stream=true (0.00s)
+        catalog_contract_test.go:111:
+                Error Trace:    D:/MX-CPAMP-worktrees/bps-protocol-tools/components/cpa/internal/basispoints/catalog_contract_test.go:111
+                Error:          Should be zero, but was 1
+                Test:           TestCatalogContractLongHistoryMismatchFailsClosed/cached=false/stream=true
+                Messages:       已有历史时不能增加模型请求或伪造执行结果
+    --- FAIL: TestCatalogContractLongHistoryMismatchFailsClosed/cached=true/stream=false (0.00s)
+        catalog_contract_test.go:111:
+                Error Trace:    D:/MX-CPAMP-worktrees/bps-protocol-tools/components/cpa/internal/basispoints/catalog_contract_test.go:111
+                Error:          Should be zero, but was 1
+                Test:           TestCatalogContractLongHistoryMismatchFailsClosed/cached=true/stream=false
+                Messages:       已有历史时不能增加模型请求或伪造执行结果
+    --- FAIL: TestCatalogContractLongHistoryMismatchFailsClosed/cached=true/stream=true (0.00s)
+        catalog_contract_test.go:111:
+                Error Trace:    D:/MX-CPAMP-worktrees/bps-protocol-tools/components/cpa/internal/basispoints/catalog_contract_test.go:111
+                Error:          Should be zero, but was 1
+                Test:           TestCatalogContractLongHistoryMismatchFailsClosed/cached=true/stream=true
+                Messages:       已有历史时不能增加模型请求或伪造执行结果
+--- FAIL: TestFunctionCodeBranchCatalogAndReplay (0.00s)
+    function_code_branches_test.go:146: cached native call was not replayed verbatim
+--- FAIL: TestCodexThreadDelegationPreservesPairedTools (0.00s)
+    history_delegation_test.go:151: handoff was not retained between the user message and paired tools
+FAIL
+FAIL    github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints    2.531s
+ok      github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints/urlvalidator   0.063s
+FAIL

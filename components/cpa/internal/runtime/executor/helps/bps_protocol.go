@@ -1,0 +1,253 @@
+package helps
+
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"errors"
+	"io"
+	"net/http"
+	"strings"
+
+	"github.com/MoeForge/moego/ojson"
+	"github.com/google/uuid"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints"
+)
+
+const BPSResponsesURL = "https://bps.openai.com/basispoints/api/responses"
+
+func PrepareBPSDoc(doc *ojson.Doc, model string) error {
+	var input []any
+	raw := doc.Get("input")
+	if raw.Type == ojson.String {
+		input = []any{bpsTextMessage("user", raw.String())}
+	} else if raw.IsArray() {
+		for _, item := range raw.Array() {
+			input = append(input, item.Value())
+		}
+	} else {
+		return errors.New("BPS requires text input")
+	}
+	prologue := []any{}
+	if instructions := doc.Get("instructions").String(); instructions != "" {
+		prologue = append(prologue, bpsTextMessage("developer", instructions))
+	}
+	prologue = append(prologue, bpsTextMessage("developer", "This is an external Responses client without an Excel workbook. Return assistant text and do not call server-injected Excel or Office tools."))
+	effort := doc.Get("reasoning.effort").String()
+	if effort == "" {
+		effort = doc.Get("reasoning_effort").String()
+	}
+	if effort == "" {
+		effort = "medium"
+	}
+	switch effort {
+	case "low", "medium", "high", "xhigh":
+	default:
+		return errors.New("invalid BPS reasoning effort")
+	}
+	for _, key := range []string{"instructions", "reasoning", "tools", "tool_choice", "parallel_tool_calls", "include", "stream_options", "service_tier", "generate", "prompt_cache_retention", "safety_identifier"} {
+		_ = doc.Delete(key)
+	}
+	for key, value := range map[string]any{"model": model, "model_selection": "explicit", "stream": true, "store": false, "input": append(prologue, input...), "reasoning_effort": effort, "metadata": map[string]any{"task_id": uuid.NewString(), "turn_id": uuid.NewString(), "agent_iteration": "0"}} {
+		if err := doc.Set(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func bpsTextMessage(role, text string) map[string]any {
+	return map[string]any{"type": "message", "role": role, "content": []any{map[string]any{"type": "input_text", "text": text}}}
+}
+
+func ApplyBPSHeaders(req *http.Request, token, accountID string) error {
+	if token == "" || accountID == "" || strings.ContainsAny(token+accountID, "\r\n") {
+		return errors.New("BPS credentials are incomplete")
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("chatgpt-account-id", accountID)
+	req.Header.Set("x-openai-account-id", accountID)
+	req.Header.Set("x-basispoints-auth-mode", "chatgpt")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Accept-Encoding", "identity")
+	req.Header.Set("Origin", "https://bps.openai.com")
+	for key, value := range map[string]string{"client-agent-profile": "excel", "client-editor": "excel", "client-host": "office", "client-platform": "excel", "client-platform-class": "PC", "client-product": "basispoints-excel-plugin", "client-runtime": "desktop", "office-host": "Excel", "office-platform": "PC"} {
+		req.Header.Set("x-openai-internal-basispoints-"+key, value)
+	}
+	return nil
+}
+
+// ReadBPSEvents requires a real terminal event; an EOF never becomes success.
+func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]byte) error) error {
+	return readBPSEvents(ctx, response, false, consume)
+}
+
+func ReadBPSProtocolEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error) (err error) {
+	defer func() { err = WithBPSHTTPStatus(err, response.StatusCode) }()
+	upstream := response.Body
+	if !strings.Contains(strings.ToLower(response.Header.Get("Content-Type")), "text/event-stream") {
+		raw, err := io.ReadAll(io.LimitReader(upstream, (16<<20)+1))
+		if err != nil || len(raw) > 16<<20 || !ojson.ValidBytes(raw) {
+			return NewBPSFailure("protocol_decode", "invalid_response")
+		}
+		doc := ojson.NewDocString(`{"type":"response.completed"}`)
+		_ = doc.SetRaw("response", string(raw))
+		upstream = io.NopCloser(bytes.NewReader(append(append([]byte("data: "), doc.Bytes()...), []byte("\n\n")...)))
+	}
+	// Nil callbacks ensure one accepted generation never triggers automatic model repair.
+	converted := bridge.StreamWithRepairs(ctx, upstream, nil, nil)
+	defer func() { _ = converted.Close() }()
+	public := &http.Response{Header: http.Header{"Content-Type": []string{"text/event-stream"}}, Body: converted}
+	return readBPSEvents(ctx, public, true, func(event []byte) error {
+		bound, err := bindings.Publish(event)
+		if err != nil {
+			return err
+		}
+		return consume(bound)
+	})
+}
+
+func readBPSEvents(ctx context.Context, response *http.Response, tools bool, consume func([]byte) error) error {
+	const max = 16 << 20
+	terminal := false
+	outputIndices := make(map[int64]int)
+	publicOutputIndex := func(upstream int64) int {
+		if index, ok := outputIndices[upstream]; ok {
+			return index
+		}
+		index := len(outputIndices)
+		outputIndices[upstream] = index
+		return index
+	}
+	dispatch := func(data []byte) error {
+		if len(data) == 0 || bytes.Equal(data, []byte("[DONE]")) {
+			return nil
+		}
+		if !ojson.ValidBytes(data) || !ojson.ParseBytes(data).IsObject() {
+			return NewBPSFailure("protocol_decode", "invalid_response")
+		}
+		doc := ojson.NewDoc(data)
+		for _, path := range []string{"response.id", "response_id"} {
+			if id := doc.Get(path).String(); id != "" && !strings.HasPrefix(id, "resp_bps_") {
+				_ = doc.Set(path, "resp_bps_"+strings.TrimPrefix(id, "resp_"))
+			}
+		}
+		kind := doc.Get("type").String()
+		if strings.HasPrefix(kind, "response.reasoning") || doc.Get("item.type").String() == "reasoning" {
+			return nil
+		}
+		if kind == "response.done" {
+			kind = "response.completed"
+			_ = doc.Set("type", kind)
+		}
+		if kind == "response.failed" || kind == "response.incomplete" || kind == "error" {
+			if failure := basispoints.ParseBridgeFailure(data); failure != nil {
+				if failure.FailureStage == "bridge_tool_validation" {
+					return NewBPSFailure("tool_validation", "tool_validation_failed")
+				}
+				return NewBPSFailure("protocol_conversion", "conversion_failed")
+			}
+			if kind == "response.incomplete" {
+				return NewBPSFailure("protocol_decode", "incomplete_response")
+			}
+			diagnostic := NewBPSFailure("upstream_inband", "unknown")
+			if failure := basispoints.ParseUpstreamFailure(data); failure != nil {
+				// The bridge's default 502 does not prove an explicit in-band status.
+				if failure.Status != http.StatusBadGateway || (failure.Code != "basispoints_upstream_error" && failure.Code != "basispoints_upstream_cancelled") {
+					diagnostic = NewBPSFailure("upstream_inband", "upstream_failed")
+					diagnostic.inbandStatus = failure.Status
+				}
+			}
+			return diagnostic
+		}
+		if !tools && (strings.Contains(kind, "function_call") || strings.Contains(kind, "custom_tool")) {
+			return NewBPSFailure("tool_validation", "tool_validation_failed")
+		}
+		allowedItem := func(kind string) bool {
+			return kind == "message" || kind == "reasoning" || tools && (kind == "function_call" || kind == "custom_tool_call")
+		}
+		if item := doc.Get("item.type").String(); item != "" && !allowedItem(item) {
+			return NewBPSFailure("protocol_conversion", "conversion_failed")
+		}
+		if index := doc.Get("output_index"); index.Exists() {
+			_ = doc.Set("output_index", publicOutputIndex(index.Int()))
+		}
+		if kind == "response.completed" {
+			if status := doc.Get("response.status").String(); status != "completed" {
+				return NewBPSFailure("protocol_decode", "incomplete_response")
+			}
+			terminal = true
+		}
+		if source := doc.Get("response.output"); source.IsArray() {
+			output := []any{}
+			for upstreamIndex, item := range source.Array() {
+				if kind := item.Get("type").String(); !allowedItem(kind) {
+					return NewBPSFailure("protocol_conversion", "conversion_failed")
+				}
+				if item.Get("type").String() != "reasoning" {
+					index := publicOutputIndex(int64(upstreamIndex))
+					for len(output) <= index {
+						output = append(output, nil)
+					}
+					output[index] = item.Value()
+				}
+			}
+			_ = doc.Set("response.output", output)
+		}
+		return consume(doc.Bytes())
+	}
+	if !strings.Contains(strings.ToLower(response.Header.Get("Content-Type")), "text/event-stream") {
+		data, err := io.ReadAll(io.LimitReader(response.Body, max+1))
+		if err != nil {
+			return err
+		}
+		if len(data) > max {
+			return NewBPSFailure("protocol_decode", "invalid_response")
+		}
+		doc := ojson.NewDocString(`{"type":"response.completed"}`)
+		if err = doc.SetRaw("response", string(data)); err != nil {
+			return NewBPSFailure("protocol_decode", "invalid_response")
+		}
+		return dispatch(doc.Bytes())
+	}
+	scanner := bufio.NewScanner(response.Body)
+	scanner.Buffer(make([]byte, 64<<10), max)
+	var data []byte
+	for scanner.Scan() {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			if err := dispatch(bytes.TrimSpace(data)); err != nil {
+				return err
+			}
+			data = nil
+			if terminal {
+				return nil
+			}
+		} else if bytes.HasPrefix(line, []byte("data:")) {
+			if len(data) > 0 {
+				data = append(data, '\n')
+			}
+			data = append(data, bytes.TrimPrefix(line[5:], []byte(" "))...)
+			if len(data) > max {
+				return NewBPSFailure("protocol_decode", "invalid_response")
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return NewBPSFailure("protocol_decode", "incomplete_response")
+		}
+		return err
+	}
+	if err := dispatch(bytes.TrimSpace(data)); err != nil {
+		return err
+	}
+	if !terminal {
+		return NewBPSFailure("protocol_decode", "incomplete_response")
+	}
+	return nil
+}

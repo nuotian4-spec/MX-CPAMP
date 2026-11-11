@@ -1,0 +1,13 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+The system cannot find the path specified.
+The system cannot find the path specified.
+
+ RUN  v4.1.12 D:/MX-CPAMP-worktrees/phase2-login/components/cpamp/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  01:42:20
+   Duration  323ms (transform 53ms, setup 0ms, import 76ms, tests 4ms, environment 0ms)

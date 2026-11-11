@@ -1,0 +1,4 @@
+{"stage":"image","role":"cpa","id":"sha256:a4428de0eeda96d76cfa5733eed190ea8b45cd49083bf6b881f4bc9dfc1f5933","revision":"ef4d287ea3298a7680f8fc21e82db77417bbe634"}
+{"stage":"image","role":"manager","id":"sha256:6732b8d85cfade68fce21ae286ede773d8151a397c64eedbea0b4618d4b6cd73","revision":"bd573d0439a925d811e25aeeb575ac91feb5796d"}
+{"stage":"cleanup","verified":true,"token_state_retained":false,"state_dir":"C:\\Users\\子羽\\.codex\\artifacts\\mx-manual-bps-oauth-b80efd2e3db4"}
+{"stage":"harness","status":"failed","error_code":"services_not_ready"}

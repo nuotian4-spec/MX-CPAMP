@@ -1,0 +1,13 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "delivery_loaded", "functions": ["prepare", "apply", "confirm_deploy", "snapshot", "backup", "health", "drift"]}
+{"boundary": "prepare", "passed": true, "zero_service_change": true, "zero_config_wrapper_change": true, "staged_only": true}
+stage=awaiting_confirmation
+将短暂停止 Worker、Manager、CPA，可能中断现有登录和模型请求；Caddy 保留。输入 DEPLOY：DEPLOY
+stage=pre_switch_drift
+stage=stopping_apps
+stage=backing_up
+release_failed stage=backing_up code=operation_failed
+
+{"boundary": "maintenance_failure", "passed": true, "stage": "backing_up", "apps_stopped": true, "caddy_running": true, "no_candidate_install": true, "no_automatic_recovery": true, "reentry_rejected": true}
+fixture_cleanup=verified
+command_exit=0

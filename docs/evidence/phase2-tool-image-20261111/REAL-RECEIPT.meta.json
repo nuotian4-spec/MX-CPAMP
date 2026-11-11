@@ -1,0 +1,15 @@
+{
+  "exit_code": 1,
+  "stderr_seen": false,
+  "source_revision": "2f51beb7c8f9ed7ecb3c91562fe94824192c6990",
+  "manager_revision": "bd573d0439a925d811e25aeeb575ac91feb5796d",
+  "worker_revision": "95dd9ca2c16d5469c43ce7c910f38ff271af45e3",
+  "tool_approved_revision": "23f0727ec5ed091d7f43ee62eae833d4189e4645",
+  "profile": "bps",
+  "model": "gpt-6-luna",
+  "client_model_request_budget": 4,
+  "login_budget": 1,
+  "normal_refresh_budget": 1,
+  "text_failure_stops_remaining": true,
+  "user_authorized": true
+}

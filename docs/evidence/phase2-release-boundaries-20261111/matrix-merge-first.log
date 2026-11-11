@@ -1,0 +1,18 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "delivery_loaded", "functions": ["prepare", "apply", "confirm_deploy", "snapshot", "backup", "health", "drift"]}
+{"boundary": "cpa_source_selection", "source": "HOME_JWT", "actual_inspect": true, "rejected": true, "code": "cpa_external_config_mode", "zero_maintenance": true}
+{"boundary": "cpa_source_selection", "source": "PGSTORE_DSN", "actual_inspect": true, "rejected": true, "code": "cpa_external_config_mode", "zero_maintenance": true}
+{"boundary": "cpa_source_selection", "source": "alternate_config_args", "actual_inspect": true, "rejected": true, "code": "cpa_config_source_changed", "zero_maintenance": true}
+{"boundary": "manager_inline_secret", "actual_inspect": true, "rejected": true, "code": "worker_inline_secret", "zero_maintenance": true}
+Traceback (most recent call last):
+  File "/checks/run.py", line 243, in <module>
+    main()
+  File "/checks/run.py", line 179, in main
+    assert code==0, 'prepare_failed:'+output
+           ^^^^^^^
+AssertionError: prepare_failed:stage=prepare_bundle
+stage=prepare_site
+release_failed stage=prepare_site code=candidate_merge_changed
+
+fixture_cleanup=verified
+command_exit=1

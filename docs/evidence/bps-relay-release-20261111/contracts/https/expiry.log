@@ -1,0 +1,7 @@
+command=docker run --rm --pull never --network none --mount type=bind,source=D:/MX-CPAMP-worktrees/bps-models-inspection/components/cpa,target=/app,readonly -w /app -e GOTOOLCHAIN=local -e GOPROXY=off -e GOSUMDB=off --entrypoint go sha256:75195664cd12258c72160cf4121c931ae4176719d6545a9e5f35fabfe2abbc55 test ./internal/basispoints -run ^TestIndependentImageRelayOwnersEnforceExpiry$ -count=1 -v
+product_source_revision=b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c source_equivalence_exit=0
+=== RUN   TestIndependentImageRelayOwnersEnforceExpiry
+--- PASS: TestIndependentImageRelayOwnersEnforceExpiry (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints	0.013s
+exit=0

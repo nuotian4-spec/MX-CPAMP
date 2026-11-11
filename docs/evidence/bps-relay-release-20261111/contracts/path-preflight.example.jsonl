@@ -1,0 +1,3 @@
+{"kind":"bps_state","config_read":"ok","auth_dir":"/fixture/auth","container_path":"/root/private-state","mapped_host":"unknown","transport":"native","relay_origin_configured":false,"existing_host":{"exists":"unknown"},"case":"home_state"}
+{"kind":"bps_state","config_read":"ok","auth_dir":"/fixture/auth","container_path":"/root","mapped_host":"unknown","transport":"native","relay_origin_configured":false,"existing_host":{"exists":"unknown"},"case":"home_bare"}
+{"kind":"bps_state","config_read":"ok","auth_dir":"/fixture/auth","container_path":"/root/bps-state","mapped_host":"unknown","transport":"native","relay_origin_configured":false,"existing_host":{"exists":"unknown"},"case":"home_backslash"}

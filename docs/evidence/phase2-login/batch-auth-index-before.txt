@@ -1,0 +1,5 @@
+--- FAIL: TestBatchSummariesDoNotExposeEmailInCredentialFilename (0.01s)
+    batches_test.go:346: post_retry摘要泄露凭证邮箱或秘密
+FAIL
+FAIL	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/oauthlogin	0.140s
+FAIL

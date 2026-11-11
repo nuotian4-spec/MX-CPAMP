@@ -1,0 +1,32 @@
+BASE=aeba9ee7cd7429ec271f1ff1f4a006762f244483
+COMMAND=go test ./internal/runtime/executor -run ^TestBPSExecutorReasoningSuffixAndFinalBarrier$ -count=1 -v
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix
+    bps_executor_test.go:267: suffix/body/payload precedence changed: want effort="high" got {"input":[{"content":[{"text":"This is an external Responses client without an Excel workbook. Return assistant text and do not call server-injected Excel or Office tools.","type":"input_text"}],"role":"developer","type":"message"},{"content":[{"text":"hi","type":"input_text"}],"role":"user","type":"message"}],"model":"configured-model","stream":true,"store":false,"reasoning_effort":"medium","metadata":{"agent_iteration":"0","task_id":"54086253-813f-415b-a3ed-bb94d1c02e08","turn_id":"abb74bac-0398-40aa-808d-fce9109befd9"},"model_selection":"explicit"}
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix-over-body
+    bps_executor_test.go:267: suffix/body/payload precedence changed: want effort="high" got {"input":[{"content":[{"text":"This is an external Responses client without an Excel workbook. Return assistant text and do not call server-injected Excel or Office tools.","type":"input_text"}],"role":"developer","type":"message"},{"content":[{"text":"hi","type":"input_text"}],"role":"user","type":"message"}],"model":"configured-model","stream":true,"store":false,"metadata":{"agent_iteration":"0","task_id":"1eb9f8b3-b4f2-4039-bb99-9bf16b379c0a","turn_id":"3ae05d49-ea8d-4339-b633-a5097a0f15e9"},"model_selection":"explicit","reasoning_effort":"low"}
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/body
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-override
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-filter
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix
+    bps_executor_test.go:267: suffix/body/payload precedence changed: want effort="high" got {"stream":true,"model":"configured-model","input":[{"content":[{"text":"This is an external Responses client without an Excel workbook. Return assistant text and do not call server-injected Excel or Office tools.","type":"input_text"}],"role":"developer","type":"message"},{"content":[{"text":"hi","type":"input_text"}],"role":"user","type":"message"}],"store":false,"reasoning_effort":"medium","metadata":{"agent_iteration":"0","task_id":"0e36731b-65ec-4ea8-ad4f-767750c54845","turn_id":"5e0a2b11-879d-4d67-8bed-c77945ad2f40"},"model_selection":"explicit"}
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix-over-body
+    bps_executor_test.go:267: suffix/body/payload precedence changed: want effort="high" got {"stream":true,"model":"configured-model","input":[{"content":[{"text":"This is an external Responses client without an Excel workbook. Return assistant text and do not call server-injected Excel or Office tools.","type":"input_text"}],"role":"developer","type":"message"},{"content":[{"text":"hi","type":"input_text"}],"role":"user","type":"message"}],"store":false,"model_selection":"explicit","reasoning_effort":"low","metadata":{"agent_iteration":"0","task_id":"99abf884-e344-4d51-b90b-d47e58399558","turn_id":"5020a1fe-9db4-4548-ba5b-28fe3902fb60"}}
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/body
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-override
+=== RUN   TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-filter
+--- FAIL: TestBPSExecutorReasoningSuffixAndFinalBarrier (0.00s)
+    --- FAIL: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix (0.00s)
+    --- FAIL: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/suffix-over-body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-override (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai-response/payload-filter (0.00s)
+    --- FAIL: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix (0.00s)
+    --- FAIL: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/suffix-over-body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/body (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-override (0.00s)
+    --- PASS: TestBPSExecutorReasoningSuffixAndFinalBarrier/openai/payload-filter (0.00s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	0.205s
+FAIL
+EXIT=1

@@ -1,0 +1,26 @@
+{
+  "window": "mx-bps-quota-manual-ddbbbfeb3310",
+  "verify_exit": 0,
+  "stop_exit": 0,
+  "credentials_total": 1,
+  "bps_credentials": 1,
+  "server_inspection_runs": 1,
+  "bps_results": 1,
+  "official_usage_observed": true,
+  "harness_initiated_official_access": false,
+  "harness_initiated_official_usage": false,
+  "harness_initiated_refresh": false,
+  "harness_initiated_inference": false,
+  "page_observation": {
+    "source": "user_report_and_cua_read_only_observation",
+    "account_label": "official_account_usage",
+    "remaining_percent": 99,
+    "reset_time_observed": true,
+    "inspection_observation_time_observed": true,
+    "refresh_clicked_by_harness": false
+  },
+  "cleanup_verified": true,
+  "token_state_retained": false,
+  "production_changed": false,
+  "production_verified": false
+}

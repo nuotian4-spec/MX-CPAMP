@@ -1,0 +1,71 @@
+{
+  "base_commit": "bab1afb07e3cf25e78394b6cb959aaa5999b31bd",
+  "unchanged_functions": [
+    "require",
+    "command",
+    "read",
+    "write",
+    "digest",
+    "mark",
+    "compose",
+    "mounts",
+    "snapshot",
+    "facts",
+    "compose_matches_live",
+    "validate_snapshot",
+    "yaml_document",
+    "config",
+    "env",
+    "resolve",
+    "mapped",
+    "cpa_config_source",
+    "manager_config",
+    "secrets",
+    "image_records",
+    "load_bundle",
+    "confirm_deploy",
+    "stopped",
+    "backup",
+    "install_candidate",
+    "main"
+  ],
+  "changed_functions": [
+    "sources",
+    "health",
+    "prepare",
+    "drift",
+    "apply"
+  ],
+  "new_functions": [
+    "effective_protocol",
+    "candidate_config",
+    "caddy_adapt",
+    "caddy_runtime",
+    "caddy_semantic",
+    "caddy_site",
+    "caddy_source",
+    "caddy_candidate",
+    "caddy_https_health",
+    "publish_caddy",
+    "resolve_state"
+  ],
+  "shell_entry": "unchanged",
+  "product_images": "unchanged",
+  "reuse": [
+    "original_120_second_confirmation_and_non_tty_eof",
+    "maintenance_backup_failure_retention",
+    "original_config_source_and_secret_selection"
+  ],
+  "final_tool_commit": "0a98a2bc8f259c1c73bfcc3a850f2f0ef145492e",
+  "lifecycle_tool_commit": "5cc747e79a580e1a0b2b4748553427010cdfc53d",
+  "state_path_delta": {
+    "changed_functions": [
+      "sources"
+    ],
+    "new_function": "resolve_state",
+    "new_supported_expansion": "backslash_home_separator",
+    "lifecycle_old_state": "/root/bps-state",
+    "lifecycle_old_state_resolution": "unchanged",
+    "supplement": "contract-checks.log four HOME/cwd cases and B actual loader"
+  }
+}

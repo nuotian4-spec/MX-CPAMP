@@ -1,0 +1,19 @@
+BASE=aeba9ee7cd7429ec271f1ff1f4a006762f244483
+COMMAND=go test ./internal/runtime/executor -run ^TestBPSExecutorResponsesStreamLifecycle$ -count=1 -v
+=== RUN   TestBPSExecutorResponsesStreamLifecycle
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/terminal-sse
+    bps_executor_test.go:205: text arrived before item/content establishment: [response.created response.output_text.delta]
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/unary
+    bps_executor_test.go:205: text arrived before item/content establishment: [response.created response.output_text.delta]
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/complete-sse
+=== RUN   TestBPSExecutorResponsesStreamLifecycle/missing-done-sse
+    bps_executor_test.go:212: incomplete or duplicated lifecycle: [response.created response.output_item.added response.content_part.added response.output_text.delta response.completed] text="hello"
+--- FAIL: TestBPSExecutorResponsesStreamLifecycle (0.00s)
+    --- FAIL: TestBPSExecutorResponsesStreamLifecycle/terminal-sse (0.00s)
+    --- FAIL: TestBPSExecutorResponsesStreamLifecycle/unary (0.00s)
+    --- PASS: TestBPSExecutorResponsesStreamLifecycle/complete-sse (0.00s)
+    --- FAIL: TestBPSExecutorResponsesStreamLifecycle/missing-done-sse (0.00s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	0.198s
+FAIL
+EXIT=1

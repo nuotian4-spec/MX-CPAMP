@@ -1,0 +1,9 @@
+{
+  "ref": "mx-cpa:bps-quota-identity-20261111",
+  "id": "sha256:eeb5bf17435a4c3d1a508188fd149eb8b2dbc5d9d20390cf4fd22d6e40f40d4b",
+  "revision": "b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c",
+  "os": "linux",
+  "architecture": "amd64",
+  "runtime_proxy_env_count": 0,
+  "build_exit": 0
+}

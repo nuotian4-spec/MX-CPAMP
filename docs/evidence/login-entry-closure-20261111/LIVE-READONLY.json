@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-11-11T09:02:36.1146936Z",
+  "password_login_configured": false,
+  "runs": [
+    {
+      "id": 1,
+      "status": "completed",
+      "targetTypes": [
+        "codex",
+        "bps"
+      ],
+      "totalFiles": 1,
+      "probeSetCount": 1,
+      "deleteCount": 0,
+      "disableCount": 0,
+      "enableCount": 0,
+      "reauthCount": 0,
+      "results": [
+        {
+          "provider": "bps",
+          "action": "keep",
+          "state": "bps_access_allowed",
+          "usedPercent": null,
+          "autoRecoverEligible": false,
+          "executedAction": null,
+          "allowed": true,
+          "upstream_status": 200,
+          "error": null,
+          "queried_at": "2026-11-11T08:58:51Z"
+        }
+      ]
+    }
+  ],
+  "harness_issued_upstream_requests": false
+}

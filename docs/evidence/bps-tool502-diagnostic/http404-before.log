@@ -1,0 +1,69 @@
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=false/custom-rule=false
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-44d6-76d9-a576-704f43c112d4
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |          24ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-44d6-76d9-a576-704f43c112d4
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=true calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           1ms | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-44f1-766e-9102-a0f99cfa4236
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-44f1-766e-9102-a0f99cfa4236
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=true current_cooling=true
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=false/custom-rule=true
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-44fa-7928-a2ad-62c069ac0459
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-44fa-7928-a2ad-62c069ac0459
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=false calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-44ff-7b03-a8b0-3f0304dd3053
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-44ff-7b03-a8b0-3f0304dd3053
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=false current_cooling=true
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=true/custom-rule=false
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-4506-7b8a-b868-a9e8623433f5
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-4506-7b8a-b868-a9e8623433f5
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=true calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-450b-717c-bca2-3add549887df
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-450b-717c-bca2-3add549887df
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=true current_cooling=true
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=true/custom-rule=true
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-4512-7c1f-b153-c5315a5911a4
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-4512-7c1f-b153-c5315a5911a4
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=false calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           1ms | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-4517-7223-b379-34a377b918a6
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c861-4517-7223-b379-34a377b918a6
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=false current_cooling=true
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=false/custom-rule=false
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-451e-7ad1-8d24-e5f8a9eb486a
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-451e-7ad1-8d24-e5f8a9eb486a
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=true calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-4523-7120-a2ea-9ce629a881ba
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-4523-7120-a2ea-9ce629a881ba
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=true current_cooling=true
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=false/custom-rule=true
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-4529-741d-933d-5759a73bcfa6
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-4529-741d-933d-5759a73bcfa6
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=false calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-452c-7cbd-a2ea-d8f980ff91c0
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           4ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-452c-7cbd-a2ea-d8f980ff91c0
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=false current_cooling=true
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=true/custom-rule=false
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-4536-7f01-a52f-4de8264d473f
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           1ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-4536-7f01-a52f-4de8264d473f
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=true calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-453b-7115-a0c0-856f253a9bc0
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-453b-7115-a0c0-856f253a9bc0
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=true current_cooling=true
+=== RUN   TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=true/custom-rule=true
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           1ms | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-true err=BPS upstream returned HTTP 404" request_id=01a1c861-4543-7305-a554-33b792fe5b17
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-4543-7305-a554-33b792fe5b17
+    bps_http_diagnostics_test.go:126: legacy=true public=404/model_not_found internal_code="" cooling=false calls=1
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           1ms | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic-404-false err={\"error\":{\"message\":\"BPS upstream returned HTTP 404\",\"type\":\"invalid_request_error\",\"diagnostics\":{\"stage\":\"upstream_http\",\"code\":\"http_rejected\",\"upstream_http_status\":404,\"inband_status\":null},\"code\":\"model_not_found\"}}" request_id=01a1c861-4547-78d4-8704-63e6665652f5
+time="2026-11-11T10:13:00+08:00" level=warning msg="404 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c861-4547-78d4-8704-63e6665652f5
+    bps_http_diagnostics_test.go:124: dispatch differs from legacy: legacy_code="" current_code="model_not_found" legacy_cooling=false current_cooling=true
+--- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch (0.12s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=false/custom-rule=false (0.04s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=false/custom-rule=true (0.01s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=true/custom-rule=false (0.01s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/responses/stream=true/custom-rule=true (0.01s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=false/custom-rule=false (0.01s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=false/custom-rule=true (0.01s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=true/custom-rule=false (0.01s)
+    --- FAIL: TestBPSHTTP404DiagnosticsKeepDispatch//v1/chat/completions/stream=true/custom-rule=true (0.01s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/api	0.299s
+FAIL

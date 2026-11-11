@@ -1,0 +1,9 @@
+{"stage":"inputs","source_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3","worker_source_overlay":false,"cpa_binary_overlay":false,"manager_binary_overlay":false,"overlay_fingerprints":{"worker":null,"cpa":null,"manager":null},"external_network":"none","synthetic_only":true}
+{"stage":"image","role":"cpa","image_id":"sha256:0bb5d7dbfc44d4822577fa4ae9f76aa81e0b5a2fd7afae2168c5ae53cbd1f47a","image_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3"}
+{"stage":"image","role":"manager","image_id":"sha256:de4775de2a5345c199ff96034d647b0076b0791a30bb8ed04143497ca35c7429","image_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3"}
+{"stage":"image","role":"worker","image_id":"sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758","image_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3"}
+{"stage":"boundaries","readonly":true,"tmpfs_state":true,"docker_logging":false,"published_ports":false,"external_network":"none","production_access":false}
+{"stage":"ready","services_healthy":true,"unauthorized_status":401,"external_network":"none"}
+{"stage":"failed","error_code":"batch_redaction"}
+{"stage":"cleanup","verified":true,"token_state_retained":false}
+{"stage":"input_recheck","unchanged":true}

@@ -1,0 +1,18 @@
+=== RUN   TestBPSAccountUsageFlattenedCredentialListing
+--- PASS: TestBPSAccountUsageFlattenedCredentialListing (0.03s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	0.235s
+=== RUN   TestBPSFlattenedAccountIdentityListing
+=== RUN   TestBPSFlattenedAccountIdentityListing/flat_bps
+=== RUN   TestBPSFlattenedAccountIdentityListing/empty
+=== RUN   TestBPSFlattenedAccountIdentityListing/missing
+=== RUN   TestBPSFlattenedAccountIdentityListing/bad_type
+=== RUN   TestBPSFlattenedAccountIdentityListing/other_provider
+--- PASS: TestBPSFlattenedAccountIdentityListing (0.04s)
+    --- PASS: TestBPSFlattenedAccountIdentityListing/flat_bps (0.03s)
+    --- PASS: TestBPSFlattenedAccountIdentityListing/empty (0.00s)
+    --- PASS: TestBPSFlattenedAccountIdentityListing/missing (0.00s)
+    --- PASS: TestBPSFlattenedAccountIdentityListing/bad_type (0.00s)
+    --- PASS: TestBPSFlattenedAccountIdentityListing/other_provider (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	0.191s

@@ -1,0 +1,60 @@
+=== RUN   TestBPSAccessPublicHandlerReadOnly
+=== RUN   TestBPSAccessPublicHandlerReadOnly/allowed_and_filtered
+=== RUN   TestBPSAccessPublicHandlerReadOnly/denied
+=== RUN   TestBPSAccessPublicHandlerReadOnly/empty
+=== RUN   TestBPSAccessPublicHandlerReadOnly/unauthorized
+=== RUN   TestBPSAccessPublicHandlerReadOnly/forbidden
+=== RUN   TestBPSAccessPublicHandlerReadOnly/rate_limited
+=== RUN   TestBPSAccessPublicHandlerReadOnly/upstream_failed
+=== RUN   TestBPSAccessPublicHandlerReadOnly/redirect
+=== RUN   TestBPSAccessPublicHandlerReadOnly/invalid_json
+=== RUN   TestBPSAccessPublicHandlerReadOnly/missing_allowed
+=== RUN   TestBPSAccessPublicHandlerReadOnly/wrong_allowed_type
+=== RUN   TestBPSAccessPublicHandlerReadOnly/missing_catalog
+=== RUN   TestBPSAccessPublicHandlerReadOnly/bad_catalog
+=== RUN   TestBPSAccessPublicHandlerReadOnly/bad_optional_flag
+=== RUN   TestBPSAccessPublicHandlerReadOnly/bad_policy
+=== RUN   TestBPSAccessPublicHandlerReadOnly/oversize
+--- PASS: TestBPSAccessPublicHandlerReadOnly (0.06s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/allowed_and_filtered (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/denied (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/empty (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/unauthorized (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/forbidden (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/rate_limited (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/upstream_failed (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/redirect (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/invalid_json (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/missing_allowed (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/wrong_allowed_type (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/missing_catalog (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/bad_catalog (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/bad_optional_flag (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/bad_policy (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerReadOnly/oversize (0.01s)
+=== RUN   TestBPSAccessPublicHandlerRejectsReferences
+--- PASS: TestBPSAccessPublicHandlerRejectsReferences (0.00s)
+=== RUN   TestBPSAccessPublicHandlerTransportAndSnapshot
+=== RUN   TestBPSAccessPublicHandlerTransportAndSnapshot/timeout
+=== RUN   TestBPSAccessPublicHandlerTransportAndSnapshot/canceled
+=== RUN   TestBPSAccessPublicHandlerTransportAndSnapshot/transport_error
+=== RUN   TestBPSAccessPublicHandlerTransportAndSnapshot/credential_changed
+=== RUN   TestBPSAccessPublicHandlerTransportAndSnapshot/global_proxy_changed
+=== RUN   TestBPSAccessPublicHandlerTransportAndSnapshot/credential_incomplete
+--- PASS: TestBPSAccessPublicHandlerTransportAndSnapshot (0.02s)
+    --- PASS: TestBPSAccessPublicHandlerTransportAndSnapshot/timeout (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerTransportAndSnapshot/canceled (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerTransportAndSnapshot/transport_error (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerTransportAndSnapshot/credential_changed (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerTransportAndSnapshot/global_proxy_changed (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerTransportAndSnapshot/credential_incomplete (0.00s)
+=== RUN   TestBPSAccessPublicHandlerParentCancellation
+=== RUN   TestBPSAccessPublicHandlerParentCancellation/headers
+=== RUN   TestBPSAccessPublicHandlerParentCancellation/body
+--- PASS: TestBPSAccessPublicHandlerParentCancellation (0.01s)
+    --- PASS: TestBPSAccessPublicHandlerParentCancellation/headers (0.00s)
+    --- PASS: TestBPSAccessPublicHandlerParentCancellation/body (0.00s)
+=== RUN   TestBPSAccessPublicHandlerKeepsShorterDeadline
+--- PASS: TestBPSAccessPublicHandlerKeepsShorterDeadline (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	0.128s

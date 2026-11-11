@@ -1,0 +1,14 @@
+{"stage":"inputs","profile":"bps","mode":"execute","client_request_budget":1,"source_revision":"4367adaf687ce336e81122fcdb530c0e66e6eb33","worker_source_overlay":false,"cpa_binary_overlay":false,"manager_binary_overlay":false,"overlay_fingerprints":{"worker":null,"cpa":null,"manager":null},"production_network_equivalence":false}
+{"stage":"image","role":"cpa","image_id":"sha256:c7867d233d8f17e97b720de49c12b0d0fdbb52bc45e91e78310d3a1131a32487","image_revision":"4367adaf687ce336e81122fcdb530c0e66e6eb33","expected_revision":"4367adaf687ce336e81122fcdb530c0e66e6eb33"}
+{"stage":"image","role":"manager","image_id":"sha256:f72b39c0ff1759c14ced75c511a35ab0d97935249cd0446b47becd30a5c9b6b9","image_revision":"bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f","expected_revision":"bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f"}
+{"stage":"image","role":"worker","image_id":"sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758","image_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3","expected_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3"}
+{"stage":"boundaries","readonly":true,"tmpfs_state":true,"docker_logging":false,"published_ports":false,"secret_argv_env":false,"production_access":false}
+{"stage":"ready","profile":"bps","services_healthy":true,"admin_gate":true,"production_network_equivalence":false,"login_network":"test_proxy_wrapper"}
+{"stage":"batch","profile":"bps","status":"succeeded","error_code":null,"worker_error_code":null,"login_stage":"cpa_import","worker_stage":"unknown","login_reason":null,"worker_reason":"unknown"}
+{"stage":"saved_registered","profile":"bps","saved":true,"registered":true,"single_bps_credential":true}
+{"stage":"concurrency","profile":"bps","concurrency_override_saved":true}
+{"stage":"refresh","profile":"bps","same_auth":true,"same_profile":true,"same_client":true,"same_identity":true,"refresh_token_present":true,"access_token_changed":true,"refresh_token_changed":true,"concurrency_preserved":true,"refresh_endpoint_requests":1}
+{"stage":"business","profile":"bps","client_requests":1,"public_http_status":403,"public_error_code":"insufficient_quota","public_error_type":"permission_error","public_error_category":"upstream_http","public_upstream_http_status":403,"model":"gpt-5.6-sol","upstream_attempts":"unknown"}
+{"stage":"harness","profile":"bps","status":"failed","error_code":"public_request_rejected"}
+{"stage":"cleanup","verified":true,"token_state_retained":false}
+{"stage":"input_recheck","unchanged":true}

@@ -1,0 +1,27 @@
+{"boundary": "delivery_shell_entry", "actual_shebang": true, "no_arguments_rejected": true}
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+stage=prepare_bundle
+stage=prepare_site
+stage=prepared
+prepared=/var/lib/docker/volumes/mx-bps-relay-boundary-0946fb7c64-root/_data/.mx-upgrade-bps-relay-20261111 maintenance_started=no
+
+{"boundary": "prepare", "passed": true, "zero_service_change": true, "zero_config_wrapper_change": true, "live_state_absent": true, "caddy_runtime_unchanged": true}
+{"boundary": "confirmation_cancel", "passed": true, "real_pty": true, "zero_maintenance": true, "zero_service_change": true}
+stage=awaiting_confirmation
+将短暂停止 Worker、Manager、CPA，可能中断现有登录和模型请求；Caddy 保留。输入 DEPLOY：DEPLOY
+stage=pre_switch_drift
+stage=stopping_apps
+stage=backing_up
+stage=publishing_candidate
+stage=starting_candidates
+stage=publishing_caddy
+stage=reloading_caddy
+release_failed stage=reloading_caddy code=command_failed
+fixture_command=["docker", "exec", "7c22cd89a58670af5e9513e2c0a7c446fefcaf56e692098a2a51d80a89759fc9", "caddy", "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+fixture_command_error={"level":"info","ts":1794401189.3792703,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+Error: adapting config using caddyfile: subject does not qualify for certificate: '}'
+
+
+{"boundary": "caddy_reload_failure", "passed": true, "stage": "reloading_caddy", "disk_candidate_runtime_old": true, "original_inode": true, "old_caddy_running": true, "backup_original_readable": true, "maintenance_retained": true, "reentry_rejected": true}
+fixture_cleanup=verified
+command_exit=0

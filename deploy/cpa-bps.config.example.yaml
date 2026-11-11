@@ -1,0 +1,7 @@
+# 合并到既有 v8 配置；不是完整配置，不覆盖 auth-dir、API key 或其他平台。
+config-version: 8
+oauth:
+  providers:
+    bps:
+      # 由用户填入实际核验可用的模型；空清单不注册 BPS 模型。
+      models: []

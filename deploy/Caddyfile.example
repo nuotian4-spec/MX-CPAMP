@@ -1,0 +1,8 @@
+# 仅作脱敏路由示例。已有生产域名、TLS 与附加路由保持原位。
+cpa.example.invalid {
+    reverse_proxy cpa:8317
+}
+cpamp.example.invalid {
+    reverse_proxy cpa-manager-plus:18317
+}
+# oauth-login 无公网站点、反向代理或宿主机端口映射。

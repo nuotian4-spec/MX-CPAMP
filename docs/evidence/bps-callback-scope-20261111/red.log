@@ -1,0 +1,13 @@
+=== RUN   TestBPSOAuthCallbackScope
+=== RUN   TestBPSOAuthCallbackScope/single
+    auth_files_bps_test.go:351: callback status 400, want 200: {"error":"invalid_callback_query"}
+=== RUN   TestBPSOAuthCallbackScope/duplicate
+    auth_files_bps_test.go:355: callback error "invalid_callback_query", want "conflicting_callback_parameters"
+=== RUN   TestBPSOAuthCallbackScope/unknown
+--- FAIL: TestBPSOAuthCallbackScope (0.00s)
+    --- FAIL: TestBPSOAuthCallbackScope/single (0.00s)
+    --- FAIL: TestBPSOAuthCallbackScope/duplicate (0.00s)
+    --- PASS: TestBPSOAuthCallbackScope/unknown (0.00s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	0.032s
+FAIL

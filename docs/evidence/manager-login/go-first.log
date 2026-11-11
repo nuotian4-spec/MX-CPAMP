@@ -1,0 +1,6 @@
+go: downloading modernc.org/sqlite v1.46.1
+go: downloading golang.org/x/sys v0.44.0
+?   	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/oauthlogin	[no test files]
+?   	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/oauthlogin	[no test files]
+ok  	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/config	0.113s
+?   	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/router	[no test files]

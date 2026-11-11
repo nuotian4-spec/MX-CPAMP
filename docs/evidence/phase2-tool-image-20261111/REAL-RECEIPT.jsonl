@@ -1,0 +1,16 @@
+{"stage":"inputs","profile":"bps","mode":"execute","client_request_budget":4,"source_revision":"2f51beb7c8f9ed7ecb3c91562fe94824192c6990","worker_source_overlay":false,"cpa_binary_overlay":false,"manager_binary_overlay":false,"overlay_fingerprints":{"worker":null,"cpa":null,"manager":null},"production_network_equivalence":false}
+{"stage":"image","role":"cpa","image_id":"sha256:064349bcaf66620cbe3e4770b2caf5b833ff2cb8dfd1b1c2f47c6789c452a766","image_revision":"2f51beb7c8f9ed7ecb3c91562fe94824192c6990","expected_revision":"2f51beb7c8f9ed7ecb3c91562fe94824192c6990"}
+{"stage":"image","role":"manager","image_id":"sha256:6732b8d85cfade68fce21ae286ede773d8151a397c64eedbea0b4618d4b6cd73","image_revision":"bd573d0439a925d811e25aeeb575ac91feb5796d","expected_revision":"bd573d0439a925d811e25aeeb575ac91feb5796d"}
+{"stage":"image","role":"worker","image_id":"sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758","image_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3","expected_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3"}
+{"stage":"boundaries","readonly":true,"tmpfs_state":true,"docker_logging":false,"published_ports":false,"secret_argv_env":false,"production_access":false}
+{"stage":"ready","profile":"bps","services_healthy":true,"admin_gate":true,"production_network_equivalence":false,"login_network":"test_proxy_wrapper"}
+{"stage":"batch","profile":"bps","status":"succeeded","error_code":null,"worker_error_code":null,"login_stage":"cpa_import","worker_stage":"unknown","login_reason":null,"worker_reason":"unknown"}
+{"stage":"saved_registered","profile":"bps","saved":true,"registered":true,"single_bps_credential":true}
+{"stage":"concurrency","profile":"bps","concurrency_override_saved":true}
+{"stage":"refresh","profile":"bps","same_auth":true,"same_profile":true,"same_client":true,"same_identity":true,"refresh_token_present":true,"access_token_changed":true,"refresh_token_changed":true,"concurrency_preserved":true,"refresh_endpoint_requests":1}
+{"stage":"business","profile":"bps","normal_terminal":true,"text_output_nonempty":true,"client_requests":1,"public_http_status":200,"feature":"text","probe_outcome":"succeeded","text_gate_passed":true,"model":"gpt-6-luna","upstream_attempts":"unknown"}
+{"stage":"business","profile":"bps","error_code":"public_request_rejected","client_requests":1,"public_http_status":502,"public_error_code":"internal_server_error","public_error_type":"server_error","public_error_category":"unknown","public_upstream_http_status":null,"feature":"tools","probe_outcome":"rejected","model":"gpt-6-luna","upstream_attempts":"unknown"}
+{"stage":"business","profile":"bps","normal_terminal":true,"text_output_nonempty":true,"client_requests":1,"public_http_status":200,"feature":"image","probe_outcome":"succeeded","image_red_confirmed":true,"model":"gpt-6-luna","upstream_attempts":"unknown"}
+{"stage":"complete","profile":"bps","catalog_exact":true,"auth_target_confirmed":true,"admission_drained":true,"client_requests":3,"probes_complete":false,"all_requests_succeeded":false,"text_gate_passed":true,"tool_roundtrip_complete":false,"image_red_confirmed":true,"tool_client_requests":1,"image_client_requests":1,"upstream_attempts":"unknown"}
+{"stage":"cleanup","verified":true,"token_state_retained":false}
+{"stage":"input_recheck","unchanged":true,"harness_unchanged":true}

@@ -1,0 +1,9 @@
+{"boundary": "delivery_shell_entry", "actual_shebang": true, "original_python_entry": true, "no_arguments_rejected": true}
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "delivery_loaded", "functions": ["prepare", "apply", "confirm_deploy", "snapshot", "backup", "health", "drift"]}
+{"boundary": "prepare", "passed": true, "zero_service_change": true, "zero_config_wrapper_change": true, "staged_only": true}
+{"boundary": "reused_boundaries", "source": "matrix-shell-dependency.log", "delivery": "de91274298c74b073f91212b5acf90833f4a8777", "unchanged_functions": ["confirm_deploy", "drift", "sources", "secrets"], "timeout_seconds": 120.58}
+{"boundary": "apply", "passed": true, "real_authenticated_health": true, "caddy_id_unchanged": true, "apps_three_chain": true, "generated_linux_shell": true, "backup_secret_readable": true, "backup_mode": "600"}
+{"boundary": "complete_reapply", "rejected": true}
+fixture_cleanup=verified
+command_exit=0

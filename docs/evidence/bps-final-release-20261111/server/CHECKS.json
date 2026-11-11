@@ -1,0 +1,28 @@
+{
+  "received_on": "2026-11-11",
+  "source_attachment": "b8c7ca4c-3938-4640-b146-54c752a2da43",
+  "input_head": "bab1afb07e3cf25e78394b6cb959aaa5999b31bd",
+  "records": 26,
+  "reported_completion": true,
+  "server_process_exit_code": null,
+  "service_topology_comparison": {
+    "cli-proxy-api": "unchanged",
+    "cpa-manager-plus": "unchanged",
+    "oauth-login": "unchanged",
+    "caddy": "unchanged"
+  },
+  "authenticated_health": "passed",
+  "login_activity": "unknown",
+  "model_activity": "unknown",
+  "caddy_adapt_parse": "ok",
+  "caddy_skeleton_truncated": false,
+  "explicit_relay_routes_observed": 0,
+  "legacy_root_relay_origin_configured": false,
+  "effective_relay_origin_configured": "unknown",
+  "effective_protocol_layout_requires_v8_merge": true,
+  "runtime_caddy_config_verified": false,
+  "old_default_bps_state_existence": "unknown",
+  "write_release_ready": false,
+  "new_server_commands_run_by_agent": 0,
+  "local_receipt_validation_exit": 0
+}

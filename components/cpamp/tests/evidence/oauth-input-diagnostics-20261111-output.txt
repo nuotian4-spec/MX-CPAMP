@@ -1,0 +1,139 @@
+OAuth 输入诊断定向工具回执摘录
+来源为本轮已返回工具输出，按命令摘录正文并规范化空白；此文件不是进程直接重定向的原始 stdout 日志。
+每段保留原工具 chunk_id，可据本轮工具记录核对。命令与真实退出码分别列出，不据组合 Shell 最后一个命令推断前序命令成功。
+基线：33297e872b1974a19035fd81531eab80e8b22721
+产品及测试输入：aff9fe08b94158521e936ebf707bd57b517258b7
+固定工具与离线环境见同目录 oauth-input-diagnostics-20261111.md。
+
+=== 首轮红测 ===
+工具回执 chunk_id：847552
+目录：components/cpamp/apps/manager-server
+命令：go test ./internal/http/controller/oauthlogin -run 'TestCallbackValidationThroughServiceAndHandler|TestPasswordLoginCapabilities' -count=1
+真实 exit_code：1
+output：
+--- FAIL: TestCallbackValidationThroughServiceAndHandler (0.12s)
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/url (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/query (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/conflict (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/state_mismatch (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/code_required (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/provider_mismatch (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/body (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/state (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/provider (0.00s)
+        callback_diagnostics_test.go:89: 回调分类错误：得到502，预期400
+        callback_diagnostics_test.go:96: 稳定诊断码错误：""
+--- FAIL: TestPasswordLoginCapabilitiesAreAuthenticatedAndConfigurationOnly (0.00s)
+    --- FAIL: TestPasswordLoginCapabilitiesAreAuthenticatedAndConfigurationOnly/missing (0.00s)
+        callback_diagnostics_test.go:144: 配置契约错误：404 404 page not found
+    --- FAIL: TestPasswordLoginCapabilitiesAreAuthenticatedAndConfigurationOnly/missing_secret (0.00s)
+        callback_diagnostics_test.go:144: 配置契约错误：404 404 page not found
+    --- FAIL: TestPasswordLoginCapabilitiesAreAuthenticatedAndConfigurationOnly/missing_url (0.00s)
+        callback_diagnostics_test.go:144: 配置契约错误：404 404 page not found
+    --- FAIL: TestPasswordLoginCapabilitiesAreAuthenticatedAndConfigurationOnly/configured (0.00s)
+        callback_diagnostics_test.go:144: 配置契约错误：404 404 page not found
+FAIL
+FAIL github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/oauthlogin 0.212s
+FAIL
+
+=== JSON 分类红反例 ===
+工具回执 chunk_id：a4deee
+目录：components/cpamp/apps/manager-server
+命令：go test ./internal/http/controller/oauthlogin -run 'TestCallbackValidationThroughServiceAndHandler/(partial_decode_failure|trailing_json_failure|trailing_second_object|truncated_json|oversized_body)$' -count=1
+真实 exit_code：1
+output：
+--- FAIL: TestCallbackValidationThroughServiceAndHandler (0.03s)
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/partial_decode_failure (0.00s)
+        callback_diagnostics_test.go:94: 回调分类错误：得到400，预期502
+        callback_diagnostics_test.go:101: 稳定诊断码错误："invalid_callback_url"
+        callback_diagnostics_test.go:122: 保存结果未知时释放了提交锁
+        callback_diagnostics_test.go:125: 保存结果未知时重复转发了授权码
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/trailing_json_failure (0.00s)
+        callback_diagnostics_test.go:94: 回调分类错误：得到400，预期502
+        callback_diagnostics_test.go:101: 稳定诊断码错误："invalid_callback_url"
+        callback_diagnostics_test.go:122: 保存结果未知时释放了提交锁
+        callback_diagnostics_test.go:125: 保存结果未知时重复转发了授权码
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/trailing_second_object (0.00s)
+        callback_diagnostics_test.go:94: 回调分类错误：得到400，预期502
+        callback_diagnostics_test.go:101: 稳定诊断码错误："invalid_callback_url"
+        callback_diagnostics_test.go:122: 保存结果未知时释放了提交锁
+        callback_diagnostics_test.go:125: 保存结果未知时重复转发了授权码
+    --- FAIL: TestCallbackValidationThroughServiceAndHandler/oversized_body (0.00s)
+        callback_diagnostics_test.go:94: 回调分类错误：得到400，预期502
+        callback_diagnostics_test.go:101: 稳定诊断码错误："invalid_callback_url"
+        callback_diagnostics_test.go:122: 保存结果未知时释放了提交锁
+        callback_diagnostics_test.go:125: 保存结果未知时重复转发了授权码
+FAIL
+FAIL github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/oauthlogin 0.163s
+FAIL
+
+=== 最终 Go 定向包 ===
+工具回执 chunk_id：85a687
+目录：components/cpamp/apps/manager-server
+命令：go test ./internal/service/oauthlogin ./internal/http/controller/oauthlogin -count=1
+真实 exit_code：0
+output：
+ok github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/oauthlogin 0.355s
+ok github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/oauthlogin 0.331s
+
+=== 最终 Web 定向测试 ===
+工具回执 chunk_id：1f063e（此块仅引用其中 Web 命令输出）
+目录：components/cpamp/apps/web
+命令：node ../../node_modules/vitest/vitest.mjs run src/features/oauth/InternalLoginCards.test.tsx src/services/api/loginTasks.test.ts src/services/api/client.test.ts
+真实 exit_code：0
+output：
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+The system cannot find the path specified.
+The system cannot find the path specified.
+
+ RUN  v4.1.12 D:/MX-CPAMP-worktrees/oauth-input-diagnostics/components/cpamp/apps/web
+
+ Test Files  3 passed (3)
+      Tests  30 passed (30)
+   Start at  13:34:08
+   Duration  1.30s (transform 822ms, setup 0ms, import 1.54s, tests 166ms, environment 1ms)
+
+=== 相关 Web 格式与 lint ===
+工具回执 chunk_id：bbef27
+目录：components/cpamp
+命令：node node_modules/prettier/bin/prettier.cjs --write apps/web/src/features/oauth/BatchPasswordLogin.tsx apps/web/src/features/oauth/InternalLoginCards.tsx apps/web/src/features/oauth/InternalLoginCards.test.tsx apps/web/src/services/api/loginTasks.ts apps/web/src/services/api/loginTasks.test.ts apps/web/src/services/api/client.test.ts
+命令：node node_modules/eslint/bin/eslint.js apps/web/src/features/oauth/BatchPasswordLogin.tsx apps/web/src/features/oauth/InternalLoginCards.tsx apps/web/src/features/oauth/InternalLoginCards.test.tsx apps/web/src/services/api/loginTasks.ts apps/web/src/services/api/loginTasks.test.ts apps/web/src/services/api/client.test.ts --report-unused-disable-directives
+真实 exit_code：0
+output：
+apps/web/src/features/oauth/BatchPasswordLogin.tsx 201ms
+apps/web/src/features/oauth/InternalLoginCards.tsx 34ms
+apps/web/src/features/oauth/InternalLoginCards.test.tsx 78ms
+apps/web/src/services/api/loginTasks.ts 14ms
+apps/web/src/services/api/loginTasks.test.ts 5ms
+apps/web/src/services/api/client.test.ts 12ms
+
+=== 暂存差异检查与产品提交 ===
+工具回执 chunk_id：ec739e
+目录：components/cpamp
+命令：git diff --cached --check
+真实 exit_code：0
+output：无
+命令：git commit -m '保留明确回调拒绝并按登录器配置禁用2FA入口'
+真实 exit_code：0
+output：
+[codex/oauth-input-diagnostics aff9fe0] 保留明确回调拒绝并按登录器配置禁用2FA入口
+ 9 files changed, 427 insertions(+), 14 deletions(-)
+ create mode 100644 components/cpamp/apps/manager-server/internal/http/controller/oauthlogin/callback_diagnostics_test.go

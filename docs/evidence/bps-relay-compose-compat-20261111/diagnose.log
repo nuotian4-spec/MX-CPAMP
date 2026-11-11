@@ -1,0 +1,6 @@
+{"case": "missing_bind_default", "passed": true, "zero_file_writes": true, "secret_absent": true, "result": {"code": "candidate_merge_changed", "differences": [{"expected": {"present": true, "type": "dict"}, "path": "/services/cli-proxy-api/volumes/0/bind", "rendered": {"present": false, "type": "missing"}}], "truncated": false}}
+{"case": "explicit_true_equal", "passed": true, "zero_file_writes": true, "secret_absent": true, "result": {"code": "compose_equal", "differences": [], "truncated": false}}
+{"case": "source_drift", "passed": true, "zero_file_writes": true, "secret_absent": true, "result": {"code": "candidate_merge_changed", "differences": [{"expected": {"present": true, "type": "str"}, "path": "/services/cli-proxy-api/volumes/0/source", "rendered": {"present": true, "type": "str"}}], "truncated": false}}
+{"case": "anonymous_keys_and_limit", "passed": true, "limit": 30, "truncated": true}
+{"case": "linux_python_and_sh_heredoc_syntax", "passed": true}
+command_exit=0

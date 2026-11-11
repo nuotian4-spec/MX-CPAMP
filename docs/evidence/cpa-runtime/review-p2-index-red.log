@@ -1,0 +1,9 @@
+BASE=aeba9ee7cd7429ec271f1ff1f4a006762f244483
+COMMAND=go test ./internal/runtime/executor/helps -run ^TestBPSReadEventsReindexesVisibleOutput$ -count=1 -v
+=== RUN   TestBPSReadEventsReindexesVisibleOutput
+    bps_protocol_test.go:76: visible message index=1, terminal position must be 0: {"type":"response.output_item.added","output_index":1,"item":{"id":"msg_1","type":"message","role":"assistant","content":[]}}
+--- FAIL: TestBPSReadEventsReindexesVisibleOutput (0.00s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps	0.155s
+FAIL
+EXIT=1

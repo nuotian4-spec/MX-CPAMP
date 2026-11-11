@@ -1,0 +1,9 @@
+{
+  "ServerVersion": "29.7.2",
+  "Driver": "vfs",
+  "DriverStatus": null,
+  "DockerRootDir": "/var/lib/docker",
+  "OperatingSystem": "Alpine Linux v3.24",
+  "OSType": "linux",
+  "Architecture": "x86_64"
+}

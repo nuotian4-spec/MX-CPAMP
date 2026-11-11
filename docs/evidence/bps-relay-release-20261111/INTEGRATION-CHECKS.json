@@ -1,0 +1,43 @@
+{
+  "candidate_baseline": "bab1afb07e3cf25e78394b6cb959aaa5999b31bd",
+  "final_code_head_before_commit": "c0e2188141057531e71df0777241ef8ce0df566a",
+  "a_tool_commit": "5cc747e79a580e1a0b2b4748553427010cdfc53d",
+  "a_state_path_commit": "0a98a2bc8f259c1c73bfcc3a850f2f0ef145492e",
+  "a_evidence_commit": "7146032e667db702823835d81d5c39b2aaf72474",
+  "a_doc_commit": "aa44f7b1bbd5e0883d874591078a674e23214d08",
+  "a_prompt_commit": "015534cc9f1e9f45997a6cda0be4833395cb351d",
+  "b_config_commit": "b854d63aaf0cebe0aec51aaa68052ce916cfe6d8",
+  "b_https_commit": "502afd3f98ee0da04182e65c37ce9e991956e808",
+  "b_path_commit": "28275d11fd6e91fb3d7ddfad922f8dcf74006d26",
+  "b_expiry_commit": "e8fea8592495ffe240f9e4298a88fe53cd0e0bf3",
+  "a_lifecycle_success_exit": 0,
+  "a_lifecycle_reload_failure_controller_exit": 0,
+  "b_config_loader_exit": 0,
+  "b_settings_get_exit": 0,
+  "b_https_fixture_exit": 0,
+  "b_expiry_test_exit": 0,
+  "review_status": "passed_no_new_p1_p2",
+  "product_sources_changed": false,
+  "schema_or_sql_migrations_changed": false,
+  "official_requests": 0,
+  "production_actions": 0,
+  "two_factor_provenance": "user_confirmation",
+  "production_public_https_image_verification": "after_switch",
+  "branch_push": {
+    "branch": "codex/openai-bps-login",
+    "remote_head": "62020c8f7ef693974a95ee265c5ffac5939d8711",
+    "exit_code": 0
+  },
+  "release": {
+    "tag": "mx-cpamp-20261111-rc2",
+    "target": "4fb5da07d5968ebcc8c52b5c5232506fb981e060",
+    "prerelease": true,
+    "assets_uploaded": true,
+    "url": "https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261111-rc2",
+    "asset_archive_sha256": "256ddca4ec162bc1249ccea95ca1e36ce536b4909fa1ac89b77af1b477910c27",
+    "asset_python_sha256": "8d75ea5034fa28beedd4796953795f1772208683039ebcb33be1371edcf7e5ef",
+    "asset_shell_sha256": "73074c6d9110245ecc1777f03589c9e7f96e2a332932112a0bb81816eee35bb2"
+  },
+  "write_release_ready": false,
+  "exit_code": 0
+}

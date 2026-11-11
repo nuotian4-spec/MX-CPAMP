@@ -1,0 +1,5 @@
+ok  	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/oauthlogin	6.167s
+ok  	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/oauthlogin	0.100s
+?   	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/router	[no test files]
+ok  	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/config	0.111s
+ok  	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/proxy	0.505s

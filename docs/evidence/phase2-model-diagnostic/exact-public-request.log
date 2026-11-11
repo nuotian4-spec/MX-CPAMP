@@ -1,0 +1,32 @@
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=true
+time="2026-11-10T18:18:13Z" level=error msg="500 |            0s |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6ae-99f4-7e6e-8cf3-fc303d36d061
+    zz_bps_model_diagnostic_test.go:61: model=gpt-6-astra with_max_output_tokens=true http=500 fake_roundtripper_calls=0 body={"error":{"message":"provider_not_found: no provider supplied","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=false
+time="2026-11-10T18:18:13Z" level=warning msg="upstream execution failed: provider=bps model=gpt-6-astra auth=provider=bps auth_file=bps-diagnostic duration=1ms err=Post \"https://bps.openai.com/basispoints/api/responses\": dial tcp: lookup bps.openai.com on 192.168.65.7:53: dial udp 192.168.65.7:53: connect: network is unreachable" request_id=01a1c6ae-99f9-75a6-a790-594b6c399ca8
+time="2026-11-10T18:18:13Z" level=error msg="500 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6ae-99f9-75a6-a790-594b6c399ca8
+    zz_bps_model_diagnostic_test.go:59: control result: status=500 calls=0 body={"error":{"message":"Post \"https://bps.openai.com/basispoints/api/responses\": dial tcp: lookup bps.openai.com on 192.168.65.7:53: dial udp 192.168.65.7:53: connect: network is unreachable","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=true
+time="2026-11-10T18:18:13Z" level=error msg="500 |           1ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6ae-99ff-7965-bc9e-c03d7d5d45f8
+    zz_bps_model_diagnostic_test.go:61: model=gpt-6.1-sol with_max_output_tokens=true http=500 fake_roundtripper_calls=0 body={"error":{"message":"provider_not_found: no provider supplied","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=false
+time="2026-11-10T18:18:13Z" level=warning msg="upstream execution failed: provider=bps model=gpt-6.1-sol auth=provider=bps auth_file=bps-diagnostic duration=0s err=Post \"https://bps.openai.com/basispoints/api/responses\": dial tcp: lookup bps.openai.com on 192.168.65.7:53: dial udp 192.168.65.7:53: connect: network is unreachable" request_id=01a1c6ae-9a03-70fa-96c5-a8e8d9dd7f66
+time="2026-11-10T18:18:13Z" level=error msg="500 |           1ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6ae-9a03-70fa-96c5-a8e8d9dd7f66
+    zz_bps_model_diagnostic_test.go:59: control result: status=500 calls=0 body={"error":{"message":"Post \"https://bps.openai.com/basispoints/api/responses\": dial tcp: lookup bps.openai.com on 192.168.65.7:53: dial udp 192.168.65.7:53: connect: network is unreachable","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=true
+time="2026-11-10T18:18:13Z" level=error msg="500 |            0s |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6ae-9a07-7039-b40d-36a2cde1b8c0
+    zz_bps_model_diagnostic_test.go:61: model=gpt-5.6-sol with_max_output_tokens=true http=500 fake_roundtripper_calls=0 body={"error":{"message":"provider_not_found: no provider supplied","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=false
+time="2026-11-10T18:18:13Z" level=warning msg="upstream execution failed: provider=bps model=gpt-5.6-sol auth=provider=bps auth_file=bps-diagnostic duration=0s err=Post \"https://bps.openai.com/basispoints/api/responses\": dial tcp: lookup bps.openai.com on 192.168.65.7:53: dial udp 192.168.65.7:53: connect: network is unreachable" request_id=01a1c6ae-9a0a-7bcd-ae9e-8ce4e47be9cf
+time="2026-11-10T18:18:13Z" level=error msg="500 |           1ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6ae-9a0a-7bcd-ae9e-8ce4e47be9cf
+    zz_bps_model_diagnostic_test.go:59: control result: status=500 calls=0 body={"error":{"message":"Post \"https://bps.openai.com/basispoints/api/responses\": dial tcp: lookup bps.openai.com on 192.168.65.7:53: dial udp 192.168.65.7:53: connect: network is unreachable","type":"server_error","code":"internal_server_error"}}
+--- FAIL: TestPhase2BPSExactPublicRequestDiagnostic (0.03s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=true (0.00s)
+    --- FAIL: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=false (0.01s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=true (0.00s)
+    --- FAIL: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=false (0.00s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=true (0.00s)
+    --- FAIL: TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=false (0.00s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/api	0.048s
+FAIL

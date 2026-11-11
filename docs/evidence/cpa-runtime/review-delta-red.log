@@ -1,0 +1,17 @@
+BASE=e9fb547f238a687e332ee1bedd81b937ab26c489
+COMMAND=go test ./internal/runtime/executor -run ^TestBPSExecutorTextProtocolsAndFinalBarrier$ -count=1 -v
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=false
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=true
+    bps_executor_test.go:81: first upstream delta preceded message/content establishment: [response.created response.output_text.delta]
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=false
+=== RUN   TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=true
+--- FAIL: TestBPSExecutorTextProtocolsAndFinalBarrier (0.00s)
+    --- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=false (0.00s)
+    --- FAIL: TestBPSExecutorTextProtocolsAndFinalBarrier/openai-response/stream=true (0.00s)
+    --- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=false (0.00s)
+    --- PASS: TestBPSExecutorTextProtocolsAndFinalBarrier/openai/stream=true (0.00s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor	0.203s
+FAIL
+EXIT=1

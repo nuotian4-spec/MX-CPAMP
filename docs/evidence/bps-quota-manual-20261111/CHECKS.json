@@ -1,0 +1,18 @@
+{
+  "baseline": "6d7cbc6dfcbc72ceb6ac057539c045d873873622",
+  "node_check": {
+    "run.mjs": 0,
+    "worker.mjs": 0,
+    "proxy-runner.mjs": 0
+  },
+  "worker_material_byte_equal": {
+    "worker.mjs": true,
+    "proxy-runner.mjs": true
+  },
+  "diff_check": 0,
+  "preflight_executed": false,
+  "start_executed": false,
+  "official_requests_by_harness": 0,
+  "product_builds": 0,
+  "old_files_modified": false
+}

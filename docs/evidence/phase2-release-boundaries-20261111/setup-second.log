@@ -1,0 +1,13 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "fixture_failed_service", "service": "cli-proxy-api", "running": false, "exit_code": 0}
+{"boundary": "fixture_failed_service", "service": "cpa-manager-plus", "running": true, "exit_code": 0}
+{"boundary": "fixture_failed_service", "service": "oauth-login", "running": true, "exit_code": 0}
+{"boundary": "fixture_failed_service", "service": "caddy", "running": false, "exit_code": 1}
+Traceback (most recent call last):
+  File "/checks/run.py", line 95, in <module>
+    main()
+  File "/checks/run.py", line 87, in main
+    raise RuntimeError('fixture_services_not_running')
+RuntimeError: fixture_services_not_running
+fixture_cleanup=verified
+command_exit=1

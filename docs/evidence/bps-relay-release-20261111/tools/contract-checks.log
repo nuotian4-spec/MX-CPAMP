@@ -1,0 +1,2 @@
+{"protocol_cases": 10, "state_home_and_cwd_cases": 4, "candidate_no_source_mutation": true, "site_upstream_mismatch_rejected": true, "result": "passed"}
+command_exit=0

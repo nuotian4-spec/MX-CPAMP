@@ -1,0 +1,14 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "fixture_failed_service", "service": "cli-proxy-api", "running": false, "exit_code": 0}
+{"boundary": "fixture_startup_detail", "output": "CLIProxyAPI Version: local-bps, Commit: 5c90a92eef27f450c7080bc8735c88d873fc8915, BuiltAt: unknown\n[2026-11-11 12:34:00] [--------] [warn ] [main.go:925] failed to parse plugin bootstrap config: hash remote management key: bcrypt: password length exceeds 72 bytes\n[2026-11-11 12:34:00] [--------] [error] [main.go:602] failed to load config: failed to hash remote management key: bcrypt: password length exceeds 72 bytes\n"}
+{"boundary": "fixture_failed_service", "service": "cpa-manager-plus", "running": true, "exit_code": 0}
+{"boundary": "fixture_failed_service", "service": "oauth-login", "running": true, "exit_code": 0}
+{"boundary": "fixture_failed_service", "service": "caddy", "running": true, "exit_code": 0}
+Traceback (most recent call last):
+  File "/checks/run.py", line 98, in <module>
+    main()
+  File "/checks/run.py", line 90, in main
+    raise RuntimeError('fixture_services_not_running')
+RuntimeError: fixture_services_not_running
+fixture_cleanup=verified
+command_exit=1

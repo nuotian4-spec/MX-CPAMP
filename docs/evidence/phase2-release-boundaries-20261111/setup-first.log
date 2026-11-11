@@ -1,0 +1,9 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+Traceback (most recent call last):
+  File "/checks/run.py", line 92, in <module>
+    main()
+  File "/checks/run.py", line 84, in main
+    raise RuntimeError('fixture_services_not_running')
+RuntimeError: fixture_services_not_running
+fixture_cleanup=verified
+command_exit=1

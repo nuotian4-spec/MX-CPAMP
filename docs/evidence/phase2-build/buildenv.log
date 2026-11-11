@@ -1,0 +1,56 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 960B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26-bookworm
+#2 DONE 1.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 505B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [builder 1/7] FROM docker.io/library/golang:1.26-bookworm@sha256:5de7c99eb78ca5e515a4c340235d0955ec5964a5071c492c15503d7c267da473
+#5 resolve docker.io/library/golang:1.26-bookworm@sha256:5de7c99eb78ca5e515a4c340235d0955ec5964a5071c492c15503d7c267da473 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 169.17kB 0.2s done
+#4 DONE 0.2s
+
+#6 [builder 3/7] RUN apt-get update && apt-get install -y --no-install-recommends build-essential git && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [builder 4/7] COPY go.mod go.sum ./
+#7 CACHED
+
+#8 [builder 5/7] RUN go mod download
+#8 CACHED
+
+#9 [builder 6/7] COPY . .
+#9 CACHED
+
+#10 [builder 2/7] WORKDIR /app
+#10 CACHED
+
+#11 [builder 7/7] RUN CGO_ENABLED=1 GOOS=linux go build -buildvcs=false -ldflags="-s -w -X 'main.Version=phase2-local-20261111' -X 'main.Commit=95dd9ca2c16d5469c43ce7c910f38ff271af45e3' -X 'main.BuildDate=2026-11-11'" -o ./CLIProxyAPI ./cmd/server/
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 23.3s done
+#12 exporting manifest sha256:89233f016cd1f6ec8bfda7430e295da267b7a81ab9784406dbcdbf46d07142ae 0.0s done
+#12 exporting config sha256:82124f99038fa182fec96dc7d49ded53bfcc434b37a240d4e5e501743c02605f 0.0s done
+#12 exporting attestation manifest sha256:b0a673d945042e8f15a04c7ba9170cf0056ddfc0c26c3c1449fb0edc13fefc45
+#12 exporting attestation manifest sha256:b0a673d945042e8f15a04c7ba9170cf0056ddfc0c26c3c1449fb0edc13fefc45 0.0s done
+#12 exporting manifest list sha256:c2c0afa322d878c8f1070c76e06047b50b045507b2f7184cb1690527136600d7 0.0s done
+#12 naming to docker.io/library/mx-cpa-buildenv:phase2-local-20261111 done
+#12 unpacking to docker.io/library/mx-cpa-buildenv:phase2-local-20261111
+#12 unpacking to docker.io/library/mx-cpa-buildenv:phase2-local-20261111 9.9s done
+#12 DONE 33.6s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/lot8jul1fuzdbx7k5o2v5p5z3

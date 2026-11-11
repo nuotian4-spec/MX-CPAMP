@@ -1,0 +1,28 @@
+=== RUN   TestBPSRelayEffectiveContract
+=== RUN   TestBPSRelayEffectiveContract/root
+=== RUN   TestBPSRelayEffectiveContract/v8
+=== RUN   TestBPSRelayEffectiveContract/mixed
+=== RUN   TestBPSRelayEffectiveContract/null_leaves
+=== RUN   TestBPSRelayEffectiveContract/empty_leaves
+=== RUN   TestBPSRelayEffectiveContract/trailing_slash
+=== RUN   TestBPSRelayEffectiveContract/relative_state
+=== RUN   TestBPSRelayEffectiveContract/home_state
+=== RUN   TestBPSRelayEffectiveContract/auth_priority
+=== RUN   TestBPSRelayEffectiveContract/auth_null
+=== RUN   TestBPSRelayEffectiveContract/root_null
+=== RUN   TestBPSRelayEffectiveContract/parent_null
+--- PASS: TestBPSRelayEffectiveContract (0.01s)
+    --- PASS: TestBPSRelayEffectiveContract/root (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/v8 (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/mixed (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/null_leaves (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/empty_leaves (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/trailing_slash (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/relative_state (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/home_state (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/auth_priority (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/auth_null (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/root_null (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/parent_null (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/config	0.020s

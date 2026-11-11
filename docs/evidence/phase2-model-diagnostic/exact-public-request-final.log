@@ -1,0 +1,28 @@
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=true
+time="2026-11-10T18:18:59Z" level=error msg="500 |           1ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6af-4b8b-7c87-b741-fbc2ba6b958b
+    zz_bps_model_diagnostic_test.go:63: model=gpt-6-astra with_max_output_tokens=true http=500 fake_roundtripper_calls=0 body={"error":{"message":"provider_not_found: no provider supplied","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=false
+time="2026-11-10T18:18:59Z" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6af-4b90-76d4-823f-cd83feb857ed
+    zz_bps_model_diagnostic_test.go:63: model=gpt-6-astra with_max_output_tokens=false http=200 fake_roundtripper_calls=1 body={"id":"resp_bps_diagnostic","object":"response","created_at":1,"status":"completed","model":"gpt-6-astra","output":[{"content":[{"text":"OK","type":"output_text"}],"id":"msg_1","role":"assistant","status":"completed","type":"message"}],"usage":{"input_tokens":3,"output_tokens":1,"total_tokens":4}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=true
+time="2026-11-10T18:18:59Z" level=error msg="500 |            0s |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6af-4b92-79a1-8510-2af184a39fe4
+    zz_bps_model_diagnostic_test.go:63: model=gpt-6.1-sol with_max_output_tokens=true http=500 fake_roundtripper_calls=0 body={"error":{"message":"provider_not_found: no provider supplied","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=false
+time="2026-11-10T18:18:59Z" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6af-4b95-7125-bd50-0dc1a9950c32
+    zz_bps_model_diagnostic_test.go:63: model=gpt-6.1-sol with_max_output_tokens=false http=200 fake_roundtripper_calls=1 body={"id":"resp_bps_diagnostic","object":"response","created_at":1,"status":"completed","model":"gpt-6.1-sol","output":[{"content":[{"text":"OK","type":"output_text"}],"id":"msg_1","role":"assistant","status":"completed","type":"message"}],"usage":{"input_tokens":3,"output_tokens":1,"total_tokens":4}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=true
+time="2026-11-10T18:18:59Z" level=error msg="500 |            0s |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6af-4b97-74f6-8fbf-226a7c1b9a7e
+    zz_bps_model_diagnostic_test.go:63: model=gpt-5.6-sol with_max_output_tokens=true http=500 fake_roundtripper_calls=0 body={"error":{"message":"provider_not_found: no provider supplied","type":"server_error","code":"internal_server_error"}}
+=== RUN   TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=false
+time="2026-11-10T18:18:59Z" level=info msg="200 |            0s |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6af-4b9a-7ed8-91b1-0b0150c82ec5
+    zz_bps_model_diagnostic_test.go:63: model=gpt-5.6-sol with_max_output_tokens=false http=200 fake_roundtripper_calls=1 body={"id":"resp_bps_diagnostic","object":"response","created_at":1,"status":"completed","model":"gpt-5.6-sol","output":[{"content":[{"text":"OK","type":"output_text"}],"id":"msg_1","role":"assistant","status":"completed","type":"message"}],"usage":{"input_tokens":3,"output_tokens":1,"total_tokens":4}}
+--- PASS: TestPhase2BPSExactPublicRequestDiagnostic (0.02s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=true (0.00s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6-astra/token-limit=false (0.00s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=true (0.00s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-6.1-sol/token-limit=false (0.00s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=true (0.00s)
+    --- PASS: TestPhase2BPSExactPublicRequestDiagnostic/gpt-5.6-sol/token-limit=false (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	0.036s

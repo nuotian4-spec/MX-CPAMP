@@ -1,0 +1,11 @@
+{"stage":"image","role":"cpa","image_id":"sha256:7adb02d9f8674f808e87af95b4c9244a6e73511551a0e6982514a60cbd3b4327","image_revision":"d07b4b1ed4845be0b2474a50ec75d39c254b937e"}
+{"stage":"image","role":"manager","image_id":"sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd","image_revision":"d26cbf7595ecf41ba8cbfd90c956291ac351b471"}
+{"stage":"image","role":"checks_runner","image_id":"sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758","oauth_service_started":false}
+{"stage":"boundaries","readonly":true,"tmpfs_state":true,"docker_logging":false,"published_ports":false,"external_network":"none","worker_started":false,"synthetic_only":true}
+{"stage":"access","admin_unauthorized_status":401,"instance_reference_rejected":true,"credential_incomplete":true,"quota_unknown":true,"real_access_called":false}
+{"stage":"usage","cpa_admin_gate":true,"manager_admin_gate":true,"instance_reference_rejected":true,"provider":"bps","source":"chatgpt_account_usage","credential_incomplete":true,"quota_unknown":true,"real_usage_called":false}
+{"stage":"models","read_does_not_publish":true,"manual_save_registered":true,"clear_preserves_credential":true,"unrelated_yaml_preserved":true,"stale_revision_rejected":true}
+{"stage":"inspection_config","http_status":200,"error_code":null}
+{"stage":"inspection","probe_set_count":1,"provider":"bps","action":"keep","quota_unknown":true,"no_auto_actions":true,"persisted":true,"scheduler_enabled":false}
+{"stage":"failed","error_code":"snapshot_exact_inspection_identity"}
+{"stage":"cleanup","verified":true,"synthetic_state_retained":false}

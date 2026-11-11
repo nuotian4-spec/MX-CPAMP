@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-11",
+  "user_authorization_received": true,
+  "requested_action": "start_reviewed_isolated_manual_bps_oauth_window",
+  "tool_outcome": "rejected_before_create_process",
+  "tool_stated_reason": "blocked by policy",
+  "script_executed": false,
+  "readonly_check": {
+    "matching_label_container_count": 0,
+    "start_receipt_exists": false,
+    "exit_receipt_exists": false
+  },
+  "new_oauth_window_started": false,
+  "next_action": "user_runs_reviewed_start_in_local_windows_powershell_and_returns_non_secret_ready_receipt",
+  "same_scope_reauthorization_required": false
+}

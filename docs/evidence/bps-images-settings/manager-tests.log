@@ -1,0 +1,7 @@
+产品输入: 2a3e933901dbec46b0cd77191a568bf06420087c
+工作目录: D:/MX-CPAMP-worktrees/bps-images-settings/components/cpamp/apps/manager-server
+命令: go test ./internal/service/credentialconcurrency ./internal/http/controller/bpssettings ./internal/http/router -run TestBPSSettings -count=1
+ok  github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/credentialconcurrency  0.101s
+ok  github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/bpssettings  0.109s
+?   github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/router [no test files]
+exit=0

@@ -1,0 +1,16 @@
+{
+  "exit_code": 0,
+  "stderr_seen": false,
+  "started_at": "2026-11-11T03:38:00.251Z",
+  "finished_at": "2026-11-11T03:38:29.454Z",
+  "source_revision": "ef4d287ea3298a7680f8fc21e82db77417bbe634",
+  "harness_revision": "732a8d4466356d5b0aaafbd645fc58046447c50c",
+  "profile": "bps",
+  "model": "gpt-6-luna",
+  "login_budget": 1,
+  "normal_refresh_budget": 0,
+  "client_model_request_budget": 2,
+  "legal_ping_required_before_followup": true,
+  "failure_stops_remaining": true,
+  "user_authorized": true
+}

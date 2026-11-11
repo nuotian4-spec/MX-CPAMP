@@ -1,0 +1,5 @@
+993eaf8dcedd72fe889ae6feba3de779b1b4dc49
+go test ./internal/api/handlers/management ./internal/runtime/executor/helps -run TestBPSSettings|TestBPSImage -count=1
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	0.232s
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps	0.226s
+exit=0

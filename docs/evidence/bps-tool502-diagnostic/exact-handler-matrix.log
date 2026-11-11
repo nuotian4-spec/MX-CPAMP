@@ -1,0 +1,57 @@
+=== RUN   TestBPSExactPing502Diagnostic
+=== RUN   TestBPSExactPing502Diagnostic/valid_envelope_sse
+time="2026-11-11T03:38:23+08:00" level=info msg="200 |          32ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fd36-70e4-abc3-d2a719b2a1d4
+    zz_bps_tool502_diagnostic_test.go:135: scenario=valid_envelope_sse http=200 public_code= public_type= category=success synthetic_upstream_calls=1 tool_valid=true
+=== RUN   TestBPSExactPing502Diagnostic/valid_direct_sse
+time="2026-11-11T03:38:23+08:00" level=info msg="200 |           4ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fd5d-7370-84b0-371711dd49af
+    zz_bps_tool502_diagnostic_test.go:135: scenario=valid_direct_sse http=200 public_code= public_type= category=success synthetic_upstream_calls=1 tool_valid=true
+=== RUN   TestBPSExactPing502Diagnostic/valid_envelope_json
+time="2026-11-11T03:38:23+08:00" level=info msg="200 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fd69-70db-b1de-1f6c427ccf99
+    zz_bps_tool502_diagnostic_test.go:135: scenario=valid_envelope_json http=200 public_code= public_type= category=success synthetic_upstream_calls=1 tool_valid=true
+=== RUN   TestBPSExactPing502Diagnostic/invalid_transport
+time="2026-11-11T03:38:23+08:00" level=error msg="502 |           5ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fd71-75b2-8c9a-b4b6ed142510
+    zz_bps_tool502_diagnostic_test.go:135: scenario=invalid_transport http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/invalid_schema
+time="2026-11-11T03:38:23+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fddb-7620-b5d6-c520a564665b
+    zz_bps_tool502_diagnostic_test.go:135: scenario=invalid_schema http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/missing_call_id
+time="2026-11-11T03:38:23+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fe36-710e-a9f0-e9f6eff0e640
+    zz_bps_tool502_diagnostic_test.go:135: scenario=missing_call_id http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/upstream_inband_failure
+time="2026-11-11T03:38:23+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fe87-78eb-99f9-da6072542ced
+    zz_bps_tool502_diagnostic_test.go:135: scenario=upstream_inband_failure http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/incomplete_terminal
+time="2026-11-11T03:38:23+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-fed8-76f3-9930-079106615ac7
+    zz_bps_tool502_diagnostic_test.go:135: scenario=incomplete_terminal http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/malformed_sse
+time="2026-11-11T03:38:23+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-ff30-7441-90e2-ae4221ee4a1d
+    zz_bps_tool502_diagnostic_test.go:135: scenario=malformed_sse http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/truncated_sse
+time="2026-11-11T03:38:24+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-ff81-7711-8e89-fe3e65ae0c52
+    zz_bps_tool502_diagnostic_test.go:135: scenario=truncated_sse http=502 public_code=internal_server_error public_type=server_error category=transport synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/missing_subject
+time="2026-11-11T03:38:24+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f7-ffd2-76ec-a281-8eca7cc26082
+    zz_bps_tool502_diagnostic_test.go:135: scenario=missing_subject http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/binding_storage_failure
+time="2026-11-11T03:38:24+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f8-0020-7176-8acd-515ca339d20b
+    zz_bps_tool502_diagnostic_test.go:135: scenario=binding_storage_failure http=502 public_code=internal_server_error public_type=server_error category=unknown synthetic_upstream_calls=1 tool_valid=false
+=== RUN   TestBPSExactPing502Diagnostic/upstream_http_502
+time="2026-11-11T03:38:24+08:00" level=warning msg="502 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=diagnostic err=BPS upstream returned HTTP 502" request_id=01a1c6f8-0070-7476-a183-c28ef8cc3368
+time="2026-11-11T03:38:24+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c6f8-0070-7476-a183-c28ef8cc3368
+    zz_bps_tool502_diagnostic_test.go:135: scenario=upstream_http_502 http=502 public_code=internal_server_error public_type=server_error category=upstream_http synthetic_upstream_calls=1 tool_valid=false
+--- PASS: TestBPSExactPing502Diagnostic (0.91s)
+    --- PASS: TestBPSExactPing502Diagnostic/valid_envelope_sse (0.04s)
+    --- PASS: TestBPSExactPing502Diagnostic/valid_direct_sse (0.01s)
+    --- PASS: TestBPSExactPing502Diagnostic/valid_envelope_json (0.01s)
+    --- PASS: TestBPSExactPing502Diagnostic/invalid_transport (0.10s)
+    --- PASS: TestBPSExactPing502Diagnostic/invalid_schema (0.09s)
+    --- PASS: TestBPSExactPing502Diagnostic/missing_call_id (0.08s)
+    --- PASS: TestBPSExactPing502Diagnostic/upstream_inband_failure (0.08s)
+    --- PASS: TestBPSExactPing502Diagnostic/incomplete_terminal (0.09s)
+    --- PASS: TestBPSExactPing502Diagnostic/malformed_sse (0.08s)
+    --- PASS: TestBPSExactPing502Diagnostic/truncated_sse (0.08s)
+    --- PASS: TestBPSExactPing502Diagnostic/missing_subject (0.08s)
+    --- PASS: TestBPSExactPing502Diagnostic/binding_storage_failure (0.08s)
+    --- PASS: TestBPSExactPing502Diagnostic/upstream_http_502 (0.08s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	1.073s

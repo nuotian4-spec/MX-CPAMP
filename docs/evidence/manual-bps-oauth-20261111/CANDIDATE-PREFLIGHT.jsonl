@@ -1,0 +1,7 @@
+{"stage":"image","role":"cpa","id":"sha256:a4428de0eeda96d76cfa5733eed190ea8b45cd49083bf6b881f4bc9dfc1f5933","revision":"ef4d287ea3298a7680f8fc21e82db77417bbe634"}
+{"stage":"image","role":"manager","id":"sha256:cdf235bee2e22f2c33af145b8fb4d27e93b4478162b8738dcadd3595f3b74c4a","revision":"7b6d6ca7408856f2e345a0f5c1e5cdea29f39a44"}
+{"stage":"capabilities","unauthenticated_http":401,"authenticated_http":200,"password_login_configured":false}
+{"stage":"panel","http_status":200,"unconfigured_password_login_hint_present":true,"callback_validation_hint_present":true,"rendered_browser_acceptance":false}
+{"stage":"verify_empty","saved_count":0,"registered_count":0,"manual_oauth_sessions_created":0,"harness_initiated_refresh_requests":0,"harness_initiated_model_requests":0,"background_refresh_hard_blocked":false}
+{"stage":"cleanup","verified":true,"token_state_retained":false}
+{"stage":"command_exit","code":0}

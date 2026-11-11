@@ -1,0 +1,2 @@
+{"code":"state_observed","files":{"complete":false,"compose.bps-final.yaml":true,"maintenance":false,"ready":false,"stage":true},"stage":"prepare_site"}
+{"code":"candidate_merge_changed","differences":[{"expected":{"present":true,"type":"bool","value":true},"path":"/services/cli-proxy-api/volumes/4/bind/create_host_path","rendered":{"present":false,"type":"missing"}}],"truncated":false}

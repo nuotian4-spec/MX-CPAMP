@@ -1,0 +1,9 @@
+{
+  "ref": "mx-cpamp:bps-quota-repair-20261111",
+  "id": "sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd",
+  "revision": "d26cbf7595ecf41ba8cbfd90c956291ac351b471",
+  "os": "linux",
+  "architecture": "amd64",
+  "runtime_proxy_env_count": 0,
+  "build_exit": 0
+}

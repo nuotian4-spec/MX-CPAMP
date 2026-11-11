@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-11-11T05:25:25.669Z",
+  "scope": "existing_session_get_and_worker_preflight_only",
+  "new_oauth_sessions": 0,
+  "callback_posts": 0,
+  "model_requests": 0,
+  "explicit_refresh_requests": 0,
+  "probes": [
+    {
+      "kind": "manager_session",
+      "http": 200,
+      "status": "wait",
+      "error_code": null
+    },
+    {
+      "kind": "cpa_session",
+      "http": 200,
+      "status": "wait",
+      "error_code": null
+    },
+    {
+      "kind": "worker_empty_input",
+      "http": 503,
+      "status": null,
+      "error_code": null
+    }
+  ]
+}

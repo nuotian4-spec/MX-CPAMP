@@ -1,0 +1,12 @@
+{"stage":"inputs","source_revision":"bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f","worker_source_overlay":false,"cpa_binary_overlay":false,"manager_binary_overlay":false,"overlay_fingerprints":{"worker":null,"cpa":null,"manager":null},"external_network":"none","synthetic_only":true}
+{"stage":"image","role":"cpa","image_id":"sha256:0bb5d7dbfc44d4822577fa4ae9f76aa81e0b5a2fd7afae2168c5ae53cbd1f47a","image_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3","expected_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3"}
+{"stage":"image","role":"manager","image_id":"sha256:f72b39c0ff1759c14ced75c511a35ab0d97935249cd0446b47becd30a5c9b6b9","image_revision":"bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f","expected_revision":"bb14b3a1c60f1b84b31a19ea5b1dde71edaee00f"}
+{"stage":"image","role":"worker","image_id":"sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758","image_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3","expected_revision":"95dd9ca2c16d5469c43ce7c910f38ff271af45e3"}
+{"stage":"boundaries","readonly":true,"tmpfs_state":true,"docker_logging":false,"published_ports":false,"external_network":"none","production_access":false}
+{"stage":"ready","services_healthy":true,"unauthorized_status":401,"external_network":"none"}
+{"stage":"batch","serial":true,"failure_continued":true,"latest_terminal_recovered":true,"duplicate_not_replayed":true,"mapped_registered_saved":true,"synthetic_only":true}
+{"stage":"bff","oauth_set_default_restored":true,"oauth_persisted":true,"config_set_default_restored":true,"config_identity_stable":true,"other_credential_unchanged":true}
+{"stage":"concurrency","cross_model_shared":true,"independent_credentials":true,"pool_wait_observed":true,"queued_cancel_removed":true,"active_cancel_upstream_exit":true,"release_woke_waiter":true,"all_drained":true,"real_upstream_called":false}
+{"stage":"complete","result":"passed","synthetic_login":true,"synthetic_upstream":true}
+{"stage":"cleanup","verified":true,"token_state_retained":false}
+{"stage":"input_recheck","unchanged":true}

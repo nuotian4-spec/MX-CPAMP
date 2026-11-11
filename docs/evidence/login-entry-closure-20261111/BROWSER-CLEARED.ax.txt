@@ -1,0 +1,5 @@
+Browser tab: 7, Title: "CPA Manager Plus", URL: "http://127.0.0.1:11034/management.html#/oauth".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+~					32 text entry area (settable) 账号列表
+~					45 text entry area (settable) 账号列表
+The focused UI element is 45 text entry area (settable) 账号列表

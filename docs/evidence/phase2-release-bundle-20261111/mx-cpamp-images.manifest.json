@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "archive": {
+    "file": "mx-cpamp-images-linux-amd64.tar.gz",
+    "sha256": "99362d58a8c182cf9266fc64632dbdbce67f20085246fad9743cee2c5652f744"
+  },
+  "images": {
+    "cpa": {
+      "ref": "mx-cpa:bps-tool-diagnostic-20261111",
+      "revision": "ef4d287ea3298a7680f8fc21e82db77417bbe634",
+      "os": "linux",
+      "architecture": "amd64",
+      "accepted_ids": [
+        "sha256:a4428de0eeda96d76cfa5733eed190ea8b45cd49083bf6b881f4bc9dfc1f5933",
+        "sha256:8a47d757034a09d391188113a5b72a745149f87da880a5313e2fb558b5d2512e"
+      ]
+    },
+    "manager": {
+      "ref": "mx-cpamp:bps-tools-images-20261111",
+      "revision": "bd573d0439a925d811e25aeeb575ac91feb5796d",
+      "os": "linux",
+      "architecture": "amd64",
+      "accepted_ids": [
+        "sha256:6732b8d85cfade68fce21ae286ede773d8151a397c64eedbea0b4618d4b6cd73",
+        "sha256:7c1e360f0ad697560eb1d4bcca60ee40782be6ff5d7b72dcc89a85ce225b3d8e"
+      ]
+    },
+    "worker": {
+      "ref": "mx-oauth-login:phase2-local-20261111",
+      "revision": "95dd9ca2c16d5469c43ce7c910f38ff271af45e3",
+      "os": "linux",
+      "architecture": "amd64",
+      "accepted_ids": [
+        "sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758",
+        "sha256:30689442b2f61b2c7ff27eae008291b014fe7161e842a60202a6574c912be4dd"
+      ]
+    }
+  }
+}

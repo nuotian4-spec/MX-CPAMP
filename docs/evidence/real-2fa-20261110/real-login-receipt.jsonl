@@ -1,0 +1,10 @@
+{"stage":"image","role":"cpa","image_id":"sha256:58d0177203d8f4e4968cebc60c59bdb0e236404a05c27656a38351dc1022ab93"}
+{"stage":"image","role":"manager","image_id":"sha256:85a8f76852c08de220ba132490cbdf234b87f1bdeba91a6e0d9bfa905769a25c"}
+{"stage":"image","role":"worker","image_id":"sha256:64168881ce990f58d24736d1f8488549457ed2c775a072c1d0572bd524b7926b"}
+{"stage":"boundaries","readonly":true,"tmpfs_state":true,"docker_logging":false,"published_ports":false,"secret_argv_env":false,"production_access":false}
+{"stage":"ready","services_healthy":true,"admin_gate":true,"local_proxy_port_reachable":true,"login_network":"test_proxy_wrapper","production_network_equivalence":false}
+{"stage":"create","profile":"codex"}
+{"stage":"login","profile":"codex","status":"needs_user_action","error_code":"needs_user_action","worker_error_code":"needs_user_action"}
+{"stage":"create","profile":"bps"}
+{"stage":"login","profile":"bps","status":"needs_user_action","error_code":"needs_user_action","worker_error_code":"needs_user_action"}
+{"stage":"cleanup","verified":true,"token_state_retained":false}
