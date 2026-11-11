@@ -24,6 +24,7 @@
 | 其他只读逻辑复用 | 移除新增纯函数并把 BPS 字段片段替回基线后，完整 Python AST 相同 | `unchanged_other_preflight_auth_io_activity_ast=passed`；原 Caddy、认证来源、固定 GET、活动统计与旧只读证据复用 |
 | 固定镜像源码等价 | `git diff --quiet b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c bab1afb07e3cf25e78394b6cb959aaa5999b31bd -- components/cpa` | exit 0，loader 对应最终镜像产品源码 |
 | 最终 diff | `git diff --check` | exit 0 |
+| HOME 三种受支持路径 | `python docs/evidence/bps-relay-release-20261111/contracts/verify.py --path-only`；`~`、`~/private-state`、`~\bps-state` | exit 0，`path.log`、`path-loader.log`、`path-preflight.example.jsonl`；只跑三条路径，未重启固定 CPA 或重跑 HTTPS |
 
 最终 CPA 镜像为 `sha256:eeb5bf17435a4c3d1a508188fd149eb8b2dbc5d9d20390cf4fd22d6e40f40d4b`，标签 revision 为 `b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c`。Settings DTO 不返回 `state-dir`；路径结论来自实际 loader 专项，独立于 Settings 回读。
 

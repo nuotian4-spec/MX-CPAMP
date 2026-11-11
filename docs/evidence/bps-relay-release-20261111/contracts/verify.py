@@ -20,6 +20,7 @@ REVISION = 'b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c'
 KEY = 'SYNTHETIC_BPS_CONTRACT_20261111'
 rows = []
 CANDIDATE_ONLY = '--candidate-only' in sys.argv
+PATH_ONLY = '--path-only' in sys.argv
 
 
 def command(args, data=None, check=True):
@@ -47,11 +48,14 @@ cases = [
     case('trailing_slash', canonical={'image-transport': 'relay', 'image-relay-base-url': 'https://v8.example.invalid/'}, expected={'image_transport': 'relay', 'image_relay_base_url': 'https://v8.example.invalid/'}),
     case('relative_state', canonical={'state-dir': ' ./private/../state '}, expected={'state': '@CWD@/state'}),
     case('home_state', canonical={'state-dir': ' ~/private-state '}, expected={'state': '@HOME@/private-state'}),
+    case('home_bare', canonical={'state-dir': '~'}, expected={'state': '@HOME@'}),
+    case('home_backslash', canonical={'state-dir': '~\\bps-state'}, expected={'state': '@HOME@/bps-state'}),
     case('auth_priority', expected={'state': '/fixture/v8/bps-state'}, **{'auth-dir': '/fixture/root/auth', 'oauth': {'auth-dir': '/fixture/v8/auth'}}),
     case('auth_null', expected={'state': '@HOME@/bps-state'}, **{'auth-dir': '/fixture/root/auth', 'oauth': {'auth-dir': None}}),
     case('root_null', **{'bps-protocol': None}),
     dict(case('parent_null', **{'upstream': {'bps': {'protocol': None}}}), reject=True),
 ]
+if PATH_ONLY: cases = [tc for tc in cases if tc['name'] in ['home_state', 'home_bare', 'home_backslash']]
 
 source = (ROOT / 'deploy/phase2-readonly-preflight.sh').read_text(encoding='utf-8').replace('\r\n', '\n')
 
@@ -81,7 +85,7 @@ for tc in ([] if CANDIDATE_ONLY else cases):
         assert row['container_path'] == exp['state'].replace('@CWD@', '/CLIProxyAPI').replace('@HOME@', '/root')
     assert KEY not in json.dumps(row)
     row['case'] = tc['name']
-if not CANDIDATE_ONLY: print('preflight_effective_root_v8_mixed_null_empty_auth_home_cwd=passed')
+if not CANDIDATE_ONLY: print('preflight_home_path_forms=passed count=3' if PATH_ONLY else 'preflight_effective_root_v8_mixed_null_empty_auth_home_cwd=passed')
 
 # 仅替换 BPS 取值片段；其他 I/O、认证、活动统计与已审基线保持 AST 等价。
 baseline = ast.parse(embedded(command(['git', 'show', BASE + ':deploy/phase2-readonly-preflight.sh']).stdout.decode()))
@@ -112,8 +116,8 @@ with tempfile.TemporaryDirectory(prefix=prefix) as temporary:
     (temporary / 'overlay.json').write_text(json.dumps({'Replace': {'/app/internal/config/zz_bps_relay_contract_test.go': '/evidence/config_contract_test.go'}}), encoding='utf-8')
     if not CANDIDATE_ONLY:
         loader = command(['docker', 'run', '--rm', '--pull', 'never', '--network', 'none', '--mount', 'type=bind,source=' + str(ROOT / 'components/cpa') + ',target=/app,readonly', '--mount', 'type=bind,source=' + str(HERE) + ',target=/evidence,readonly', '--mount', 'type=bind,source=' + str(temporary) + ',target=/checks,readonly', '-w', '/app', '-e', 'GOTOOLCHAIN=local', '-e', 'GOPROXY=off', '-e', 'GOSUMDB=off', '--entrypoint', 'go', 'mx-cpa-buildenv:bps-tools-images-20261111', 'test', '-overlay', '/checks/overlay.json', './internal/config', '-run', '^TestBPSRelayEffectiveContract$', '-count=1', '-v'])
-        (HERE / 'loader.log').write_text(loader.stdout.decode(), encoding='utf-8')
-        print('actual_linux_config_loader_and_state_directory_12_cases=passed')
+        (HERE / ('path-loader.log' if PATH_ONLY else 'loader.log')).write_text(loader.stdout.decode(), encoding='utf-8')
+        print('actual_linux_config_loader_and_state_directory_cases=passed count=' + str(len(cases)))
     else:
         assert 'PASS' in (HERE / 'loader.log').read_text(encoding='utf-8')
         print('config_loader_and_preflight_prior_pass=reused')
@@ -152,6 +156,6 @@ else:sys.exit(2)
             command(['docker', 'rm', '-f', name], check=False)
     assert not command(['docker', 'ps', '-aq', '--filter', 'name=' + prefix]).stdout.strip()
 print('fixture_cleanup=verified')
-if rows: (HERE / 'preflight.example.jsonl').write_text(''.join(json.dumps(row, ensure_ascii=True, separators=(',', ':')) + '\n' for row in rows), encoding='utf-8')
+if rows: (HERE / ('path-preflight.example.jsonl' if PATH_ONLY else 'preflight.example.jsonl')).write_text(''.join(json.dumps(row, ensure_ascii=True, separators=(',', ':')) + '\n' for row in rows), encoding='utf-8')
 print('preflight_requests=0 model_requests=0 external_network_success=0 production_requests=0')
 print('exit=0')

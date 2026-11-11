@@ -1,0 +1,10 @@
+=== RUN   TestBPSRelayEffectiveContract
+=== RUN   TestBPSRelayEffectiveContract/home_state
+=== RUN   TestBPSRelayEffectiveContract/home_bare
+=== RUN   TestBPSRelayEffectiveContract/home_backslash
+--- PASS: TestBPSRelayEffectiveContract (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/home_state (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/home_bare (0.00s)
+    --- PASS: TestBPSRelayEffectiveContract/home_backslash (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/config	0.017s
