@@ -93,7 +93,8 @@ def compose_matches_live(rendered,live):
         environment.update({k:str(v if v is not None else '') for k,v in planned.get('environment',{}).items()})
         require(environment==env(c),'compose_environment_drift')
         for key,field in [('command','Cmd'),('entrypoint','Entrypoint'),('user','User'),('working_dir','WorkingDir')]:
-            expected=planned.get(key,image.get(field))
+            expected=planned.get(key)
+            if expected is None:expected=image.get(field)
             default=[] if field in ['Cmd','Entrypoint'] else ''
             require((cc.get(field) or default)==(expected or default),'compose_process_drift')
         expected_mounts=[]
