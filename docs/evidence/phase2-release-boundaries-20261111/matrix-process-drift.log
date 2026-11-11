@@ -1,0 +1,14 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "delivery_loaded", "functions": ["prepare", "apply", "confirm_deploy", "snapshot", "backup", "health", "drift"]}
+Traceback (most recent call last):
+  File "/checks/run.py", line 210, in <module>
+    main()
+  File "/checks/run.py", line 149, in main
+    assert code==0, 'prepare_failed:'+output
+           ^^^^^^^
+AssertionError: prepare_failed:stage=prepare_bundle
+stage=prepare_site
+release_failed stage=prepare_site code=compose_process_drift
+
+fixture_cleanup=verified
+command_exit=1

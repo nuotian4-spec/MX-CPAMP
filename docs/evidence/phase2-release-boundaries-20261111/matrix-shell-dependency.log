@@ -1,0 +1,22 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "delivery_loaded", "functions": ["prepare", "apply", "confirm_deploy", "snapshot", "backup", "health", "drift"]}
+{"boundary": "prepare", "passed": true, "zero_service_change": true, "zero_config_wrapper_change": true, "staged_only": true}
+{"boundary": "confirmation_no_tty", "passed": true, "zero_maintenance": true, "stage": "awaiting_confirmation", "elapsed_seconds": 0.52}
+{"boundary": "confirmation_cancel", "passed": true, "zero_maintenance": true, "stage": "awaiting_confirmation", "elapsed_seconds": 0.48}
+{"boundary": "confirmation_eof", "passed": true, "zero_maintenance": true, "stage": "awaiting_confirmation", "elapsed_seconds": 0.58}
+{"boundary": "confirmation_timeout", "passed": true, "zero_maintenance": true, "stage": "awaiting_confirmation", "elapsed_seconds": 120.58}
+{"boundary": "source_drift", "source": "cpa/config.yaml", "rejected": true, "zero_maintenance": true}
+{"boundary": "source_drift", "source": "compose.mx-cpamp.yaml", "rejected": true, "zero_maintenance": true}
+{"boundary": "worker_secret_permissions", "mode": "600", "rejected": true, "zero_maintenance": true}
+Traceback (most recent call last):
+  File "/checks/run.py", line 235, in <module>
+    main()
+  File "/checks/run.py", line 222, in main
+    rendered=json.loads(command([str(ROOT/'cpa-compose'),'config','--format','json']))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/checks/run.py", line 24, in command
+    raise RuntimeError('fixture_command_failed:'+json.dumps(args)+':'+result.stderr)
+RuntimeError: fixture_command_failed:["/var/lib/docker/volumes/mx-phase2-boundary-8fe134acc3-root/_data/cpa-compose", "config", "--format", "json"]:env: can't execute 'bash': No such file or directory
+
+fixture_cleanup=verified
+command_exit=1

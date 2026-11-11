@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/checks/run.py", line 171, in <module>
+    main()
+  File "/checks/run.py", line 101, in main
+    create_site()
+  File "/checks/run.py", line 96, in create_site
+    compose([ROOT/'compose.yaml'],'up','-d','--pull','never','--no-build')
+  File "/checks/run.py", line 33, in compose
+    return command(result+list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/checks/run.py", line 23, in command
+    raise RuntimeError('fixture_command_failed:'+json.dumps(args)+':'+result.stderr)
+RuntimeError: fixture_command_failed:["docker", "compose", "--project-directory", "/var/lib/docker/volumes/mx-phase2-boundary-315bf1c9fa-root/_data", "-p", "mx-phase2-boundary-315bf1c9fa", "-f", "/var/lib/docker/volumes/mx-phase2-boundary-315bf1c9fa-root/_data/compose.yaml", "up", "-d", "--pull", "never", "--no-build"]: Network mx-phase2-boundary-315bf1c9fa_default  Creating
+ Network mx-phase2-boundary-315bf1c9fa_default  Error
+failed to create network mx-phase2-boundary-315bf1c9fa_default: Error response from daemon: all predefined address pools have been fully subnetted
+
+fixture_cleanup=verified
+command_exit=1

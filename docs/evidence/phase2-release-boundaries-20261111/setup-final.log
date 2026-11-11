@@ -1,0 +1,4 @@
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+{"boundary": "fixture_runtime", "four_running": true, "caddy_base_chain": true, "apps_dual_chain": true}
+fixture_cleanup=verified
+command_exit=0

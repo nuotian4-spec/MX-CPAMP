@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/checks/run.py", line 171, in <module>
+    main()
+  File "/checks/run.py", line 101, in main
+    create_site()
+  File "/checks/run.py", line 96, in create_site
+    compose([ROOT/'compose.yaml'],'up','-d','--pull','never','--no-build')
+  File "/checks/run.py", line 33, in compose
+    return command(result+list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/checks/run.py", line 23, in command
+    raise RuntimeError('fixture_command_failed:'+args[0])
+RuntimeError: fixture_command_failed:docker
+fixture_cleanup=verified
+command_exit=1
