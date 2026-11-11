@@ -68,6 +68,81 @@ def get(address, port, path, key):
     except Exception: pass
     return None, None
 
+def caddy_skeleton(adapted):
+    # 只保留原序和固定分类；原始匹配值、域名、组名与代理配置不进入输出。
+    budget, groups = [128], {}
+    state = dict(status='observed', truncated=False)
+    def unknown():
+        state['status'] = 'unknown'
+        return 'unknown'
+    def items(value):
+        if not isinstance(value, list):
+            unknown(); return []
+        if len(value) > 16:
+            state['truncated'] = True; unknown()
+        return value[:16]
+    def classify(value, allowed):
+        if isinstance(value, str) and value in allowed: return allowed[value]
+        return unknown()
+    def route_list(value, depth=0):
+        result = []
+        for index, route in enumerate(items(value)):
+            if budget[0] == 0 or depth > 12:
+                state['truncated'] = True; unknown(); break
+            budget[0] -= 1
+            if not isinstance(route, dict):
+                result.append(dict(index=index, status=unknown())); continue
+            match = []
+            for matcher in items(route.get('match', [{}])):
+                if not isinstance(matcher, dict):
+                    match.append(dict(status=unknown())); continue
+                entry = dict(paths=[classify(p, {'/api/bps-images/*':'relay', '/api/*':'api', '/v1/*':'v1'}) for p in items(matcher['path'])] if 'path' in matcher else ['any'], methods=[classify(m, {'GET':'GET', 'HEAD':'HEAD'}) for m in items(matcher['method'])] if 'method' in matcher else ['any'])
+                entry['other_matchers'] = unknown() if set(matcher) - {'path', 'method'} else 'none'
+                match.append(entry)
+            group = route.get('group')
+            if group is None: group_id = None
+            elif isinstance(group, str):
+                if group not in groups: groups[group] = len(groups) + 1
+                group_id = groups[group]
+            else: group_id = unknown()
+            terminal = route.get('terminal', False)
+            if type(terminal) is not bool: terminal = unknown()
+            handlers = []
+            for handler_index, handler in enumerate(items(route.get('handle', []))):
+                if budget[0] == 0:
+                    state['truncated'] = True; unknown(); break
+                budget[0] -= 1
+                if not isinstance(handler, dict):
+                    handlers.append(dict(index=handler_index, type=unknown())); continue
+                kind = handler.get('handler')
+                entry = dict(index=handler_index, type=kind if kind in ['subroute', 'reverse_proxy', 'rewrite', 'headers', 'static_response'] else unknown())
+                if kind == 'subroute':
+                    entry['routes'] = route_list(handler.get('routes', []), depth + 1)
+                    entry['other_options'] = unknown() if set(handler) - {'handler', 'routes', '@id'} else 'none'
+                elif kind == 'reverse_proxy':
+                    entry['targets'] = [classify(upstream.get('dial'), {'cli-proxy-api:8317':'cpa', 'cpa-manager-plus:18317':'manager'}) if isinstance(upstream, dict) and set(upstream) <= {'dial'} else unknown() for upstream in items(handler.get('upstreams', []))]
+                    entry['other_options'] = unknown() if set(handler) - {'handler', 'upstreams', '@id'} else 'none'
+                else:
+                    entry['details'] = unknown()
+                handlers.append(entry)
+            result.append(dict(index=index, match=match, terminal=terminal, group=group_id, other_options=unknown() if set(route) - {'match', 'handle', 'terminal', 'group', '@id'} else 'none', handle=handlers))
+        return result
+    servers = adapted
+    for key in ['apps', 'http', 'servers']:
+        servers = servers.get(key) if isinstance(servers, dict) else None
+    ordered = []
+    if isinstance(servers, dict):
+        if len(servers) > 16:
+            state['truncated'] = True; unknown()
+        for index, server in enumerate(list(servers.values())[:16]):
+            if isinstance(server, dict):
+                entry = dict(index=index, routes=route_list(server.get('routes', [])))
+                if 'errors' in server: entry['error_routes'] = unknown()
+                ordered.append(entry)
+            else: ordered.append(dict(index=index, status=unknown()))
+    else: unknown()
+    return dict(ordered_servers=ordered, skeleton_status=state['status'], skeleton_truncated=state['truncated'])
+
 def main():
     project = sys.argv[1] if len(sys.argv) > 1 else 'cpa-stack'
     if len(sys.argv) > 2 or not re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,62}', project):
@@ -143,7 +218,7 @@ def main():
         elif isinstance(value,list):
             for child in value:routes(child)
     routes(adapted)
-    emit('caddy_routes', parse='ok' if isinstance(adapted,dict) else 'unknown', relay_routes=relay, generic_api_routes=generic_api, effective_order='requires_review' if relay else 'not_applicable')
+    emit('caddy_routes', parse='ok' if isinstance(adapted,dict) else 'unknown', relay_routes=relay, generic_api_routes=generic_api, effective_order='requires_review' if relay else 'not_applicable', **caddy_skeleton(adapted))
     shared=set(cpa.get('NetworkSettings',{}).get('Networks',{})) & set(manager.get('NetworkSettings',{}).get('Networks',{})) & set(worker.get('NetworkSettings',{}).get('Networks',{}))
     network=next(iter(shared)) if len(shared)==1 else None
     def address(c): return c.get('NetworkSettings',{}).get('Networks',{}).get(network,{}).get('IPAddress') if network else None
