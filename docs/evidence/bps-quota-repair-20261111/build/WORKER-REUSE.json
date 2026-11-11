@@ -1,0 +1,11 @@
+{
+  "ref": "mx-oauth-login:phase2-local-20261111",
+  "id": "sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758",
+  "revision": "95dd9ca2c16d5469c43ce7c910f38ff271af45e3",
+  "os": "linux",
+  "architecture": "amd64",
+  "input_comparison_base": "f4dd43e4c217ca6eb7762ca4d4f747665280657c",
+  "input_path": "components/oauth-login",
+  "input_diff_exit": 0,
+  "rebuilt": false
+}

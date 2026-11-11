@@ -1,0 +1,166 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.manager-server
+#1 transferring dockerfile: 1.64kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22.23.4-alpine
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/golang:1.26.10-alpine
+#3 DONE 2.3s
+
+#2 [internal] load metadata for docker.io/library/node:22.23.4-alpine
+#2 DONE 2.3s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.21
+#4 DONE 2.3s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 201B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 [service-build 1/9] FROM docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696
+#7 resolve docker.io/library/golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 0.1s done
+#7 DONE 0.1s
+
+#8 [stage-2 1/4] FROM docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab
+#8 resolve docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab
+#8 resolve docker.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab 0.1s done
+#8 CACHED
+
+#9 [web-build 1/8] FROM docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+#9 resolve docker.io/library/node:22.23.4-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202 0.1s done
+#9 DONE 0.1s
+
+#6 [internal] load build context
+#6 transferring context: 1.24MB 0.2s done
+#6 DONE 0.2s
+
+#10 [service-build 2/9] WORKDIR /src
+#10 CACHED
+
+#11 [web-build 2/8] WORKDIR /app
+#11 CACHED
+
+#12 [web-build 3/8] COPY package*.json ./
+#12 CACHED
+
+#13 [web-build 4/8] COPY apps/web/package.json ./apps/web/package.json
+#13 CACHED
+
+#14 [web-build 5/8] RUN npm ci
+#14 ...
+
+#15 [service-build 3/9] COPY apps/manager-server ./apps/manager-server
+#15 DONE 0.3s
+
+#16 [stage-2 2/4] RUN apk add --no-cache ca-certificates wget tzdata
+#16 0.330 fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/APKINDEX.tar.gz
+#16 1.549 fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/community/x86_64/APKINDEX.tar.gz
+#16 2.808 (1/6) Installing ca-certificates (20261020-r0)
+#16 3.099 (2/6) Installing tzdata (2026f-r0)
+#16 3.707 (3/6) Installing libunistring (1.2-r0)
+#16 4.504 (4/6) Installing libidn2 (2.3.7-r0)
+#16 5.029 (5/6) Installing pcre2 (10.43-r1)
+#16 5.691 (6/6) Installing wget (1.25.0-r0)
+#16 5.974 Executing busybox-1.37.0-r14.trigger
+#16 5.990 Executing ca-certificates-20261020-r0.trigger
+#16 6.064 OK: 10 MiB in 21 packages
+#16 DONE 6.4s
+
+#14 [web-build 5/8] RUN npm ci
+#14 ...
+
+#17 [stage-2 3/4] WORKDIR /app
+#17 DONE 0.1s
+
+#14 [web-build 5/8] RUN npm ci
+#14 38.63
+#14 38.63 added 286 packages, and audited 289 packages in 38s
+#14 38.63
+#14 38.63 77 packages are looking for funding
+#14 38.63   run `npm fund` for details
+#14 38.77
+#14 38.77 8 vulnerabilities (7 moderate, 1 high)
+#14 38.77
+#14 38.77 To address issues that do not require attention, run:
+#14 38.77   npm audit fix
+#14 38.77
+#14 38.77 To address all issues (including breaking changes), run:
+#14 38.77   npm audit fix --force
+#14 38.77
+#14 38.77 Run `npm audit` for details.
+#14 38.77 npm notice
+#14 38.77 npm notice New major version of npm available! 10.9.9 -> 12.2.2
+#14 38.77 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+#14 38.77 npm notice To update run: npm install -g npm@12.2.2
+#14 38.77 npm notice
+#14 DONE 39.1s
+
+#18 [web-build 6/8] COPY apps/web ./apps/web
+#18 DONE 0.5s
+
+#19 [web-build 7/8] WORKDIR /app/apps/web
+#19 DONE 0.1s
+
+#20 [web-build 8/8] RUN VERSION=bps-quota-repair-20261111 npm run build
+#20 0.404
+#20 0.404 > cpa-manager-plus-web@0.0.0 build
+#20 0.404 > tsc && vite build
+#20 0.404
+#20 25.81 (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+#20 25.81   - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+#20 25.81 Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+#20 25.83 vite v8.3.5 building client environment for production...
+#20 25.86 transforming...
+#20 28.77 ✓ 1667 modules transformed.
+#20 29.01 rendering chunks...
+#20 29.74 [plugin vite:singlefile]
+#20 29.74
+#20 29.74 [plugin vite:singlefile] Inlining: index-Bd9ejZru.js
+#20 29.76 [plugin vite:singlefile] Inlining: style-BekbbpXN.css
+#20 29.78 computing gzip size...
+#20 29.85 dist/index.html  6,528.63 kB │ gzip: 1,781.30 kB
+#20 29.85
+#20 29.85 ✓ built in 4.01s
+#20 DONE 30.0s
+
+#21 [service-build 4/9] COPY --from=web-build /app/apps/web/dist/index.html ./apps/manager-server/internal/httpapi/web/management.html
+#21 DONE 0.1s
+
+#22 [service-build 5/9] COPY --from=web-build /app/apps/web/dist/favicon.ico ./apps/manager-server/internal/httpapi/web/favicon.ico
+#22 DONE 0.1s
+
+#23 [service-build 6/9] COPY --from=web-build /app/apps/web/dist/apple-touch-icon.png ./apps/manager-server/internal/httpapi/web/apple-touch-icon.png
+#23 DONE 0.1s
+
+#24 [service-build 7/9] WORKDIR /src/apps/manager-server
+#24 DONE 0.1s
+
+#25 [service-build 8/9] RUN go mod download
+#25 DONE 14.0s
+
+#26 [service-build 9/9] RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.Version=bps-quota-repair-20261111 -X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.SourceCommit=d26cbf7595ecf41ba8cbfd90c956291ac351b471" -o /out/cpa-manager-plus ./cmd/cpa-manager-plus
+#26 DONE 14.8s
+
+#27 [stage-2 4/4] COPY --from=service-build /out/cpa-manager-plus /usr/local/bin/cpa-manager-plus
+#27 DONE 0.1s
+
+#28 exporting to image
+#28 exporting layers
+#28 exporting layers 1.0s done
+#28 exporting manifest sha256:907a028badb8b3a9287dd2ae151e1eb97a2e903680422499a5581cedd14c6f52 0.0s done
+#28 exporting config sha256:a7b21c514227d3c48426b8cb1bb443cc8d5ca8000c626da190099ef922c5b247 0.0s done
+#28 exporting attestation manifest sha256:03e5a3fbbc7ed81d986245c5aa6d42b292f1dcda755458e1f668d5cf10a14f90 0.0s done
+#28 exporting manifest list sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd
+#28 exporting manifest list sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd 0.0s done
+#28 naming to docker.io/library/mx-cpamp:bps-quota-repair-20261111 done
+#28 unpacking to docker.io/library/mx-cpamp:bps-quota-repair-20261111
+#28 unpacking to docker.io/library/mx-cpamp:bps-quota-repair-20261111 0.3s done
+#28 DONE 1.5s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/5ke7l2wa2ef7ty4bi7t3luu1y

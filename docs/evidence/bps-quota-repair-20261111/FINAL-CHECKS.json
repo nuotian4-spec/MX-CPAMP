@@ -1,0 +1,11 @@
+{
+  "checked_head": "b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c",
+  "base": "f4dd43e4c217ca6eb7762ca4d4f747665280657c",
+  "diff_check_exit": 0,
+  "manager_product_equivalence_revision": "d26cbf7595ecf41ba8cbfd90c956291ac351b471",
+  "manager_product_diff_exit": 0,
+  "worker_product_diff_exit": 0,
+  "protected_schema_migration_deploy_dependency_paths": [],
+  "cpa_build_revision": "b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c",
+  "no_push_or_deploy_performed": true
+}

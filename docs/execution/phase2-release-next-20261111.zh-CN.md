@@ -6,7 +6,7 @@
 
 BPS手工OAuth、BPS 2FA、保存注册、同client正常刷新、gpt-6-luna文本、默认原生图片及Responses普通工具往返分别已有真实回执。批次、并发、Chat/Responses普通与SSE、关图、工具截图及历史图片语义已有对应离线证据；不逐协议重复真实调用，不将离线结果写成全形态真实成功。
 
-最新本地候选固定为[BPS模型与巡检回执](../evidence/bps-inspection-repair-20261111/FINAL.zh-CN.md)中的CPA与Manager，包含已通过的scope兼容修复；Worker继续复用原产物。此前发布工具与分发归档的固定身份属于旧候选，未重新绑定，`write_release_ready=false`。
+最新本地候选固定为[BPS官方账号用量回执](../evidence/bps-quota-repair-20261111/FINAL.zh-CN.md)中的CPA与Manager，保留模型/巡检、scope兼容及登录入口修复；Worker继续复用原产物。此前发布工具与分发归档的固定身份属于旧候选，未重新绑定，`write_release_ready=false`。
 
 ## 接续顺序
 
@@ -80,3 +80,5 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 最新完整窗口：用户选择Codex+BPS后，已有服务端记录确认唯一BPS账号只读权限巡检HTTP200/allowed=true/keep，删除、启停及重登均0；只读摘要与旧窗口清理exit0见[入口收口](login-entry-closure-20261111.zh-CN.md)。原专项窗口缺Worker，能力false导致两处2FA门控，现使用完整三组件工具，保持产品门控并复用未变构建/专项。独审放行后09:13:47 UTC真实start退出0，能力true、Worker鉴权200/401/401/404、空批次通过；浏览器分别录入并清空两处2FA检查文字，四入口均显示。新入口`127.0.0.1:11034`，截止`2026-11-11T10:13:43.149Z`，归属`mx-full-login-manual-19e8a490cf66`。当前责任人：主会话交付与按归属清理；下一责任人：用户仅继续已确认范围。没有新登录/OAuth/access/刷新/推理提交，没有产品修改、新构建、推送或OVH动作；`two_factor_live_verified=false`、`write_release_ready=false`。
 
 新增额度反馈：[BPS额度调查](../bps-quota-investigation-20261111.zh-CN.md)确认原实现仅接权限查询，非单纯漏展示。用户随后批准并导入BPS，已审真实来源验证exit0：同BPS凭证access/wham均200，主窗口已用17%、周期2592000秒，带绝对重置时间；实际各GET1次，刷新/推理0，独审通过。该结果只证明官方账号主用量可读，不定义BPS专属或共享桶。当前按[完整接入执行包](bps-quota-repair-20261111.zh-CN.md)两线实施CPA独立usage接口及Manager/Web巡检/账号各视图/主动刷新/快照；不改现有access和自动动作，无schema迁移。后续专项及最终组合均离线，不追加真实请求；当前责任人：执行席，下一责任人：独审与主会话整合构建。`quota_product_ready=false`、`write_release_ready=false`。
+
+最新额度候选已完成：[本地最终回执](../evidence/bps-quota-repair-20261111/FINAL.zh-CN.md)。CPA独立usage、Manager/Web全链展示和BPS身份隔离均经专项与独审；最终镜像组合exit0，快照精确身份/写查/清理通过。首次组合漏account_id的exit1保留，CPA公共列表修复后仅重建CPA，Manager/Worker复用。旧11034窗口已按归属stop，令牌状态不保留。无新增SQL/schema迁移，沿现有SQLite写观察；新产品真实账号页面和生产尚未验，未追加官方请求或推送/部署。当前责任人：主会话本地收口；下一责任人：主会话准备新候选页面验收与统一发布材料。`local_candidate_ready=true`、`integration_passed=true`、`quota_product_live_verified=false`、`write_release_ready=false`。

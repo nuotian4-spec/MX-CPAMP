@@ -19,3 +19,11 @@ checks runner 默认使用已缓存 `sha256:2bfdb42551061d6c0ba1b71758402ab46bc6
 旧模型读/保存/清空及 revision 保护、巡检配置边界沿用已验证 harness；collector 保持环境托管原输入，仅 scheduler 关闭、手动执行一次巡检。公开 handler 的实际数值、headers、取消、身份/出口漂移与错误分类复用 CPA/Manager 本轮专项，不在此重复请求官方。
 
 本线仅 `node --check run.mjs`、`node --check check.mjs` 和 `git diff --check`，均退出0，详 `SYNTAX.txt`。未执行组合、构建、真实 access/usage、登录、刷新或推理。最终组合回执由主会话记录命令、两镜像身份、退出码与清理结果。
+
+## 主会话最终执行
+
+首轮 `RUN.jsonl / RUN.exit=1` 保留：旧 CPA 在精确身份断言停止，清理通过。CPA 身份投影修复和实际 v0/v8 列表专项通过后，仅重建 CPA，Manager 输入等价复用。最终 `RUN-FINAL.jsonl / RUN-FINAL.exit=0`：五项身份布尔全部 true，BPS 快照公开写查成功，所有前段断言及 cleanup 均通过。没有真实官方请求。
+
+```powershell
+& 'C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/node-v22.23.4-win-x64/node.exe' 'D:/MX-CPAMP/docs/evidence/bps-quota-repair-20261111/integration/run.mjs' --cpa-image 'mx-cpa:bps-quota-identity-20261111' --cpa-id 'sha256:eeb5bf17435a4c3d1a508188fd149eb8b2dbc5d9d20390cf4fd22d6e40f40d4b' --cpa-revision 'b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c' --manager-image 'mx-cpamp:bps-quota-repair-20261111' --manager-id 'sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd' --manager-revision 'd26cbf7595ecf41ba8cbfd90c956291ac351b471'
+```

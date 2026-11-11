@@ -43,4 +43,6 @@
 
 实际access与wham各GET1次，刷新、登录和推理0次，`SOURCE-RUN.exit=0`；原始脱敏结果与独审见[来源证据](evidence/bps-quota-repair-20261111/source/SOURCE-RUN.jsonl)和[审查记录](evidence/bps-quota-repair-20261111/review/REVIEW.zh-CN.md)。旧prepare因BPS0退出1保留，用户导入后run重新计数BPS1并通过，不将旧失败改写为成功。
 
-`official_source_verified=true`、`quota_product_ready=false`。两线实施按[执行包](execution/bps-quota-repair-20261111.zh-CN.md)进行：独立用量接口保留现有权限接口，同时接通巡检、账号各视图、主动刷新与真BPS快照。来源预算已结束，后续实施和组合只用离线合成输入，不追加真实请求。本轮未推送或部署OVH；当前责任人：主会话协调与整合，下一责任人：两线执行席及独审。
+两线实施已完成，见[最终本地候选](evidence/bps-quota-repair-20261111/FINAL.zh-CN.md)：独立用量接口保留现有权限接口，贯通巡检、账号各视图、主动刷新与真BPS快照，并补齐平铺BPS身份投影及三处旧证据隔离。专项、独审、最终两镜像构建与断网组合均通过；首轮组合身份失败和随后修复证据分别保留。
+
+`official_source_verified=true`、`local_candidate_ready=true`、`integration_passed=true`、`quota_product_live_verified=false`、`write_release_ready=false`。来源预算结束后未追加真实请求，旧窗口已按归属清理。本轮未推送或部署OVH；当前责任人：主会话收口本地候选，下一责任人：主会话准备新产品页面验收与统一发布材料。
