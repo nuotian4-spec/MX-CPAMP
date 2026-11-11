@@ -6,6 +6,10 @@ import json
 spec=importlib.util.spec_from_file_location('release','/delivery/bps-final-release.py')
 r=importlib.util.module_from_spec(spec);spec.loader.exec_module(r)
 cases=0
+assert r.resolve_state('~\\bps-state','/CLIProxyAPI')=='/root/bps-state'
+assert r.resolve_state('~/bps-state','/CLIProxyAPI')=='/root/bps-state'
+assert r.resolve_state('~','/CLIProxyAPI')=='/root'
+assert r.resolve_state('relative-state','/CLIProxyAPI')=='/CLIProxyAPI/relative-state'
 
 for source,transport in [({},'native'),({'bps-protocol':{'image-transport':'relay','image-relay-base-url':r.RELAY_ORIGIN+'/'}},'relay'),({'bps-protocol':{'enabled':False,'image-transport':'relay','image-relay-base-url':r.RELAY_ORIGIN,'state-dir':'/old'},'upstream':{'bps':{'protocol':{'enabled':None,'images-enabled':False,'image-transport':None,'image-relay-base-url':None,'state-dir':None}}}},'native')]:
     original=copy.deepcopy(source)
@@ -28,4 +32,4 @@ document['apps']['http']['servers']['srv0']['routes'][0]['handle'][0]['routes'][
 try:r.caddy_site(document)
 except r.Failure as error:assert str(error)=='relay_site_upstream_changed'
 else:raise AssertionError('wrong_cpa_site_accepted')
-print(json.dumps({'protocol_cases':cases,'candidate_no_source_mutation':True,'site_upstream_mismatch_rejected':True,'result':'passed'}))
+print(json.dumps({'protocol_cases':cases,'state_home_and_cwd_cases':4,'candidate_no_source_mutation':True,'site_upstream_mismatch_rejected':True,'result':'passed'}))

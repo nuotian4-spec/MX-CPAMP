@@ -279,6 +279,13 @@ def resolve(path,cwd='/CLIProxyAPI'):
     if path=='~' or path.startswith('~/'):path='/root/'+path[2:] if path!='~' else '/root'
     return posixpath.normpath(path if path.startswith('/') else posixpath.join(cwd,path))
 
+
+def resolve_state(path,cwd):
+    path=str(path).strip()
+    if path=='~' or path.startswith(('~/','~\\')):
+        path=posixpath.join('/root',path[1:].lstrip('/\\'))
+    return resolve(path,cwd)
+
 def mapped(live,service,path):
     for m in sorted(live[service]['Mounts'],key=lambda x:-len(x['Destination'])):
         dest=m['Destination'].rstrip('/')
@@ -321,7 +328,7 @@ def sources(live,cfg):
     kv_path=mapped(live,'cli-proxy-api',resolve(kv.get('path') or '/root/.cli-proxy-api/kv.db',cwd))
     require(kv_path.is_relative_to(ROOT/'cpa/auth') or kv_path.is_relative_to(ROOT/'cpa/plugins'),'external_kv_not_covered')
     protocol=effective_protocol(cfg)
-    old_state=resolve(protocol.get('state-dir') or posixpath.join(posixpath.dirname(auth),'bps-state'),cwd)
+    old_state=resolve_state(protocol.get('state-dir') or posixpath.join(posixpath.dirname(auth),'bps-state'),cwd)
     require(old_state!=auth and not old_state.startswith(auth+'/'),'state_inside_auth')
     check='if [ -e "$1" ]; then printf exists; elif [ -d "$(dirname -- "$1")" ] && [ -r "$(dirname -- "$1")" ]; then printf absent; else printf unknown; fi'
     require(command(['docker','exec',live['cli-proxy-api']['Id'],'sh','-c',check,'sh',old_state])=='absent','existing_or_unknown_bps_state')
