@@ -1,0 +1,14 @@
+=== RUN   TestBPSOAuthCallbackValidationAndCompletion
+--- PASS: TestBPSOAuthCallbackValidationAndCompletion (0.01s)
+=== RUN   TestBPSOAuthCallbackScope
+=== RUN   TestBPSOAuthCallbackScope/single
+    auth_files_bps_test.go:381: {"adopted":true,"auth_id":"bps-9cb30335-user@example.com-free.json","inference_verified":false,"quota_blocked":false,"recovery_stage":"loaded","renewal_state":"awaiting_first_renewal","renewal_verified":false,"requires_sign_in":false,"saved":true,"status":"ok"}
+=== RUN   TestBPSOAuthCallbackScope/duplicate
+=== RUN   TestBPSOAuthCallbackScope/unknown
+--- FAIL: TestBPSOAuthCallbackScope (0.01s)
+    --- FAIL: TestBPSOAuthCallbackScope/single (0.01s)
+    --- PASS: TestBPSOAuthCallbackScope/duplicate (0.00s)
+    --- PASS: TestBPSOAuthCallbackScope/unknown (0.00s)
+FAIL
+FAIL	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	0.056s
+FAIL

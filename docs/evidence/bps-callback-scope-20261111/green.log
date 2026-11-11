@@ -1,0 +1,12 @@
+=== RUN   TestBPSOAuthCallbackValidationAndCompletion
+--- PASS: TestBPSOAuthCallbackValidationAndCompletion (0.02s)
+=== RUN   TestBPSOAuthCallbackScope
+=== RUN   TestBPSOAuthCallbackScope/single
+=== RUN   TestBPSOAuthCallbackScope/duplicate
+=== RUN   TestBPSOAuthCallbackScope/unknown
+--- PASS: TestBPSOAuthCallbackScope (0.01s)
+    --- PASS: TestBPSOAuthCallbackScope/single (0.01s)
+    --- PASS: TestBPSOAuthCallbackScope/duplicate (0.00s)
+    --- PASS: TestBPSOAuthCallbackScope/unknown (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	0.052s
