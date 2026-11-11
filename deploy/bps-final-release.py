@@ -490,7 +490,7 @@ def prepare(source):
 
 def confirm_deploy():
     require(sys.stdin.isatty(),'tty_required')
-    print('将短暂停止 Worker、Manager、CPA，可能中断现有登录和模型请求；Caddy 保留。输入 DEPLOY：',end='',flush=True)
+    print('将短暂停止 Worker、Manager、CPA，可能中断现有登录和模型请求；将写入 Caddy 下载路由并在原容器重载。输入 DEPLOY：',end='',flush=True)
     require(select.select([sys.stdin],[],[],120)[0],'confirmation_timeout')
     answer=sys.stdin.readline()
     require(answer!='','confirmation_eof')
