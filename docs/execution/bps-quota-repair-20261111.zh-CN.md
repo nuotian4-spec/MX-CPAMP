@@ -30,4 +30,18 @@
 
 Manager/Web需一并处理的现存过滤：AccountsPage的display/observe/refresh；accountCredentialEvidence的窗口与时间边界；accountQuotaSummary的BPS override；accountQuotaDisplayWindows的source与映射；accountQuotaSnapshots的query及snapshotDefinition；quotasnapshot/evidence.go的provider和inventory scope；quotasnapshot/service.go的provider白名单。现有CodexInspectionResult已含窗口、库存观察与provider，可沿用JSON及现有表，不需新增schema。账号主动刷新和监控概览的provider路由也属于本轮额度展示链，不能只扩大白名单却落入失败默认分支。保留真实BPS身份，不写成Codex快照；Codex专属Header/重置推断保留其原provider条件。
 
-无新增SQL/schema迁移；未来额度记录可沿用既有巡检存储，是否需要新增持久字段以实际契约明确披露。无推送或OVH部署授权外动作。当前责任人：A席准备来源诊断，独审核证后由主会话执行；下一责任人：来源确认后的两线实施席。
+## 真实来源结果与当前态
+
+用户导入后，已审`--run`退出0：auth1/BPS1/Codex0；access200/allowed=true/models2，wham200，主窗口使用17%、周期2592000秒、reset_after2586075、reset_at1796977220，其他窗口null。实际GET各1，刷新/推理0，输出仅白名单。主线回执`f4dd43e4c217ca6eb7762ca4d4f747665280657c`与独审均已归档。`official_source_verified=true`，仅证明该授权可读官方账号用量。
+
+A树新分支`codex/bps-account-usage-cpa`负责CPA独立usage接口、冻结契约、handler/解析专项和断网组合工具；B树`D:/MX-CPAMP-worktrees/bps-models-inspection`新分支`codex/bps-account-usage-manager`负责Manager/Web完整链路及专项。两线从`f4dd43e4`开始，来源验证后不再发官方请求。独审`callback_compatibility`只读跟进，主会话统一最终两镜像构建和一次组合，Worker输入不变复用。
+
+无新增SQL/schema迁移，沿用既有巡检JSON与quota snapshot表；额度观察写入属于运行时记录，不改变凭证或调度动作。无推送或OVH部署。当前责任人：两线执行席；下一责任人：独审与主会话整合构建。`quota_product_ready=false`、`write_release_ready=false`。
+
+## CPA 候选与窗口清理
+
+A席产品提交 `d563ef2862931d4ce836d4372140ee4e4f31ca19` 经独审放行，主线整合 `d07b4b1ed4845be0b2474a50ec75d39c254b937e`；专项退出0，独立 usage 保持原 access 契约。CPA 最终镜像已构建退出0，身份见[构建回执](../evidence/bps-quota-repair-20261111/build/README.zh-CN.md)。组合材料 `92fa20c94b6ee23c9550abad5692fb3586440197` 经独审后整合 `d803a02`，尚未执行最终组合。
+
+旧完整窗口到期后已按随机归属执行 stop，退出0、`verified=true`、`token_state_retained=false`，见 `source/WINDOW-CLEANUP.jsonl`。不重启该窗口或沿用旧凭证状态。用户反馈的 BPS 2FA `security_check / needs_user_action` 仅表示本次流程需要官方交互，不据此推断密码、TOTP、封号或出口原因；Worker 产品未改，本轮未追加登录。
+
+当前责任人：Manager/Web 执行席完成全展示链路及专项；下一责任人：独审、主会话整合及一次最终构建/断网组合。额度来源已验，完整产品仍待验，`quota_product_ready=false`、`write_release_ready=false`。

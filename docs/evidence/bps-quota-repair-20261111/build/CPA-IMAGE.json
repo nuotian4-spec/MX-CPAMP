@@ -1,0 +1,9 @@
+{
+  "ref": "mx-cpa:bps-quota-repair-20261111",
+  "id": "sha256:7adb02d9f8674f808e87af95b4c9244a6e73511551a0e6982514a60cbd3b4327",
+  "revision": "d07b4b1ed4845be0b2474a50ec75d39c254b937e",
+  "os": "linux",
+  "architecture": "amd64",
+  "runtime_proxy_env_count": 0,
+  "build_exit": 0
+}
