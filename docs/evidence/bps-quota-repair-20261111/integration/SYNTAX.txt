@@ -1,0 +1,4 @@
+node --check run.mjs=0
+node --check check.mjs=0
+official_requests=0
+network_harness_execution=deferred_main_session
