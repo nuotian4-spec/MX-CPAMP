@@ -33,6 +33,8 @@ const config = (scope: ApiClientRequestScope) => ({
   baseURL: `${normalizeApiBase(scope.apiBase)}/api/oauth-login`,
 });
 export const loginTasksApi = {
+  capabilities: (scope: ApiClientRequestScope) =>
+    apiClient.get<{ password_login_configured: boolean }>('/capabilities', config(scope)),
   create: (input: LoginInput, scope: ApiClientRequestScope) =>
     apiClient.post<LoginTask>('/tasks', input, config(scope)),
   get: (id: string, scope: ApiClientRequestScope) =>

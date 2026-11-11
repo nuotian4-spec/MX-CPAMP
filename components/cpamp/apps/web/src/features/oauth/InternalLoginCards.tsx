@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { BatchPasswordLogin } from './BatchPasswordLogin';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { BatchPasswordLogin, type PasswordLoginStatus } from './BatchPasswordLogin';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { publishAccountCredentialMutationRevision } from '@/stores';
@@ -146,6 +146,10 @@ function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
               </a>
             </p>
             <InputURL value={session.url} />
+            <p>
+              完整回调地址来自官方登录结束后的 bps.openai.com/.../auth/callback 页面， 不是上方
+              auth.openai.com 授权链接。请复制地址栏的完整地址。
+            </p>
             <label>
               完整回调 URL
               <input ref={callback} type="password" autoComplete="off" />
@@ -164,11 +168,44 @@ function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
   );
 }
 export function InternalLoginCards({ scope }: { scope: ApiClientRequestScope }) {
+  const capabilityScope = useMemo(
+    () => ({ apiBase: scope.apiBase, managementKey: scope.managementKey }),
+    [scope.apiBase, scope.managementKey]
+  );
+  const [capabilities, setCapabilities] = useState<{
+    scope: ApiClientRequestScope;
+    status: PasswordLoginStatus;
+  }>();
+  useEffect(() => {
+    let disposed = false;
+    loginTasksApi.capabilities(capabilityScope).then(
+      (result) => {
+        if (!disposed)
+          setCapabilities({
+            scope: capabilityScope,
+            status:
+              result?.password_login_configured === true
+                ? 'configured'
+                : result?.password_login_configured === false
+                  ? 'unconfigured'
+                  : 'error',
+          });
+      },
+      () => {
+        if (!disposed) setCapabilities({ scope: capabilityScope, status: 'error' });
+      }
+    );
+    return () => {
+      disposed = true;
+    };
+  }, [capabilityScope]);
+  const passwordLoginStatus =
+    capabilities?.scope === capabilityScope ? capabilities.status : 'loading';
   return (
     <>
-      <BatchPasswordLogin profile="codex" scope={scope} />
+      <BatchPasswordLogin profile="codex" scope={scope} passwordLoginStatus={passwordLoginStatus} />
       <BPSOAuth scope={scope} />
-      <BatchPasswordLogin profile="bps" scope={scope} />
+      <BatchPasswordLogin profile="bps" scope={scope} passwordLoginStatus={passwordLoginStatus} />
     </>
   );
 }

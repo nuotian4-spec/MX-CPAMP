@@ -71,6 +71,25 @@ describe('ApiClient request scoping', () => {
     });
   });
 
+  it('回调拒绝状态码保留在ApiError.status供登录页面分类', async () => {
+    await expect(
+      applyResponseErrorInterceptor({
+        isAxiosError: true,
+        message: 'callback rejected',
+        response: {
+          status: 400,
+          data: { error: '回调输入未通过校验', code: 'invalid_callback_url' },
+        },
+      })
+    ).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 400,
+      message: '回调输入未通过校验',
+      data: { code: 'invalid_callback_url' },
+    });
+    expect(dispatchEvent).not.toHaveBeenCalled();
+  });
+
   it('preserves an explicit old connection while regular requests use the current connection', () => {
     const scoped = createScopedApiRequestConfig({
       apiBase: 'http://old-cpa.local:8317',

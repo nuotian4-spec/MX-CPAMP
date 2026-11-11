@@ -20,12 +20,16 @@ import {
   type BatchPreviewRow,
 } from '@/services/api/loginBatches';
 
+export type PasswordLoginStatus = 'loading' | 'configured' | 'unconfigured' | 'error';
+
 export function BatchPasswordLogin({
   profile,
   scope,
+  passwordLoginStatus,
 }: {
   profile: LoginProfile;
   scope: ApiClientRequestScope;
+  passwordLoginStatus: PasswordLoginStatus;
 }) {
   const [batch, setBatch] = useState<LoginBatch>();
   const [otherActive, setOtherActive] = useState(false);
@@ -38,6 +42,7 @@ export function BatchPasswordLogin({
   const published = useRef(new Set<string>());
   current.current = batch;
   const active = isLoginBatchActive(batch);
+  const canCreate = passwordLoginStatus === 'configured';
   useEffect(() => {
     let disposed = false;
     let polling = false;
@@ -113,6 +118,7 @@ export function BatchPasswordLogin({
     };
   }, [scope, profile]);
   const previewInput = () => {
+    if (!canCreate) return;
     const parsed = parseLoginBatch(input.current?.value || '');
     setPreview(parsed.preview);
     setError(parsed.error);
@@ -120,6 +126,7 @@ export function BatchPasswordLogin({
   };
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!canCreate) return;
     const parsed = parseLoginBatch(input.current?.value || '');
     setPreview(parsed.preview);
     if (parsed.error || !parsed.items.length) {
@@ -172,6 +179,15 @@ export function BatchPasswordLogin({
           每批最多100行，逐条执行。仅申请{profile === 'bps' ? 'BPS' : 'Codex'}
           授权；密码与TOTP仅本次使用，未开始材料最多等待30分钟。关闭页面后继续执行，服务重启后不续跑。
         </p>
+        {!canCreate && (
+          <p role="status">
+            {passwordLoginStatus === 'unconfigured'
+              ? '当前服务未配置2FA登录器'
+              : passwordLoginStatus === 'loading'
+                ? '正在确认2FA登录器配置'
+                : '2FA登录器配置状态未确认，请稍后刷新'}
+          </p>
+        )}
         <form onSubmit={submit} autoComplete="off">
           <label>
             账号列表
@@ -182,14 +198,18 @@ export function BatchPasswordLogin({
               autoComplete="off"
               spellCheck={false}
               placeholder="邮箱----密码----TOTP种子"
-              disabled={busy || active || otherActive}
+              disabled={!canCreate || busy || active || otherActive}
               style={{ width: '100%', fontFamily: 'monospace' }}
             />
           </label>
-          <Button type="button" onClick={previewInput} disabled={busy || active || otherActive}>
+          <Button
+            type="button"
+            onClick={previewInput}
+            disabled={!canCreate || busy || active || otherActive}
+          >
             检查列表
           </Button>
-          <Button type="submit" disabled={busy || active || otherActive}>
+          <Button type="submit" disabled={!canCreate || busy || active || otherActive}>
             {busy ? '正在创建批次' : '开始批量登录'}
           </Button>
           {active && (

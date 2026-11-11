@@ -71,15 +71,20 @@ type upstreamError struct {
 
 func (e *upstreamError) Error() string { return "上游拒绝登录请求" }
 func callbackDefinitelyRejected(err error) bool {
+	return CallbackRejectionCode(err) != ""
+}
+
+// CallbackRejectionCode 仅返回 CPA 明确拒绝回调的白名单诊断码。
+func CallbackRejectionCode(err error) string {
 	var upstream *upstreamError
 	if !errors.As(err, &upstream) || upstream.status != http.StatusBadRequest {
-		return false
+		return ""
 	}
 	switch upstream.code {
 	case "invalid_callback_url", "invalid_callback_query", "conflicting_callback_parameters", "callback_state_mismatch", "callback_code_required", "oauth_provider_mismatch", "invalid_body", "invalid_state", "unsupported_provider":
-		return true
+		return upstream.code
 	}
-	return false
+	return ""
 }
 
 type Service struct {
@@ -122,6 +127,12 @@ func New(resolver SetupResolver, mutations *cpaauthfiles.MutationCoordinator, wo
 		workerURL: strings.TrimRight(workerURL, "/"), secret: strings.TrimSpace(secret),
 		client: &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, timeout: 25 * time.Minute, poll: time.Second}
 }
+
+// PasswordLoginConfigured 只报告配置，不连接登录器或启动登录。
+func (s *Service) PasswordLoginConfigured() bool {
+	return strings.TrimSpace(s.workerURL) != "" && s.secret != ""
+}
+
 func terminal(status string) bool {
 	return status != "created" && status != "running" && status != "importing" && status != "cancelling"
 }
@@ -453,10 +464,14 @@ func (s *Service) request(ctx context.Context, method, target, key string, input
 			Code  string `json:"code"`
 			Error string `json:"error"`
 		}
-		_ = json.NewDecoder(io.LimitReader(res.Body, 4096)).Decode(&payload)
-		code := payload.Code
-		if code == "" {
-			code = payload.Error
+		body, readErr := io.ReadAll(io.LimitReader(res.Body, 4097))
+		decoder := json.NewDecoder(bytes.NewReader(body))
+		code := ""
+		if readErr == nil && len(body) <= 4096 && decoder.Decode(&payload) == nil && decoder.Decode(&struct{}{}) == io.EOF {
+			code = payload.Code
+			if code == "" {
+				code = payload.Error
+			}
 		}
 		switch code {
 		case "invalid_callback_url", "invalid_callback_query", "conflicting_callback_parameters", "callback_state_mismatch", "callback_code_required", "oauth_provider_mismatch", "invalid_body", "invalid_state", "unsupported_provider":

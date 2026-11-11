@@ -1,3 +1,4 @@
+import { Profiler } from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InternalLoginCards } from './InternalLoginCards';
@@ -12,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   status: vi.fn(),
   callback: vi.fn(),
   cancelOAuth: vi.fn(),
+  capabilities: vi.fn(),
   publish: vi.fn(),
 }));
 vi.mock('@/services/api/loginBatches', async (original) => ({
@@ -58,6 +60,7 @@ describe('批量与BPS授权入口', () => {
     mocks.latest.mockResolvedValue(null);
     mocks.cancelOAuth.mockResolvedValue({ status: 'ok' });
     mocks.get.mockResolvedValue(running);
+    mocks.capabilities.mockResolvedValue({ password_login_configured: true });
   });
   afterEach(async () => {
     if (renderer) await act(async () => renderer.unmount());
@@ -95,6 +98,135 @@ describe('批量与BPS授权入口', () => {
       await renderer.root.findAllByType('form')[0].props.onSubmit({ preventDefault() {} });
     });
   }
+  const createButtons = () =>
+    renderer.root.findAllByType(Button).filter((node) => node.props.children === '开始批量登录');
+  it('未配置登录器时禁用两处2FA，但手工BPS授权独立可用', async () => {
+    mocks.capabilities.mockResolvedValue({ password_login_configured: false });
+    mocks.startBPS.mockResolvedValue({ url: 'https://auth.invalid/authorize', state: 'state' });
+    await render();
+    expect(mocks.capabilities).toHaveBeenCalledWith(scope);
+    expect(createButtons()).toHaveLength(2);
+    expect(createButtons().every((button) => button.props.disabled)).toBe(true);
+    expect(renderer.root.findAllByType('textarea').every((node) => node.props.disabled)).toBe(true);
+    expect(JSON.stringify(renderer.toJSON())).toContain('当前服务未配置2FA登录器');
+    await submit();
+    expect(mocks.create).not.toHaveBeenCalled();
+    await act(async () => {
+      await renderer.root
+        .findAllByType(Button)
+        .find((node) => node.props.children === '生成授权链接')
+        ?.props.onClick();
+    });
+    expect(mocks.startBPS).toHaveBeenCalledWith(scope);
+  });
+  it.each(['error', 'missing', 'nonboolean', 'null'] as const)(
+    '配置%s时不开放2FA，也不读取输入',
+    async (kind) => {
+      if (kind === 'error') mocks.capabilities.mockRejectedValue(new Error('offline'));
+      else
+        mocks.capabilities.mockResolvedValue(
+          kind === 'missing' ? {} : kind === 'null' ? null : { password_login_configured: 'true' }
+        );
+      await render();
+      expect(createButtons().every((button) => button.props.disabled)).toBe(true);
+      expect(JSON.stringify(renderer.toJSON())).toContain('2FA登录器配置状态未确认');
+      await submit();
+      expect(mocks.create).not.toHaveBeenCalled();
+      expect(textareas[0].value).toContain('PASSWORD_CANARY');
+      expect(renderer.root.findAllByType('details')).toHaveLength(0);
+    }
+  );
+  it('配置加载期间禁止回车提交，确认配置后才开放', async () => {
+    let resolve!: (value: { password_login_configured: boolean }) => void;
+    mocks.capabilities.mockReturnValue(new Promise((done) => (resolve = done)));
+    await render();
+    expect(createButtons().every((button) => button.props.disabled)).toBe(true);
+    expect(JSON.stringify(renderer.toJSON())).toContain('正在确认2FA登录器配置');
+    await submit();
+    expect(mocks.create).not.toHaveBeenCalled();
+    await act(async () => resolve({ password_login_configured: true }));
+    expect(createButtons().every((button) => !button.props.disabled)).toBe(true);
+  });
+  it('切实例当帧禁用旧配置，返回原实例也重新等待配置', async () => {
+    await render();
+    expect(createButtons().every((button) => !button.props.disabled)).toBe(true);
+    const disabledSnapshots: boolean[] = [];
+    mocks.capabilities.mockReturnValue(new Promise(() => {}));
+    const nextScope = { apiBase: 'https://other.invalid', managementKey: 'other' };
+    const view = (currentScope: typeof scope) => (
+      <Profiler
+        id="login"
+        onRender={() => {
+          disabledSnapshots.push(createButtons().every((button) => button.props.disabled));
+        }}
+      >
+        <InternalLoginCards scope={currentScope} />
+      </Profiler>
+    );
+    await act(async () => renderer.update(view(scope)));
+    disabledSnapshots.length = 0;
+    await act(async () => renderer.update(view(nextScope)));
+    expect(disabledSnapshots.length).toBeGreaterThan(0);
+    expect(disabledSnapshots.every(Boolean)).toBe(true);
+    await act(async () => renderer.update(view(scope)));
+    expect(createButtons().every((button) => button.props.disabled)).toBe(true);
+    await submit();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it('旧实例迟到的配置响应不解锁当前实例', async () => {
+    let resolveOld!: (value: { password_login_configured: boolean }) => void;
+    mocks.capabilities.mockReturnValueOnce(new Promise((done) => (resolveOld = done)));
+    await render();
+    mocks.capabilities.mockReturnValue(new Promise(() => {}));
+    await act(async () =>
+      renderer.update(
+        <InternalLoginCards scope={{ apiBase: 'https://other.invalid', managementKey: 'other' }} />
+      )
+    );
+    await act(async () => resolveOld({ password_login_configured: true }));
+    expect(createButtons().every((button) => button.props.disabled)).toBe(true);
+    expect(JSON.stringify(renderer.toJSON())).toContain('正在确认2FA登录器配置');
+  });
+  it('未配置登录器不阻断已有批次查询和取消', async () => {
+    mocks.capabilities.mockResolvedValue({ password_login_configured: false });
+    mocks.active.mockResolvedValue(running);
+    mocks.cancel.mockResolvedValue({ ...running, status: 'cancelling' });
+    await render();
+    await act(async () => vi.advanceTimersByTimeAsync(1600));
+    expect(mocks.get).toHaveBeenCalledWith('batch', scope);
+    const cancel = renderer.root
+      .findAllByType(Button)
+      .find((node) => node.props.children === '取消剩余条目');
+    expect(cancel?.props.disabled).toBe(false);
+    await act(async () => cancel?.props.onClick());
+    expect(mocks.cancel).toHaveBeenCalledWith('batch', scope);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it.each([400, 502])('回调HTTP %s显示明确拒绝或结果待确认', async (status) => {
+    mocks.startBPS.mockResolvedValue({ url: 'https://auth.invalid/authorize', state: 'state' });
+    mocks.callback.mockRejectedValue({ status, message: 'RAW_TOKEN_CANARY' });
+    await render();
+    await act(async () => {
+      await renderer.root
+        .findAllByType(Button)
+        .find((node) => node.props.children === '生成授权链接')
+        ?.props.onClick();
+    });
+    callbacks[0].value = 'https://callback.invalid/?code=CODE_CANARY&state=state';
+    await act(async () => {
+      await renderer.root
+        .findAllByType(Button)
+        .find((node) => node.props.children === '提交回调')
+        ?.props.onClick();
+    });
+    const text = JSON.stringify(renderer.toJSON());
+    expect(text).toContain(status === 400 ? '回调地址未通过校验' : '回调结果未确认');
+    expect(text).not.toContain('RAW_TOKEN_CANARY');
+    expect(text).not.toContain('CODE_CANARY');
+    expect(callbacks[0].value).toBe('');
+    expect(mocks.callback).toHaveBeenCalledTimes(1);
+    expect(mocks.publish).not.toHaveBeenCalled();
+  });
   it('批量表单只保存掩码预览，提交后清空材料', async () => {
     mocks.create.mockResolvedValue(running);
     await render();

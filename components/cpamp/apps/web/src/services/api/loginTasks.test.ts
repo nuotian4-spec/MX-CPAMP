@@ -31,6 +31,15 @@ describe('登录API隔离', () => {
       }
     );
   });
+  it('配置只读查询固定Manager入口并携带当前实例管理员头', () => {
+    const scope = { apiBase: 'https://panel.invalid/v0/management', managementKey: 'ADMIN' };
+    loginTasksApi.capabilities(scope);
+    expect(client.get).toHaveBeenCalledWith('/capabilities', {
+      baseURL: 'https://panel.invalid/api/oauth-login',
+      cpampScopedRequest: true,
+      headers: { Authorization: 'Bearer ADMIN' },
+    });
+  });
   it('人工验证不是成功或进行中', () => {
     const task = { id: 'id', profile: 'bps' as const, status: 'needs_user_action' as const };
     expect(isLoginTaskActive(task)).toBe(false);

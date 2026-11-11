@@ -26,6 +26,12 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	var result any
 	var err error
 	switch {
+	case path == "capabilities":
+		if r.Method != http.MethodGet {
+			response.MethodNotAllowed(w)
+			return
+		}
+		result = map[string]bool{"password_login_configured": h.Service.PasswordLoginConfigured()}
 	case path == "batches" && r.Method == http.MethodPost:
 		var input login.BatchInput
 		if !decodeLimit(w, r, &input, 1024*1024) {
@@ -76,6 +82,12 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		if path == "oauth/callback" {
+			if code := login.CallbackRejectionCode(err); code != "" {
+				response.JSON(w, http.StatusBadRequest, map[string]string{"error": "回调输入未通过校验", "code": code})
+				return
+			}
+		}
 		status := http.StatusBadGateway
 		switch {
 		case errors.Is(err, login.ErrInput):
