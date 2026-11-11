@@ -18,7 +18,7 @@ import time
 
 ROOT = pathlib.Path('/opt/cpa-stack')
 PROJECT = 'cpa-stack'
-STATE = ROOT / '.mx-upgrade-bps-relay-20261111'
+STATE = ROOT / '.mx-upgrade-bps-relay-20261111-r2'
 RELAY_HOST = 'cpa.maixun.cyou'
 RELAY_ORIGIN = 'https://' + RELAY_HOST
 APPS = ['oauth-login', 'cpa-manager-plus', 'cli-proxy-api']
@@ -54,6 +54,24 @@ def compose(extra=False):
     files = [ROOT/'compose.yaml', ROOT/'compose.mx-cpamp.yaml']
     if extra: files.append(STATE/'compose.bps-final.yaml')
     return ['docker','compose','--project-directory',str(ROOT),'-p',PROJECT]+sum((['-f',str(p)] for p in files),[])
+
+def normalize_compose_merge(value):
+    normalized=copy.deepcopy(value)
+    for service in normalized.get('services',{}).values():
+        for volume in service.get('volumes',[]):
+            if volume.get('type')!='bind':
+                continue
+            bind=volume.get('bind')
+            if not isinstance(bind,dict):
+                continue
+            if bind.get('create_host_path') is True:
+                bind.pop('create_host_path')
+            if not bind:
+                volume.pop('bind',None)
+    return normalized
+
+def compose_merge_matches(expected,rendered):
+    return normalize_compose_merge(expected)==normalize_compose_merge(rendered)
 
 def mounts(c):
     return sorted([{'type':m['Type'],'source':m['Source'],'target':m['Destination'],'rw':m['RW']} for m in c['Mounts']],key=lambda m:m['target'])
@@ -477,7 +495,7 @@ def prepare(source):
     expected['services']['cli-proxy-api'].setdefault('volumes',[]).append({'type':'bind','source':str(ROOT/'cpa/bps-state'),'target':'/var/lib/cpa/bps-state','bind':{'create_host_path':True}})
     for value in [expected,rendered]:
         for service in value['services'].values():service['volumes']=sorted(service.get('volumes',[]),key=lambda x:x['target'])
-    require(rendered==expected,'candidate_merge_changed')
+    require(compose_merge_matches(expected,rendered),'candidate_merge_changed')
     tracked=origin['tracked']+[str(pathlib.Path(__file__).resolve()),str(pathlib.Path(__file__).with_suffix('.sh').resolve())]
     plan={'facts':observed,'images':images,'sources':origin,'base':merged,'rendered':rendered,'caddy':caddy,'caddy_candidate':caddy_rendered,'digests':{p:digest(p) for p in tracked},'candidate_digests':{p:digest(STATE/p) for p in ['cpa-config.yaml','compose.bps-final.yaml','Caddyfile']}}
     write(STATE/'plan.json',plan)
