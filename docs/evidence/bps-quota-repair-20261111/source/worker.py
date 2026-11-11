@@ -1,5 +1,4 @@
 """临时 Worker 内的一次性 BPS 额度来源读取，仅接受 prepare/run。"""
-import datetime
 import json
 import math
 import re
@@ -24,8 +23,19 @@ ERRORS = {
     'insufficient_scope', 'usage_policy_lookup_unavailable', 'usage_policy_dependency_missing',
     'usage_policy_context_missing',
 }
-QUOTA = re.compile(r'quota|remaining|reset|usage|limit|credit|balance|window', re.I)
-SAFE_KEY = re.compile(r'^[A-Za-z_][A-Za-z0-9_-]{0,63}$')
+ROOT_KEYS = {'allowed', 'model_catalog', 'plan_type', 'rate_limit', 'code_review_rate_limit',
+             'additional_rate_limits', 'credits', 'quota', 'usage_limit', 'error', 'detail'}
+AUTH_KEYS = {'type', 'profile', 'client_id', 'access_token', 'account_id', 'expired'}
+WINDOW = {key: None for key in ('used_percent', 'limit_window_seconds', 'reset_after_seconds', 'reset_at')}
+RATE = {'allowed': None, 'limit_reached': None, 'primary_window': WINDOW, 'secondary_window': WINDOW}
+QUOTA_SCHEMA = {
+    'rate_limit': RATE, 'code_review_rate_limit': RATE,
+    'additional_rate_limits': [{'rate_limit': RATE}],
+    'credits': {'has_credits': None, 'unlimited': None, 'balance': None},
+    'quota': {key: None for key in ('limit', 'remaining', 'used', 'total', 'resets_at', 'resets_in_seconds')},
+    'usage_limit': {'plan_type': None, 'resets_at': None, 'resets_in_seconds': None},
+    'error': {'plan_type': None, 'resets_at': None, 'resets_in_seconds': None},
+}
 
 
 def emit(value):
@@ -44,45 +54,39 @@ def kind(value):
     return 'array' if isinstance(value, list) else 'object'
 
 
-def fields(root):
-    return [{'name': key if SAFE_KEY.fullmatch(key) else 'redacted_key', 'type': kind(value)}
-            for key, value in root.items()][:128]
+def fields(root, allowed=ROOT_KEYS):
+    return [{'name': key, 'type': kind(root[key])} for key in sorted(allowed) if key in root]
 
 
 def quota_fields(root):
     result = []
+    unknown = 0
 
-    def visit(value, location='', active=False, depth=0):
-        if depth > 8 or len(result) >= 256:
-            return
-        if isinstance(value, dict):
+    def visit(value, schema, location=''):
+        nonlocal unknown
+        if isinstance(value, dict) and isinstance(schema, dict):
             for key, child in value.items():
-                if not SAFE_KEY.fullmatch(key):
+                if key not in schema:
+                    if location:
+                        unknown += 1
                     continue
                 child_path = (location + '.' if location else '') + key
-                selected = active or bool(QUOTA.search(key))
-                if selected:
-                    item = {'field': child_path, 'type': kind(child)}
+                item = {'field': child_path, 'type': kind(child)}
+                if schema[key] is None:
                     if key in NUMBERS and isinstance(child, (int, float)) and not isinstance(child, bool) and math.isfinite(child):
                         item['value'] = child
                     elif key in NUMBERS and isinstance(child, str) and re.fullmatch(r'-?[0-9]+(?:\.[0-9]+)?', child) and len(child) < 40:
                         item['value'] = float(child)
-                    elif key in {'reset_at', 'resets_at'} and isinstance(child, str) and re.fullmatch(
-                            r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+(?:Z|[+-][0-9]{2}:[0-9]{2})', child):
-                        try:
-                            item['value'] = datetime.datetime.fromisoformat(child.replace('Z', '+00:00')).isoformat()
-                        except ValueError:
-                            pass
                     elif key in BOOLEANS and isinstance(child, bool):
                         item['value'] = child
-                    result.append(item)
-                visit(child, child_path, selected, depth + 1)
-        elif isinstance(value, list):
+                result.append(item)
+                visit(child, schema[key], child_path)
+        elif isinstance(value, list) and isinstance(schema, list):
             for child in value[:32]:
-                visit(child, location + '[]', active, depth + 1)
+                visit(child, schema[0], location + '[]')
 
-    visit(root)
-    return result
+    visit(root, QUOTA_SCHEMA)
+    return {'fields': result, 'unknown_field_count': unknown}
 
 
 def error_code(root):
@@ -131,7 +135,7 @@ try:
     emit({'stage': 'credential_inventory', 'auth_file_count': len(documents), 'bps_count': len(matches),
           'known_provider_counts': {provider: sum(doc.get('type') == provider for doc in documents)
                                     for provider in ('bps', 'codex')},
-          'auth_root_fields': [fields(doc) for doc in documents]})
+          'auth_root_fields': [fields(doc, AUTH_KEYS) for doc in documents]})
     if len(matches) != 1:
         raise ValueError('bps_count_not_one')
     selected = matches[0]
@@ -179,11 +183,12 @@ try:
                 emit(record)
                 raise ValueError('invalid_response')
             record.update({'root_fields': fields(parsed), 'quota_fields': quota_fields(parsed),
+                           'unknown_root_field_count': len(set(parsed) - ROOT_KEYS),
                            'error_code': error_code(parsed)})
             if stage == 'access':
                 catalog = parsed.get('model_catalog')
                 models = catalog.get('models') if isinstance(catalog, dict) else None
-                valid = parsed.get('allowed') is True and isinstance(models, list) and bool(models) and all(
+                valid = parsed.get('allowed') is True and isinstance(models, list) and all(
                     isinstance(model, dict) and isinstance(model.get('id'), str) for model in models)
                 record.update({'allowed': parsed.get('allowed') if isinstance(parsed.get('allowed'), bool) else None,
                                'model_count': len(models) if isinstance(models, list) else None,

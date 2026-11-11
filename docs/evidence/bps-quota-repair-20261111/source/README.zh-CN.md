@@ -19,7 +19,7 @@ node D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/bps-quota-repair-
 `--run` 再做相同本地检查，使用该唯一 BPS bearer/account_id，按顺序最多两个 GET：
 
 1. `https://bps.openai.com/basispoints/api/responses/access?include_models=true`
-2. 首次 HTTP 200、allowed=true 且 model_catalog.models 结构有效后，`https://chatgpt.com/backend-api/wham/usage`
+2. 首次 HTTP 200、allowed=true 且 model_catalog.models 为合法数组（允许为空）后，`https://chatgpt.com/backend-api/wham/usage`
 
 每个 GET 超时20秒、零重试、不跟随重定向；任一步失败即停。进程最多60秒，临近到期少于60秒即停。没有登录、刷新、推理、模型请求、服务/配置/批次修改。
 
@@ -29,7 +29,7 @@ HTTP 从既有 Worker 进程命名空间发出，明确固定 `http://host.docke
 
 `docker exec` 读取 `/state/auths/*.json` 到捕获内存；文件名、token、email、account_id、JWT 与原始响应不回显、不落盘。凭证/正文可变缓冲在 finally 覆写，解析对象与请求头清空；Python 一次性进程随后退出。语言运行时产生的不可变字符串副本由进程退出释放，不宣称物理内存的确定擦除。
 
-输出为根字段名称/类型、额度相关字段名称/类型，固定白名单数值/布尔值、HTTP、白名单 `error.code`；不输出原始错误 message、model id、身份信息或任意字符串值。未知错误码统一为 `other`。
+输出仅含固定白名单根键/额度路径的名称和类型、白名单数值/布尔值、HTTP、白名单 `error.code`。未知根键/额度子树键仅计数；日期字符串仅记类型，数字 reset 保留数值。原始错误 message、model id、身份信息与任意字符串值不输出；未知错误码统一为 `other`。纯本地反例命令：`python source/projection_test.py`，不读取凭证或访问网络。
 
 ## 事实来源
 
