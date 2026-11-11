@@ -1,12 +1,12 @@
 # 二期发布前收口
 
-日期：2026-11-11。现场盘点来源基线 `a4eaecfe48efaa198d4c15d9165e61ac5da77443`。沿用完整验收后统一发布的决定；本地发布工具、旧候选分发归档与真实发布边界已完成，生产保持原状。修复版手工BPS OAuth在本机隔离环境完成一次真实保存注册验收及清理，未追加主动刷新或模型请求，未推送或部署。
+日期：2026-11-11。现场盘点来源基线 `a4eaecfe48efaa198d4c15d9165e61ac5da77443`。当前入口为[最终候选发布材料](../evidence/bps-final-release-20261111/FINAL.zh-CN.md)：BPS用量页面真实验收、新三镜像归档、独立发布工具、最小真实Linux生命周期及独审均已完成。沿用完整验收后统一发布的决定；下一步运行[现场只读入口](bps-final-readonly-next-20261111.zh-CN.md)补实际Caddy路由/活动摘要，接续HTTPS图片中转和Codex正向2FA验收。生产保持原状，未推送或部署。
 
 ## 已完成范围
 
 BPS手工OAuth、BPS 2FA、保存注册、同client正常刷新、gpt-6-luna文本、默认原生图片及Responses普通工具往返分别已有真实回执。批次、并发、Chat/Responses普通与SSE、关图、工具截图及历史图片语义已有对应离线证据；不逐协议重复真实调用，不将离线结果写成全形态真实成功。
 
-最新本地候选固定为[BPS官方账号用量回执](../evidence/bps-quota-repair-20261111/FINAL.zh-CN.md)中的CPA与Manager，保留模型/巡检、scope兼容及登录入口修复；Worker继续复用原产物。此前发布工具与分发归档的固定身份属于旧候选，未重新绑定，`write_release_ready=false`。
+最新本地候选固定为[BPS官方账号用量回执](../evidence/bps-quota-repair-20261111/FINAL.zh-CN.md)中的CPA与Manager，保留模型/巡检、scope兼容及登录入口修复；Worker继续复用原产物。新 `bps-final-release.*` 和本轮归档已重新绑定并通过实载、切换与独审，整合输入 `db97e37f177a9223130d95035cda57ef831b112d`；旧工具与旧包保留。`local_release_materials_ready=true`、`quota_product_live_verified=true`、`write_release_ready=false`。
 
 ## 接续顺序
 
@@ -37,9 +37,11 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 ## 当前责任
 
-下一责任人：用户使用[完整登录窗口](login-entry-closure-20261111.zh-CN.md)继续已确认范围的操作，主会话核业务回执并最终按归属清理。BPS模型发现/人工发布与只读巡检已有真实通过记录，两处2FA输入已在完整窗口实际核验；真实2FA结果另验。既有生产只读盘点、发布工具及挂载/恢复证据按输入复用，分发资产待最终候选验收后重新绑定。现有业务通过项不重开，旧403/502及供体三项基线失败继续保留。
+当前责任人：主会话交付充分的Caddy/活动只读采集入口，接续HTTPS relay和Codex正向2FA验收；用户仅回传新现场白名单摘要。BPS模型发现/人工发布、只读巡检及官方账号用量页面已有真实通过记录；临时登录及用量窗口均已清理。新分发资产已绑定，已通过业务不重开，旧403/502及供体三项基线失败继续保留。
 
 ## 当前接续回执
+
+以下按时间保留历史接续；当前态以文首和[最终候选发布材料](../evidence/bps-final-release-20261111/FINAL.zh-CN.md)为准，历史窗口和归档不作为当前入口。
 
 本地材料已完成并整合：
 

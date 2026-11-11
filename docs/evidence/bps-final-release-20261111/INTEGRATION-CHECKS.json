@@ -1,0 +1,29 @@
+{
+  "candidate_baseline": "c2adc4ad92a2bf564bf8dfcbaa40aee78d8c9ff3",
+  "integration_head": "db97e37f177a9223130d95035cda57ef831b112d",
+  "tool_input_commit": "3c9c63aaeb865c81631f37b6f3b373edaee694c5",
+  "bundle_evidence_commit": "5c89657f1e2102ce31a38d8450a9fb0852060ca8",
+  "tool_evidence_commit": "34bef9d4411c98667f4ea3a4beab0b9642e2df35",
+  "syntax_ast": "passed",
+  "candidate_manifest_binding": "passed",
+  "artifact_manifest_byte_match": true,
+  "archive_size": 227177346,
+  "checks": {
+    "product_input_unchanged": 0,
+    "old_release_tools_unchanged": 0,
+    "diff_check": 0
+  },
+  "new_schema_sql_migration_paths": [],
+  "repeated_lifecycle_tests": false,
+  "new_official_requests": 0,
+  "production_actions": 0,
+  "push_performed": false,
+  "release_published": false,
+  "exit_code": 0,
+  "preflight_source_commit": "2351a7c9532253ab09cd139013e073a28ca57d2e",
+  "final_code_head": "3ab700103458854c2800c3fce23b8da77f83e72f",
+  "final_diff_check_exit": 0,
+  "product_and_old_release_inputs_unchanged": true,
+  "delivery_script_byte_match": true,
+  "read_only_preflight_review": "passed"
+}

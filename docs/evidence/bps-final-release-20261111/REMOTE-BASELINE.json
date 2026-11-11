@@ -1,0 +1,15 @@
+{
+  "checked_at_date": "2026-11-11",
+  "repository": "https://github.com/nuotian4-spec/MX-CPAMP.git",
+  "local_candidate_head": "c2adc4ad92a2bf564bf8dfcbaa40aee78d8c9ff3",
+  "remote_default_branch": "main",
+  "remote_main": "cae2b599e864153e95c241b3070a7336dcddfad0",
+  "remote_work_branch": "codex/openai-bps-login",
+  "remote_work_head": "66736ed731535f94dfce76a1c88a752a98bcc86a",
+  "viewer_permission": "ADMIN",
+  "visibility": "PUBLIC",
+  "latest_observed_release": "mx-cpamp-20261110-rc1",
+  "remote_read_exit": 0,
+  "push_performed": false,
+  "release_published": false
+}
