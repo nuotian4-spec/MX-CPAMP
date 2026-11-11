@@ -18,7 +18,9 @@ import time
 
 ROOT = pathlib.Path('/opt/cpa-stack')
 PROJECT = 'cpa-stack'
-STATE = ROOT / '.mx-upgrade-bps-final-20261111'
+STATE = ROOT / '.mx-upgrade-bps-relay-20261111'
+RELAY_HOST = 'cpa.maixun.cyou'
+RELAY_ORIGIN = 'https://' + RELAY_HOST
 APPS = ['oauth-login', 'cpa-manager-plus', 'cli-proxy-api']
 CANDIDATES = {'cli-proxy-api': {'ref': 'mx-cpa:bps-quota-identity-20261111', 'revision': 'b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c', 'accepted_ids': ['sha256:eeb5bf17435a4c3d1a508188fd149eb8b2dbc5d9d20390cf4fd22d6e40f40d4b', 'sha256:09d30cc6bc3808a07b06953faecb0bb49036a5240513132e6cb8b7c035b1b335'], 'role': 'cpa'}, 'cpa-manager-plus': {'ref': 'mx-cpamp:bps-quota-repair-20261111', 'revision': 'd26cbf7595ecf41ba8cbfd90c956291ac351b471', 'accepted_ids': ['sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd', 'sha256:a7b21c514227d3c48426b8cb1bb443cc8d5ca8000c626da190099ef922c5b247'], 'role': 'manager'}, 'oauth-login': {'ref': 'mx-oauth-login:phase2-local-20261111', 'revision': '95dd9ca2c16d5469c43ce7c910f38ff271af45e3', 'accepted_ids': ['sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758', 'sha256:30689442b2f61b2c7ff27eae008291b014fe7161e842a60202a6574c912be4dd'], 'role': 'worker'}}
 BASELINE = {'cli-proxy-api': {'kind': 'service', 'service': 'cli-proxy-api', 'id': '0cf979adbe916fba8892309800f7940a28bb6038f17428e67b8f2c4de1120a53', 'image_id': 'sha256:58d0177203d8f4e4968cebc60c59bdb0e236404a05c27656a38351dc1022ab93', 'image_ref': 'mx-cpa:20261110-rc1', 'revision': '5c90a92eef27f450c7080bc8735c88d873fc8915', 'status': 'running', 'health': 'unknown', 'network_mode': 'cpa-stack_default', 'networks': ['cpa-stack_default'], 'ports': [{'target': '8317/tcp', 'published': []}], 'mounts': [{'type': 'bind', 'source': '/opt/cpa-stack/cpa/config.yaml', 'target': '/CLIProxyAPI/config.yaml', 'rw': True}, {'type': 'bind', 'source': '/opt/cpa-stack/cpa/logs', 'target': '/CLIProxyAPI/logs', 'rw': True}, {'type': 'bind', 'source': '/opt/cpa-stack/cpa/plugins', 'target': '/CLIProxyAPI/plugins', 'rw': True}, {'type': 'bind', 'source': '/opt/cpa-stack/cpa/auth', 'target': '/root/.cli-proxy-api', 'rw': True}], 'working_dir': '/opt/cpa-stack', 'compose_files': ['/opt/cpa-stack/compose.yaml', '/opt/cpa-stack/compose.mx-cpamp.yaml']}, 'cpa-manager-plus': {'kind': 'service', 'service': 'cpa-manager-plus', 'id': 'ea0af0d5c8acff58abd9e96adb48687d24a4d03e381c2a123b1c4952931531eb', 'image_id': 'sha256:85a8f76852c08de220ba132490cbdf234b87f1bdeba91a6e0d9bfa905769a25c', 'image_ref': 'mx-cpamp:20261110-rc1', 'revision': '07572357832b69a30e3ee6c45f9f0cc2c3350e0c', 'status': 'running', 'health': 'healthy', 'network_mode': 'cpa-stack_default', 'networks': ['cpa-stack_default'], 'ports': [{'target': '18317/tcp', 'published': []}], 'mounts': [{'type': 'bind', 'source': '/opt/cpa-stack/manager-data', 'target': '/data', 'rw': True}, {'type': 'bind', 'source': '/opt/cpa-stack/secrets/cpamp-admin-key', 'target': '/run/secrets/cpamp-admin-key', 'rw': False}, {'type': 'bind', 'source': '/opt/cpa-stack/secrets/oauth_login_secret', 'target': '/run/secrets/oauth_login_secret', 'rw': False}], 'working_dir': '/opt/cpa-stack', 'compose_files': ['/opt/cpa-stack/compose.yaml', '/opt/cpa-stack/compose.mx-cpamp.yaml']}, 'oauth-login': {'kind': 'service', 'service': 'oauth-login', 'id': '880b9f091993a61152a732568447ba60026eb09c1bad6fdfb746c27ffbf81cce', 'image_id': 'sha256:64168881ce990f58d24736d1f8488549457ed2c775a072c1d0572bd524b7926b', 'image_ref': 'mx-oauth-login:20261110-rc1', 'revision': '42b04ac71df347e9c22fa35bad484c437da52d4b', 'status': 'running', 'health': 'unknown', 'network_mode': 'cpa-stack_default', 'networks': ['cpa-stack_default'], 'ports': [{'target': '18417/tcp', 'published': []}], 'mounts': [{'type': 'bind', 'source': '/opt/cpa-stack/secrets/oauth_login_secret', 'target': '/run/secrets/oauth_login_secret', 'rw': False}], 'working_dir': '/opt/cpa-stack', 'compose_files': ['/opt/cpa-stack/compose.yaml', '/opt/cpa-stack/compose.mx-cpamp.yaml']}, 'caddy': {'kind': 'service', 'service': 'caddy', 'id': '65e16a7220570b0847458b94eba1e779cff90a7cb50095e1dd00261fc41854ab', 'image_id': 'sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d', 'image_ref': 'caddy:2.10.2-alpine', 'revision': 'unknown', 'status': 'running', 'health': 'unknown', 'network_mode': 'cpa-stack_default', 'networks': ['cpa-stack_default'], 'ports': [{'target': '2019/tcp', 'published': []}, {'target': '443/tcp', 'published': [{'ip': '0.0.0.0', 'port': '443'}, {'ip': '::', 'port': '443'}]}, {'target': '443/udp', 'published': []}, {'target': '80/tcp', 'published': [{'ip': '0.0.0.0', 'port': '80'}, {'ip': '::', 'port': '80'}]}], 'mounts': [{'type': 'volume', 'source': '/var/lib/docker/volumes/cpa-stack_caddy_config/_data', 'target': '/config', 'rw': True}, {'type': 'volume', 'source': '/var/lib/docker/volumes/cpa-stack_caddy_data/_data', 'target': '/data', 'rw': True}, {'type': 'bind', 'source': '/opt/cpa-stack/Caddyfile', 'target': '/etc/caddy/Caddyfile', 'rw': False}], 'working_dir': '/opt/cpa-stack', 'compose_files': ['/opt/cpa-stack/compose.yaml']}}
@@ -160,6 +162,116 @@ def config():
     require(isinstance(cfg,dict) and cfg.get('config-version')==8,'config_version_unknown')
     return cfg
 
+
+def effective_protocol(cfg):
+    legacy=cfg.get('bps-protocol')
+    require(legacy is None or isinstance(legacy,dict),'protocol_mapping_required')
+    result=copy.deepcopy(legacy or {})
+    current=cfg
+    for name in ['upstream','bps','protocol']:
+        if name not in current:break
+        current=current[name]
+        require(isinstance(current,dict),'protocol_mapping_required')
+    else:
+        result.update(current)
+    for name in ['image-transport','image-relay-base-url','state-dir']:
+        require(result.get(name) is None or isinstance(result.get(name),str),'protocol_string_required')
+    result['image-transport']=result.get('image-transport') or 'native'
+    origin=(result.get('image-relay-base-url') or '').strip()
+    require(origin in ['',RELAY_ORIGIN,RELAY_ORIGIN+'/'],'relay_origin_changed')
+    result['image-relay-base-url']=origin.rstrip('/')
+    result['state-dir']=(result.get('state-dir') or '').strip()
+    require(result['image-transport'] in ['native','relay'],'protocol_transport_unknown')
+    require(result['image-relay-base-url'] in ['',RELAY_ORIGIN],'relay_origin_changed')
+    require(result['image-transport']!='relay' or result['image-relay-base-url']==RELAY_ORIGIN,'relay_origin_missing')
+    return result
+
+
+def candidate_config(cfg):
+    protocol=effective_protocol(cfg)
+    candidate=copy.deepcopy(cfg)
+    target=candidate
+    for name in ['upstream','bps','protocol']:
+        if name not in target:target[name]={}
+        require(isinstance(target[name],dict),'protocol_mapping_required')
+        target=target[name]
+    touched={'image-transport':protocol['image-transport'],'image-relay-base-url':RELAY_ORIGIN,'state-dir':'/var/lib/cpa/bps-state'}
+    target.update(touched)
+    if isinstance(candidate.get('bps-protocol'),dict):
+        for name in touched:candidate['bps-protocol'].pop(name,None)
+    return candidate
+
+
+def caddy_adapt(cid,text):
+    return json.loads(command(['docker','exec','-i',cid,'caddy','adapt','--config','-','--adapter','caddyfile'],text))
+
+
+def caddy_runtime(cid):
+    return json.loads(command(['docker','exec',cid,'wget','-qO-','http://127.0.0.1:2019/config/']))
+
+
+def caddy_semantic(value):
+    groups={}
+    def visit(item):
+        if isinstance(item,dict):
+            return {k:('group'+str(groups.setdefault(v,len(groups))) if k=='group' else visit(v)) for k,v in item.items()}
+        if isinstance(item,list):return [visit(v) for v in item]
+        return item
+    return visit(value)
+
+
+def caddy_site(document):
+    servers=document.get('apps',{}).get('http',{}).get('servers',{})
+    sites=[]
+    for server in servers.values():
+        for route in server.get('routes',[]):
+            if route.get('match')==[{'host':[RELAY_HOST]}]:
+                require(any(str(p).endswith(':443') for p in server.get('listen',[])),'relay_site_not_https')
+                require(route.get('terminal') is True and len(route.get('handle',[]))==1 and route['handle'][0].get('handler')=='subroute','relay_site_shape')
+                sites.append(route['handle'][0]['routes'])
+    require(len(sites)==1,'relay_site_not_unique')
+    targets=[]
+    def upstreams(item):
+        if isinstance(item,dict):
+            if item.get('handler')=='reverse_proxy':targets.extend(u.get('dial') for u in item.get('upstreams',[]))
+            for value in item.values():upstreams(value)
+        elif isinstance(item,list):
+            for value in item:upstreams(value)
+    upstreams(sites[0])
+    require(targets and set(targets).issubset({'cli-proxy-api:8317','cpa:8317'}),'relay_site_upstream_changed')
+    return sites[0]
+
+
+def caddy_source(live):
+    cid=live['caddy']['Id'];path=ROOT/'Caddyfile';text=path.read_text()
+    require(command(['docker','exec',cid,'cat','/etc/caddy/Caddyfile'])==text,'caddy_bind_content_drift')
+    adapted=caddy_adapt(cid,text)
+    require(caddy_semantic(caddy_runtime(cid))==caddy_semantic(adapted),'caddy_runtime_source_drift')
+    caddy_site(adapted)
+    return {'adapted':adapted,'inode':path.stat().st_ino}
+
+
+def caddy_candidate(live,source):
+    path=ROOT/'Caddyfile';text=path.read_text()
+    require('/api/bps-images/' not in text,'relay_route_already_present')
+    header=re.compile(r'(?m)^(?P<indent>[ \t]*)(?:https://)?cpa\.maixun\.cyou(?::443)?[ \t]*\{[ \t]*(?:#[^\n]*)?$')
+    require(len(list(header.finditer(text)))==1,'relay_site_text_not_unique')
+    block='\n    @mx_bps_relay {\n        method GET HEAD\n        path /api/bps-images/*\n    }\n    handle @mx_bps_relay {\n        reverse_proxy cli-proxy-api:8317\n    }'
+    candidate=header.sub(lambda m:m.group(0)+block,text)
+    cid=live['caddy']['Id'];adapted=caddy_adapt(cid,candidate)
+    routes=caddy_site(adapted);matches=[]
+    for index,route in enumerate(routes):
+        if route.get('match')==[{'method':['GET','HEAD'],'path':['/api/bps-images/*']}] or route.get('match')==[{'path':['/api/bps-images/*'],'method':['GET','HEAD']}]:
+            matches.append(index)
+    require(len(matches)==1,'relay_download_route_missing')
+    relay=routes.pop(matches[0]);handlers=relay.get('handle',[])
+    require(len(handlers)==1 and handlers[0].get('handler')=='subroute','relay_download_route_shape')
+    require(handlers[0].get('routes')==[{'handle':[{'handler':'reverse_proxy','upstreams':[{'dial':'cli-proxy-api:8317'}]}]}],'relay_download_target_changed')
+    require(caddy_semantic(adapted)==caddy_semantic(source['adapted']),'caddy_unrelated_routes_changed')
+    adapted=caddy_adapt(cid,candidate)
+    command(['docker','exec','-i',cid,'caddy','validate','--config','-','--adapter','caddyfile'],candidate)
+    return candidate,adapted
+
 def env(c): return dict(x.split('=',1) for x in c['Config'].get('Env',[]) if '=' in x)
 
 def resolve(path,cwd='/CLIProxyAPI'):
@@ -208,8 +320,7 @@ def sources(live,cfg):
     require(not kv.get('type') or kv.get('type') in ['bbolt','bolt'],'kv_backend_unknown')
     kv_path=mapped(live,'cli-proxy-api',resolve(kv.get('path') or '/root/.cli-proxy-api/kv.db',cwd))
     require(kv_path.is_relative_to(ROOT/'cpa/auth') or kv_path.is_relative_to(ROOT/'cpa/plugins'),'external_kv_not_covered')
-    protocol=cfg.get('bps-protocol') or {}
-    require(protocol.get('image-transport','native') in ['', 'native'] and not protocol.get('image-relay-base-url'),'relay_route_not_authorized')
+    protocol=effective_protocol(cfg)
     old_state=resolve(protocol.get('state-dir') or posixpath.join(posixpath.dirname(auth),'bps-state'),cwd)
     require(old_state!=auth and not old_state.startswith(auth+'/'),'state_inside_auth')
     check='if [ -e "$1" ]; then printf exists; elif [ -d "$(dirname -- "$1")" ] && [ -r "$(dirname -- "$1")" ]; then printf absent; else printf unknown; fi'
@@ -323,6 +434,20 @@ def health(candidate=False):
     payload={'api':keys[0],'admin':(ROOT/'secrets/cpamp-admin-key').read_text().strip()}
     program="const fs=require('fs');let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',async()=>{try{const k=JSON.parse(s),w=fs.readFileSync('/run/secrets/oauth_login_secret','utf8').trim();for(const [u,t,ok] of [['http://cli-proxy-api:8317/v1/models',k.api,200],['http://cpa-manager-plus:18317/api/oauth-login/tasks/00000000-0000-4000-8000-000000000001',k.admin,404],['http://oauth-login:18417/health',w,200]]){for(const [key,status] of [[t,ok],['invalid-phase2-probe',401]]){const r=await fetch(u,{redirect:'error',headers:{authorization:'Bearer '+key},signal:AbortSignal.timeout(5000)});if(r.status!==status)throw Error('probe');await r.arrayBuffer()}}process.stdout.write('ok')}catch{process.exitCode=1}})"
     require(command(['docker','exec','-i',live['oauth-login']['Id'],'node','-e',program],json.dumps(payload))=='ok','authenticated_health_failed')
+    if candidate:
+        protocol=effective_protocol(cfg)
+        payload.update(transport=protocol['image-transport'],origin=protocol['image-relay-base-url'],enabled=protocol.get('enabled') is not False,images_enabled=protocol.get('images-enabled') is not False)
+        program="const fs=require('fs');let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',async()=>{try{const k=JSON.parse(s),r=await fetch('http://cpa-manager-plus:18317/api/bps/settings',{headers:{authorization:'Bearer '+k.admin},signal:AbortSignal.timeout(5000)}),p=await r.json();if(r.status!==200||p.image_transport!==k.transport||p.image_relay_base_url!==k.origin||p.enabled!==k.enabled||p.images_enabled!==k.images_enabled)throw Error('settings');process.stdout.write('ok')}catch{process.exitCode=1}})"
+        require(command(['docker','exec','-i',live['oauth-login']['Id'],'node','-e',program],json.dumps(payload))=='ok','candidate_settings_not_effective')
+        require((ROOT/'Caddyfile').stat().st_ino==plan['caddy']['inode'],'caddy_inode_changed')
+        require(command(['docker','exec',live['caddy']['Id'],'cat','/etc/caddy/Caddyfile'])==(STATE/'Caddyfile').read_text(),'caddy_bind_content_drift')
+        require(caddy_semantic(caddy_runtime(live['caddy']['Id']))==caddy_semantic(plan['caddy_candidate']),'caddy_reload_not_effective')
+
+
+def caddy_https_health():
+    live=snapshot();cfg=config();payload={'api':cfg.get('access',{}).get('api-keys',cfg.get('api-keys'))[0]}
+    program="const https=require('https');let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',async()=>{try{const k=JSON.parse(s);function probe(host,path,method,key,status){return new Promise((resolve,reject)=>{const r=https.request({host:'caddy',port:443,servername:host,path,method,headers:{host,...(key?{authorization:'Bearer '+key}:{})}},p=>{let n=0;p.on('data',c=>n+=c.length);p.on('end',()=>p.statusCode===status&&(method!=='HEAD'||n===0)?resolve():reject(Error('status')))});r.setTimeout(5000,()=>r.destroy(Error('timeout')));r.on('error',reject);r.end()})}for(const [path,method,key,status] of [['/v1/models','GET',k.api,200],['/v1/models','GET','invalid-relay-probe',401],['/api/bps-images/'+ 'a'.repeat(43),'GET','',404],['/api/bps-images/'+ 'a'.repeat(43),'HEAD','',404],['/api/bps-images/'+ 'a'.repeat(43),'POST','',404],['/v8/management/bps/settings','GET','',404],['/state','GET','',404]])await probe('cpa.maixun.cyou',path,method,key,status);process.stdout.write('ok')}catch{process.exitCode=1}})"
+    require(command(['docker','exec','-i',live['oauth-login']['Id'],'node','-e',program],json.dumps(payload))=='ok','caddy_https_routes_failed')
 
 def prepare(source):
     require(not (STATE/'ready').exists() and not (STATE/'maintenance').exists() and not (STATE/'complete').exists(),'state_already_used')
@@ -332,9 +457,10 @@ def prepare(source):
     require((ROOT/'.mx-upgrade-20261110-rc1/complete').is_file(),'rc1_complete_missing')
     merged=json.loads(command(compose()+['config','--format','json']))
     compose_matches_live(merged,live)
-    candidate=copy.deepcopy(cfg)
-    candidate.setdefault('bps-protocol',{})['state-dir']='/var/lib/cpa/bps-state'
+    candidate=candidate_config(cfg)
     write(STATE/'cpa-config.yaml',candidate)
+    caddy=caddy_source(live);caddy_text,caddy_rendered=caddy_candidate(live,caddy)
+    (STATE/'Caddyfile').write_text(caddy_text);(STATE/'Caddyfile').chmod(0o600)
     override={'services':{s:{'image':images[s],'pull_policy':'never'} for s in APPS}}
     override['services']['cli-proxy-api']['volumes']=[{'type':'bind','source':str(ROOT/'cpa/bps-state'),'target':'/var/lib/cpa/bps-state','bind':{'create_host_path':True}}]
     write(STATE/'compose.bps-final.yaml',override)
@@ -346,8 +472,10 @@ def prepare(source):
         for service in value['services'].values():service['volumes']=sorted(service.get('volumes',[]),key=lambda x:x['target'])
     require(rendered==expected,'candidate_merge_changed')
     tracked=origin['tracked']+[str(pathlib.Path(__file__).resolve()),str(pathlib.Path(__file__).with_suffix('.sh').resolve())]
-    plan={'facts':observed,'images':images,'sources':origin,'base':merged,'rendered':rendered,'digests':{p:digest(p) for p in tracked},'candidate_digests':{p:digest(STATE/p) for p in ['cpa-config.yaml','compose.bps-final.yaml']}}
+    plan={'facts':observed,'images':images,'sources':origin,'base':merged,'rendered':rendered,'caddy':caddy,'caddy_candidate':caddy_rendered,'digests':{p:digest(p) for p in tracked},'candidate_digests':{p:digest(STATE/p) for p in ['cpa-config.yaml','compose.bps-final.yaml','Caddyfile']}}
     write(STATE/'plan.json',plan)
+    with (STATE/'RECOVERY-CADDY.txt').open('w') as recovery:
+        recovery.write('Caddy下载路由恢复\nprepare只暂存，取消不写入或reload。发布时保持原Caddyfile inode写入，再在原容器reload。\n若stage=publishing_caddy，磁盘可能部分或全部为候选，运行配置可能仍旧；若stage=reloading_caddy，必须分别核磁盘、挂载可见字节和admin运行配置。\n原Caddyfile在本次停态backup/data.tar.gz内；仅绑定本次plan和备份恢复正文到原inode，并在原容器validate/reload，不重建Caddy或覆盖证书卷。\n新CPA和原业务数据须保留，不自动回灌。reload成功不代表外部TLS或有效图片取图成功。\n')
     (STATE/'RECOVERY.txt').write_text('BPS 官方账号用量发布失败处理\n保留本目录、stage、plan.json、backup、compose.bps-final.yaml 和新建 cpa/bps-state；不要删除 maintenance 或重复 apply。\n维护开始前失败：旧容器和原配置未切换，按错误类别修复后定向核证，不改旧 rc1 材料。\n维护开始后失败：先只读核三个应用实际状态、Caddy 原容器 ID、当前配置和三文件链；由维护者绑定本次 plan 和停态备份制定定向恢复。不要自动整库回灌；新凭证、运行时记录和切换后的数据必须先保留。\n新 wrapper 依赖本目录 compose.bps-final.yaml，完成后也保留本目录。备份只作为经检查的恢复来源，不代表已恢复或业务验收。\n')
     health(False)
     (STATE/'ready').touch(mode=0o600);mark('prepared')
@@ -369,6 +497,7 @@ def drift():
     require(image_records()==plan['images'],'candidate_image_drift')
     require(json.loads(command(compose()+['config','--format','json']))==plan['base'],'compose_drift')
     compose_matches_live(plan['base'],live)
+    require(caddy_source(live)==plan['caddy'],'caddy_source_drift')
     require(sources(live,config())==plan['sources'],'state_or_data_source_drift')
     secrets(live);health(False)
 
@@ -411,6 +540,21 @@ def install_candidate():
     shutil.copyfile(STATE/'cpa-compose',ROOT/'cpa-compose.bps-final-new');(ROOT/'cpa-compose.bps-final-new').chmod(0o700)
     os.replace(ROOT/'cpa-compose.bps-final-new',ROOT/'cpa-compose')
 
+
+def publish_caddy():
+    plan=read(STATE/'plan.json');live=snapshot();path=ROOT/'Caddyfile'
+    require(live['caddy']['Id']==plan['facts']['caddy']['id'] and path.stat().st_ino==plan['caddy']['inode'],'caddy_identity_drift')
+    mark('publishing_caddy')
+    body=(STATE/'Caddyfile').read_bytes()
+    with path.open('r+b') as output:
+        output.write(body);output.truncate();output.flush();os.fsync(output.fileno())
+    require(path.stat().st_ino==plan['caddy']['inode'],'caddy_inode_changed')
+    require(command(['docker','exec',live['caddy']['Id'],'cat','/etc/caddy/Caddyfile'])==body.decode(),'caddy_bind_content_drift')
+    mark('reloading_caddy')
+    command(['docker','exec',live['caddy']['Id'],'caddy','reload','--config','/etc/caddy/Caddyfile','--adapter','caddyfile'])
+    mark('caddy_runtime_health')
+    require(caddy_semantic(caddy_runtime(live['caddy']['Id']))==caddy_semantic(plan['caddy_candidate']),'caddy_reload_not_effective')
+
 def apply():
     require((STATE/'ready').is_file() and not (STATE/'complete').exists(),'not_prepared_or_complete')
     require(not (STATE/'maintenance').exists(),'maintenance_requires_manual_recovery')
@@ -422,12 +566,14 @@ def apply():
     stopped();mark('backing_up');backup()
     mark('publishing_candidate');install_candidate()
     mark('starting_candidates');command(compose(True)+['up','-d','--no-deps','--no-build','--pull','never']+APPS)
+    publish_caddy()
     mark('authenticated_health')
     for attempt in range(30):
         try:health(True);break
         except Failure:
             if attempt==29:raise
             time.sleep(2)
+    mark('caddy_https_routes');caddy_https_health()
     (STATE/'complete').touch(mode=0o600);mark('complete')
     print('release_complete state='+str(STATE)+' backup='+str(STATE/'backup'),flush=True)
 
