@@ -14,6 +14,7 @@ checks runner 默认使用已缓存 `sha256:2bfdb42551061d6c0ba1b71758402ab46bc6
 - CPA 精确 auth_index/auth_id，缺 token 返回 credential_incomplete，source=chatgpt_account_usage，plan/rate 为 null。
 - Manager `/api/bps/usage?auth_index&connection_ref` 缺 token归一；坏 connection_ref 返回409。
 - BPS 权限 probe 和未知 quota，巡检保持 keep、不自动恢复/删除/禁用/启用/重登；provider 记录往返和凭证状态保留。
+- 快照写查使用同次巡检结果的 fileName/authIndex/accountId/accountSnapshot 完整身份元组；accountId 核对合成凭证固定值，accountSnapshot 空则省略，不从 sub 或显示标签推导。
 
 旧模型读/保存/清空及 revision 保护、巡检配置边界沿用已验证 harness；collector 保持环境托管原输入，仅 scheduler 关闭、手动执行一次巡检。公开 handler 的实际数值、headers、取消、身份/出口漂移与错误分类复用 CPA/Manager 本轮专项，不在此重复请求官方。
 

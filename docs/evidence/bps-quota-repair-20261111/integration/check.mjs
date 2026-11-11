@@ -43,14 +43,6 @@ try{
   must(usage.status===200&&usage.value.provider==='bps'&&usage.value.source==='chatgpt_account_usage'&&usage.value.error==='credential_incomplete'&&usage.value.rate_limit===null&&usage.value.plan_type===null,'manager_usage_incomplete_contract');
   report({stage:'usage',cpa_admin_gate:true,manager_admin_gate:true,instance_reference_rejected:true,provider:'bps',source:'chatgpt_account_usage',credential_incomplete:true,quota_unknown:true,real_usage_called:false});
 
-  const snapshotAccount={auth_file_snapshot:selected.name,auth_index:selected.auth_index,auth_provider_snapshot:'bps'};
-  const observed=Date.now(),end=observed+2592000000;
-  const snapshotWrite=await request(manager,'/v0/management/quota-snapshots',input.admin,'POST',{entries:[{row_key:'synthetic-bps',provider:'bps',account:snapshotAccount,windows:[{provider_window_id:'bps-primary',window_kind:'monthly',window_mode:'fixed',model_scope_kind:'feature',model_scope_key:'bps_account_usage',source:'api_query',observed_at_ms:observed,boundary_accuracy:'exact',cycle_start_ms:observed,cycle_end_ms:end,duration_seconds:2592000,used_percent:17}]}]});
-  must(snapshotWrite.status===200&&snapshotWrite.value.items?.length===1&&snapshotWrite.value.items[0].provider==='bps','snapshot_bps_write');
-  const snapshotQuery=await request(manager,'/v0/management/quota-snapshots/query',input.admin,'POST',{accounts:[{row_key:'synthetic-bps',provider:'bps',account:snapshotAccount}]});
-  must(snapshotQuery.status===200&&snapshotQuery.value.items?.length===1&&snapshotQuery.value.items[0].provider==='bps'&&snapshotQuery.value.items[0].windows?.some(window=>window.used_percent===17&&window.model_scope_kind==='feature'&&window.model_scope_key==='bps_account_usage'),'snapshot_bps_roundtrip');
-  report({stage:'snapshot',provider:'bps',synthetic_only:true,write_query_roundtrip:true});
-
   const initial=await models(),before=await cpaConfig();must(initial.models.length===0,'initial_models_empty');
   const draft=['gpt-6-luna'];
   must((await models()).models.length===0&&(await cpaConfig()).oauth.providers.bps.models.length===0,'read_does_not_publish');
@@ -82,6 +74,15 @@ try{
   const persisted=await request(manager,'/v0/management/codex-inspection/runs/'+detail.run.id,input.admin);must(persisted.status===200&&persisted.value.results[0].provider==='bps'&&persisted.value.results[0].usedPercent==null,'inspection_record_roundtrip');
   const finalFiles=await credentials();must(finalFiles.length===1&&finalFiles[0].auth_index===selected.auth_index&&finalFiles[0].disabled===selected.disabled,'inspection_credential_unchanged');
   report({stage:'inspection',probe_set_count:1,provider:'bps',action:'keep',quota_unknown:true,no_auto_actions:true,persisted:true,scheduler_enabled:false});
+
+  must(result.fileName===selected.name&&result.authIndex===selected.auth_index&&result.accountId==='synthetic-bps-account','snapshot_exact_inspection_identity');
+  const snapshotAccount={auth_file_snapshot:result.fileName,auth_index:result.authIndex,auth_provider_snapshot:'bps',auth_account_id_snapshot:result.accountId,...(result.accountSnapshot?{account_snapshot:result.accountSnapshot}:{})};
+  const observed=Date.now(),end=observed+2592000000;
+  const snapshotWrite=await request(manager,'/v0/management/quota-snapshots',input.admin,'POST',{entries:[{row_key:'synthetic-bps',provider:'bps',account:snapshotAccount,windows:[{provider_window_id:'bps-primary',window_kind:'monthly',window_mode:'fixed',model_scope_kind:'feature',model_scope_key:'bps_account_usage',source:'api_query',observed_at_ms:observed,boundary_accuracy:'exact',cycle_start_ms:observed,cycle_end_ms:end,duration_seconds:2592000,used_percent:17}]}]});
+  must(snapshotWrite.status===200&&snapshotWrite.value.items?.length===1&&snapshotWrite.value.items[0].provider==='bps','snapshot_bps_write');
+  const snapshotQuery=await request(manager,'/v0/management/quota-snapshots/query',input.admin,'POST',{accounts:[{row_key:'synthetic-bps',provider:'bps',account:snapshotAccount}]});
+  must(snapshotQuery.status===200&&snapshotQuery.value.items?.length===1&&snapshotQuery.value.items[0].provider==='bps'&&snapshotQuery.value.items[0].windows?.some(window=>window.used_percent===17&&window.model_scope_kind==='feature'&&window.model_scope_key==='bps_account_usage'),'snapshot_bps_roundtrip');
+  report({stage:'snapshot',provider:'bps',synthetic_only:true,write_query_roundtrip:true});
   report({stage:'complete',result:'passed',synthetic_only:true,real_login_refresh_inference_called:false});
 }catch(error){
   const code=String(error?.message||'integration_failed');report({stage:'failed',error_code:/^[a-z_]{1,80}$/.test(code)?code:'integration_failed'});process.exitCode=1;
