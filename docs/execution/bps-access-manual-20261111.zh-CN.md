@@ -33,4 +33,6 @@ DON'T：不改产品、旧证据或生产配置；不读取旧凭据，不联网
 
 入口实现与证据源提交`6532e0152f47e1d98acd37092db04fcd6b4d15d5`已整合主线`2112c94`。最终语法、无账号断网预检和diff检查exit0，预检清理确认；主线脚本与源提交输入等价，复用该专项。操作见[手工入口](../evidence/bps-access-manual-20261111/README.zh-CN.md)，审查见[独审记录](../evidence/bps-access-manual-20261111/review/REVIEW.zh-CN.md)。
 
-当前责任人：主会话完成独审核证后仅启动新的本机空窗口；下一责任人：用户在新窗口完成一次官方手工授权、系统设置一次发现与模型保存展示，主会话核验后按归属清理。真实官方权限结果待证，`write_release_ready=false`。
+独审放行后主会话已启动新的本机空窗口，真实`MANUAL-START.exit=0`；启动时凭证0、发布模型0，未创建OAuth会话或查询官方access。地址`http://127.0.0.1:6722/management.html#/oauth`，有效期至`2026-11-11T08:50:46.268Z`（北京时间16:50:46）。非秘密现场指针：`C:/Users/子羽/.codex/artifacts/mx-bps-access-manual-b32b2eaf5650/state.json`；临时访问文件不入仓。
+
+当前责任人：用户在新窗口完成一次官方手工授权、系统设置一次发现与模型保存展示；下一责任人：主会话根据用户回报填脱敏观察、执行本地verify并按归属stop清理。到期停进程不等于清理完成；如用户未完成，也须保留真实结果并清理，旧窗口不复用。真实官方权限结果待证，`write_release_ready=false`。
