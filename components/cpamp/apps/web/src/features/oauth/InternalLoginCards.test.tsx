@@ -192,7 +192,9 @@ describe('批量与BPS授权入口', () => {
     mocks.active.mockResolvedValue(running);
     mocks.cancel.mockResolvedValue({ ...running, status: 'cancelling' });
     await render();
-    await act(async () => vi.advanceTimersByTimeAsync(1600));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1600);
+    });
     expect(mocks.get).toHaveBeenCalledWith('batch', scope);
     const cancel = renderer.root
       .findAllByType(Button)
