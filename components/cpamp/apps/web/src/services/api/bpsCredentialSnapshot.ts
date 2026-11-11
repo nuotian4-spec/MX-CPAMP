@@ -7,7 +7,10 @@ import type { ApiClientRequestScope } from './client';
 export const loadBpsBoundAuthFiles = async (
   scope: ApiClientRequestScope
 ): Promise<AuthFilesResponse> => {
-  const before = await bpsSettingsApi.get(scope);
+  const before = await bpsSettingsApi.get(scope).catch(() => null);
+  // Older CPA instances still expose ordinary credentials without BPS management.
+  // Their BPS entries receive no reference, so permission probes remain disabled.
+  if (!before) return authFilesApi.list(scope);
   const result = await authFilesApi.list(scope);
   const after = await bpsSettingsApi.get(scope);
   if (!before.connection_ref || before.connection_ref !== after.connection_ref)
