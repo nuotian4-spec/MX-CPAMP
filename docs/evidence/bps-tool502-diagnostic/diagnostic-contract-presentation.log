@@ -1,0 +1,140 @@
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/tool-invalid
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |          24ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-77ba-7e16-bdb4-6c5f0d967dae
+    bps_failure_diagnostics_test.go:141: stage=tool_validation code=tool_validation_failed public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/identity-missing
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-77db-7a22-8bd5-fca94e665738
+    bps_failure_diagnostics_test.go:141: stage=binding_identity code=identity_incomplete_or_changed public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/storage-failed
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-77e3-778d-931d-a4e53a985b7a
+    bps_failure_diagnostics_test.go:141: stage=binding_storage code=storage_unavailable public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/inband-403
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-77eb-7231-9386-cbdb580d98a0
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=502 upstream_http=200 inband_status=403 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/inband-429
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-77f2-7055-8d54-a1bd11846eb7
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=502 upstream_http=200 inband_status=429 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/inband-unknown
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-77f8-7e1a-99fb-bd93ad4440a2
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=unknown public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/http-429
+time="2026-11-11T10:14:18+08:00" level=warning msg="429 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 429" request_id=01a1c862-7801-7187-9e97-a4e126b2f5e7
+time="2026-11-11T10:14:18+08:00" level=warning msg="429 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7801-7187-9e97-a4e126b2f5e7
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=429 upstream_http=429 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/http-503
+time="2026-11-11T10:14:18+08:00" level=warning msg="503 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 503" request_id=01a1c862-7808-7806-98c9-7d8650d48c1e
+time="2026-11-11T10:14:18+08:00" level=error msg="503 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7808-7806-98c9-7d8650d48c1e
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=503 upstream_http=503 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/tool-invalid
+time="2026-11-11T10:14:18+08:00" level=info msg="200 |           4ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7810-759d-b9aa-89e563e607be
+    bps_failure_diagnostics_test.go:141: stage=tool_validation code=tool_validation_failed public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/identity-missing
+time="2026-11-11T10:14:18+08:00" level=info msg="200 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-781a-72e3-802d-21910fbdc1b6
+    bps_failure_diagnostics_test.go:141: stage=binding_identity code=identity_incomplete_or_changed public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/storage-failed
+time="2026-11-11T10:14:18+08:00" level=info msg="200 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7823-7768-b8d9-5c37f377470d
+    bps_failure_diagnostics_test.go:141: stage=binding_storage code=storage_unavailable public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/inband-403
+time="2026-11-11T10:14:18+08:00" level=info msg="200 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7829-7e7a-a9b8-75b89d37a567
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=200 upstream_http=200 inband_status=403 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/inband-429
+time="2026-11-11T10:14:18+08:00" level=info msg="200 |           3ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7831-7a97-b2e2-3137e526a246
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=200 upstream_http=200 inband_status=429 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/inband-unknown
+time="2026-11-11T10:14:18+08:00" level=info msg="200 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7839-73cd-86d8-1bfbda898b24
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=unknown public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/http-429
+time="2026-11-11T10:14:18+08:00" level=warning msg="429 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 429" request_id=01a1c862-783f-7b25-bb1e-919a17ea8ad3
+time="2026-11-11T10:14:18+08:00" level=warning msg="429 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-783f-7b25-bb1e-919a17ea8ad3
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=429 upstream_http=429 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/http-503
+time="2026-11-11T10:14:18+08:00" level=warning msg="503 |           1ms | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 503" request_id=01a1c862-7847-7765-88d1-f37078419ec7
+time="2026-11-11T10:14:18+08:00" level=error msg="503 |           2ms |       192.0.2.1 | POST    \"/v1/responses\"" request_id=01a1c862-7847-7765-88d1-f37078419ec7
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=503 upstream_http=503 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/tool-invalid
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-784f-701e-832f-a19f7aa90426
+    bps_failure_diagnostics_test.go:141: stage=tool_validation code=tool_validation_failed public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/identity-missing
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-7855-7d33-a73a-8a851f16dfca
+    bps_failure_diagnostics_test.go:141: stage=binding_identity code=identity_incomplete_or_changed public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/storage-failed
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-785d-79ec-8155-20e9b6c6433a
+    bps_failure_diagnostics_test.go:141: stage=binding_storage code=storage_unavailable public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/inband-403
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-7864-7466-9897-6da0b51b7221
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=502 upstream_http=200 inband_status=403 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/inband-429
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-786a-76a7-9bfc-0d0a1d070fa0
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=502 upstream_http=200 inband_status=429 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/inband-unknown
+time="2026-11-11T10:14:18+08:00" level=error msg="502 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-7871-706a-b8ba-28baea0749c7
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=unknown public_http=502 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/http-429
+time="2026-11-11T10:14:18+08:00" level=warning msg="429 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 429" request_id=01a1c862-7877-7ea5-ad9b-c4aaf699ad21
+time="2026-11-11T10:14:19+08:00" level=warning msg="429 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-7877-7ea5-ad9b-c4aaf699ad21
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=429 upstream_http=429 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/http-503
+time="2026-11-11T10:14:19+08:00" level=warning msg="503 |            0s | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 503" request_id=01a1c862-787e-7330-94e1-9c3b0f88f31a
+time="2026-11-11T10:14:19+08:00" level=error msg="503 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-787e-7330-94e1-9c3b0f88f31a
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=503 upstream_http=503 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/tool-invalid
+time="2026-11-11T10:14:19+08:00" level=info msg="200 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-7885-797d-a6dc-6f44df8f5ebe
+    bps_failure_diagnostics_test.go:141: stage=tool_validation code=tool_validation_failed public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/identity-missing
+time="2026-11-11T10:14:19+08:00" level=info msg="200 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-788c-712b-956f-4a89a0181f5f
+    bps_failure_diagnostics_test.go:141: stage=binding_identity code=identity_incomplete_or_changed public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/storage-failed
+time="2026-11-11T10:14:19+08:00" level=info msg="200 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-7894-7b64-8ab4-e214c24c388f
+    bps_failure_diagnostics_test.go:141: stage=binding_storage code=storage_unavailable public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/inband-403
+time="2026-11-11T10:14:19+08:00" level=info msg="200 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-789b-773b-9d2e-75b665ab833d
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=200 upstream_http=200 inband_status=403 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/inband-429
+time="2026-11-11T10:14:19+08:00" level=info msg="200 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-78a4-739d-8d29-37d970357632
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=upstream_failed public_http=200 upstream_http=200 inband_status=429 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/inband-unknown
+time="2026-11-11T10:14:19+08:00" level=info msg="200 |           2ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-78ac-760a-b4ce-d98349550c56
+    bps_failure_diagnostics_test.go:141: stage=upstream_inband code=unknown public_http=200 upstream_http=200 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/http-429
+time="2026-11-11T10:14:19+08:00" level=warning msg="429 |           1ms | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 429" request_id=01a1c862-78b4-7b0a-8242-225834c12fb6
+time="2026-11-11T10:14:19+08:00" level=warning msg="429 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-78b4-7b0a-8242-225834c12fb6
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=429 upstream_http=429 inband_status=0 calls=1
+=== RUN   TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/http-503
+time="2026-11-11T10:14:19+08:00" level=warning msg="503 |           1ms | upstream execution failed: provider=bps model=gpt-6-luna auth=provider=bps auth_file=failure-diagnostic err=BPS upstream returned HTTP 503" request_id=01a1c862-78be-72a0-b3b1-f6d280ea9d08
+time="2026-11-11T10:14:19+08:00" level=error msg="503 |           3ms |       192.0.2.1 | POST    \"/v1/chat/completions\"" request_id=01a1c862-78be-72a0-b3b1-f6d280ea9d08
+    bps_failure_diagnostics_test.go:141: stage=upstream_http code=http_rejected public_http=503 upstream_http=503 inband_status=0 calls=1
+--- PASS: TestBPSFailureDiagnosticsPublicProtocols (0.27s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/tool-invalid (0.04s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/identity-missing (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/storage-failed (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/inband-403 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/inband-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/inband-unknown (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/http-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=false/http-503 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/tool-invalid (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/identity-missing (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/storage-failed (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/inband-403 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/inband-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/inband-unknown (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/http-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/responses/stream=true/http-503 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/tool-invalid (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/identity-missing (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/storage-failed (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/inband-403 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/inband-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/inband-unknown (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/http-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=false/http-503 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/tool-invalid (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/identity-missing (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/storage-failed (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/inband-403 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/inband-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/inband-unknown (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/http-429 (0.01s)
+    --- PASS: TestBPSFailureDiagnosticsPublicProtocols//v1/chat/completions/stream=true/http-503 (0.01s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	0.463s
