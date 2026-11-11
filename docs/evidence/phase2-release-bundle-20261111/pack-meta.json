@@ -1,0 +1,10 @@
+{
+  "status": "complete",
+  "docker_exit": 0,
+  "gzip_complete": true,
+  "stderr_seen": false,
+  "started_at": "2026-11-11T04:31:11.439Z",
+  "bytes": 227124363,
+  "sha256": "99362d58a8c182cf9266fc64632dbdbce67f20085246fad9743cee2c5652f744",
+  "finished_at": "2026-11-11T04:31:18.748Z"
+}
