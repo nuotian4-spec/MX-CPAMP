@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # 二期独立发布入口；状态和秘密只在服务器私有目录保存。
 set -eu
 umask 077

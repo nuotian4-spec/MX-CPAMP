@@ -410,7 +410,7 @@ def install_candidate():
     shutil.copyfile(STATE/'cpa-config.yaml',ROOT/'cpa/config.phase2-new')
     (ROOT/'cpa/config.phase2-new').chmod(0o600)
     os.replace(ROOT/'cpa/config.phase2-new',ROOT/'cpa/config.yaml')
-    wrapper='#!/usr/bin/env bash\nset -eu\nexec docker compose --project-directory '+str(ROOT)+' -p '+PROJECT+' -f '+str(ROOT/'compose.yaml')+' -f '+str(ROOT/'compose.mx-cpamp.yaml')+' -f '+str(STATE/'compose.phase2.yaml')+' "$@"\n'
+    wrapper='#!/bin/sh\nset -eu\nexec docker compose --project-directory '+str(ROOT)+' -p '+PROJECT+' -f '+str(ROOT/'compose.yaml')+' -f '+str(ROOT/'compose.mx-cpamp.yaml')+' -f '+str(STATE/'compose.phase2.yaml')+' "$@"\n'
     (STATE/'cpa-compose').write_text(wrapper);(STATE/'cpa-compose').chmod(0o700)
     shutil.copyfile(STATE/'cpa-compose',ROOT/'cpa-compose.phase2-new');(ROOT/'cpa-compose.phase2-new').chmod(0o700)
     os.replace(ROOT/'cpa-compose.phase2-new',ROOT/'cpa-compose')
