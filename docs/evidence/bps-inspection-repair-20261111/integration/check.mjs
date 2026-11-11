@@ -47,9 +47,11 @@ try{
 
   const originalConfig=await request(manager,'/usage-service/config',input.admin);must(originalConfig.status===200&&originalConfig.value.config,'manager_config');
   const config=structuredClone(originalConfig.value.config);delete config.cpaConnection.managementKeyConfigured;
-  config.collector={...config.collector,enabled:false};
   config.codexInspection={...config.codexInspection,enabled:false,targetTypes:['bps'],targetType:'bps',autoActionMode:'none',autoRecoverEnabled:false,workers:1,retries:0};
-  const configured=await request(manager,'/usage-service/config',input.admin,'PUT',{config});must(configured.status===200&&configured.value.config.codexInspection.targetTypes?.join(',')==='bps','inspection_config');
+  const configured=await request(manager,'/usage-service/config',input.admin,'PUT',{config});
+  const configErrorCodes=new Set(['connection_env_managed','account_processing_policy_env_locked','cpa_connection_already_bound','cpa_connection_required_for_monitoring','cpa_connection_required','invalid_admin_key','invalid_management_key','usage_service_not_configured']);
+  report({stage:'inspection_config',http_status:configured.status,error_code:configured.status===200?null:configErrorCodes.has(configured.value.code)?configured.value.code:'unclassified'});
+  must(configured.status===200&&configured.value.config.codexInspection.targetTypes?.join(',')==='bps','inspection_config');
   const started=await request(manager,'/v0/management/codex-inspection/run',input.admin,'POST');must(started.status===200&&started.value.run?.id,'inspection_start');
   const detail=await poll(async()=>{const response=await request(manager,'/v0/management/codex-inspection/runs/'+started.value.run.id,input.admin);must(response.status===200,'inspection_query');return response.value.run?.status==='completed'?response.value:null;},'inspection_complete');
   must(detail.run.totalFiles===1&&detail.run.probeSetCount===1&&detail.results?.length===1,'inspection_set_one');
