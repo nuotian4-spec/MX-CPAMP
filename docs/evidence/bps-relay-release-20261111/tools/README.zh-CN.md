@@ -2,7 +2,7 @@
 
 2026-11-11。原最终工具输入为 `0a98a2bc8f259c1c73bfcc3a850f2f0ef145492e`，基线 `bab1afb07e3cf25e78394b6cb959aaa5999b31bd`。本轮补丁把独立状态目录切换为 `.mx-upgrade-bps-relay-20261111-r2`，保留旧失败目录不接续。仅修改 `deploy/bps-final-release.py`，同步控制器与证据；产品、三镜像及原Shell入口保持原输入。
 
-Compose表示兼容修复：prepare 比较现在只对候选合并语义做有界归一：`bind.create_host_path=true`、缺省 bind 和空 bind 等价；`type/source/target/read_only` 及其他 bind 选项仍逐项严格比较，实质挂载漂移继续失败。本轮实际 Compose 2.33 输出与新状态目录完整周期见[独立证据](../../bps-relay-compose-compat-20261111/README.zh-CN.md)。OVH 5.7.0 当前只确认 `candidate_merge_changed`，尚待字段差异诊断，默认字段表示差异不写成现场精确根因；本目录原日志保留历史输入。
+Compose表示兼容修复：prepare 比较现在只对候选合并语义做有界归一：`bind.create_host_path=true`、缺省 bind 和空 bind 等价；`type/source/target/read_only` 及其他 bind 选项仍逐项严格比较，实质挂载漂移继续失败。本轮实际 Compose 2.33 输出与新状态目录完整周期见[独立证据](../../bps-relay-compose-compat-20261111/README.zh-CN.md)。OVH 5.7.0 的只读诊断已确认唯一差异为新增卷的 `bind.create_host_path`：expected=true、rendered叶缺省，复用既有empty_bind覆盖；本目录原日志保留历史输入。
 
 ## 发布行为
 
