@@ -1,3 +1,4 @@
+import { getBpsQuotaState } from '@/utils/quota/bpsIdentity';
 import type { TFunction } from 'i18next';
 import type {
   AntigravityQuotaGroup,
@@ -1326,6 +1327,8 @@ export const getAccountQuotaProviderLabel = (
   t: TFunction
 ) => {
   switch (provider) {
+    case 'bps':
+      return '官方账号用量';
     case 'antigravity':
       return t('antigravity_quota.title');
     case 'claude':
@@ -1379,6 +1382,7 @@ const buildBaseAccountQuotaEntry = (
 };
 
 export type MonitoringQuotaStores = {
+  bpsQuota?: Record<string, CodexQuotaState>;
   antigravityQuota: Record<string, AntigravityQuotaState>;
   claudeQuota: Record<string, ClaudeQuotaState>;
   codexQuota: Record<string, CodexQuotaState>;
@@ -1525,6 +1529,28 @@ export const buildAccountQuotaEntryFromProviderState = (
         quota
       );
     }
+    case 'bps': {
+      const quota = state as CodexQuotaState;
+      return applyProviderQuotaStateMetadata(
+        {
+          ...buildBaseAccountQuotaEntry(target, t),
+          planType: quota.planType ?? null,
+          windows: quota.windows.map((window) => ({
+            id: window.id,
+            label: '官方账号用量',
+            remainingPercent:
+              typeof window.usedPercent === 'number' ? 100 - window.usedPercent : null,
+            resetLabel: window.resetLabel,
+            resetAtMs: window.resetAtMs,
+            resetAccuracy: window.resetAccuracy,
+            usageLabel: null,
+            modelScope: window.modelScope,
+          })),
+          observedAtMs: quota.observedAtMs,
+        },
+        quota
+      );
+    }
     case 'codex':
     default: {
       const quota = state as CodexQuotaState;
@@ -1553,6 +1579,12 @@ export const buildCachedAccountQuotaEntry = (
   t: TFunction
 ): AccountQuotaEntry | null => {
   switch (target.provider) {
+    case 'bps':
+      return buildAccountQuotaEntryFromProviderState(
+        target,
+        getBpsQuotaState(stores.bpsQuota ?? {}, target.file),
+        t
+      );
     case 'antigravity':
       return buildAccountQuotaEntryFromProviderState(
         target,

@@ -9,8 +9,8 @@ import (
 
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/codexquota"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/model"
+	quotasnapshotrepo "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/repository/quotasnapshot"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/usage"
-	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/usageidentity"
 )
 
 const (
@@ -39,11 +39,12 @@ func (s *Service) WriteUsageEvents(ctx context.Context, events []usage.Event) er
 // parsed here; only the normalized reset timestamp carried by the result is
 // trusted as a fixed-window boundary.
 func (s *Service) WriteCodexInspectionResult(ctx context.Context, result model.CodexInspectionResult) error {
-	if normalizeProvider(result.Provider) != "codex" {
+	provider := normalizeProvider(result.Provider)
+	if provider != "codex" && provider != "bps" {
 		return nil
 	}
 	inventoryMode := "partial"
-	if codexInspectionInventoryComplete(result) {
+	if codexInspectionInventoryComplete(result) || (provider == "bps" && result.QuotaInventoryObserved && len(result.QuotaWindows) > 0) {
 		inventoryMode = "complete"
 	}
 	observedAtMS := result.CreatedAtMS
@@ -52,13 +53,13 @@ func (s *Service) WriteCodexInspectionResult(ctx context.Context, result model.C
 	}
 	account := AccountTarget{
 		AuthFileSnapshot:      result.FileName,
-		AuthProviderSnapshot:  "codex",
+		AuthProviderSnapshot:  provider,
 		AuthIndex:             result.AuthIndex,
 		AccountSnapshot:       result.AccountSnapshot,
 		AuthAccountIDSnapshot: result.AccountID,
 		Source:                result.FileName,
 	}
-	if _, ok := usageidentity.AccountKey(account.identityFields("codex")); !ok {
+	if _, ok := account.accountKey(provider); !ok {
 		return nil
 	}
 	windows := make([]WindowInput, 0, len(result.QuotaWindows))
@@ -68,7 +69,10 @@ func (s *Service) WriteCodexInspectionResult(ctx context.Context, result model.C
 		}
 		duration := roundedPositiveInt64(window.LimitWindowSeconds)
 		windowKind := quotaWindowKind(duration)
-		providerWindowID := codexquota.CanonicalProviderWindowID(window.ID, windowKind)
+		providerWindowID := strings.TrimSpace(window.ID)
+		if provider == "codex" {
+			providerWindowID = codexquota.CanonicalProviderWindowID(window.ID, windowKind)
+		}
 		inferredScope := codexquota.InferScopeFromProviderWindowID(providerWindowID)
 		modelScope := inferredScope
 		if window.ModelScope != nil {
@@ -127,13 +131,15 @@ func (s *Service) WriteCodexInspectionResult(ctx context.Context, result model.C
 	if len(windows) == 0 && inventoryMode != "complete" {
 		return nil
 	}
-	applyCodexWindowRelationships(windows)
+	if provider == "codex" {
+		applyCodexWindowRelationships(windows)
+	}
 	return s.writeEvidenceEntries(ctx, []WriteEntry{{
-		Provider: "codex",
+		Provider: provider,
 		Account:  account,
 		Observation: &ObservationInput{
 			Source: "inspection", SourceObservationID: inspectionObservationID(result),
-			ObservedAtMS: observedAtMS, InventoryScopeKey: "codex:rate-limits",
+			ObservedAtMS: observedAtMS, InventoryScopeKey: quotasnapshotrepo.InventoryScopeKey(provider),
 			InventoryMode: inventoryMode,
 		},
 		Windows: windows,
@@ -197,7 +203,7 @@ func quotaSnapshotEntryFromUsageEvent(event usage.Event) (WriteEntry, bool) {
 		AuthIndex:             event.AuthIndex,
 		Source:                event.Source,
 	}
-	if _, ok := usageidentity.AccountKey(account.identityFields(provider)); !ok {
+	if _, ok := account.accountKey(provider); !ok {
 		return WriteEntry{}, false
 	}
 	observationID := eventObservationID(event)

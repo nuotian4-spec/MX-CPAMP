@@ -1,3 +1,4 @@
+import { getBpsQuotaState } from '@/utils/quota/bpsIdentity';
 import type {
   AntigravityQuotaState,
   AuthFileItem,
@@ -77,6 +78,7 @@ export interface AccountQuotaStores {
   antigravityQuota: Record<string, AntigravityQuotaState>;
   claudeQuota: Record<string, ClaudeQuotaState>;
   codexQuota: Record<string, CodexQuotaState>;
+  bpsQuota?: Record<string, CodexQuotaState>;
   devinQuota: Record<string, DevinQuotaState>;
   kimiQuota: Record<string, KimiQuotaState>;
   metaQuota: Record<string, MetaQuotaState>;
@@ -85,6 +87,7 @@ export interface AccountQuotaStores {
 
 export interface AccountQuotaOverrides {
   codexQuotaBySelectionKey?: Map<string, CodexQuotaState>;
+  bpsQuotaBySelectionKey?: Map<string, CodexQuotaState>;
   codexHeaderSnapshotBySelectionKey?: Map<string, UsageHeaderSnapshot>;
 }
 
@@ -130,11 +133,7 @@ export const isSpendControlLimitExpired = (
   nowMs = Date.now()
 ): boolean => {
   const resetAtMs = limit?.resetAtMs;
-  return (
-    isValidQuotaResetAtMs(resetAtMs) &&
-    Number.isFinite(nowMs) &&
-    resetAtMs <= nowMs
-  );
+  return isValidQuotaResetAtMs(resetAtMs) && Number.isFinite(nowMs) && resetAtMs <= nowMs;
 };
 
 export const isSpendControlSnapshotCurrent = (
@@ -569,7 +568,12 @@ const codexMainQuotaWindows = (quota: CodexQuotaState) =>
   quota.windows.filter(isCodexMainQuotaWindow);
 
 const normalizeXaiPlanType = (planType?: string | null): string =>
-  planType ? planType.trim().toLowerCase().replace(/[\s\-_]+/g, '') : '';
+  planType
+    ? planType
+        .trim()
+        .toLowerCase()
+        .replace(/[\s\-_]+/g, '')
+    : '';
 
 export const isExplicitFreeXaiPlan = (planType?: string | null): boolean => {
   const normalized = normalizeXaiPlanType(planType);
@@ -948,6 +952,25 @@ export const resolveAccountQuota = (
       planType: filePlanType,
       source: 'none',
     };
+  }
+
+  if (provider === 'bps') {
+    const quota = overrides?.bpsQuotaBySelectionKey
+      ? overrides.bpsQuotaBySelectionKey.get(getAuthFileSelectionKey(file))
+      : getBpsQuotaState(stores.bpsQuota ?? {}, file);
+    if (!quota) return emptyQuota(filePlanType);
+    if (quota.status === 'loading') return loadingQuota(quota.planType ?? filePlanType);
+    if (quota.status === 'error')
+      return quotaFromError(
+        quota.error,
+        quota.planType ?? filePlanType,
+        quota.errorStatus,
+        quota.failedAtMs
+      );
+    return quotaFromUsedWindows(quota.windows, quota.planType ?? filePlanType, {
+      fetchedAtMs: quota.fetchedAtMs,
+      observedAtMs: quota.observedAtMs,
+    });
   }
 
   if (provider === 'codex') {

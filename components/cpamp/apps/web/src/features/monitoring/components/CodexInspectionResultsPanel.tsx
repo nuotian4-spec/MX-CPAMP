@@ -27,6 +27,7 @@ import { CodexInspectionQuotaWindows } from '@/features/monitoring/components/Co
 import { Panel } from '@/features/monitoring/components/CodexInspectionPanels';
 import { useNotificationStore } from '@/stores';
 import { copyToClipboard } from '@/utils/clipboard';
+import { formatDateTime } from '@/utils/format';
 import { getPlanPresentation } from '@/utils/plans';
 import styles from '../CodexInspectionPage.module.scss';
 
@@ -69,6 +70,23 @@ const actionToneClass: Record<CodexInspectionAction, string> = {
   disable: styles.actionDisable,
   enable: styles.actionEnable,
   reauth: styles.actionReauth,
+};
+
+const readBpsUsageDetail = (errorDetail: string | undefined) => {
+  try {
+    const detail = JSON.parse(errorDetail || '{}');
+    if (!detail || typeof detail !== 'object') return {};
+    return {
+      queriedAt:
+        typeof detail.usage_queried_at === 'string' &&
+        Number.isFinite(Date.parse(detail.usage_queried_at))
+          ? detail.usage_queried_at
+          : undefined,
+      error: typeof detail.usage_error === 'string' ? detail.usage_error : undefined,
+    };
+  } catch {
+    return {};
+  }
 };
 
 export function CodexInspectionResultsPanel({
@@ -232,11 +250,15 @@ export function CodexInspectionResultsPanel({
             {filteredResults.length > 0 ? (
               filteredResults.map((item) => {
                 const isXai = item.provider.trim().toLowerCase() === 'xai';
-                const planLabel = getPlanPresentation({
-                  provider: item.provider,
-                  planType: item.planType,
-                  t,
-                })?.shortLabel;
+                const isBps = item.provider.trim().toLowerCase() === 'bps';
+                const bpsUsage = isBps ? readBpsUsageDetail(item.errorDetail) : {};
+                const planLabel = isBps
+                  ? item.planType
+                  : getPlanPresentation({
+                      provider: item.provider,
+                      planType: item.planType,
+                      t,
+                    })?.shortLabel;
                 const quotaWindows = item.quotaWindows ?? [];
                 const errorText = item.errorDetail || item.error;
                 const errorSummary = summarizeInspectionError(item, t, {
@@ -288,9 +310,11 @@ export function CodexInspectionResultsPanel({
                             isXai ? styles.providerBadgeXai : styles.providerBadgeCodex
                           }`}
                         >
-                          {isXai
-                            ? t('monitoring.codex_inspection_target_xai')
-                            : t('monitoring.codex_inspection_target_codex')}
+                          {isBps
+                            ? 'BPS'
+                            : isXai
+                              ? t('monitoring.codex_inspection_target_xai')
+                              : t('monitoring.codex_inspection_target_codex')}
                         </span>
                         <span
                           className={`${styles.stateChip} ${
@@ -345,8 +369,24 @@ export function CodexInspectionResultsPanel({
                     </section>
 
                     <section className={`${styles.resultCardSection} ${styles.resultQuotaSection}`}>
-                      {item.provider === 'bps' ? (
-                        <span>额度未知；推理未验证</span>
+                      {isBps ? (
+                        <>
+                          <span>官方账号用量</span>
+                          {bpsUsage.queriedAt ? (
+                            <small>
+                              观察时间：
+                              <time dateTime={bpsUsage.queriedAt}>
+                                {formatDateTime(bpsUsage.queriedAt)}
+                              </time>
+                            </small>
+                          ) : null}
+                          {bpsUsage.error ? <small>用量查询失败：{bpsUsage.error}</small> : null}
+                          <CodexInspectionQuotaWindows
+                            windows={quotaWindows}
+                            fallbackUsedPercent={item.usedPercent}
+                            t={t}
+                          />
+                        </>
                       ) : (
                         <CodexInspectionQuotaWindows
                           windows={quotaWindows}

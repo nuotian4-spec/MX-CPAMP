@@ -100,6 +100,48 @@ const collectText = (renderer: ReactTestRenderer) =>
     .flatMap((node) => node.children.filter((child): child is string => typeof child === 'string'));
 
 describe('CodexInspectionResultsPanel', () => {
+  it('展示BPS官方账号用量、套餐和独立观察时间', () => {
+    const queriedAt = '2026-11-11T10:00:00Z';
+    const renderer = renderPanel(
+      createItem({
+        provider: 'bps',
+        planType: 'plus',
+        errorDetail: JSON.stringify({
+          usage_source: 'chatgpt_account_usage',
+          usage_queried_at: queriedAt,
+          usage_upstream_status: 200,
+          usage_error: null,
+        }),
+      })
+    );
+    const text = collectText(renderer);
+
+    expect(text).toContain('BPS');
+    expect(text).not.toContain('monitoring.codex_inspection_target_codex');
+    expect(text).toContain('官方账号用量');
+    expect(text).toContain('plus');
+    expect(renderer.root.findByType('time').props.dateTime).toBe(queriedAt);
+    expect(text).toContain('monitoring.codex_inspection_quota_remaining:97%');
+  });
+
+  it('BPS用量失败单独展示并保留权限通过', () => {
+    const renderer = renderPanel(
+      createItem({
+        provider: 'bps',
+        statusCode: 200,
+        usedPercent: null,
+        quotaWindows: [],
+        errorDetail: JSON.stringify({ allowed: true, usage_error: 'unauthorized' }),
+      })
+    );
+    const text = collectText(renderer);
+
+    expect(text).toContain('monitoring.codex_inspection_probe_state_success');
+    expect(text.join('')).toContain('用量查询失败：unauthorized');
+    expect(text).toContain('monitoring.codex_inspection_quota_unavailable');
+    expect(renderer.root.findAllByType('time')).toHaveLength(0);
+  });
+
   it('renders one four-section result card without duplicated healthy copy or empty actions', () => {
     const renderer = renderPanel(createItem());
     const text = collectText(renderer);

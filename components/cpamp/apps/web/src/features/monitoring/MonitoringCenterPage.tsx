@@ -1,3 +1,4 @@
+import { getBpsQuotaState } from '@/utils/quota/bpsIdentity';
 import {
   useCallback,
   useDeferredValue,
@@ -78,6 +79,7 @@ import {
 } from '@/features/monitoring/components/RealtimeEventsPanel';
 import { type AccountQuotaState } from '@/features/monitoring/components/accountOverviewPresentation';
 import {
+  BPS_CONFIG,
   ANTIGRAVITY_CONFIG,
   CLAUDE_CONFIG,
   CODEX_CONFIG,
@@ -272,6 +274,7 @@ export function MonitoringCenterPage() {
   const antigravityQuota = useQuotaStore((state) => state.antigravityQuota);
   const claudeQuota = useQuotaStore((state) => state.claudeQuota);
   const codexQuota = useQuotaStore((state) => state.codexQuota);
+  const bpsQuota = useQuotaStore((state) => state.bpsQuota);
   const devinQuota = useQuotaStore((state) => state.devinQuota);
   const kimiQuota = useQuotaStore((state) => state.kimiQuota);
   const xaiQuota = useQuotaStore((state) => state.xaiQuota);
@@ -280,15 +283,17 @@ export function MonitoringCenterPage() {
       antigravityQuota,
       claudeQuota,
       codexQuota,
+      bpsQuota,
       devinQuota,
       kimiQuota,
       xaiQuota,
     }),
-    [antigravityQuota, claudeQuota, codexQuota, devinQuota, kimiQuota, xaiQuota]
+    [antigravityQuota, claudeQuota, codexQuota, bpsQuota, devinQuota, kimiQuota, xaiQuota]
   );
   const setAntigravityQuota = useQuotaStore((state) => state.setAntigravityQuota);
   const setClaudeQuota = useQuotaStore((state) => state.setClaudeQuota);
   const setCodexQuota = useQuotaStore((state) => state.setCodexQuota);
+  const setBpsQuota = useQuotaStore((state) => state.setBpsQuota);
   const setDevinQuota = useQuotaStore((state) => state.setDevinQuota);
   const setKimiQuota = useQuotaStore((state) => state.setKimiQuota);
   const setXaiQuota = useQuotaStore((state) => state.setXaiQuota);
@@ -1331,6 +1336,12 @@ export function MonitoringCenterPage() {
       };
 
       switch (target.provider) {
+        case 'bps':
+          return run(
+            BPS_CONFIG,
+            setBpsQuota,
+            getBpsQuotaState(sharedQuotaStores.bpsQuota ?? {}, target.file)
+          );
         case 'antigravity':
           return run(
             ANTIGRAVITY_CONFIG,
@@ -1375,6 +1386,7 @@ export function MonitoringCenterPage() {
       setAntigravityQuota,
       setClaudeQuota,
       setCodexQuota,
+      setBpsQuota,
       setDevinQuota,
       setKimiQuota,
       setXaiQuota,

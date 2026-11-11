@@ -42,7 +42,8 @@ const hasRequiredFileProvider = (target: MonitoringAccountHistoryTarget): boolea
   const account = target.account_snapshot?.trim() ?? '';
   const label = target.auth_label_snapshot?.trim() ?? '';
   const source = target.source?.trim() ?? '';
-  const effectiveFile = authFile || (source && source !== account && source !== label ? source : '');
+  const effectiveFile =
+    authFile || (source && source !== account && source !== label ? source : '');
   return !effectiveFile || Boolean(target.auth_provider_snapshot?.trim());
 };
 
@@ -56,9 +57,11 @@ export const buildAccountHistoryTargetEntries = (rows: AccountRow[]): AccountHis
       const authLabelSnapshot = identity.authLabelSnapshot;
       const authFileSnapshot = identity.physicalName || readString(row.fileName);
       const rowProvider = readString(row.provider);
-      const authProviderSnapshot = identity.provider || (rowProvider === 'unknown' ? '' : rowProvider);
+      const authProviderSnapshot =
+        identity.provider || (rowProvider === 'unknown' ? '' : rowProvider);
       const isCodex = normalizeProvider(authProviderSnapshot) === 'codex';
-      const authAccountIdSnapshot = isCodex ? identity.accountId : '';
+      const isBps = normalizeProvider(authProviderSnapshot) === 'bps';
+      const authAccountIdSnapshot = isCodex || isBps ? identity.accountId : '';
       const authProjectIdSnapshot = isCodex ? '' : readString(row.projectId);
       const authIndex = identity.authIndex || readString(row.authIndex);
 

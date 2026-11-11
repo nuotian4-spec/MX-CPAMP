@@ -27,6 +27,13 @@ export interface AccountInspectionSummary {
   quotaInventoryObserved?: boolean;
   error?: string;
   errorKind?: string;
+  errorDetail?: string;
+  credentialIdentity?: {
+    provider: string;
+    authIndex: string | null;
+    accountId: string;
+    accountSnapshot: string;
+  };
   runId: number;
   resultId: number;
   createdAtMs: number;

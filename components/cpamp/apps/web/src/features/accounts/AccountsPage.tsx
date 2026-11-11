@@ -1,3 +1,5 @@
+import { getBpsQuotaState, getBpsQuotaStoreKey } from '@/utils/quota/bpsIdentity';
+import { buildBpsInspectionQuotaState } from './model/bpsQuota';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type {
   KeyboardEvent,
@@ -48,6 +50,7 @@ import {
   IconX,
 } from '@/components/ui/icons';
 import {
+  BPS_CONFIG,
   ANTIGRAVITY_CONFIG,
   CLAUDE_CONFIG,
   CODEX_CONFIG,
@@ -1386,6 +1389,7 @@ export function AccountsPage() {
   const antigravityQuota = useQuotaStore((state) => state.antigravityQuota);
   const claudeQuota = useQuotaStore((state) => state.claudeQuota);
   const codexQuota = useQuotaStore((state) => state.codexQuota);
+  const bpsQuota = useQuotaStore((state) => state.bpsQuota);
   const devinQuota = useQuotaStore((state) => state.devinQuota);
   const kimiQuota = useQuotaStore((state) => state.kimiQuota);
   const metaQuota = useQuotaStore((state) => state.metaQuota);
@@ -1395,16 +1399,18 @@ export function AccountsPage() {
       antigravityQuota,
       claudeQuota,
       codexQuota,
+      bpsQuota,
       devinQuota,
       kimiQuota,
       metaQuota,
       xaiQuota,
     }),
-    [antigravityQuota, claudeQuota, codexQuota, devinQuota, kimiQuota, metaQuota, xaiQuota]
+    [antigravityQuota, claudeQuota, codexQuota, bpsQuota, devinQuota, kimiQuota, metaQuota, xaiQuota]
   );
   const setAntigravityQuota = useQuotaStore((state) => state.setAntigravityQuota);
   const setClaudeQuota = useQuotaStore((state) => state.setClaudeQuota);
   const setCodexQuota = useQuotaStore((state) => state.setCodexQuota);
+  const setBpsQuota = useQuotaStore((state) => state.setBpsQuota);
   const setDevinQuota = useQuotaStore((state) => state.setDevinQuota);
   const setKimiQuota = useQuotaStore((state) => state.setKimiQuota);
   const setMetaQuota = useQuotaStore((state) => state.setMetaQuota);
@@ -3922,6 +3928,34 @@ export function AccountsPage() {
       getFreshCodexHeaderQuota,
     ]
   );
+  const getDisplayBpsQuota = useCallback(
+    (file: AuthFileItem): CodexQuotaState | undefined => {
+      if (normalizeAccountProvider(file) !== 'bps') return undefined;
+      const boundary = getCredentialEvidenceBoundary(file);
+      const cutoff = Math.max(
+        boundary.localAtMs,
+        boundary.inspectionAtMs,
+        readAuthFileCredentialRefreshAtMs(file) ?? 0
+      );
+      const stored = getBpsQuotaState(bpsQuota, file);
+      const inspection = buildBpsInspectionQuotaState(
+        file,
+        accountInspectionBySelectionKey.get(getAuthFileSelectionKey(file))
+      );
+      return [stored, inspection]
+        .filter(
+          (state): state is CodexQuotaState =>
+            Boolean(state) &&
+            (state?.fetchedAtMs ?? state?.observedAtMs ?? state?.failedAtMs ?? 0) > cutoff
+        )
+        .sort(
+          (a, b) =>
+            (b.fetchedAtMs ?? b.observedAtMs ?? b.failedAtMs ?? 0) -
+            (a.fetchedAtMs ?? a.observedAtMs ?? a.failedAtMs ?? 0)
+        )[0];
+    },
+    [accountInspectionBySelectionKey, bpsQuota, getCredentialEvidenceBoundary]
+  );
   const getDisplayCodexResetEvidenceQuota = useCallback(
     (row: AccountRow): CodexQuotaState | undefined =>
       mergeCodexResetCreditsFromQuotaSnapshots(
@@ -3933,8 +3967,19 @@ export function AccountsPage() {
   const getQuotaSnapshotObservation = useCallback(
     (row: AccountRow): AccountQuotaSnapshotObservationInput | undefined => {
       let fetchedAtMs: number | undefined;
+      let source: AccountQuotaSnapshotObservationInput['source'] = 'api_query';
       let inventoryMode: AccountQuotaSnapshotObservationInput['inventory_mode'] = 'complete';
       switch (row.provider) {
+        case 'bps': {
+          const state = getDisplayBpsQuota(row.raw);
+          if (state?.status === 'success') {
+            fetchedAtMs = state.fetchedAtMs ?? state.observedAtMs;
+            if (state.windows.some((window) => window.observationSource === 'inspection')) {
+              source = 'inspection';
+            }
+          }
+          break;
+        }
         case CODEX_CONFIG.type: {
           const state = getActiveCodexQuota(row.raw);
           if (
@@ -4014,8 +4059,8 @@ export function AccountsPage() {
         return undefined;
       }
       return {
-        source: 'api_query',
-        source_observation_id: `accounts-provider-query:${Math.trunc(fetchedAtMs)}`,
+        source,
+        source_observation_id: `accounts-provider-${source === 'inspection' ? 'inspection' : 'query'}:${Math.trunc(fetchedAtMs)}`,
         observed_at_ms: Math.trunc(fetchedAtMs),
         inventory_scope_key:
           row.provider === CODEX_CONFIG.type
@@ -4024,7 +4069,7 @@ export function AccountsPage() {
         inventory_mode: inventoryMode,
       };
     },
-    [baseQuotaStores, getActiveCodexQuota, getCredentialEvidenceBoundary]
+    [baseQuotaStores, getActiveCodexQuota, getCredentialEvidenceBoundary, getDisplayBpsQuota]
   );
   const getCodexHeaderQuotaSnapshotObservation = useCallback(
     (row: AccountRow): AccountQuotaSnapshotObservationInput | undefined => {
@@ -4103,6 +4148,7 @@ export function AccountsPage() {
     getFreshCodexHeaderQuota,
   ]);
   const accountQuotaOverrides = useMemo(() => {
+    const bpsQuotaBySelectionKey = new Map<string, CodexQuotaState>();
     const codexQuotaBySelectionKey = new Map<string, CodexQuotaState>();
     const codexHeaderSnapshotBySelectionKey = new Map<string, UsageHeaderSnapshot>();
     files.forEach((file) => {
@@ -4111,13 +4157,15 @@ export function AccountsPage() {
       if (headerSnapshot) {
         codexHeaderSnapshotBySelectionKey.set(selectionKey, headerSnapshot);
       }
+      const bps = getDisplayBpsQuota(file);
+      if (bps) bpsQuotaBySelectionKey.set(selectionKey, bps);
       const quota = getDisplayCodexQuota(file);
       if (quota) {
         codexQuotaBySelectionKey.set(selectionKey, quota);
       }
     });
-    return { codexQuotaBySelectionKey, codexHeaderSnapshotBySelectionKey };
-  }, [files, getDisplayCodexHeaderSnapshot, getDisplayCodexQuota]);
+    return { codexQuotaBySelectionKey, codexHeaderSnapshotBySelectionKey, bpsQuotaBySelectionKey };
+  }, [files, getDisplayCodexHeaderSnapshot, getDisplayCodexQuota, getDisplayBpsQuota]);
 
   const rows = useMemo(
     () =>
@@ -4822,11 +4870,12 @@ export function AccountsPage() {
       return buildAccountQuotaDisplayWindows(row, {
         stores: baseQuotaStores,
         getDisplayCodexQuota,
+        getDisplayBpsQuota,
         translateQuotaWindowLabel,
         t,
       });
     },
-    [baseQuotaStores, getDisplayCodexQuota, t, translateQuotaWindowLabel]
+    [baseQuotaStores, getDisplayCodexQuota, getDisplayBpsQuota, t, translateQuotaWindowLabel]
   );
   const buildCodexSnapshotDefinitions = useCallback(
     (row: AccountRow, quota: CodexQuotaState | undefined): AccountQuotaWindowDefinition[] =>
@@ -4865,7 +4914,9 @@ export function AccountsPage() {
         rowKey,
         mergeAccountQuotaSnapshotWindows(
           definitions,
-          quotaSnapshotWindowsByRowKey.get(rowKey) ?? [],
+          quotaSnapshotWindowsByRowKey.get(
+            provider === 'bps' && selectedRow ? getBpsQuotaStoreKey(selectedRow.raw) : rowKey
+          ) ?? [],
           {
             provider,
             getLabel: (snapshot) => resolveAccountQuotaSnapshotLabel(snapshot, provider, t),
@@ -6013,7 +6064,12 @@ export function AccountsPage() {
           if (snapshotWindows) {
             setQuotaSnapshotWindowsByRowKey((current) => {
               const next = new Map(current);
-              next.set(selectedRow.selectionKey, snapshotWindows);
+              next.set(
+                selectedRow.provider === 'bps'
+                  ? getBpsQuotaStoreKey(selectedRow.raw)
+                  : selectedRow.selectionKey,
+                snapshotWindows
+              );
               return next;
             });
             const mergedDefinitions = mergeAccountQuotaSnapshotWindows(
@@ -6541,6 +6597,10 @@ export function AccountsPage() {
         });
       };
       switch (row.provider) {
+        case 'bps':
+          return toAccountQuotaRefreshOutcome(
+            await refreshWithConfig(BPS_CONFIG, setBpsQuota, getBpsQuotaState(bpsQuota, row.raw))
+          );
         case CODEX_CONFIG.type: {
           // Any quota refresh supersedes an in-flight reset-credit verification
           // for this credential. Summary refreshes can also establish a newer
@@ -6637,6 +6697,8 @@ export function AccountsPage() {
       setAntigravityQuota,
       setClaudeQuota,
       setCodexQuota,
+      setBpsQuota,
+      bpsQuota,
       setDevinQuota,
       setKimiQuota,
       setMetaQuota,

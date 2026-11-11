@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	validProviders      = stringSet("codex", "claude", "antigravity", "kimi", "xai", "devin", "meta")
+	validProviders      = stringSet("bps", "codex", "claude", "antigravity", "kimi", "xai", "devin", "meta")
 	validModes          = stringSet("fixed", "calendar", "rolling", "non_window", "unknown")
 	validScopes         = stringSet("all", "family", "models", "product", "feature")
 	validSources        = stringSet("api_query", "response_header", "response_body", "inspection")
@@ -235,7 +235,7 @@ func (s *Service) Write(ctx context.Context, req WriteRequest) (WriteResponse, e
 		if !validProviders[provider] {
 			return WriteResponse{}, fmt.Errorf("unsupported provider %q", entry.Provider)
 		}
-		accountKey, ok := usageidentity.AccountKey(entry.Account.identityFields(provider))
+		accountKey, ok := entry.Account.accountKey(provider)
 		if !ok {
 			return WriteResponse{}, errors.New("account identity is required")
 		}
@@ -509,7 +509,7 @@ func (s *Service) Query(ctx context.Context, req QueryRequest) (QueryResponse, e
 		if !validProviders[provider] {
 			return QueryResponse{}, fmt.Errorf("unsupported provider %q", account.Provider)
 		}
-		accountKey, ok := usageidentity.AccountKey(account.Account.identityFields(provider))
+		accountKey, ok := account.Account.accountKey(provider)
 		if !ok {
 			return QueryResponse{}, errors.New("account identity is required")
 		}
@@ -1460,6 +1460,20 @@ func windowSortRank(window Window) int64 {
 		return math.MaxInt64 - 1
 	}
 	return *window.DurationSeconds
+}
+
+func (target AccountTarget) accountKey(provider string) (string, bool) {
+	fields := target.identityFields(provider)
+	if normalizeProvider(provider) != "bps" {
+		return usageidentity.AccountKey(fields)
+	}
+	if normalizeProvider(fields.AuthProviderSnapshot) != "bps" ||
+		(fields.AuthFileSnapshot == "" && fields.AuthIndex == "") ||
+		(fields.AuthAccountIDSnapshot == "" && fields.AccountSnapshot == "") {
+		return "", false
+	}
+	encoded, _ := json.Marshal([]string{fields.AuthFileSnapshot, "bps", fields.AuthIndex, fields.AuthAccountIDSnapshot, fields.AccountSnapshot})
+	return "bps-quota-account:v1:" + string(encoded), true
 }
 
 func (target AccountTarget) identityFields(provider string) usageidentity.Fields {

@@ -46,21 +46,19 @@ export function CodexInspectionQuotaWindows({
   t,
 }: CodexInspectionQuotaWindowsProps) {
   const normalizedFallbackUsedPercent = normalizePercent(fallbackUsedPercent);
-  const knownRows = (windows ?? []).flatMap((window) => {
-    const usedPercent = normalizePercent(window.usedPercent);
-    return usedPercent === null
-      ? []
-      : [
-          {
-            id: window.id,
-            label: formatQuotaLabel(window, t),
-            resetLabel: window.resetLabel,
-            resetAtMs: window.resetAtMs,
-            resetAccuracy: window.resetAccuracy,
-            usedPercent,
-          },
-        ];
-  });
+  const knownRows = (windows ?? [])
+    .filter(
+      (window) =>
+        normalizePercent(window.usedPercent) !== null || isValidQuotaResetAtMs(window.resetAtMs)
+    )
+    .map((window) => ({
+      id: window.id,
+      label: formatQuotaLabel(window, t),
+      resetLabel: window.resetLabel,
+      resetAtMs: window.resetAtMs,
+      resetAccuracy: window.resetAccuracy,
+      usedPercent: normalizePercent(window.usedPercent),
+    }));
   const rows =
     knownRows.length > 0
       ? knownRows
@@ -110,7 +108,12 @@ export function CodexInspectionQuotaWindows({
                 })}
               </span>
             </div>
-            <div className={styles.quotaWindowBar} aria-hidden="true">
+            <div
+              className={
+                row.usedPercent === null ? styles.quotaWindowPlaceholderBar : styles.quotaWindowBar
+              }
+              aria-hidden="true"
+            >
               <span
                 className={`${styles.quotaWindowBarFill} ${getQuotaFillClass(remainingPercent)}`}
                 style={{ width: `${remainingPercent ?? 0}%` }}

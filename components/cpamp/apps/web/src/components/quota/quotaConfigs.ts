@@ -1,3 +1,9 @@
+import {
+  buildBpsQuotaCredentialIdentity,
+  getBpsQuotaStoreKey,
+  scopeBpsQuotaState,
+} from '@/utils/quota/bpsIdentity';
+import { bpsUsageApi, bpsUsageState } from '@/services/api/bpsUsage';
 import type { TFunction } from 'i18next';
 import type {
   AntigravityQuotaState,
@@ -62,7 +68,7 @@ import {
   scopeQuotaStateToCredential,
 } from '@/utils/quota/credentialScope';
 
-type QuotaType = 'antigravity' | 'claude' | 'codex' | 'kimi' | 'xai' | 'devin' | 'meta';
+type QuotaType = 'bps' | 'antigravity' | 'claude' | 'codex' | 'kimi' | 'xai' | 'devin' | 'meta';
 
 export type { QuotaFetchContext };
 
@@ -700,8 +706,8 @@ export const CODEX_CONFIG: QuotaConfig<CodexQuotaState, CodexQuotaData> = {
       // CODEX_CONFIG is the full refresh. An explicit dedicated count-only
       // response is authoritative; an actual endpoint failure is already
       // identified as 'summary' by fetchCodexQuota.
-      resetCreditsCountSource: data.resetCreditsCountSource ??
-        (data.rateLimitResetCreditsError ? 'summary' : 'dedicated'),
+      resetCreditsCountSource:
+        data.resetCreditsCountSource ?? (data.rateLimitResetCreditsError ? 'summary' : 'dedicated'),
     });
     return {
       status: 'success',
@@ -936,3 +942,33 @@ export const META_CONFIG: QuotaConfig<MetaQuotaState, MetaQuotaData> = {
   scopeState: scopeCredentialQuotaState,
 };
 
+export const BPS_CONFIG: QuotaConfig<CodexQuotaState, CodexQuotaState> = {
+  type: 'bps',
+  i18nPrefix: 'codex_quota',
+  getStoreKey: getBpsQuotaStoreKey,
+  fetchQuota: async (file, _t, scope) => {
+    if (!scope) throw new Error('请刷新连接');
+    const usage = await bpsUsageApi.query(
+      String(file.authIndex ?? file['auth_index'] ?? ''),
+      scope,
+      String(file.bps_connection_ref ?? '')
+    );
+    if (usage.error) throw new Error(`官方账号用量：${usage.error}`);
+    return bpsUsageState(usage, file);
+  },
+  buildLoadingState: (file) => ({
+    status: 'loading',
+    windows: [],
+    ...buildBpsQuotaCredentialIdentity(file),
+  }),
+  buildSuccessState: (data, file) => ({ ...data, ...buildBpsQuotaCredentialIdentity(file) }),
+  buildErrorState: (error, errorStatus, file) => ({
+    status: 'error',
+    windows: [],
+    error,
+    errorStatus,
+    failedAtMs: Date.now(),
+    ...buildBpsQuotaCredentialIdentity(file),
+  }),
+  scopeState: scopeBpsQuotaState,
+};

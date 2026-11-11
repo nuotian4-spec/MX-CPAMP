@@ -132,3 +132,29 @@ describe('CodexInspectionQuotaWindows', () => {
     ).toHaveLength(1);
   });
 });
+
+it('仅重置窗口展示未知百分比和重置时间，0用量展示100剩余', () => {
+  let renderer: ReactTestRenderer;
+  act(() => {
+    renderer = create(
+      <CodexInspectionQuotaWindows
+        windows={[
+          {
+            id: 'bps-primary',
+            labelKey: '官方账号用量',
+            usedPercent: null,
+            resetAtMs: 1796977220000,
+          },
+          { id: 'bps-secondary', labelKey: '官方账号用量', usedPercent: 0 },
+        ]}
+        t={t}
+      />
+    );
+  });
+  const text = collectText(renderer!);
+  expect(text).toContain('monitoring.codex_inspection_quota_remaining:--');
+  expect(text).toContain('monitoring.codex_inspection_quota_remaining:100%');
+  expect(text).toContain(
+    `monitoring.codex_inspection_quota_reset:${formatQuotaResetTime(1796977220000)}`
+  );
+});

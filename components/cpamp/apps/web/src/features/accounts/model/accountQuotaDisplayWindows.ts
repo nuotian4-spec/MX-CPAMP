@@ -1,3 +1,4 @@
+import { getBpsQuotaState } from '@/utils/quota/bpsIdentity';
 import type { TFunction } from 'i18next';
 import { getCredentialScopedQuotaState } from '@/utils/quota/credentialScope';
 import type {
@@ -40,6 +41,7 @@ export type AccountQuotaWindowKind =
   | 'unknown';
 
 export type AccountQuotaWindowSource =
+  | 'bps'
   | 'codex'
   | 'claude'
   | 'antigravity'
@@ -83,6 +85,7 @@ export type TranslateQuotaWindowLabel = (
 
 export interface BuildAccountQuotaDisplayWindowsOptions {
   stores: AccountQuotaStores;
+  getDisplayBpsQuota?: (file: AuthFileItem) => CodexQuotaState | undefined;
   getDisplayCodexQuota?: (file: AuthFileItem) => CodexQuotaState | undefined;
   translateQuotaWindowLabel: TranslateQuotaWindowLabel;
   t: TFunction;
@@ -140,6 +143,7 @@ export type AccountQuotaSemanticGroup = 'standard' | 'model' | 'other';
 export const getAccountQuotaSemanticGroup = (
   window: Pick<AccountQuotaDisplayWindow, 'kind' | 'windowMode' | 'modelScope' | 'source'>
 ): AccountQuotaSemanticGroup => {
+  if (window.source === 'bps') return 'standard';
   const { kind, windowMode } = window;
 
   if (
@@ -152,12 +156,7 @@ export const getAccountQuotaSemanticGroup = (
     return 'other';
   }
 
-  if (
-    kind === 'five_hour' ||
-    kind === 'daily' ||
-    kind === 'weekly' ||
-    kind === 'monthly'
-  ) {
+  if (kind === 'five_hour' || kind === 'daily' || kind === 'weekly' || kind === 'monthly') {
     return isModelScopedAccountQuotaWindow(window) ? 'model' : 'standard';
   }
 
@@ -659,8 +658,7 @@ const buildXaiQuotaDisplayWindows = (
     typeof billing.usagePercent === 'number' &&
     Number.isFinite(billing.usagePercent);
   const hasObservedWeeklyPeriod =
-    billing.periodType === 'weekly' &&
-    Boolean(billing.periodStart || billing.periodEnd);
+    billing.periodType === 'weekly' && Boolean(billing.periodStart || billing.periodEnd);
   const hasObservedProductUsage =
     Array.isArray(billing.productUsage) &&
     billing.productUsage.some(
@@ -830,6 +828,29 @@ export const buildAccountQuotaDisplayWindows = (
   row: AccountRow,
   options: BuildAccountQuotaDisplayWindowsOptions
 ): AccountQuotaDisplayWindow[] => {
+  if (row.provider === 'bps') {
+    const quota = options.getDisplayBpsQuota
+      ? options.getDisplayBpsQuota(row.raw)
+      : getBpsQuotaState(options.stores.bpsQuota ?? {}, row.raw);
+    return (quota?.windows ?? []).map((window) =>
+      buildAccountQuotaDisplayWindow({
+        key: window.id,
+        label: '官方账号用量',
+        usedPercent: window.usedPercent,
+        remainingPercent: remainingPercentFromUsed(window.usedPercent),
+        resetLabel: window.resetLabel || '-',
+        resetAtMs: window.resetAtMs,
+        resetAccuracy: window.resetAccuracy,
+        limitWindowSeconds: window.limitWindowSeconds ?? null,
+        source: 'bps',
+        observationSource: window.observationSource ?? 'api_query',
+        observedAtMs: window.observedAtMs ?? quota?.fetchedAtMs ?? quota?.observedAtMs ?? null,
+        quotaProgressObservedAtMs: window.quotaProgressObservedAtMs,
+        modelScope: { kind: 'feature', key: 'bps_account_usage', complete: false },
+        nowMs: options.nowMs,
+      })
+    );
+  }
   if (row.provider === 'codex') {
     const windows = buildCodexQuotaDisplayWindows(row, options);
     if (windows.length) return windows;
@@ -883,9 +904,7 @@ const buildDevinQuotaDisplayWindows = (
       remainingPercent === null ? null : clampDisplayPercent(100 - remainingPercent);
     const hasReset = isValidQuotaResetAtMs(window.resetAtMs);
     const resetLabel =
-      hasReset && window.resetAtMs !== null
-        ? formatQuotaResetTime(window.resetAtMs)
-        : '-';
+      hasReset && window.resetAtMs !== null ? formatQuotaResetTime(window.resetAtMs) : '-';
     const labelKey = window.id === 'daily' ? 'devin_quota.daily' : 'devin_quota.weekly';
     const label = options.translateQuotaWindowLabel(undefined, labelKey);
 
@@ -924,9 +943,7 @@ const buildMetaQuotaDisplayWindows = (
         : null;
     const hasReset = isValidQuotaResetAtMs(window.resetAtMs);
     const resetLabel =
-      hasReset && window.resetAtMs !== null
-        ? formatQuotaResetTime(window.resetAtMs)
-        : '-';
+      hasReset && window.resetAtMs !== null ? formatQuotaResetTime(window.resetAtMs) : '-';
     const labelKey = window.id === 'window' ? 'meta_quota.window' : 'meta_quota.weekly';
     const label = options.translateQuotaWindowLabel(undefined, labelKey);
 
@@ -948,4 +965,3 @@ const buildMetaQuotaDisplayWindows = (
     });
   });
 };
-

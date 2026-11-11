@@ -1,3 +1,4 @@
+import { matchesBpsInspectionIdentity } from '@/utils/quota/bpsIdentity';
 import type { AuthFileItem } from '@/types';
 import type { CodexInspectionResult } from '@/services/api/usageService';
 import type { TFunction } from 'i18next';
@@ -328,6 +329,13 @@ const buildInspectionMap = (
       quotaInventoryObserved: result.quotaInventoryObserved,
       error: result.error ?? '',
       errorKind: result.errorKind ?? '',
+      errorDetail: result.errorDetail ?? '',
+      credentialIdentity: {
+        provider: result.provider ?? '',
+        authIndex: result.authIndex ?? null,
+        accountId: result.accountId ?? '',
+        accountSnapshot: result.accountSnapshot ?? '',
+      },
       runId: result.runId,
       resultId: result.id,
       createdAtMs: result.createdAtMs,
@@ -361,6 +369,11 @@ export const buildAccountInspectionBySelectionKey = (
           : exactInspection
         : (exactInspection ?? fallbackInspection);
     if (!inspection) return;
+    if (
+      normalizeAccountProvider(file) === 'bps' &&
+      !matchesBpsInspectionIdentity(file, inspection.credentialIdentity, inspection.createdAtMs)
+    )
+      return;
     const boundary = evidenceBoundaryBySelectionKey?.get(selectionKey);
     const usesExactInspection = inspection === exactInspection;
     const boundaryAtMs = Math.max(
@@ -742,14 +755,7 @@ export const filterAccountRows = (rows: AccountRow[], filters: AccountRowFilters
     if (filters.plan !== 'all' && rowPlan !== filters.plan) {
       return false;
     }
-    if (
-      !matchesStatusFilter(
-        row,
-        filters.status,
-        filters.codexStatusBySelectionKey,
-        filters
-      )
-    ) {
+    if (!matchesStatusFilter(row, filters.status, filters.codexStatusBySelectionKey, filters)) {
       return false;
     }
     if (!matchesQuotaBand(row, filters.quotaBand)) return false;
@@ -860,11 +866,7 @@ export const getPlanOptions = (rows: AccountRow[], t?: TFunction): AccountPlanOp
       return;
     }
     const presentation = getPlanPresentation({ provider: row.provider, planType: row.planType, t });
-    const label = getCanonicalPlanFilterLabel(
-      plan,
-      t,
-      presentation?.shortLabel ?? plan
-    );
+    const label = getCanonicalPlanFilterLabel(plan, t, presentation?.shortLabel ?? plan);
     const previousLabel = labels.get(plan);
     if (!previousLabel || label < previousLabel) labels.set(plan, label);
   });
@@ -1060,7 +1062,11 @@ const compareAccountRowsBySort = (left: AccountRow, right: AccountRow, sort: Acc
     return compareNullableNumbers(left.createdAtMs, right.createdAtMs, sort.direction);
   }
   if (sort.key === 'remaining') {
-    return compareNullableNumbers(left.subscriptionUntilMs, right.subscriptionUntilMs, sort.direction);
+    return compareNullableNumbers(
+      left.subscriptionUntilMs,
+      right.subscriptionUntilMs,
+      sort.direction
+    );
   }
   if (sort.key === 'reset') {
     return compareQuotaResets(left.quota, right.quota, sort.direction);

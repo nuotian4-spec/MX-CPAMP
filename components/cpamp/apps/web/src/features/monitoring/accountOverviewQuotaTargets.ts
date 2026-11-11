@@ -14,7 +14,14 @@ import {
 import type { MonitoringAccountAuthState } from './accountOverviewState';
 import type { MonitoringAccountRow } from './hooks/useMonitoringData';
 
-export type MonitoringAccountQuotaProvider = 'antigravity' | 'claude' | 'codex' | 'kimi' | 'xai' | 'devin';
+export type MonitoringAccountQuotaProvider =
+  | 'bps'
+  | 'antigravity'
+  | 'claude'
+  | 'codex'
+  | 'kimi'
+  | 'xai'
+  | 'devin';
 
 export type MonitoringAccountQuotaTarget = {
   key: string;
@@ -44,6 +51,12 @@ const readAuthFileQuotaLabel = (file: AuthFileItem, authIndex: string) => {
 export const resolveMonitoringAccountQuotaProvider = (
   file: AuthFileItem
 ): MonitoringAccountQuotaProvider | null => {
+  if (
+    String(file.provider ?? file.type ?? '')
+      .trim()
+      .toLowerCase() === 'bps'
+  )
+    return 'bps';
   if (isCodexFile(file)) return 'codex';
   if (isClaudeFile(file)) return 'claude';
   if (isAntigravityFile(file)) return 'antigravity';

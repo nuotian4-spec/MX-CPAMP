@@ -27,10 +27,19 @@ export type AuthFileModelItem = {
 };
 export type AuthFileIconAsset = string | { light: string; dark: string };
 
-export type QuotaProviderType = 'antigravity' | 'claude' | 'codex' | 'kimi' | 'xai' | 'devin' | 'meta';
+export type QuotaProviderType =
+  | 'bps'
+  | 'antigravity'
+  | 'claude'
+  | 'codex'
+  | 'kimi'
+  | 'xai'
+  | 'devin'
+  | 'meta';
 export type OAuthConfigLoadState = 'loading' | 'ready' | 'unsupported' | 'error';
 
 export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
+  'bps',
   'antigravity',
   'claude',
   'codex',
@@ -164,7 +173,6 @@ export const normalizeProviderKey = (value: string) => {
 
 export const isQuotaRefreshSupportedProvider = (provider: string): boolean =>
   QUOTA_PROVIDER_TYPES.has(normalizeProviderKey(provider) as QuotaProviderType);
-
 
 export const getEquivalentProviderKeys = (value: string): string[] => {
   const providerKey = normalizeProviderKey(value);

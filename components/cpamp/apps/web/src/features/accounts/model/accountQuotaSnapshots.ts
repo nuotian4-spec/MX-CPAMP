@@ -402,8 +402,8 @@ const toSnapshotWindow = (
         : definition.modelScope.key;
   const persistedModelIDs = scopeComplete && hasModels ? definition.modelScope.models : undefined;
   const boundaryAccuracy =
-    scopeComplete && hasModels ? definition.boundaryAccuracy : ('unknown' as const);
-  const windowMode = scopeComplete && hasModels ? definition.windowMode : ('unknown' as const);
+    (definition.provider === 'bps' || (scopeComplete && hasModels)) ? definition.boundaryAccuracy : ('unknown' as const);
+  const windowMode = definition.provider === 'bps' || (scopeComplete && hasModels) ? definition.windowMode : ('unknown' as const);
   const resetCredits = definition.provider === 'codex' ? toResetCredits(codexQuota) : [];
   const snapshotObservedAtMs = observation?.observed_at_ms ?? definition.observedAtMs ?? nowMs;
   const quotaProgressBelongsToObservation =
@@ -603,7 +603,7 @@ export const buildAccountQuotaSnapshotQueryAccounts = (
   );
   return rows.flatMap((row) => {
     const target = targets.get(row.selectionKey);
-    if (!target || !['codex', 'claude', 'antigravity', 'kimi', 'xai', 'devin', 'meta'].includes(row.provider)) {
+    if (!target || !['bps', 'codex', 'claude', 'antigravity', 'kimi', 'xai', 'devin', 'meta'].includes(row.provider)) {
       return [];
     }
     return [
@@ -1068,6 +1068,7 @@ const snapshotDefinition = (
   key: string
 ): AccountQuotaWindowDefinition => {
   const provider: AccountQuotaWindowSource =
+    options.provider === 'bps' ||
     options.provider === 'codex' ||
     options.provider === 'claude' ||
     options.provider === 'antigravity' ||
@@ -1083,7 +1084,7 @@ const snapshotDefinition = (
   const currentEndMs = lifecycle.currentCycle?.scheduledEndMs ?? resetAtMs;
   const durationSeconds =
     lifecycle.currentCycle?.durationSeconds ?? snapshot.duration_seconds ?? null;
-  const modelScope = snapshotModelScope(snapshot);
+  const modelScope = options.provider === 'bps' ? { kind: 'feature' as const, key: 'bps_account_usage', complete: false } : snapshotModelScope(snapshot);
   const usedPercent = isFiniteQuotaProgress(snapshot.used_percent) ? snapshot.used_percent : null;
   const remainingPercent = isFiniteQuotaProgress(snapshot.remaining_percent)
     ? snapshot.remaining_percent
