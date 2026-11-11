@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/MoeForge/moego/ojson"
+	"github.com/gin-gonic/gin"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 )
@@ -24,6 +25,9 @@ const bpsUsageFixture = `{"plan_type":"pro","rate_limit":{"allowed":true,"limit_
 
 func TestBPSAccountUsageFlattenedCredentialListing(t *testing.T) {
 	server, manager, selected, store := newBPSAccessServer(t)
+	// 使用实际管理路由注册入口，同时覆盖 Manager 使用的 v0 与 v8。
+	server.engine = gin.New()
+	server.registerManagementRoutes()
 	file := filepath.Join(t.TempDir(), selected.ID)
 	raw := []byte(`{"type":"bps","profile":"excel","client_id":"app_fnr0pYvVwwFDocDumLG3H2Bp","account_id":"synthetic-bps-account","email":"synthetic@example.invalid","access_token":"PRIVATE_ACCESS","refresh_token":"PRIVATE_REFRESH","sub":"PRIVATE_SUB"}`)
 	if err := os.WriteFile(file, raw, 0600); err != nil {
@@ -41,20 +45,22 @@ func TestBPSAccountUsageFlattenedCredentialListing(t *testing.T) {
 	if _, err := manager.Update(coreauth.WithSkipPersist(context.Background()), selected); err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodGet, "/v8/management/credentials", nil)
-	req.RemoteAddr = "127.0.0.1:1234"
-	req.Header.Set("Authorization", "Bearer test-password")
-	w := httptest.NewRecorder()
-	server.engine.ServeHTTP(w, req)
-	root := ojson.ParseBytes(w.Body.Bytes())
-	matched := false
-	for _, entry := range root.Get("files").Array() {
-		if entry.Get("name").String() == selected.ID {
-			matched = entry.Get("account_id").String() == "synthetic-bps-account" && entry.Get("auth_index").String() == selected.Index && entry.Get("provider").String() == "bps"
+	for _, endpoint := range []string{"/v8/management/credentials", "/v0/management/auth-files"} {
+		req := httptest.NewRequest(http.MethodGet, endpoint, nil)
+		req.RemoteAddr = "127.0.0.1:1234"
+		req.Header.Set("Authorization", "Bearer test-password")
+		w := httptest.NewRecorder()
+		server.engine.ServeHTTP(w, req)
+		root := ojson.ParseBytes(w.Body.Bytes())
+		matched := false
+		for _, entry := range root.Get("files").Array() {
+			if entry.Get("name").String() == selected.ID {
+				matched = entry.Get("account_id").String() == "synthetic-bps-account" && entry.Get("auth_index").String() == selected.Index && entry.Get("provider").String() == "bps"
+			}
 		}
-	}
-	if w.Code != 200 || !matched || store.writes.Load() != 0 || strings.Contains(w.Body.String(), "PRIVATE_") {
-		t.Fatal("公开凭证列表缺少平铺BPS身份或泄露凭证")
+		if w.Code != 200 || !matched || store.writes.Load() != 0 || strings.Contains(w.Body.String(), "PRIVATE_") {
+			t.Fatal("公开凭证列表缺少平铺BPS身份或泄露凭证", endpoint)
+		}
 	}
 }
 

@@ -12,6 +12,6 @@ CPA 管理凭证列表的公共 builder 现为 BPS 从平铺 metadata.account_id
 & 'C:/Users/子羽/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.10.windows-amd64/bin/go.exe' test ./internal/api ./internal/api/handlers/management -run 'TestBPS(AccountUsageFlattenedCredentialListing|FlattenedAccountIdentityListing)$' -count=1 -v
 ```
 
-exit 0，详 `identity-listing-go-test.log/exit`。专项读取实际临时平铺 JSON 文件，穿过 v8 管理公开列表；同一公共 builder 核 v0/v8 的有效身份、空值、缺失、坏类型和其他 provider；确认身份匹配、无凭证回显、原存储零写入。
+exit 0，详 `identity-public-go-test.log/exit`。专项读取实际临时平铺 JSON 文件，由实际 `registerManagementRoutes` 注册入口穿过 `/v8/management/credentials` 与 Manager 使用的 `/v0/management/auth-files` 公开列表；同一公共 builder 核 v0/v8 的有效身份、空值、缺失、坏类型和其他 provider；确认身份匹配、无凭证回显、原存储零写入。初次仅 v8 的专项保留在 `identity-listing-go-test.log/exit`。
 
 组合 `node --check run.mjs/check.mjs`、`git diff --check` 通过。未重跑组合、构建或官方请求；原失败与清理回执由主会话保留。无 SQL/schema/迁移或线上动作。
