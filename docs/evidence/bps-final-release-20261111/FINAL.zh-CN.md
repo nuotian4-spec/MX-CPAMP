@@ -1,6 +1,6 @@
 # BPS 最终候选发布材料
 
-2026-11-11。产品基线 `c2adc4ad92a2bf564bf8dfcbaa40aee78d8c9ff3`；新分发归档与发布工具整合输入 `db97e37f177a9223130d95035cda57ef831b112d`。本地发布材料通过，沿用完整验收后统一发布的安排，`local_release_materials_ready=true`、`quota_product_live_verified=true`、`write_release_ready=false`。
+2026-11-11。产品基线 `c2adc4ad92a2bf564bf8dfcbaa40aee78d8c9ff3`；native材料整合输入 `db97e37f177a9223130d95035cda57ef831b112d`，其通过记录保留。最新OVH完整回执已核，现补根/v8有效配置兼容及HTTPS relay发布边界；沿用完整验收后统一发布。当前`local_release_materials_ready=false`、`quota_product_live_verified=true`、`write_release_ready=false`，待新工具及专项整合后再更新。
 
 ## 已核交付
 
@@ -34,6 +34,6 @@
 2. **Codex正向2FA**：当前真实回执为 `security_check / needs_user_action / web_login`。按官方支持的交互路径定位和验收，不盲重试旧账号。BPS早期成功与最近需要人工交互的事实分别保留。
 3. **生产在途与现场**：原18条OVH基线复用；新增采集仅补Caddy和活动摘要。单登录任务/Worker活动仍可能unknown。正式prepare、切前漂移、新停态备份及切后真实身份/鉴权由OVH现场回执确认。
 
-当前责任人：主会话已交付[现场只读入口](../../execution/bps-final-readonly-next-20261111.zh-CN.md)，接续relay及2FA剩余验收。下一责任人：用户回传现场白名单摘要，主会话核证后安排必要的定向实施。新预检源提交为 `2351a7c9532253ab09cd139013e073a28ca57d2e`，未执行生产请求；路径/方法/目标及未知条件仅作为人工核路由的事实。完整验收通过后统一推送、分发与交付锁定完整提交的生产命令。
+当前责任人：主会话已核[26条OVH完整只读回执](server/README.zh-CN.md)，四服务未漂移、三鉴权通过，活动仍unknown。有效协议字段另有根/v8优先级兼容缺口，按[relay与发布配置执行包](../../execution/bps-relay-release-20261111.zh-CN.md)两线修复并补改变的Caddy/配置边界；旧native工具的通过记录保留，不扩大成双模式发布已完成。下一责任人：执行席、独审与主会话整合，用户暂无需重跑整轮盘点。完整验收通过后统一推送、分发与交付锁定完整提交的生产命令。
 
 无SQL/schema迁移。未来apply会停止Worker、Manager、CPA，备份Manager数据、auth、KV、配置及必要secret，并写入新配置、wrapper及私有BPS状态目录；Caddy保持原容器。切换后新绑定原位保留，备份不含切后新增数据。本轮没有推送、Release上传或生产写入。
