@@ -1,0 +1,6 @@
+linux_delivery_bash_n=passed exit=0
+linux_outer_heredoc_bash_n=passed exit=0
+image=postgres:17-alpine
+network=none pull=never
+shell_input=utf8_lf_bytes
+preflight_execution_count=0

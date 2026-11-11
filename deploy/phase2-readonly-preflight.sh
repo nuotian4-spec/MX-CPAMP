@@ -48,6 +48,35 @@ def yaml_doc(text, cwd):
     parsed = obj(run(['docker', 'compose', '--project-directory', cwd, '-f', '-', 'config', '--no-interpolate', '--format', 'json'], wrapper))
     return parsed.get('x-preflight') if isinstance(parsed, dict) else None
 
+def effective_bps_protocol(cfg):
+    # v8 按字段是否存在覆盖兼容值；显式 null 仍覆盖，父节点须为映射。
+    legacy = cfg.get('bps-protocol')
+    if legacy is None: legacy = {}
+    if not isinstance(legacy, dict): return None
+    current = cfg
+    for key in ['upstream', 'bps', 'protocol']:
+        if key not in current: return dict(legacy)
+        current = current[key]
+        if not isinstance(current, dict): return None
+    result = dict(legacy)
+    result.update(current)
+    return result
+
+def bps_container_path(container, value):
+    if not isinstance(value, str) or not value.strip(): return None
+    value = value.strip()
+    if value == '~' or value.startswith(('~/', '~\\')):
+        config = container.get('Config', {})
+        home = next((entry[5:] for entry in config.get('Env', []) if entry.startswith('HOME=')), None)
+        if not home and config.get('User', '') in ['', 'root', '0', '0:0']: home = '/root'
+        if not home or not os.path.isabs(home): return None
+        value = os.path.join(home, value[1:].lstrip('/\\'))
+    if not os.path.isabs(value):
+        cwd = container.get('Config', {}).get('WorkingDir') or '/'
+        if not os.path.isabs(cwd): return None
+        value = os.path.join(cwd, value)
+    return os.path.normpath(value)
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs): return None
 
@@ -189,11 +218,17 @@ def main():
     config_path = host_path(cpa,'/CLIProxyAPI/config.yaml')
     config = yaml_doc(read(config_path),root) if config_path else None
     cfg = config if isinstance(config,dict) else {}
-    auth_path = cfg.get('oauth',{}).get('auth-dir',cfg.get('auth-dir','/root/.cli-proxy-api'))
-    protocol = cfg.get('bps-protocol',{}) or {}
-    state_path = protocol.get('state-dir') or os.path.join(os.path.dirname(str(auth_path).replace('~/','/root/')),'bps-state')
-    state_host = host_path(cpa,state_path)
-    emit('bps_state', config_read='ok' if config else 'unknown', auth_dir=safe(auth_path), container_path=safe(state_path), mapped_host=safe(state_host), transport=protocol.get('image-transport') if protocol.get('image-transport') in ['native','relay'] else 'not_configured', relay_origin_configured=bool(protocol.get('image-relay-base-url')), existing_host=path_info(state_host) if state_host else {'exists':'unknown'})
+    oauth = cfg.get('oauth', {})
+    auth_value = oauth.get('auth-dir', cfg.get('auth-dir')) if isinstance(oauth, dict) else None
+    auth_path = bps_container_path(cpa, auth_value if auth_value is not None and (not isinstance(auth_value,str) or auth_value.strip()) else '~/.cli-proxy-api') if isinstance(oauth, dict) else None
+    protocol = effective_bps_protocol(cfg)
+    state_value = protocol.get('state-dir') if protocol is not None else None
+    state_path = (bps_container_path(cpa, state_value) if isinstance(state_value,str) and state_value.strip() else os.path.join(os.path.dirname(auth_path),'bps-state') if auth_path else None) if protocol is not None and (state_value is None or isinstance(state_value,str)) else None
+    state_host = host_path(cpa,state_path) if state_path else None
+    transport = protocol.get('image-transport') if protocol is not None else 'unknown'
+    if transport is None or transport == '': transport = 'native'
+    origin = protocol.get('image-relay-base-url') if protocol is not None else None
+    emit('bps_state', config_read='ok' if config else 'unknown', auth_dir=safe(auth_path), container_path=safe(state_path), mapped_host=safe(state_host), transport=transport if transport in ['native','relay'] else 'unknown', relay_origin_configured=(bool(origin.strip()) if isinstance(origin,str) else False if origin is None else None) if protocol is not None else None, existing_host=path_info(state_host) if state_host else {'exists':'unknown'})
     adapted = obj(run(['docker','exec',caddy['Id'],'caddy','adapt','--config','/etc/caddy/Caddyfile','--adapter','caddyfile']))
     relay=[]; generic_api=0
     def routes(value):
