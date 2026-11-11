@@ -23,6 +23,21 @@
   "production_actions": 0,
   "two_factor_provenance": "user_confirmation",
   "production_public_https_image_verification": "after_switch",
+  "branch_push": {
+    "branch": "codex/openai-bps-login",
+    "remote_head": "4fb5da07d5968ebcc8c52b5c5232506fb981e060",
+    "exit_code": 0
+  },
+  "release": {
+    "tag": "mx-cpamp-20261111-rc2",
+    "target": "4fb5da07d5968ebcc8c52b5c5232506fb981e060",
+    "prerelease": true,
+    "assets_uploaded": true,
+    "url": "https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261111-rc2",
+    "asset_archive_sha256": "256ddca4ec162bc1249ccea95ca1e36ce536b4909fa1ac89b77af1b477910c27",
+    "asset_python_sha256": "8d75ea5034fa28beedd4796953795f1772208683039ebcb33be1371edcf7e5ef",
+    "asset_shell_sha256": "73074c6d9110245ecc1777f03589c9e7f96e2a332932112a0bb81816eee35bb2"
+  },
   "write_release_ready": false,
   "exit_code": 0
 }

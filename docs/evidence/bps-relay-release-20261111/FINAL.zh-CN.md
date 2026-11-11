@@ -19,7 +19,7 @@
 ## 发布绑定
 
 - 仓库：`nuotian4-spec/MX-CPAMP`，工作分支 `codex/openai-bps-login`，保留草稿PR1。
-- 拟发布标识：`mx-cpamp-20261111-rc2`；GitHub推送、Release上传和资产绑定待本地收口后执行，真实结果另记发布回执。
+- 已发布标识：`mx-cpamp-20261111-rc2`，目标提交 `4fb5da07d5968ebcc8c52b5c5232506fb981e060`；[GitHub prerelease](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261111-rc2) 的脚本、manifest和227177346字节镜像归档已上传，资产摘要与本地文件一致。
 - 资产目录：`C:/Users/子羽/.codex/artifacts/mx-cpamp-release-bps-final-20261111`。包括新 `bps-final-release.{sh,py}`、manifest及原已验三镜像压缩包。
 - 新服务器状态：`/opt/cpa-stack/.mx-upgrade-bps-relay-20261111`；不接续旧native或rc1 prepared。
 
@@ -31,4 +31,4 @@
 
 公网有效图片GET/HEAD及实际官方模型抓图属于新候选切换后的现场验收；离线HTTPS专项不冒称生产业务已通过。登录/模型在途unknown由维护确认明确提示，不当成零。旧`security_check`作为历史结果保留，不覆盖用户此次验收确认，也不承诺所有账号无人值守。
 
-当前责任人：主会话完成精确提交/资产绑定与真实远端核验后交付准备命令。下一责任人：用户执行prepare并回传阶段；主会话核该回执后交本次TTY apply入口及切后核验。授权沿用既有仓库交付、镜像分发与生产切换范围，不另造重复批准。
+当前责任人：主会话已完成分支推送、RC2资产上传和真实远端核验，现交付现场prepare命令。下一责任人：用户执行prepare并回传阶段；主会话核该回执后交本次TTY apply入口及切后核验。授权沿用既有仓库交付、镜像分发与生产切换范围，不另造重复批准。
