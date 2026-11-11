@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-11-11",
+  "source": "existing_user_browser_tab_readonly_metadata",
+  "origin": "https://bps.openai.com",
+  "path": "/basispoints/extension/360590d7-f8f9-4d88-bf75-0edfe0a4b9f3/auth/callback",
+  "query_keys": ["code", "scope", "state"],
+  "has_fragment": false,
+  "has_code": true,
+  "has_state": true,
+  "query_values_read": false,
+  "navigation_performed": false,
+  "callback_submitted": false
+}

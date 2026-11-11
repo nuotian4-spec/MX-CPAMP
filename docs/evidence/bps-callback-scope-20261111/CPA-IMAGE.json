@@ -1,0 +1,9 @@
+{
+  "ref": "mx-cpa:bps-callback-scope-20261111",
+  "id": "sha256:d96e26782b4b080a703ee9668bf1c653e18cf164035b2bd9e11bcac2d11023fd",
+  "revision": "346b9479e12bc45ccb0e72556acc4cad4e9a0a04",
+  "os": "linux",
+  "architecture": "amd64",
+  "runtime_proxy_env_count": 0,
+  "build_exit": 0
+}

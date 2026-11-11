@@ -6,7 +6,7 @@
 
 BPS 2FA、保存注册、同client正常刷新、gpt-6-luna文本、默认原生图片及Responses普通工具往返分别已有真实回执。批次、并发、Chat/Responses普通与SSE、关图、工具截图及历史图片语义已有对应离线证据；不逐协议重复真实调用，不将离线结果写成全形态真实成功。
 
-产品镜像继续固定为[工具候选记录](../evidence/bps-tool-diagnostic-20261111/FINAL.zh-CN.md)中的CPA、Manager、Worker及各自revision；本次盘点确认三个产品目录未变，不重建。
+最新本地候选固定为[scope兼容回执](../evidence/bps-callback-scope-20261111/FINAL.zh-CN.md)中的CPA与Manager；Worker继续复用原产物。此前发布工具与分发归档的固定身份属于旧候选，未重新绑定，`write_release_ready=false`。
 
 ## 接续顺序
 
@@ -63,4 +63,8 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 当前责任人：主会话。上述Manager回调400分类与无Worker前端门控已修复、独审通过；[本地诊断候选](../evidence/oauth-input-diagnostics-20261111/FINAL.zh-CN.md)完成Go两包、Web30项、最终Manager构建及无凭据隔离预检，均有对应exit0；首构建TS2769的exit1保留，最小测试类型修复后补受影响项。CPA/Worker未重建。没有追加真实OAuth、刷新或模型请求。
 
-下一责任人：用户仅确认此前填的是官方登录后的回调地址，还是上方授权链接，不发送完整地址；主会话据此决定下一次明确范围，旧会话和访问文件均已清理。具体用户回调拒绝原因仍未证实，不把离线映射缺陷写成现场根因。新Manager使旧固定分发包不适用于本候选，不以旧包发布修复；业务余项和发布绑定仍待完成。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。write_release_ready=false，完整验收后统一推送与发布，不交生产写入命令。
+用户已确认填写官方登录后的BPS回调。只读现有官方页签核到code、scope、state三个参数名，未读取参数值；旧CPA白名单漏scope，实际结构命中明确拒绝路径。已最小兼容单值scope，重复及未知参数仍拒绝；真实历史请求的HTTP拒绝码未保留，不补写现场日志。
+
+最新本地修复已完成合成handler红绿回归、独审、一次CPA最终构建及与诊断Manager的无凭据预检，见[固定候选与证据](../evidence/bps-callback-scope-20261111/FINAL.zh-CN.md)。Manager和Worker输入未变，分别复用既有构建；预检临时资源清理确认，没有追加真实OAuth、刷新或模型请求。
+
+当前责任人：主会话。新的15分钟手工OAuth入口材料已准备、固定上述候选身份并待一次明确授权，尚未启动；验收只含一次官方授权、提交回调及唯一保存注册，不主动刷新、不调用模型，不启动Worker或操作OVH。旧会话、地址及访问文件不复用。下一责任人：主会话取得该次确认后启动并跟进保存注册和归属清理。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。
