@@ -24,6 +24,7 @@ apply继续一次DEPLOY、切换前漂移核验、三应用停态备份和候选
 | 最终CPA实际设置回读、受信内部HTTPS下的模型鉴权与下载/保护路由 | 同上，通过 | [run.log](run.log) |
 | 真实reload失败、盘候选/运行旧、原Caddy运行、原备份可读、maintenance与拒重入 | 预期原发布命令非零，控制器exit0，清理verified | [caddy-reload-failure.log](caddy-reload-failure.log) |
 | 实际Linux loader12例及固定CPA五次启动/Settings GET200 | 复用B独立输入，state不在Settings DTO内 | [配置契约](../contracts/README.zh-CN.md) |
+| `~`、`~/private-state`、`~\bps-state` 的实际Linux loader与预检对照 | B专项28275d1，三例exit0 | [实际路径loader](../contracts/path-loader.log)、[路径对照](../contracts/path.log) |
 
 成功现场包含根/v8混合配置：canonical null覆盖根旧relay/state，显式false保留；最终Manager GET真实转发至固定CPA，核native、固定origin及两项开关。状态有效路径的实际loader证据采用B专项，不将Settings回读冒称state验证。
 
@@ -46,6 +47,6 @@ runner固定 `sha256:d03ace6e4638d1be235650b443a81e1cd518538e7ed059141c157ca5615
 
 [input-equivalence.json](input-equivalence.json) 逐函数AST核验27个原函数保持一致。原完整120秒/无TTY/EOF、维护后备份失败保留、秘密及配置来源专项按[既有回执](../../bps-final-release-20261111/tools/README.zh-CN.md) 复用；旧矩阵各断言与原整轮exit1口径保留，不改称全量通过。产品输入未变，未重建镜像或重跑产品全量门禁。
 
-本轮只核本机合成现场。生产原Caddyfile文本形态/admin配置尚须prepare原位匹配；公网证书链/真实外部HTTPS取图、正向图片业务及Codex正向2FA仍未由本专项证明。生产活动unknown保持原TTY停机提示，`write_release_ready=false`。没有真实登录、刷新、模型调用、生产请求、数据库迁移、push或部署。
+本轮只核本机合成现场。生产原Caddyfile文本形态/admin配置尚须prepare原位匹配；公网证书链/真实外部HTTPS取图及正向图片业务仍未由本专项证明。Codex正向2FA由用户确认已通过，本轮不再重测。生产活动unknown保持原TTY停机提示，`write_release_ready=false`。没有真实登录、刷新、模型调用、生产请求、数据库迁移、push或部署。
 
 下一责任人：C独审本工具与本轮证据；主会话整合B配置/图片证据及完整剩余业务边界。
