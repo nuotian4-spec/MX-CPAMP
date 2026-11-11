@@ -25,7 +25,7 @@
   "production_public_https_image_verification": "after_switch",
   "branch_push": {
     "branch": "codex/openai-bps-login",
-    "remote_head": "4fb5da07d5968ebcc8c52b5c5232506fb981e060",
+    "remote_head": "62020c8f7ef693974a95ee265c5ffac5939d8711",
     "exit_code": 0
   },
   "release": {
