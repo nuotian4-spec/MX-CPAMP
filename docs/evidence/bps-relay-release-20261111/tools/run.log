@@ -1,0 +1,29 @@
+{"boundary": "delivery_shell_entry", "actual_shebang": true, "no_arguments_rejected": true}
+{"boundary": "fixture_site", "four_real_services": true, "internal_network": true, "real_credentials": false, "real_model_requests": 0}
+stage=prepare_bundle
+stage=prepare_site
+stage=prepared
+prepared=/var/lib/docker/volumes/mx-bps-relay-boundary-fa06168ac2-root/_data/.mx-upgrade-bps-relay-20261111 maintenance_started=no
+
+{"boundary": "prepare", "passed": true, "zero_service_change": true, "zero_config_wrapper_change": true, "live_state_absent": true, "caddy_runtime_unchanged": true}
+{"boundary": "confirmation_cancel", "passed": true, "real_pty": true, "zero_maintenance": true, "zero_service_change": true}
+stage=awaiting_confirmation
+将短暂停止 Worker、Manager、CPA，可能中断现有登录和模型请求；Caddy 保留。输入 DEPLOY：DEPLOY
+stage=pre_switch_drift
+stage=stopping_apps
+stage=backing_up
+stage=publishing_candidate
+stage=starting_candidates
+stage=publishing_caddy
+stage=reloading_caddy
+stage=caddy_runtime_health
+stage=authenticated_health
+stage=caddy_https_routes
+stage=complete
+release_complete state=/var/lib/docker/volumes/mx-bps-relay-boundary-fa06168ac2-root/_data/.mx-upgrade-bps-relay-20261111 backup=/var/lib/docker/volumes/mx-bps-relay-boundary-fa06168ac2-root/_data/.mx-upgrade-bps-relay-20261111/backup
+
+{"boundary": "caddy_reload", "passed": true, "original_id": true, "original_inode": true, "certificate_volumes_unchanged": true, "mounted_candidate_bytes": true, "runtime_candidate": true, "validated_internal_https_routes": true, "settings_runtime_readback": true}
+{"boundary": "apply", "passed": true, "real_authenticated_health": true, "caddy_id_unchanged": true, "apps_three_chain": true, "generated_linux_shell": true, "backup_secret_readable": true, "backup_mode": "600", "live_state_mode": "700", "images": {"cli-proxy-api": "sha256:eeb5bf17435a4c3d1a508188fd149eb8b2dbc5d9d20390cf4fd22d6e40f40d4b", "cpa-manager-plus": "sha256:db9f59c696d74d55cc151564754ec98615683df5f7370b2d32f0e977b74313cd", "oauth-login": "sha256:2bfdb42551061d6c0ba1b71758402ab46bc69a8843aa8f0273d6d634472c6758"}}
+{"boundary": "complete_reapply", "rejected": true}
+fixture_cleanup=verified
+command_exit=0
