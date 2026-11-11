@@ -20,4 +20,6 @@
 
 ## 证据边界
 
-本专项证明原 ImageRelay 库与真实 Caddy TLS 路由的离线契约，不是最终生产二进制的公网抓图或官方模型业务验收。30 分钟实际过期行为没有重等；复用输入未变的产品过期单测，准确证据入口由总回执引用。配置加载与五类固定 CPA Settings 回读没有重跑。
+本专项证明原 ImageRelay 库与真实 Caddy TLS 路由的离线契约，不是最终生产二进制的公网抓图或官方模型业务验收。配置加载与五类固定 CPA Settings 回读没有重跑。
+
+过期归属单项 `go test ./internal/basispoints -run '^TestIndependentImageRelayOwnersEnforceExpiry$' -count=1 -v` 在同一缓存 Linux 环境断网运行，exit 0，真实命令和输出见 `expiry.log`。源码与固定 `b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c` 等价；用例对已创建的实际图片 entry 设置过去的失效时间，核 GET/HEAD 返回 404、另一独立宿主的有效图片继续返回 200，并核过期存储释放。没有等待真实 30 分钟，也没有重复 HTTPS 或整包测试。
