@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +21,42 @@ import (
 
 // 来源核实已脱敏的主窗口数值；其余额外字段用于验证白名单隔离。
 const bpsUsageFixture = `{"plan_type":"pro","rate_limit":{"allowed":true,"limit_reached":false,"primary_window":{"used_percent":17,"limit_window_seconds":2592000,"reset_after_seconds":0,"reset_at":1796977220},"secondary_window":null},"credits":{"balance":"PRIVATE_BALANCE"},"account_id":"PRIVATE_ACCOUNT","email":"PRIVATE_EMAIL","code_review_rate_limit":{"primary_window":{"used_percent":99}}}`
+
+func TestBPSAccountUsageFlattenedCredentialListing(t *testing.T) {
+	server, manager, selected, store := newBPSAccessServer(t)
+	file := filepath.Join(t.TempDir(), selected.ID)
+	raw := []byte(`{"type":"bps","profile":"excel","client_id":"app_fnr0pYvVwwFDocDumLG3H2Bp","account_id":"synthetic-bps-account","email":"synthetic@example.invalid","access_token":"PRIVATE_ACCESS","refresh_token":"PRIVATE_REFRESH","sub":"PRIVATE_SUB"}`)
+	if err := os.WriteFile(file, raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	stored, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(stored, &selected.Metadata); err != nil {
+		t.Fatal(err)
+	}
+	selected.Attributes = map[string]string{"path": file}
+	selected.FileName = selected.ID
+	if _, err := manager.Update(coreauth.WithSkipPersist(context.Background()), selected); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/v8/management/credentials", nil)
+	req.RemoteAddr = "127.0.0.1:1234"
+	req.Header.Set("Authorization", "Bearer test-password")
+	w := httptest.NewRecorder()
+	server.engine.ServeHTTP(w, req)
+	root := ojson.ParseBytes(w.Body.Bytes())
+	matched := false
+	for _, entry := range root.Get("files").Array() {
+		if entry.Get("name").String() == selected.ID {
+			matched = entry.Get("account_id").String() == "synthetic-bps-account" && entry.Get("auth_index").String() == selected.Index && entry.Get("provider").String() == "bps"
+		}
+	}
+	if w.Code != 200 || !matched || store.writes.Load() != 0 || strings.Contains(w.Body.String(), "PRIVATE_") {
+		t.Fatal("公开凭证列表缺少平铺BPS身份或泄露凭证")
+	}
+}
 
 func callBPSAccountUsage(server *Server, ctx context.Context, query string, authorized bool) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, "/v8/management/bps/credentials/usage"+query, nil).WithContext(ctx)

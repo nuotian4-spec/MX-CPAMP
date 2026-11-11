@@ -75,6 +75,7 @@ try{
   const finalFiles=await credentials();must(finalFiles.length===1&&finalFiles[0].auth_index===selected.auth_index&&finalFiles[0].disabled===selected.disabled,'inspection_credential_unchanged');
   report({stage:'inspection',probe_set_count:1,provider:'bps',action:'keep',quota_unknown:true,no_auto_actions:true,persisted:true,scheduler_enabled:false});
 
+  report({stage:'snapshot_identity',file_name_matches:result.fileName===selected.name,auth_index_matches:result.authIndex===selected.auth_index,account_id_present:typeof result.accountId==='string'&&Boolean(result.accountId),account_id_matches_fixture:result.accountId==='synthetic-bps-account',account_snapshot_present:typeof result.accountSnapshot==='string'&&Boolean(result.accountSnapshot)});
   must(result.fileName===selected.name&&result.authIndex===selected.auth_index&&result.accountId==='synthetic-bps-account','snapshot_exact_inspection_identity');
   const snapshotAccount={auth_file_snapshot:result.fileName,auth_index:result.authIndex,auth_provider_snapshot:'bps',auth_account_id_snapshot:result.accountId,...(result.accountSnapshot?{account_snapshot:result.accountSnapshot}:{})};
   const observed=Date.now(),end=observed+2592000000;

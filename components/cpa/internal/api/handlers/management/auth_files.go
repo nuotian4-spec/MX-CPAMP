@@ -708,6 +708,12 @@ func (h *Handler) buildAuthFileEntryLocked(auth *coreauth.Auth, quota authFileQu
 	if email := authEmail(auth); email != "" {
 		entry["email"] = email
 	}
+	// BPS 使用平铺凭证，不依赖 Codex 的 id_token 暴露账号身份。
+	if strings.EqualFold(strings.TrimSpace(auth.Provider), "bps") {
+		if accountID, ok := auth.Metadata["account_id"].(string); ok && strings.TrimSpace(accountID) != "" {
+			entry["account_id"] = strings.TrimSpace(accountID)
+		}
+	}
 	if projectID := authProjectID(auth); projectID != "" {
 		entry["project_id"] = projectID
 	}
