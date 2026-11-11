@@ -69,4 +69,4 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 当前责任人：主会话。新的15分钟手工OAuth入口材料已准备、固定上述候选身份，用户已明确确认该次验收；验收只含一次官方授权、提交回调及唯一保存注册，不主动刷新、不调用模型，不启动Worker或操作OVH。启动命令在CreateProcess前被自动审批拒绝，工具仅返回`blocked by policy`；只读核本轮容器为0、启动回执不存在，见[启动状态](../evidence/bps-callback-scope-20261111/MANUAL-START-STATUS.json)。没有新授权窗口或账号导入，不通过其他通道绕过拦截。
 
-下一责任人：用户在本机Windows PowerShell运行已审入口的start并回传非秘密ready JSON，主会话继续核验和最终归属清理；无需重复确认同一范围，旧会话、地址及访问文件不复用。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。
+用户随后已运行已审start，真实ready、独立状态核验及空池verify完成，见[当前窗口](../evidence/bps-callback-scope-20261111/MANUAL-SESSION.zh-CN.md)。本轮入口127.0.0.1:2702，截止06:26:08 UTC；保存/注册均0，尚未完成手工OAuth。当前责任人：用户在官方页面完成该次授权并提交新回调；下一责任人：主会话核唯一保存注册后归属清理。无需重复确认同一范围，旧会话、地址及访问文件不复用。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。

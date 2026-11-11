@@ -43,6 +43,6 @@ docker build --progress plain --build-arg 'HTTP_PROXY=http://host.docker.interna
 
 用户已明确确认手工BPS OAuth一轮：官方授权后提交一次回调，核唯一凭证文件、运行时注册、profile/client及令牌存在性后立即清理；不主动刷新、不调用模型、不启动Worker、不操作OVH。启动命令在CreateProcess前被工具自动审批拒绝，仅返回`blocked by policy`，脚本未执行；见[启动状态](MANUAL-START-STATUS.json)。只读核本轮label容器为0、START及exit回执均不存在，没有新授权窗口或账号导入。
 
-下一责任人：用户在本机Windows PowerShell运行已审`scope-manual-run.mjs start`，仅回传非秘密ready JSON；主会话据真实入口继续核空池、交付手工操作、保存注册核验及归属清理。此前一次范围授权仍有效，无需重复确认。旧会话、地址、授权码及截图凭据不复用，当前没有已启动的入口。
+随后用户已在本机Windows PowerShell运行已审入口，交回真实ready JSON，见[本轮窗口](MANUAL-SESSION.zh-CN.md)。主会话核空池保存/注册均0，独审确认归属、镜像和预算一致；本轮入口为127.0.0.1:2702，截止06:26:08 UTC。当前责任人为用户完成该次手工授权；下一责任人为主会话核最终保存注册并执行归属清理。此前范围授权仍有效，无需重复确认。旧会话、地址、授权码及截图凭据不复用，尚无本轮真实OAuth通过结论。
 
 此前两处2FA错误来自未配置Worker的手工专项窗口，诊断Manager已禁用相应入口；该修复不替代Codex正向2FA。Codex历史`security_check`、HTTPS中转及OVH现场仍待验。无SQL/schema迁移、数据清理或生产写入；旧分发包尚未重新绑定新CPA/Manager，`write_release_ready=false`。
