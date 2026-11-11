@@ -14,6 +14,8 @@
 
 ## 验证
 
+对应工具回执摘录见 `oauth-input-diagnostics-20261111-output.txt`；各段标明原工具 chunk_id，该文本不是进程直接重定向的原始日志。
+
 执行目录：`D:/MX-CPAMP-worktrees/oauth-input-diagnostics/components/cpamp`。
 
 固定 Go：`C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/gomodcache/golang.org/toolchain@v0.0.1-go1.26.10.windows-amd64/bin/go.exe`。
