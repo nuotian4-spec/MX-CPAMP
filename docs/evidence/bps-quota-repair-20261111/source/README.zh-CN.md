@@ -5,7 +5,7 @@
 ## 命令与预算
 
 ```powershell
-node D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/bps-quota-repair-20261111/source/diagnose.mjs --prepare
+& 'C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/node-v22.23.4-win-x64/node.exe' 'D:/MX-CPAMP/docs/evidence/bps-quota-repair-20261111/source/diagnose.mjs' --prepare
 ```
 
 `--prepare` 只检查状态归属、CPA/Worker 原命名空间、现成 Python/curl_cffi、脚本语法，以及现存凭证中唯一 `type=bps`、`profile=excel` 和固定 client_id；输出计数、字段类型，不访问官方。
@@ -13,7 +13,7 @@ node D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/bps-quota-repair-
 独审放行后由主会话执行一次：
 
 ```powershell
-node D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/bps-quota-repair-20261111/source/diagnose.mjs --run
+& 'C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/node-v22.23.4-win-x64/node.exe' 'D:/MX-CPAMP/docs/evidence/bps-quota-repair-20261111/source/diagnose.mjs' --run
 ```
 
 `--run` 再做相同本地检查，使用该唯一 BPS bearer/account_id，按顺序最多两个 GET：
