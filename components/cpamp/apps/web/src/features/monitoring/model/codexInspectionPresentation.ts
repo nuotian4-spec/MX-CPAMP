@@ -136,6 +136,8 @@ export const formatPercent = (value: number | null) =>
 
 export const formatInspectionTargetLabel = (targetTypes: unknown, t: TFunction): string => {
   const normalized = normalizeCodexInspectionTargetTypes(targetTypes);
+  if (normalized.includes('bps'))
+    return normalized.map((p) => (p === 'bps' ? 'BPS' : p === 'xai' ? 'xAI' : 'Codex')).join(' + ');
   if (normalized.includes('codex') && normalized.includes('xai')) {
     return t('monitoring.codex_inspection_target_codex_xai');
   }
@@ -1370,12 +1372,7 @@ export const buildConfigOverviewItems = (
     settings.targetTypes,
     settings.targetType
   );
-  const targetLabel =
-    targetTypes.length > 1
-      ? t('monitoring.codex_inspection_target_codex_xai')
-      : targetTypes[0] === 'xai'
-        ? t('monitoring.codex_inspection_target_xai')
-        : t('monitoring.codex_inspection_target_codex');
+  const targetLabel = formatInspectionTargetLabel(targetTypes, t);
   const providerItems: ConfigOverviewItem[] = [
     {
       key: 'target',

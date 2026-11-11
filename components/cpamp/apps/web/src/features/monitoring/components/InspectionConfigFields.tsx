@@ -87,6 +87,10 @@ export function InspectionConfigFields({
                 options={[
                   { value: 'codex', label: t('monitoring.codex_inspection_target_codex') },
                   { value: 'xai', label: t('monitoring.codex_inspection_target_xai') },
+                  { value: 'bps', label: 'BPS（只读权限）' },
+                  { value: 'codex+bps', label: 'Codex + BPS' },
+                  { value: 'xai+bps', label: 'xAI + BPS' },
+                  { value: 'codex+xai+bps', label: 'Codex + xAI + BPS' },
                   {
                     value: 'codex+xai',
                     label: t('monitoring.codex_inspection_target_codex_xai'),

@@ -53,6 +53,7 @@ func New(appCtx *app.Context) http.Handler {
 	concurrencyHandler := &concurrencycontroller.Handler{Service: connectionService, Auth: appCtx.AdminAuthService}
 	bpsSettingsHandler := &bpssettingscontroller.Handler{Service: connectionService, Auth: appCtx.AdminAuthService}
 	mux.HandleFunc("/api/bps/settings", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.Handle))
+	mux.HandleFunc("/api/bps/access", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.Access))
 	mux.HandleFunc("/api/credential-concurrency", middleware.WithCORS(appCtx.Config, concurrencyHandler.Handle))
 	loginHandler := &logincontroller.Handler{Service: appCtx.OAuthLoginService, Auth: appCtx.AdminAuthService}
 	mux.HandleFunc("/api/oauth-login/", middleware.WithCORS(appCtx.Config, loginHandler.Handle))

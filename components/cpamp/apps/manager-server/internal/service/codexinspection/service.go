@@ -1744,6 +1744,9 @@ func (s *Service) inspectSingleAccount(
 	if item.Provider == "xai" {
 		return s.inspectSingleXAIAccount(ctx, setup, settings, item, logger)
 	}
+	if item.Provider == "bps" {
+		return s.inspectSingleBPSAccount(ctx, setup, item, logger)
+	}
 	base := resultFromAccount(item)
 	if item.AuthIndex == "" {
 		base.Action = "keep"
@@ -3217,6 +3220,9 @@ func hasInspectionActionIdentity(result model.CodexInspectionResult) bool {
 }
 
 func allowAutoAction(mode string, autoRecoverEnabled bool, result model.CodexInspectionResult) bool {
+	if result.Provider == "bps" {
+		return false
+	}
 	if result.Action == "enable" {
 		return autoRecoverEnabled && result.AutoRecoverEligible
 	}

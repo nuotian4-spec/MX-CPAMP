@@ -33,6 +33,7 @@ import {
   inspectSingleAccount,
   toInspectionAccount,
 } from '@/features/monitoring/model/codexInspectionProbe';
+import { inspectSingleBpsAccount } from '@/features/monitoring/model/bpsInspectionProbe';
 import { inspectSingleXaiAccount } from '@/features/monitoring/model/xaiInspectionProbe';
 import {
   buildProgressSummary,
@@ -87,6 +88,10 @@ const identityT = ((key: string) => key) as TFunction;
 
 const formatInspectionTargetTypes = (targetTypes: string[], t: TFunction) => {
   const providers = new Set(targetTypes.map((item) => item.trim().toLowerCase()));
+  if (providers.has('bps'))
+    return [...providers]
+      .map((p) => (p === 'bps' ? 'BPS' : p === 'xai' ? 'xAI' : 'Codex'))
+      .join(' + ');
   if (providers.has('codex') && providers.has('xai')) {
     return t('monitoring.codex_inspection_target_codex_xai');
   }
@@ -538,9 +543,11 @@ export const createCodexInspectionSession = ({
       emitProgress();
 
       void (
-        account.provider === 'xai'
-          ? inspectSingleXaiAccount(account, resolvedSettings, onLog, translate, requestConfig)
-          : inspectSingleAccount(account, resolvedSettings, onLog, translate, requestConfig)
+        account.provider === 'bps'
+          ? inspectSingleBpsAccount(account, requestScope, onLog)
+          : account.provider === 'xai'
+            ? inspectSingleXaiAccount(account, resolvedSettings, onLog, translate, requestConfig)
+            : inspectSingleAccount(account, resolvedSettings, onLog, translate, requestConfig)
       )
         .then((inspectionResult) => {
           resultMap.set(inspectionResult.key, inspectionResult);
