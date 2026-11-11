@@ -36,3 +36,5 @@ DON'T：不改产品、旧证据或生产配置；不读取旧凭据，不联网
 独审放行后主会话已启动新的本机空窗口，真实`MANUAL-START.exit=0`；启动时凭证0、发布模型0，未创建OAuth会话或查询官方access。地址`http://127.0.0.1:6722/management.html#/oauth`，有效期至`2026-11-11T08:50:46.268Z`（北京时间16:50:46）。非秘密现场指针：`C:/Users/子羽/.codex/artifacts/mx-bps-access-manual-b32b2eaf5650/state.json`；临时访问文件不入仓。
 
 当前责任人：用户在新窗口完成一次官方手工授权、系统设置一次发现与模型保存展示；下一责任人：主会话根据用户回报填脱敏观察、执行本地verify并按归属stop清理。到期停进程不等于清理完成；如用户未完成，也须保留真实结果并清理，旧窗口不复用。真实官方权限结果待证，`write_release_ready=false`。
+
+用户最新回报与只读核验：模型发现成功；本地保存/注册BPS为1，发布/注册模型为2，配置一致。用户巡检截图仍为`targetTypes=[codex]`，已读1但集合0，需在巡检配置独立选择BPS。下一步骤为用户保存BPS目标后手工一次只读巡检，主会话等待真实结果；完整页面观察尚未归档，当前verify为pending。详见[当前结果](../evidence/bps-access-manual-20261111/MANUAL-PROGRESS.zh-CN.md)。
