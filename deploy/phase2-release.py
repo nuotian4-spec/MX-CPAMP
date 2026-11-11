@@ -340,7 +340,7 @@ def prepare(source):
     candidate.setdefault('bps-protocol',{})['state-dir']='/var/lib/cpa/bps-state'
     write(STATE/'cpa-config.yaml',candidate)
     override={'services':{s:{'image':images[s],'pull_policy':'never'} for s in APPS}}
-    override['services']['cli-proxy-api']['volumes']=[{'type':'bind','source':str(ROOT/'cpa/bps-state'),'target':'/var/lib/cpa/bps-state'}]
+    override['services']['cli-proxy-api']['volumes']=[{'type':'bind','source':str(ROOT/'cpa/bps-state'),'target':'/var/lib/cpa/bps-state','bind':{'create_host_path':True}}]
     write(STATE/'compose.phase2.yaml',override)
     rendered=json.loads(command(compose(True)+['config','--format','json']))
     expected=copy.deepcopy(merged)
