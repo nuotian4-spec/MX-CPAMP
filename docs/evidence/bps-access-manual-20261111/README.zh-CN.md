@@ -17,11 +17,11 @@
 
 ## 启动与查看
 
-在 PowerShell 运行；路径固定到本隔离树。`start` 仅开启空面板，返回后再由用户操作；不会创建 OAuth 会话或触发官方 access。
+在 PowerShell 运行；入口已整合至主仓库。`start` 仅开启空面板，返回后再由用户操作；不会创建 OAuth 会话或触发官方 access。
 
 ```powershell
 $taskNode = 'C:/Users/子羽/.codex/artifacts/mx-cpamp-toolchains/node-v22.23.4-win-x64/node.exe'
-$taskScript = 'D:/MX-CPAMP-worktrees/bps-access-inspection/docs/evidence/bps-access-manual-20261111/access-manual-run.mjs'
+$taskScript = 'D:/MX-CPAMP/docs/evidence/bps-access-manual-20261111/access-manual-run.mjs'
 $taskStartLines = & $taskNode $taskScript start
 $taskStartExit = $LASTEXITCODE
 $taskStartLines
