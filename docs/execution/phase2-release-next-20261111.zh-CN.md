@@ -67,4 +67,6 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 
 最新本地修复已完成合成handler红绿回归、独审、一次CPA最终构建及与诊断Manager的无凭据预检，见[固定候选与证据](../evidence/bps-callback-scope-20261111/FINAL.zh-CN.md)。Manager和Worker输入未变，分别复用既有构建；预检临时资源清理确认，没有追加真实OAuth、刷新或模型请求。
 
-当前责任人：主会话。新的15分钟手工OAuth入口材料已准备、固定上述候选身份并待一次明确授权，尚未启动；验收只含一次官方授权、提交回调及唯一保存注册，不主动刷新、不调用模型，不启动Worker或操作OVH。旧会话、地址及访问文件不复用。下一责任人：主会话取得该次确认后启动并跟进保存注册和归属清理。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。
+当前责任人：主会话。新的15分钟手工OAuth入口材料已准备、固定上述候选身份，用户已明确确认该次验收；验收只含一次官方授权、提交回调及唯一保存注册，不主动刷新、不调用模型，不启动Worker或操作OVH。启动命令在CreateProcess前被自动审批拒绝，工具仅返回`blocked by policy`；只读核本轮容器为0、启动回执不存在，见[启动状态](../evidence/bps-callback-scope-20261111/MANUAL-START-STATUS.json)。没有新授权窗口或账号导入，不通过其他通道绕过拦截。
+
+下一责任人：用户在本机Windows PowerShell运行已审入口的start并回传非秘密ready JSON，主会话继续核验和最终归属清理；无需重复确认同一范围，旧会话、地址及访问文件不复用。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。
