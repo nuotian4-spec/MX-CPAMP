@@ -331,7 +331,7 @@ func (h *Handler) handleBPSOAuthCallback(c *gin.Context, req siwcCallbackRequest
 	}
 	for key, values := range query {
 		switch key {
-		case "state", "code", "error", "error_description", "iss", "client_id":
+		case "state", "code", "scope", "error", "error_description", "iss", "client_id":
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_callback_query"})
 			return

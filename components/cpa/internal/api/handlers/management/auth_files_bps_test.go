@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -320,6 +322,65 @@ func TestBPSOAuthCallbackValidationAndCompletion(t *testing.T) {
 	}
 	if token := m.List()[0].Metadata["id_token"]; token != nil {
 		t.Fatal("BPS persisted ID token")
+	}
+}
+
+func TestBPSOAuthCallbackScope(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		extra  url.Values
+		status int
+		err    string
+	}{
+		{name: "single", extra: url.Values{"scope": {"openid offline_access email profile organization.read"}}, status: http.StatusOK},
+		{name: "duplicate", extra: url.Values{"scope": {"openid", "email"}}, status: http.StatusBadRequest, err: "conflicting_callback_parameters"},
+		{name: "unknown", extra: url.Values{"scope": {"openid"}, "extra": {"unknown"}}, status: http.StatusBadRequest, err: "invalid_callback_query"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h, manager := bpsTestHandler(t)
+			var exchanges atomic.Int32
+			state, flow := bpsTestStart(t, h, bpsManagementTransport(func(r *http.Request) (*http.Response, error) {
+				exchanges.Add(1)
+				return bpsTokenResponse(t, r)
+			}))
+			query := tc.extra
+			query.Set("state", state)
+			query.Set("code", "synthetic-code")
+			w := bpsTestCallback(t, h, state, bps.RedirectURI+"?"+query.Encode())
+			if w.Code != tc.status {
+				t.Fatalf("callback status %d, want %d: %s", w.Code, tc.status, w.Body.String())
+			}
+			if tc.status != http.StatusOK {
+				if got := ojson.NewDoc(w.Body.Bytes()).Get("error").String(); got != tc.err {
+					t.Fatalf("callback error %q, want %q", got, tc.err)
+				}
+				if exchanges.Load() != 0 || len(manager.List()) != 0 || flow.done != nil {
+					t.Fatal("rejected callback started token exchange or registered credentials")
+				}
+				return
+			}
+			bpsWaitFlow(t, flow)
+			if exchanges.Load() != 1 || len(manager.List()) != 1 {
+				t.Fatal("callback did not exchange and register exactly once")
+			}
+			auth := manager.List()[0]
+			raw, err := os.ReadFile(filepath.Join(h.cfg.AuthDir, auth.FileName))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ojson.NewDoc(raw).Get("refresh_token").String() != "exchange-refresh" {
+				t.Fatal("OAuth refresh token not persisted")
+			}
+			files, err := os.ReadDir(h.cfg.AuthDir)
+			if err != nil || len(files) != 1 {
+				t.Fatalf("credential files=%d, error=%v", len(files), err)
+			}
+			status := bpsTestRequest(t, h.GetAuthStatus, "GET", "/v8/management/oauth/status?state="+state, "", nil)
+			doc := ojson.NewDoc(status.Body.Bytes())
+			if status.Code != http.StatusOK || doc.Get("status").String() != "ok" || !doc.Get("saved").Bool() || !doc.Get("adopted").Bool() {
+				t.Fatal(status.Body.String())
+			}
+		})
 	}
 }
 
