@@ -70,3 +70,5 @@ CPA新增位于凭据扫描树之外的私有bps-state持久挂载与显式state
 当前责任人：主会话。新的15分钟手工OAuth入口材料已准备、固定上述候选身份，用户已明确确认该次验收；验收只含一次官方授权、提交回调及唯一保存注册，不主动刷新、不调用模型，不启动Worker或操作OVH。启动命令在CreateProcess前被自动审批拒绝，工具仅返回`blocked by policy`；只读核本轮容器为0、启动回执不存在，见[启动状态](../evidence/bps-callback-scope-20261111/MANUAL-START-STATUS.json)。没有新授权窗口或账号导入，不通过其他通道绕过拦截。
 
 用户随后运行已审start并完成该次官方授权；06:18:54 UTC最终verify确认唯一保存注册、profile/client、OAuth方法、令牌存在性及runtime active通过，exit0。实际配置模型清单未设，解释本轮模型0；随后stop归属清理通过、令牌状态不保留，独立核验完成，见[真实结果](../evidence/bps-callback-scope-20261111/MANUAL-RESULT.zh-CN.md)。用户新增巡检反馈已定位：读取到1份凭证，但targetTypes仅codex，且当前界面/后端/探针只支持Codex/xAI，BPS尚未接入，见[缺口记录](../evidence/bps-callback-scope-20261111/BPS-INSPECTION-GAP.zh-CN.md)。当前责任人：主会话，本轮登录验收已完成，BPS巡检待成套方案与实施边界。旧窗口、地址及访问文件不复用，不追加真实巡检或模型请求。Codex正向2FA与HTTPS中转仍待验，旧security_check不盲重试。旧固定分发包不适用于新CPA/Manager，完整验收后再统一重新绑定、推送和发布，不交生产写入命令。
+
+最新方案接续：[BPS模型配置与巡检修复方案](../bps-inspection-repair-plan.zh-CN.md)已完成Q1—Q5确认及独立只读审阅。范围为显式模型配置入口/空提示与BPS巡检；采用只读access查询、人工确认全局发布清单，各凭证单独显示官方允许模型，巡检只检测记录，不自动删启停或修改调度。无新增SQL/schema，已有SQLite巡检记录和CPA配置保存复用；专用管理探针超时规则及权限不匹配展示明确列入实施范围。当前责任人：主会话交付完整方案；下一步待用户确认整体方案后开展两线实现，方案阶段未改产品、未跑真实请求、未构建或部署。
