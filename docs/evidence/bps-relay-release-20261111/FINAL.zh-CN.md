@@ -21,14 +21,14 @@
 - 仓库：`nuotian4-spec/MX-CPAMP`，工作分支 `codex/openai-bps-login`，保留草稿PR1。
 - 已发布标识：`mx-cpamp-20261111-rc2`，目标提交 `4fb5da07d5968ebcc8c52b5c5232506fb981e060`；[GitHub prerelease](https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/mx-cpamp-20261111-rc2) 的脚本、manifest和227177346字节镜像归档已上传，资产摘要与本地文件一致。
 - 资产目录：`C:/Users/子羽/.codex/artifacts/mx-cpamp-release-bps-final-20261111`。包括新 `bps-final-release.{sh,py}`、manifest及原已验三镜像压缩包。
-- 新服务器状态：`/opt/cpa-stack/.mx-upgrade-bps-relay-20261111`；不接续旧native或rc1 prepared。
+- 当前服务器状态：`/opt/cpa-stack/.mx-upgrade-bps-relay-20261111-r2`，已complete；旧失败状态目录和bundle原位保留。
 
-`local_release_materials_ready=true`、`prepare_command_ready=true`、`two_factor_acceptance=user_confirmation`。生产旧prepare停在`prepare_site / candidate_merge_changed`，用户只读回执确认唯一差异为默认`create_host_path=true`被Compose省略，且ready/maintenance/complete均false。已审工具`602aee042d6ba161096c71c4a9e4cce57f996c87`精确覆盖该表示差异；[本次失败与接续](../bps-relay-compose-compat-20261111/SERVER-FAILURE.zh-CN.md)绑定新TOOLS、新r2状态与旧bundle。后续仅在新prepare成功后，由用户在真实TTY输入一次DEPLOY，工具再即时核漂移。
+`production_release_complete=true`、`two_factor_acceptance=user_confirmation`。发布工具固定提交`602aee042d6ba161096c71c4a9e4cce57f996c87`，新TOOLS为`/opt/cpa-stack/mx-release-20261111-rc2-r2`。用户已完成r2 prepare，并在真实TTY输入一次DEPLOY完成apply，见[生产完整回执](../bps-relay-compose-compat-20261111/SERVER-COMPLETE.zh-CN.md)。切前漂移、候选身份/挂载、内部认证、Caddy重载生效及HTTPS路由检查均通过；不要重复prepare/apply。
 
 ## 数据与现场验收
 
-无SQL/schema迁移、运行时DELETE或旧库回灌。正式apply会停止Worker、Manager、CPA，创建私有停态备份，写协议/state配置、Compose和wrapper，并原inode写入Caddyfile、在原容器重载。原域名、Base URL、访问Key、既有数据和证书卷保持；切后新绑定须原位保留。失败保留maintenance、阶段、候选和备份，不自动重入。
+无SQL/schema迁移、运行时DELETE或旧库回灌。本轮apply已停止Worker、Manager、CPA，创建私有停态备份，写协议/state配置、Compose和wrapper，并原inode写入Caddyfile、在原容器重载。原域名、Base URL、访问Key、既有数据和证书卷保持；新状态、绑定和备份原位保留。停态备份位置为`/opt/cpa-stack/.mx-upgrade-bps-relay-20261111-r2/backup`。
 
 公网有效图片GET/HEAD及实际官方模型抓图属于新候选切换后的现场验收；离线HTTPS专项不冒称生产业务已通过。登录/模型在途unknown由维护确认明确提示，不当成零。旧`security_check`作为历史结果保留，不覆盖用户此次验收确认，也不承诺所有账号无人值守。
 
-修复已推送，固定提交两文件raw下载与已审Git blob逐字核对通过，摘要、大小及Linux入口语法均有真实回执。用户已回传新r2状态prepare成功、两文件摘要OK、maintenance_started=no，见[生产prepared回执与TTY入口](../bps-relay-compose-compat-20261111/SERVER-PREPARED.zh-CN.md)。当前责任人：用户在SSH TTY运行apply并输入一次DEPLOY；下一责任人：主会话核真实切换回执。尚未切换生产，不改旧RC2资产、旧STATE或镜像归档。授权沿用既有仓库交付、镜像分发与生产切换范围，不另造重复批准。
+修复和发布材料已推送，固定提交两文件raw下载与已审Git blob逐字核对通过，生产已release_complete。当前责任人：用户回传最后的只读镜像身份与备份权限文本，并在原域名刷新面板；下一责任人：主会话核结果收口服务器发布。页面体验、公网有效图片取图和真实模型业务按实际回执分别记录；既有2FA用户验收继续复用。不改旧RC2资产、旧STATE或镜像归档。
