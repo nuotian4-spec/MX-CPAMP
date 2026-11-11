@@ -31,4 +31,4 @@
 
 公网有效图片GET/HEAD及实际官方模型抓图属于新候选切换后的现场验收；离线HTTPS专项不冒称生产业务已通过。登录/模型在途unknown由维护确认明确提示，不当成零。旧`security_check`作为历史结果保留，不覆盖用户此次验收确认，也不承诺所有账号无人值守。
 
-修复已推送，固定提交两文件raw下载与已审Git blob逐字核对通过，摘要、大小及Linux入口语法均有真实回执，见[新版prepare入口](../bps-relay-compose-compat-20261111/PREPARE.zh-CN.md)。当前责任人：用户执行新prepare并回传结果；下一责任人：主会话核证后交TTY apply。不改旧RC2资产、旧STATE或镜像归档。授权沿用既有仓库交付、镜像分发与生产切换范围，不另造重复批准。
+修复已推送，固定提交两文件raw下载与已审Git blob逐字核对通过，摘要、大小及Linux入口语法均有真实回执。用户已回传新r2状态prepare成功、两文件摘要OK、maintenance_started=no，见[生产prepared回执与TTY入口](../bps-relay-compose-compat-20261111/SERVER-PREPARED.zh-CN.md)。当前责任人：用户在SSH TTY运行apply并输入一次DEPLOY；下一责任人：主会话核真实切换回执。尚未切换生产，不改旧RC2资产、旧STATE或镜像归档。授权沿用既有仓库交付、镜像分发与生产切换范围，不另造重复批准。
