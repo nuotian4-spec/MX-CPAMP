@@ -58,3 +58,22 @@
 结论：启动门槛放行，真实页面显示、BPS OAuth、官方用量刷新与服务端巡检待用户完成。主会话回报访问文件和浏览器打开均为 queued，该回报不证明浏览器已实际显示。此次窗口尚无真实账号或官方用量观察，`official_usage_observed=false` 保持原值。
 
 下一责任人：用户自主页面验收；主会话随后仅按已有授权读取本地 verify 回执、记录真实结果并 stop 清理。本席未读取访问文件或真实凭据，未追加测试、容器动作或官方请求。
+
+## 真实页面验收与清理复核
+
+主线 `bacfb1ee4f2324ab98edbb81e36a24fd0fcbfd2a`，本轮脚本与产品无改动。用户已回报新版 3303 窗口“已完成”。独审仅经明确允许的 Get-Content 读取以下四份白名单证据，未执行门禁、容器或网络动作，未读取访问密钥、真实账号或 token 原文。
+
+| 证据 | 真实结果 |
+|---|---|
+| `VERIFY.jsonl` / `VERIFY.exit` | exit 0，检查时间 `2026-11-11T11:14:27.163Z`；凭证总数 1 / BPS 1；服务端巡检 1 / BPS 结果 1 / 合格官方用量观察 1；`official_usage_observed=true` |
+| Worker 与批次 | Manager capability 为 true；Manager 无管理员 401；Worker 正确密钥 200、错误/缺密钥 401、未知任务 404；Codex/BPS 批次及 active 批次为空，空 EOF startup 布尔保持通过 |
+| 工具动作 | `harness_login_submitted`、`harness_official_access_called`、`harness_official_usage_called`、`harness_refresh_called`、`harness_inference_called` 均为 false |
+| `STOP.jsonl` / `STOP.exit` | exit 0，清理归属为唯一新窗口 `mx-bps-quota-manual-ddbbbfeb3310`；`cleanup.verified=true`、`token_state_retained=false` |
+
+本地服务端结果满足已审来源判定：BPS 观察来自 `chatgpt_account_usage`、上游状态 200、无 usage_error 且有窗口。它是用户验收动作后已保存的真实观察，不是空窗口、能力检查或合成组合结果。
+
+主会话另回报已用 CUA 只读查看既有页面：账号卡与详情均显示“官方账号用量”、剩余 99% 和重置时间，详情最近巡检观察时间为北京时间 19:10；未点击刷新、导航或发起新查询，未保存含个人信息的页面原文或截图。该页面观察归属主会话，独审没有重复操作浏览器。原始 verify 中 `ui_evidence=manual_acceptance_pending` 是工具固定字段，保留原回执；用户完成回报与主会话页面观察另列为页面验收依据。
+
+结论：本地新版 BPS 官方账号用量链路及本窗口验收放行，临时状态已按归属清理。此结论覆盖本次用户自主导入后的账号页、详情及服务端巡检观察；不扩展为 2FA、令牌刷新、模型推理、其他账号权益或生产部署验收。后台刷新未硬禁且次数未监测，工具主动调用为零不代表全部后台请求为零。
+
+无新增产品修改、SQL/schema 迁移、生产数据写入或部署。下一责任人：主会话统一提交白名单回执与本审查，向用户交付本地验收结论；生产发布按当轮实际发布材料另行接续。

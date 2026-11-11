@@ -35,6 +35,6 @@ CPA 独立查询官方账号用量，保留原 access / 模型发现契约。Man
 
 ## 当前边界与下一责任人
 
-`official_source_verified=true`、`local_candidate_ready=true`、`integration_passed=true`、`quota_product_live_verified=false`、`write_release_ready=false`。新产品尚未做真实账号页面验收；来源成功仅证明本次授权可读取官方账号主用量，不代表全部BPS账号或模型具备相同权益。
+`official_source_verified=true`、`local_candidate_ready=true`、`integration_passed=true`、`quota_product_live_verified=true`、`write_release_ready=false`。新版本机页面验收已完成：1份BPS、1条服务端巡检和1条合格官方用量观察，账号卡与详情显示“官方账号用量”、剩余99%、重置时间及巡检观察时间；窗口已清理。该结果仅覆盖本次账号页面与服务端巡检，不代表全部BPS账号或模型具备相同权益。
 
 BPS 2FA的 `security_check / needs_user_action` 保持官方交互终态，不推断密码、TOTP、封号或出口原因；本轮没有新增登录或修改Worker。当前责任人：主会话完成本地收口；下一责任人：主会话准备固定新产物的页面验收与统一发布材料，剩余真实2FA/HTTPS中转按已有边界单独接续。旧分发包不适用于本候选，本轮无推送或OVH部署。

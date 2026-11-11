@@ -50,4 +50,4 @@ A席产品提交 `d563ef2862931d4ce836d4372140ee4e4f31ca19` 经独审放行，�
 
 两线已整合并独审放行，产品输入 `b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c`。[最终回执](../evidence/bps-quota-repair-20261111/FINAL.zh-CN.md)绑定完整镜像、专项及组合结果。Manager一次最终构建含tsc/Vite/Go全部通过；首轮组合定位CPA列表缺BPS平铺account_id，最小修复及真实v0/v8公开入口专项通过后，仅重建CPA。Manager/Worker产品输入等价复用。新组合exit0，精确身份、BPS快照写查及归属清理通过，旧组合exit1不改写。
 
-没有SQL/schema迁移或依赖变更，新增观察沿用既有SQLite表；隔离测试写合成记录并清理，生产未改。当前责任人：主会话本地收口；下一责任人：主会话准备固定产物的页面验收和统一发布材料。`local_candidate_ready=true`、`integration_passed=true`、`quota_product_live_verified=false`、`write_release_ready=false`。不追加官方请求，不推送或部署；旧窗口及旧分发包不复用。
+没有SQL/schema迁移或依赖变更，新增观察沿用既有SQLite表；隔离测试写合成记录并清理，生产未改。页面验收窗口已完成并按归属清理：1份BPS、1条服务端巡检、1条合格官方用量观察，账号页与详情均显示“官方账号用量”。`local_candidate_ready=true`、`integration_passed=true`、`quota_product_live_verified=true`、`write_release_ready=false`。不追加官方请求，不推送或部署；旧窗口及旧分发包不复用。

@@ -33,4 +33,6 @@ $taskStateDir='C:/Users/子羽/.codex/artifacts/mx-bps-quota-manual-ddbbbfeb3310
 & $taskNode $taskScript stop $taskStateDir
 ```
 
-当前责任人：用户完成一次BPS授权及两处额度页面操作。下一责任人：主会话核对只读回执和用户页面结果，再清理本窗口。`manual_page_acceptance=pending`、`quota_product_live_verified=false`、`write_release_ready=false`。无产品代码、依赖、SQL/schema迁移、推送或生产变更。
+验收已完成：用户导入1份BPS并完成账号页额度查看与服务端巡检；页面显示“官方账号用量”、剩余99%和重置时间，详情显示最近巡检观察时间。只读 `verify` exit0 记录1份BPS、1条服务端巡检和1条合格官方用量观察；`stop` exit0 且归属清理通过，脱敏结果见 [FINAL-RESULT](../evidence/bps-quota-manual-20261111/FINAL-RESULT.json)。
+
+当前责任人：主会话完成本地验收收口。`manual_page_acceptance=passed`、`quota_product_live_verified=true`、`write_release_ready=false`。本地页面验收不扩展为2FA、令牌刷新、推理、其他账号或生产部署验收；无产品代码、依赖、SQL/schema迁移、推送或生产变更。
