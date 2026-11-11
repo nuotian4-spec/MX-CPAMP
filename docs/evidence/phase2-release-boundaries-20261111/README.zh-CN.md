@@ -19,7 +19,7 @@
 - Root冻结的归档和manifest只读挂载自 `C:/Users/子羽/.codex/artifacts/mx-cpamp-release-phase2-20261111-candidate`。交付原 `load_bundle()` 实际读取、核验和加载；不自行重打包或替换候选身份。
 - 四个服务使用本机缓存的真实rc1镜像和Caddy镜像。每次唯一project/label与Linux命名根卷，应用使用真实bind来源；单文件Caddy、双文件三应用作为原始链。仅隔离内部网络，无宿主发布端口；站点凭证、数据库和业务配置全部合成。
 - 控制器只替换 `ROOT/PROJECT/STATE/BASELINE` 事实常量；不替换 `prepare/apply/confirm_deploy/snapshot/backup/health/drift`，不替换Docker/Compose。`invoke.py` 调原 `main()`，异常只做白名单输出和测试定位；真实来源反例从Docker inspect取得对象，直接调用原 `sources()` / `secrets()`。
-- 控制器独占本轮Docker socket，应用不挂socket。四应用关闭Docker日志；没有生产挂载、真实登录、刷新或模型请求。
+- 仅控制器挂载宿主Docker socket，应用不挂载。四服务关闭Docker日志；没有生产挂载、真实登录、刷新或模型请求。
 
 ## 已覆盖边界
 
