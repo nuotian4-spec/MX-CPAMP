@@ -41,3 +41,15 @@
 已定向只读核 `diagnose-merge.py`、执行席 `test-diagnose.py` 与 `diagnose.log`，未运行。脚本固定导入原 rc2 工具，先设 `dont_write_bytecode`，导入名使原 `main` 不执行；只有旧状态为 `prepare_site`、无 ready/maintenance/complete 且候选 Compose 存在才复算。命令路径仅为候选 image inspect 和两次 Compose config，没有镜像加载、服务动作、state/配置写入。输出限定差异位置、presence/type 与 create_host_path 布尔值；私有键匿名，原值和异常原文不输出，最多30条并显示截断。执行席缓存 Linux 专项已核真实 config、哨兵脱敏、零文件写入和截断结果，exit0；镜像身份入口为合成替身，不冒称该专项执行了生产 inspect。
 
 主会话固定用户入口为 `sudo python3 -B - <<'PY'`，中间逐字嵌入该脚本、末行 `PY`。父 SSH Shell 不设 `set -e`，没有下载或落盘；脚本异常只退出该 Python 子进程。此只读诊断入口通过代码审查，等待用户真实字段摘要后再判断现场失败原因，不先重试 prepare。
+
+## 现场差异闭环与 prepare 入口预审
+
+主会话转交用户真实只读诊断：唯一差异为 `/services/cli-proxy-api/volumes/4/bind/create_host_path`，expected 为存在的 bool true，rendered 为缺失，`truncated=false`；旧 STATE 为 `prepare_site`，ready/maintenance/complete 全部 false。本回执补齐前述现场字段缺口，来源为用户现场摘要，不是本地合成复现。
+
+已只读重核主线 `602aee042d6ba161096c71c4a9e4cce57f996c87`：`normalize_compose_merge` 精确移除 bind 中该布尔 true，并将清空的 bind 与省略等价；rendered 中缺失该值不变。其余字段无差异且未截断，因此现有修复精确覆盖本次现场拒绝；false、null 和其他实质挂载字段仍严格比较。此事故的比较原因已收口，不扩大为其他兼容问题，也不重跑已验门禁。
+
+仅 prepare 的入口方案通过预审：`sudo bash` here-doc 内启用 `set -euo pipefail`，父 SSH Shell 不设失败退出；用最终主线完整 SHA 下载原 `deploy/bps-final-release.py/.sh` 到新 TOOLS `/opt/cpa-stack/mx-release-20261111-rc2-r2`，执行 `prepare --bundle-dir /opt/cpa-stack/.mx-upgrade-bps-relay-20261111/bundle`。sh 实际从自身目录调用配套 py；新工具 STATE 固定 `/opt/cpa-stack/.mx-upgrade-bps-relay-20261111-r2`，旧工具/失败目录及归档保留。缓存包在新 STATE 中仍按原身份校验，不重新下载227MB归档。
+
+该入口不含 apply/DEPLOY，不停服务、不写 live 配置或重载 Caddy；会校验/加载缓存镜像、写新私有准备材料并即时核现场，成功以 `prepared=... maintenance_started=no` 回执为准。没有新增 schema 或运行时 DELETE。最终完整 SHA、远端推送及 raw 逐字一致由主会话交付前核验，本席未执行或冒称完成；完成该绑定后可交本次 prepare，实际切换另按用户 TTY 确认。
+
+完整命令入口现固定为 `docs/evidence/bps-relay-compose-compat-20261111/PREPARE.zh-CN.md`，已逐项只读核其代码块：SOURCE 为完整 `602aee042d6ba161096c71c4a9e4cce57f996c87`，TOOLS、旧 BUNDLE 与新 STATE 均与上文一致；两个下载文件配套，printf 的四个参数按双占位格式生成两条 sha256sum 检查行。py 摘要 `75b30579d61f4ca3d3e6701950e88e83cb80341a7594ae25bb5687f514171899`，sh 摘要 `73074c6d9110245ecc1777f03589c9e7f96e2a332932112a0bb81816eee35bb2`，与已核本地未改输入相符。完整块的 strict 仅在 sudo Bash 子进程内，末行只调用 `bash "$TOOLS/bps-final-release.sh" prepare --bundle-dir "$BUNDLE"`，没有 apply。`SERVER-DIAGNOSIS.jsonl` 原文亦与上述唯一现场字段回执一致。完整入口代码审查通过；本席未执行语法或业务测试，Linux bash-n、推送和远端逐字核证由主会话取得真实回执后交付。
