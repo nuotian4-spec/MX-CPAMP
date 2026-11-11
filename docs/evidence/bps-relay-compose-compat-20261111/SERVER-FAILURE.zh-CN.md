@@ -12,4 +12,4 @@
 
 局部兼容工具已整合为`602aee042d6ba161096c71c4a9e4cce57f996c87`，真实Linux新STATE prepare、PTY CANCEL、apply周期及清理exit0，独审通过。现场诊断与既有empty_bind用例对应，可复用该专项，不重跑产品或完整生命周期。Compose2.33显式true的旧比较通过这一历史结果仍保留；本次现场原因来自用户真实字段回执。
 
-当前责任人：主会话推送已审工具并核固定完整提交的远端文件，交新TOOLS、旧bundle的prepare入口；下一责任人：用户执行新prepare并回传结果，主会话核证后交TTY apply。既有产品、三镜像及已通过业务保持输入等价，不重建产品、不重复下载227MB归档，不复用旧plan/ready。
+已推送已审工具，固定完整提交的两文件raw下载逐字核验通过；[新版准备入口](PREPARE.zh-CN.md)已绑定新TOOLS和旧bundle。当前责任人：用户执行新prepare并回传结果；下一责任人：主会话核证后交TTY apply。既有产品、三镜像及已通过业务保持输入等价，不重建产品、不重复下载227MB归档，不复用旧plan/ready。
