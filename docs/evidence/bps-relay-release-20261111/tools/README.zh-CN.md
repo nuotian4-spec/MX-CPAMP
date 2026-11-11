@@ -1,12 +1,14 @@
 # 双模式图片发布工具
 
-2026-11-11。最终工具输入为 `0a98a2bc8f259c1c73bfcc3a850f2f0ef145492e`，生命周期与控制器输入为其前置提交 `5cc747e79a580e1a0b2b4748553427010cdfc53d`，基线 `bab1afb07e3cf25e78394b6cb959aaa5999b31bd`。最后增量仅对齐状态路径HOME展开，周期实际旧来源 `/root/bps-state` 的解析结果前后相同，原成功/失败证据复用。仅修改 `deploy/bps-final-release.py`，新增本目录控制器与证据；产品、三镜像及原Shell入口保持原输入。
+2026-11-11。原最终工具输入为 `0a98a2bc8f259c1c73bfcc3a850f2f0ef145492e`，基线 `bab1afb07e3cf25e78394b6cb959aaa5999b31bd`。本轮补丁把独立状态目录切换为 `.mx-upgrade-bps-relay-20261111-r2`，保留旧失败目录不接续。仅修改 `deploy/bps-final-release.py`，同步控制器与证据；产品、三镜像及原Shell入口保持原输入。
+
+Compose表示兼容修复：prepare 比较现在只对候选合并语义做有界归一：`bind.create_host_path=true`、缺省 bind 和空 bind 等价；`type/source/target/read_only` 及其他 bind 选项仍逐项严格比较，实质挂载漂移继续失败。本轮实际 Compose 2.33 输出与新状态目录完整周期见[独立证据](../../bps-relay-compose-compat-20261111/README.zh-CN.md)。OVH 5.7.0 当前只确认 `candidate_merge_changed`，尚待字段差异诊断，默认字段表示差异不写成现场精确根因；本目录原日志保留历史输入。
 
 ## 发布行为
 
 协议值按产品逐字段presence合并：根 `bps-protocol` 为兼容来源，`upstream.bps.protocol` 已存在的叶字段覆盖对应根字段，含false、空和null。canonical父节点非mapping拒绝；null叶按产品默认处理。候选仅规范化 `image-transport`、`image-relay-base-url`、`state-dir`，删除这三项旧重复叶，其他配置原样保留。默认native，已有有效native/relay保留，origin固定 `https://cpa.maixun.cyou`，state为 `/var/lib/cpa/bps-state`。固定origin及其单尾斜杠视作同origin；其他非空origin拒绝。
 
-原有效状态来源继续在prepare和drift真实docker exec检查，存在或unknown均拒绝；状态路径按产品支持的 `~`、`~/`、`~\` 展开，HOME为已核的 `/root`、相对路径按实际进程cwd解析。宿主目标目录安装前再次检查不存在，随后创建0700目录。独立状态目录为 `.mx-upgrade-bps-relay-20261111`，不接续旧native prepared。
+原有效状态来源继续在prepare和drift真实docker exec检查，存在或unknown均拒绝；状态路径按产品支持的 `~`、`~/`、`~\` 展开，HOME为已核的 `/root`、相对路径按实际进程cwd解析。宿主目标目录安装前再次检查不存在，随后创建0700目录。独立状态目录为 `.mx-upgrade-bps-relay-20261111-r2`，不接续旧失败或旧native prepared。
 
 prepare原位读取Caddyfile、真实adapt与admin运行配置，要求二者一致、原inode及挂载可见字节一致。只接受唯一CPA HTTPS站点 `cpa.maixun.cyou`，其上游须为既有CPA地址；文本入口为该域名或带https/:443的单站点头，其他形态在维护前拒绝。新增下载handle仅匹配GET/HEAD与 `/api/bps-images/*`，目标 `cli-proxy-api:8317`。移除新增route后，完整适配配置须与原语义一致，包含原Manager、模型路由顺序、分组、TLS和端口；再由原Caddy镜像validate。prepare只暂存，取消不写live或reload。
 
