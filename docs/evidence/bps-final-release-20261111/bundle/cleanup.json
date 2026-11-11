@@ -1,0 +1,10 @@
+{
+  "fixture": "mx-bps-final-archive-load-20261111",
+  "volume": "mx-bps-final-archive-load-20261111-data",
+  "container_remove_exit": 0,
+  "volume_remove_exit": 0,
+  "remaining_containers": [],
+  "remaining_volumes": [],
+  "cleanup_verified": true,
+  "archive_retained": true
+}

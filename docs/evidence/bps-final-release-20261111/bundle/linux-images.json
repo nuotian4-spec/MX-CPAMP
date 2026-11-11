@@ -1,0 +1,29 @@
+[
+  {
+    "Id": "sha256:09d30cc6bc3808a07b06953faecb0bb49036a5240513132e6cb8b7c035b1b335",
+    "RepoTags": [
+      "mx-cpa:bps-quota-identity-20261111"
+    ],
+    "Os": "linux",
+    "Architecture": "amd64",
+    "revision": "b9f98a54a1ce9cb1f44cfddbc242c5476f74d41c"
+  },
+  {
+    "Id": "sha256:a7b21c514227d3c48426b8cb1bb443cc8d5ca8000c626da190099ef922c5b247",
+    "RepoTags": [
+      "mx-cpamp:bps-quota-repair-20261111"
+    ],
+    "Os": "linux",
+    "Architecture": "amd64",
+    "revision": "d26cbf7595ecf41ba8cbfd90c956291ac351b471"
+  },
+  {
+    "Id": "sha256:30689442b2f61b2c7ff27eae008291b014fe7161e842a60202a6574c912be4dd",
+    "RepoTags": [
+      "mx-oauth-login:phase2-local-20261111"
+    ],
+    "Os": "linux",
+    "Architecture": "amd64",
+    "revision": "95dd9ca2c16d5469c43ce7c910f38ff271af45e3"
+  }
+]

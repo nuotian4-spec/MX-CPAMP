@@ -1,0 +1,23 @@
+{
+  "Id": "56ce363442354bc4c6778d1b832852341538887d3f645a7250366617e896ece4",
+  "Name": "/mx-bps-final-archive-load-20261111",
+  "image": "sha256:3ef33f2e220b79ed3ef3b99d81746f06f306cd6340e2cb7331d17ae996e74cb6",
+  "network_mode": "none",
+  "port_bindings": {},
+  "mounts": [
+    {
+      "Type": "volume",
+      "Name": "mx-bps-final-archive-load-20261111-data",
+      "Source": "/var/lib/docker/volumes/mx-bps-final-archive-load-20261111-data/_data",
+      "Destination": "/var/lib/docker",
+      "RW": true
+    },
+    {
+      "Type": "bind",
+      "Name": null,
+      "Source": "/run/desktop/mnt/host/c/Users/子羽/.codex/artifacts/mx-cpamp-release-bps-final-20261111",
+      "Destination": "/bundle",
+      "RW": false
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { createWriteStream, existsSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { join } from 'node:path';
+import { Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { createGzip } from 'node:zlib';
+
+const output = process.argv[2];
+const archive = join(output, 'mx-cpamp-images-linux-amd64.tar.gz');
+if (existsSync(archive)) throw new Error('归档已存在，保留原文件');
+const refs = ['mx-cpa:bps-quota-identity-20261111', 'mx-cpamp:bps-quota-repair-20261111', 'mx-oauth-login:phase2-local-20261111'];
+const meta = { status: 'running', docker_exit: null, gzip_complete: false, stderr_seen: false, started_at: new Date().toISOString() };
+const hash = createHash('sha256');
+let bytes = 0;
+const compressed = new Transform({ transform(chunk, encoding, callback) { hash.update(chunk); bytes += chunk.length; callback(null, chunk); } });
+const child = spawn('docker', ['image', 'save', ...refs], { stdio: ['ignore', 'pipe', 'pipe'] });
+const exited = once(child, 'exit');
+child.stderr.on('data', chunk => { meta.stderr_seen = true; process.stderr.write(chunk); });
+await pipeline(child.stdout, createGzip({ level: 6 }), compressed, createWriteStream(archive));
+meta.docker_exit = (await exited)[0];
+if (meta.docker_exit !== 0) throw new Error('Docker 导出失败');
+Object.assign(meta, { status: 'complete', gzip_complete: true, bytes, sha256: hash.digest('hex'), finished_at: new Date().toISOString() });
+writeFileSync(join(output, 'pack-meta.json'), JSON.stringify(meta, null, 2) + '\n');
+process.stdout.write(JSON.stringify(meta) + '\n');
