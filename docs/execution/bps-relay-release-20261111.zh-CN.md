@@ -1,6 +1,6 @@
 # BPS HTTPS 中转与发布配置接续
 
-2026-11-11。基线 `bab1afb07e3cf25e78394b6cb959aaa5999b31bd`。用户已选双图片模式、默认原生及完整验收后统一发布。最新[OVH只读回执](../evidence/bps-final-release-20261111/server/README.zh-CN.md)已核四服务未漂移、三项认证符合预期；登录/模型活动仍unknown。不重盘点或重复已通过业务。
+2026-11-11。实施基线 `bab1afb07e3cf25e78394b6cb959aaa5999b31bd`。本包两线已完成，最终代码输入 `c0e2188141057531e71df0777241ef8ce0df566a`；[结果与下一步](../evidence/bps-relay-release-20261111/FINAL.zh-CN.md)为当前入口。用户已确认既有2FA验收通过，不再重复。以下保留本轮实施边界；生产尚未切换。
 
 ## 目标与分工
 
@@ -27,4 +27,4 @@
 
 未变产品镜像、文本/工具/原生图片、120秒确认、secret来源和其他旧专项按输入等价复用。旧失败不改写为成功。Codex正向2FA及生产外部HTTPS取图结果分别待验，不自动使用旧凭据或新增官方请求。
 
-没有SQL/schema迁移或运行时DELETE。未来正式apply包含停三应用、新停态备份、协议与state配置写入、Caddyfile写入及原容器reload；最终一次维护确认应明确这些动作。生产基线及域名/Base URL/API Key保持，切后新绑定原位保留。当前`write_release_ready=false`，本执行包不交生产写入命令。
+没有SQL/schema迁移或运行时DELETE。未来正式apply包含停三应用、新停态备份、协议与state配置写入、Caddyfile写入及原容器reload；最终一次维护确认已明确这些动作。生产基线及域名/Base URL/API Key保持，切后新绑定原位保留。当前本地材料通过，待真实分发回执后交prepare；apply在现场prepare成功并核漂移后执行。

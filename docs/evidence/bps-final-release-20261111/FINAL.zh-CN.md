@@ -1,6 +1,6 @@
 # BPS 最终候选发布材料
 
-2026-11-11。产品基线 `c2adc4ad92a2bf564bf8dfcbaa40aee78d8c9ff3`；native材料整合输入 `db97e37f177a9223130d95035cda57ef831b112d`，其通过记录保留。最新OVH完整回执已核，现补根/v8有效配置兼容及HTTPS relay发布边界；沿用完整验收后统一发布。当前`local_release_materials_ready=false`、`quota_product_live_verified=true`、`write_release_ready=false`，待新工具及专项整合后再更新。
+2026-11-11。产品基线 `c2adc4ad92a2bf564bf8dfcbaa40aee78d8c9ff3`；native材料整合输入 `db97e37f177a9223130d95035cda57ef831b112d`，其通过记录保留。最新当前态见[双图片模式发布准备](../bps-relay-release-20261111/FINAL.zh-CN.md)：根/v8配置兼容和HTTPS relay边界已完成，2FA沿用户确认收口，`local_release_materials_ready=true`、`prepare_command_ready=true`。生产尚未prepare或切换。
 
 ## 已核交付
 
