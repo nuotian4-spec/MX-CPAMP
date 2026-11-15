@@ -14,6 +14,14 @@ probe = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(probe)
 
 
+def process_summary(result):
+    codes = ('capability_probe_arguments_invalid', 'capability_probe_config_unreadable',
+             'configuration_parse_failed', 'configuration_scope_invalid', 'configuration_keys_empty',
+             'capability_probe_output_failed')
+    code = next((item for item in codes if item in result.stderr.splitlines()), 'unclassified_process_failure')
+    return f'exit={result.returncode}; code={code}; stdout_chars={len(result.stdout)}; stderr_chars={len(result.stderr)}'
+
+
 def verify_image(image, commit, output):
     cfg = {'config-version': 8, 'access': {'api-keys': ['synthetic-kilo', 'synthetic-codex', 'synthetic-bps', 'synthetic-legacy'],
            'client-key-scopes': [{'api-key': 'synthetic-' + channel, 'channel': channel} for channel in probe.CHANNELS]}}
@@ -22,13 +30,13 @@ def verify_image(image, commit, output):
         path.write_text(json.dumps(cfg), encoding='utf-8')
         path.chmod(0o600)
         result = subprocess.run(probe.probe_command(image, path), capture_output=True, text=True, timeout=60)
-        probe.require(result.returncode == 0, '镜像策略入口成功分支退出异常')
+        probe.require(result.returncode == 0, '镜像策略入口成功分支退出异常：' + process_summary(result))
         policy = json.loads(result.stdout)
         probe.validate_policy(policy, cfg, probe.digest(path), commit)
         path.write_text('config-version: [invalid', encoding='utf-8')
         failed = subprocess.run(probe.probe_command(image, path), capture_output=True, text=True, timeout=60)
         probe.require(failed.returncode != 0 and not failed.stdout.strip() and
-                      'configuration_parse_failed' in failed.stderr, '镜像坏配置分支未正确拒绝')
+                      'configuration_parse_failed' in failed.stderr, '镜像坏配置分支未正确拒绝：' + process_summary(failed))
     evidence = {'schema': 1, 'source_commit': commit, 'image': image, 'network': 'none',
                 'account_or_database_mounts': False, 'http_server_started': False,
                 'config_policy': policy, 'invalid_config_exit_code': failed.returncode,

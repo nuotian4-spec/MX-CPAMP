@@ -190,9 +190,12 @@ def validate_combined_receipt(receipt, evidence, cfg, images, config_sha, folder
 
 
 def probe_command(image, config):
-    return ['docker', 'run', '--rm', '--network', 'none', '--read-only', '--cap-drop', 'ALL',
+    config = pathlib.Path(config).resolve()
+    owner = config.stat()
+    return ['docker', 'run', '--rm', '--network', 'none', '--read-only',
+            '--user', f'{owner.st_uid}:{owner.st_gid}', '--cap-drop', 'ALL',
             '--security-opt', 'no-new-privileges', '--mount',
-            'type=bind,src=' + str(pathlib.Path(config).resolve()) + ',dst=/candidate.yaml,readonly',
+            'type=bind,src=' + str(config) + ',dst=/candidate.yaml,readonly',
             '--entrypoint', '/CLIProxyAPI/CLIProxyAPI', image, '--capability-probe', '--config', '/candidate.yaml']
 
 

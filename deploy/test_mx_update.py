@@ -430,6 +430,35 @@ class PolicyTests(unittest.TestCase):
         self.assertTrue(command[command.index('--mount') + 1].endswith(',readonly'))
 
 
+class ProbeProcessTests(unittest.TestCase):
+    def test_candidate_owner_is_probe_process_user(self):
+        for uid, gid in ((0, 0), (1001, 1001)):
+            with self.subTest(uid=uid), mock.patch.object(pathlib.Path, 'stat', return_value=types.SimpleNamespace(st_uid=uid, st_gid=gid)):
+                command = c.probe_command('synthetic-image', pathlib.Path(__file__))
+            self.assertEqual(command[command.index('--user') + 1], f'{uid}:{gid}')
+            self.assertEqual(command[command.index('--cap-drop') + 1], 'ALL')
+            self.assertEqual(command[command.index('--network') + 1], 'none')
+            self.assertIn('--read-only', command)
+            self.assertEqual(command.count('--mount'), 1)
+            self.assertTrue(command[command.index('--mount') + 1].endswith(',readonly'))
+
+    def test_ci_process_summary_only_emits_bounded_codes(self):
+        smoke = load('mx_ci_process_diagnostic', DEPLOY / 'test_capability_image.py')
+        result = types.SimpleNamespace(returncode=1, stdout='synthetic-private-value',
+                                       stderr='synthetic-private-value\ncapability_probe_config_unreadable\n')
+        summary = smoke.process_summary(result)
+        self.assertIn('exit=1', summary)
+        self.assertIn('code=capability_probe_config_unreadable', summary)
+        self.assertNotIn('synthetic-private-value', summary)
+        result.stderr = 'synthetic-private-value'
+        self.assertIn('code=unclassified_process_failure', smoke.process_summary(result))
+        with mock.patch.object(smoke.subprocess, 'run', return_value=result):
+            with self.assertRaises(smoke.probe.Failure) as failure:
+                smoke.verify_image('synthetic-image', COMMIT, pathlib.Path('unused-evidence.json'))
+        self.assertIn('code=unclassified_process_failure', str(failure.exception))
+        self.assertNotIn('synthetic-private-value', str(failure.exception))
+
+
 class DownloadTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='mx-download-fixture-')
