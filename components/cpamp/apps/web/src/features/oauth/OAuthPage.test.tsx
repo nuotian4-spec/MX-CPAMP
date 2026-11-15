@@ -30,6 +30,12 @@ const { pageMocks } = vi.hoisted(() => {
       showNotification: vi.fn(),
       completeReauth: vi.fn(),
       publishMutationRevision: vi.fn(),
+      latestBatch: vi.fn(),
+      activeBatch: vi.fn(),
+      createBatch: vi.fn(),
+      loginCapabilities: vi.fn(),
+      startBPS: vi.fn(),
+      recordMutationMarker: vi.fn(),
     },
   };
 });
@@ -80,6 +86,31 @@ vi.mock('@/services/api', () => ({
 
 vi.mock('@/services/api/vertex', () => ({
   vertexApi: { importCredential: vi.fn() },
+}));
+
+vi.mock('@/services/api/loginBatches', async (original) => ({
+  ...(await original<typeof import('@/services/api/loginBatches')>()),
+  loginBatchesApi: {
+    latest: pageMocks.latestBatch,
+    active: pageMocks.activeBatch,
+    create: pageMocks.createBatch,
+  },
+}));
+
+vi.mock('@/services/api/loginTasks', async (original) => ({
+  ...(await original<typeof import('@/services/api/loginTasks')>()),
+  loginTasksApi: {
+    capabilities: pageMocks.loginCapabilities,
+    startBPS: pageMocks.startBPS,
+  },
+}));
+
+vi.mock('@/features/accounts/model/accountCredentialMutationMarker', () => ({
+  createAccountCredentialMutationBaseline: (_files: unknown[], provider: string) => ({
+    provider,
+    credentials: [],
+  }),
+  recordAccountCredentialMutationMarker: pageMocks.recordMutationMarker,
 }));
 
 vi.mock('@/utils/clipboard', () => ({
@@ -154,6 +185,12 @@ describe('OAuthPage request lifecycle', () => {
     pageMocks.showNotification.mockReset();
     pageMocks.completeReauth.mockReset();
     pageMocks.publishMutationRevision.mockReset();
+    pageMocks.latestBatch.mockReset().mockResolvedValue(null);
+    pageMocks.activeBatch.mockReset().mockResolvedValue(null);
+    pageMocks.createBatch.mockReset();
+    pageMocks.loginCapabilities.mockReset().mockResolvedValue({ password_login_configured: true, bps_login_mode: 'builtin' });
+    pageMocks.startBPS.mockReset();
+    pageMocks.recordMutationMarker.mockReset();
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       callback(0);
       return 1;
@@ -211,6 +248,58 @@ describe('OAuthPage request lifecycle', () => {
 
     expect(readText(renderer!.toJSON())).not.toContain('https://oauth.example/old');
     expect(pageMocks.getAuthStatus).not.toHaveBeenCalled();
+  });
+
+  it('真实批次卡定位独立Codex授权，ACK后等待保存注册且原失败行不变', async () => {
+    pageMocks.location.search = '';
+    pageMocks.latestBatch.mockImplementation(async (profile: string) => profile === 'codex' ? {
+      id: 'stopped-batch', profile, status: 'completed',
+      items: [{ id: 'stopped-row', line_no: 1, email_hint: 'f***@example.invalid', status: 'needs_user_action', error_code: 'needs_user_action', reason: 'security_check' }],
+    } : null);
+    pageMocks.startAuth.mockResolvedValue({ url: 'https://auth.example/codex', state: 'browser-session' });
+    pageMocks.submitCallback.mockResolvedValue({ status: 'ok' });
+    pageMocks.getAuthStatus.mockResolvedValueOnce({ status: 'wait' }).mockResolvedValueOnce({ status: 'ok', saved: true, adopted: true });
+    const timers: Array<{ delay: number; callback: () => Promise<void> }> = [];
+    vi.mocked(window.setInterval).mockImplementation((callback, delay) => {
+      timers.push({ delay: delay || 0, callback: callback as () => Promise<void> });
+      return timers.length;
+    });
+    const scrollIntoView = vi.fn();
+    const focus = vi.fn();
+    vi.stubGlobal('document', { getElementById: vi.fn(() => ({ scrollIntoView, focus })) });
+    await act(async () => {
+      renderer = create(<OAuthPage />, { createNodeMock: (element) => element.type === 'textarea' ? { value: '' } : null });
+    });
+    const failureText = () => readText(renderer!.root.findByProps({ id: 'oauth-provider-codex-2fa' }).findByType('li').props.children);
+    const originalFailure = failureText();
+    expect(originalFailure).toContain('needs_user_action');
+    expect(renderer!.root.findByProps({ id: 'oauth-provider-codex' }).props.tabIndex).toBe(-1);
+    const handoff = renderer!.root.findAllByType(Button).find(node => readText(node.props.children) === '转到浏览器 OAuth')!;
+    await act(async () => { handoff.props.onClick(); });
+    expect(document.getElementById).toHaveBeenCalledWith('oauth-provider-codex');
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(focus).toHaveBeenCalledOnce();
+    expect(pageMocks.startAuth).not.toHaveBeenCalled();
+    expect(pageMocks.startBPS).not.toHaveBeenCalled();
+    expect(pageMocks.createBatch).not.toHaveBeenCalled();
+    expect(pageMocks.publishMutationRevision).not.toHaveBeenCalled();
+    await act(async () => { await findCodexOAuthButton(renderer!).props.onClick(); });
+    const input = renderer!.root.findAllByType(Input).find(node => node.props.label === 'auth_login.oauth_callback_label')!;
+    act(() => input.props.onChange({ target: { value: 'http://localhost:1455/auth/callback?code=once&state=browser-session' } }));
+    await act(async () => { await findCallbackButton(renderer!).props.onClick(); });
+    expect(pageMocks.recordMutationMarker).not.toHaveBeenCalled();
+    expect(pageMocks.publishMutationRevision).not.toHaveBeenCalled();
+    expect(failureText()).toBe(originalFailure);
+    expect(JSON.stringify(renderer!.toJSON())).toContain('回调已接收，等待保存和注册确认');
+    const oauthTimer = timers.filter(timer => timer.delay === 3000);
+    expect(oauthTimer).toHaveLength(1);
+    expect(timers.filter(timer => timer.delay === 1500)).toHaveLength(2);
+    await act(async () => { await oauthTimer[0].callback(); });
+    expect(pageMocks.recordMutationMarker).toHaveBeenCalledTimes(1);
+    expect(pageMocks.publishMutationRevision).toHaveBeenCalledTimes(1);
+    expect(pageMocks.showNotification).toHaveBeenCalledWith('auth_login.codex_oauth_status_success', 'success');
+    expect(pageMocks.submitCallback).toHaveBeenCalledTimes(1);
+    expect(failureText()).toBe(originalFailure);
   });
 
   it('discards a late callback response after the connection changes', async () => {

@@ -83,7 +83,16 @@ func ReadBPSEvents(ctx context.Context, response *http.Response, consume func([]
 	return readBPSEvents(ctx, response, false, consume)
 }
 
-func ReadBPSProtocolEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error) (err error) {
+func ReadBPSProtocolEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error, repairs ...basispoints.ToolRepairFunc) (err error) {
+	return readBPSProtocolEvents(ctx, response, bridge, bindings, consume, nil, repairs...)
+}
+
+// ReadBPSSearchFinalEvents retains known terminal positions when tool events precede buffered text.
+func ReadBPSSearchFinalEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error, order []int, repairs ...basispoints.ToolRepairFunc) error {
+	return readBPSProtocolEvents(ctx, response, bridge, bindings, consume, order, repairs...)
+}
+
+func readBPSProtocolEvents(ctx context.Context, response *http.Response, bridge *basispoints.Bridge, bindings *BPSBindings, consume func([]byte) error, order []int, repairs ...basispoints.ToolRepairFunc) (err error) {
 	defer func() { err = WithBPSHTTPStatus(err, response.StatusCode) }()
 	upstream := response.Body
 	if !strings.Contains(strings.ToLower(response.Header.Get("Content-Type")), "text/event-stream") {
@@ -95,23 +104,34 @@ func ReadBPSProtocolEvents(ctx context.Context, response *http.Response, bridge 
 		_ = doc.SetRaw("response", string(raw))
 		upstream = io.NopCloser(bytes.NewReader(append(append([]byte("data: "), doc.Bytes()...), []byte("\n\n")...)))
 	}
-	// Nil callbacks ensure one accepted generation never triggers automatic model repair.
-	converted := bridge.StreamWithRepairs(ctx, upstream, nil, nil)
+	var repair basispoints.ToolRepairFunc
+	if len(repairs) > 0 {
+		repair = repairs[0]
+	}
+	converted := bridge.StreamWithRepairs(ctx, upstream, repair, nil)
 	defer func() { _ = converted.Close() }()
 	public := &http.Response{Header: http.Header{"Content-Type": []string{"text/event-stream"}}, Body: converted}
+	compaction := bpsCompactionLifecycle{required: bridge.RequiresCompaction}
 	return readBPSEvents(ctx, public, true, func(event []byte) error {
-		bound, err := bindings.Publish(event)
-		if err != nil {
-			return err
-		}
-		return consume(bound)
-	})
+		return compaction.accept(event, func(event []byte) error {
+			bound, err := bindings.Publish(event)
+			if err != nil {
+				return err
+			}
+			return consume(bound)
+		})
+	}, order)
 }
 
-func readBPSEvents(ctx context.Context, response *http.Response, tools bool, consume func([]byte) error) error {
+func readBPSEvents(ctx context.Context, response *http.Response, tools bool, consume func([]byte) error, orders ...[]int) error {
 	const max = 16 << 20
 	terminal := false
 	outputIndices := make(map[int64]int)
+	if len(orders) > 0 {
+		for index, upstream := range orders[0] {
+			outputIndices[int64(upstream)] = index
+		}
+	}
 	publicOutputIndex := func(upstream int64) int {
 		if index, ok := outputIndices[upstream]; ok {
 			return index
@@ -144,7 +164,15 @@ func readBPSEvents(ctx context.Context, response *http.Response, tools bool, con
 		if kind == "response.failed" || kind == "response.incomplete" || kind == "error" {
 			if failure := basispoints.ParseBridgeFailure(data); failure != nil {
 				if failure.FailureStage == "bridge_tool_validation" {
-					return NewBPSFailure("tool_validation", "tool_validation_failed")
+					diagnostic := NewBPSFailure("tool_validation", "tool_validation_failed")
+					diagnostic.completed = failure.UpstreamTerminalEvent == "response.completed"
+					diagnostic.withheld = failure.ToolBatchWithheld
+					diagnostic.toolReason, diagnostic.toolType, diagnostic.catalogCount = failure.Reason, failure.ToolType, failure.CatalogCount
+					diagnostic.schemaTool, diagnostic.schemaPath, diagnostic.schemaRule = failure.SchemaTool, failure.SchemaPath, failure.SchemaRule
+					diagnostic.validationReason = basispoints.BoundedToolValidationReason(failure.ValidationReason)
+					detail := BPSUsageDetail(ctx, data)
+					diagnostic.usageDetail = &detail
+					return diagnostic
 				}
 				return NewBPSFailure("protocol_conversion", "conversion_failed")
 			}
@@ -165,7 +193,7 @@ func readBPSEvents(ctx context.Context, response *http.Response, tools bool, con
 			return NewBPSFailure("tool_validation", "tool_validation_failed")
 		}
 		allowedItem := func(kind string) bool {
-			return kind == "message" || kind == "reasoning" || tools && (kind == "function_call" || kind == "custom_tool_call")
+			return kind == "message" || kind == "reasoning" || tools && (kind == "function_call" || kind == "custom_tool_call" || kind == "compaction")
 		}
 		if item := doc.Get("item.type").String(); item != "" && !allowedItem(item) {
 			return NewBPSFailure("protocol_conversion", "conversion_failed")

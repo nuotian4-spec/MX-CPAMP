@@ -29,6 +29,7 @@ type Input struct {
 	TOTPSecret string `json:"totp_secret"`
 }
 type Task struct {
+	HTTPDiagnostics
 	ID               string    `json:"id"`
 	Profile          string    `json:"profile"`
 	Status           string    `json:"status"`
@@ -57,6 +58,7 @@ type credentials struct {
 	Expired      string `json:"expired"`
 }
 type workerTask struct {
+	rawHTTPDiagnostics
 	ID        string       `json:"id"`
 	Status    string       `json:"status"`
 	ErrorCode string       `json:"error_code"`
@@ -68,6 +70,11 @@ type upstreamError struct {
 	status int
 	code   string
 }
+
+type requestFailure struct{ source string }
+
+func (e *requestFailure) Error() string { return ErrUnavailable.Error() }
+func (e *requestFailure) Unwrap() error { return ErrUnavailable }
 
 func (e *upstreamError) Error() string { return "上游拒绝登录请求" }
 func callbackDefinitelyRejected(err error) bool {
@@ -105,11 +112,15 @@ type Service struct {
 }
 
 type oauthSession struct {
+	statusMu   sync.Mutex
 	provider   string
 	setup      store.Setup
 	created    time.Time
 	release    func()
 	committing bool
+	cancelling bool
+	submitted  bool
+	terminal   map[string]any
 }
 
 var ErrTargetChanged = errors.New("CPA连接已变更，请重新发起授权")
@@ -136,16 +147,23 @@ func (s *Service) PasswordLoginConfigured() bool {
 func terminal(status string) bool {
 	return status != "created" && status != "running" && status != "importing" && status != "cancelling"
 }
-func snapshot(t *Task) Task { out := *t; out.cancel = nil; out.workerID = ""; return out }
+func snapshot(t *Task) Task {
+	out := *t
+	out.cancel = nil
+	out.workerID = ""
+	if out.EndpointCategory == "" {
+		out.EndpointCategory = "unknown"
+	}
+	if out.SecurityCheckSubtype == "" {
+		out.SecurityCheckSubtype = "unknown"
+	}
+	return out
+}
 func (s *Service) Create(input Input) (Task, error) {
 	return s.createBound(input, nil, "")
 }
 func (s *Service) createBound(input Input, expected *store.Setup, batchID string) (Task, error) {
 	if s.workerURL == "" || s.secret == "" {
-		return Task{}, ErrUnavailable
-	}
-	// 首次登录前清除上一次 Manager 进程遗留的内部任务；不从磁盘恢复凭据。
-	if s.resetWorker() != nil {
 		return Task{}, ErrUnavailable
 	}
 	if (input.Profile != "codex" && input.Profile != "bps") || strings.TrimSpace(input.Email) == "" || input.Password == "" || input.TOTPSecret == "" || len(input.Password) > 4096 || len(input.TOTPSecret) > 1024 {
@@ -157,6 +175,13 @@ func (s *Service) createBound(input Input, expected *store.Setup, batchID string
 	}
 	if expected != nil && !sameSetup(setup, *expected) {
 		return Task{}, ErrTargetChanged
+	}
+	if err := s.requireBuiltinBPS(context.Background(), setup, input.Profile); err != nil {
+		return Task{}, err
+	}
+	// Clear stale worker tasks only after the requested provider is admitted.
+	if s.resetWorker() != nil {
+		return Task{}, ErrUnavailable
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -318,6 +343,7 @@ func (s *Service) run(ctx context.Context, id string, input Input) {
 		s.mu.Lock()
 		s.tasks[id].Stage = safeStage(current.Stage)
 		s.tasks[id].Reason = safeReason(current.Reason)
+		s.tasks[id].HTTPDiagnostics = current.rawHTTPDiagnostics.safe()
 		s.mu.Unlock()
 		switch current.Status {
 		case "succeeded":
@@ -328,6 +354,7 @@ func (s *Service) run(ctx context.Context, id string, input Input) {
 			}
 			s.tasks[id].Status = "importing"
 			s.tasks[id].Stage = "cpa_import"
+			s.tasks[id].HTTPDiagnostics = (rawHTTPDiagnostics{}).safe()
 			s.tasks[id].Reason = ""
 			s.mu.Unlock()
 			s.importCredentials(id, current.Result)
@@ -450,7 +477,7 @@ func (s *Service) request(ctx context.Context, method, target, key string, input
 	req.Header.Set("Content-Type", "application/json")
 	res, err := s.client.Do(req)
 	if err != nil {
-		return ErrUnavailable
+		return &requestFailure{source: "transport"}
 	}
 	defer res.Body.Close()
 	if method == http.MethodDelete && res.StatusCode == http.StatusNotFound {
@@ -474,7 +501,7 @@ func (s *Service) request(ctx context.Context, method, target, key string, input
 			}
 		}
 		switch code {
-		case "invalid_callback_url", "invalid_callback_query", "conflicting_callback_parameters", "callback_state_mismatch", "callback_code_required", "oauth_provider_mismatch", "invalid_body", "invalid_state", "unsupported_provider":
+		case "invalid_callback_url", "invalid_callback_query", "conflicting_callback_parameters", "callback_state_mismatch", "callback_code_required", "oauth_provider_mismatch", "invalid_body", "invalid_state", "unsupported_provider", "oauth_commit_in_progress":
 		default:
 			code = "upstream_rejected"
 		}
@@ -484,7 +511,7 @@ func (s *Service) request(ctx context.Context, method, target, key string, input
 		return nil
 	}
 	if json.NewDecoder(io.LimitReader(res.Body, 1024*1024)).Decode(output) != nil {
-		return ErrUnavailable
+		return &requestFailure{source: "upstream"}
 	}
 	return nil
 }
@@ -504,8 +531,22 @@ func (s *Service) OAuth(ctx context.Context, method, action string, input map[st
 	if action != "auth-url" {
 		s.mu.Lock()
 		saved, ok := s.sessions[state]
+		var terminal map[string]any
 		s.mu.Unlock()
 		if !ok || time.Since(saved.created) > 25*time.Minute {
+			return nil, ErrNotFound
+		}
+		if action == "status" && saved.provider == "bps" {
+			saved.statusMu.Lock()
+			defer saved.statusMu.Unlock()
+		}
+		s.mu.Lock()
+		current := s.sessions[state]
+		if current == saved && action == "status" {
+			terminal = copyOAuthOutcome(saved.terminal)
+		}
+		s.mu.Unlock()
+		if current != saved || time.Since(saved.created) > 25*time.Minute {
 			return nil, ErrNotFound
 		}
 		expected = saved.setup
@@ -513,9 +554,47 @@ func (s *Service) OAuth(ctx context.Context, method, action string, input map[st
 			return nil, ErrInput
 		}
 		provider = saved.provider
+		if terminal != nil {
+			currentSetup, available, resolveErr := s.resolver.ResolveSetup(ctx)
+			if resolveErr != nil || !available {
+				return nil, ErrUnavailable
+			}
+			if !sameSetup(currentSetup, expected) {
+				return nil, ErrTargetChanged
+			}
+			return terminal, nil
+		}
 	}
 	if provider != "codex" && provider != "bps" {
 		return nil, ErrInput
+	}
+	if action == "auth-url" || action == "callback" {
+		if err := s.requireBuiltinBPS(ctx, expected, provider); err != nil {
+			return nil, err
+		}
+	}
+	if action == "session" && provider == "bps" {
+		s.mu.Lock()
+		session := s.sessions[state]
+		if session == nil {
+			s.mu.Unlock()
+			return nil, ErrNotFound
+		}
+		if session.submitted || session.committing {
+			s.mu.Unlock()
+			return nil, ErrImporting
+		}
+		if session.cancelling {
+			s.mu.Unlock()
+			return nil, ErrBusy
+		}
+		session.cancelling = true
+		s.mu.Unlock()
+		defer func() {
+			s.mu.Lock()
+			session.cancelling = false
+			s.mu.Unlock()
+		}()
 	}
 	var payload any
 	query := url.Values{}
@@ -530,12 +609,13 @@ func (s *Service) OAuth(ctx context.Context, method, action string, input map[st
 		payload = map[string]string{"provider": provider, "state": state, "redirect_url": input["redirect_url"]}
 	default:
 		query.Set("state", state)
+		query.Set("provider", provider)
 	}
 	var raw map[string]any
 	if action == "callback" {
 		s.mu.Lock()
 		session := s.sessions[state]
-		if session == nil || session.committing {
+		if session == nil || session.committing || session.cancelling {
 			s.mu.Unlock()
 			return nil, ErrBusy
 		}
@@ -555,6 +635,7 @@ func (s *Service) OAuth(ctx context.Context, method, action string, input map[st
 			return nil, ErrNotFound
 		}
 		session.release = release
+		session.submitted = true
 		s.mu.Unlock()
 	}
 	if err := s.cpaBound(ctx, expected, method, action, query, payload, &raw); err != nil {
@@ -566,6 +647,7 @@ func (s *Service) OAuth(ctx context.Context, method, action string, input map[st
 					session.release = nil
 				}
 				session.committing = false
+				session.submitted = false
 			}
 			s.mu.Unlock()
 		}
@@ -608,15 +690,52 @@ func (s *Service) OAuth(ctx context.Context, method, action string, input map[st
 		return nil, ErrUnavailable
 	}
 	out["status"] = status
-	if status == "error" {
-		out["error"] = "授权失败，请重新发起或处理官方页面验证"
+	if provider == "bps" {
+		for _, key := range []string{"saved", "adopted", "cancelled"} {
+			if value, ok := raw[key].(bool); ok {
+				out[key] = value
+			}
+		}
+		if value, ok := raw["auth_id"].(string); ok {
+			out["auth_id"] = value
+		}
+		if value, ok := raw["save_outcome"].(string); ok && validSaveOutcome(value) {
+			out["save_outcome"] = value
+		}
 	}
-	if action == "session" || (action == "status" && status != "wait") {
+	if status == "error" {
+		out["error"] = "授权未完成，请查看诊断结果"
+		if provider == "bps" {
+			s.mu.Lock()
+			submitted := s.sessions[state] != nil && s.sessions[state].submitted
+			s.mu.Unlock()
+			for key, value := range oauthOutcome(raw, submitted) {
+				out[key] = value
+			}
+		}
+	}
+	terminalResult := status != "wait"
+	if provider == "bps" {
+		terminalResult = (status == "ok" && out["saved"] == true && out["adopted"] == true) ||
+			(status == "error" && out["error_code"] != "session_missing_or_expired" && out["error_code"] != "unknown")
+	}
+	trueCancellation := action == "session" && (provider != "bps" || out["cancelled"] == true)
+	if trueCancellation || (action == "status" && status != "wait") {
 		s.mu.Lock()
 		if session := s.sessions[state]; session != nil && session.release != nil {
 			session.release()
 		}
-		delete(s.sessions, state)
+		if action == "status" && provider == "bps" {
+			if session := s.sessions[state]; session != nil {
+				session.release = nil
+				if terminalResult {
+					session.committing = true
+					session.terminal = copyOAuthOutcome(out)
+				}
+			}
+		} else {
+			delete(s.sessions, state)
+		}
 		s.mu.Unlock()
 	}
 	return out, nil

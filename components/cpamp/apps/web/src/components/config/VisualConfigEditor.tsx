@@ -777,6 +777,7 @@ export function VisualConfigEditor({
               <div className={styles.subsection}>
                 <ApiKeysCardEditor
                   value={values.apiKeysText}
+                  scopes={values.clientKeyScopes}
                   disabled={disabled}
                   onPersistApiKeyMutation={onPersistApiKeyMutation}
                   onRefreshApiKeys={onRefreshApiKeys}

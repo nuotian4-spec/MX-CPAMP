@@ -265,6 +265,24 @@ export function BatchPasswordLogin({
                     ? ` · ${row.error_code}`
                     : ''}
                   {row.auth_index ? ` · 凭证索引 ${row.auth_index}` : ''}
+                  {profile === 'codex' && row.status === 'needs_user_action' && (
+                    <div>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const card = document.getElementById('oauth-provider-codex');
+                          card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          card?.focus({ preventScroll: true });
+                        }}
+                      >
+                        转到浏览器 OAuth
+                      </Button>
+                      <p>
+                        新建独立授权，不接续原任务或修改批次；实际导入账号由官方页面登录决定。
+                        密码与TOTP不会带入浏览器授权。
+                      </p>
+                    </div>
+                  )}
                 </li>
               ))}
             </ol>

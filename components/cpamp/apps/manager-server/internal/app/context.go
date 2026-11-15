@@ -19,7 +19,9 @@ import (
 	codexinspectionsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/codexinspection"
 	collectorsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/collector"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/cpaauthfiles"
+	concurrencysvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/credentialconcurrency"
 	dashboardsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/dashboard"
+	kilosvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/kilo"
 	managerconfigsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/managerconfig"
 	modelpricesvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/modelprice"
 	monitoringsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/monitoring"
@@ -59,6 +61,8 @@ type Context struct {
 	SetupService                   *setupsvc.Service
 	AdminAuthService               *adminauthsvc.Service
 	ManagerConfigService           *managerconfigsvc.Service
+	CredentialConcurrencyService   *concurrencysvc.Service
+	KiloService                    *kilosvc.Service
 	CollectorService               *collectorsvc.Service
 	UsageService                   *usagesvc.Service
 	DashboardService               *dashboardsvc.Service
@@ -166,20 +170,23 @@ func fromExisting(
 		AggregateReadsEnabled: cfg.DashboardHourlyRollupEnabled,
 	}))
 	authFileMutationCoordinator := cpaauthfiles.NewMutationCoordinator()
+	connectionService := concurrencysvc.New(managerConfigService, authFileMutationCoordinator)
 	return &Context{
-		OAuthLoginService:    loginsvc.New(managerConfigService, authFileMutationCoordinator, cfg.OAuthLoginURL, cfg.OAuthLoginSecret),
-		UpdateCheckService:   updatechecksvc.New(st, buildinfo.Version, buildinfo.SourceCommit, os.Getenv("CPAMP_UPDATE_CHECK_ENABLED") != "false"),
-		Config:               cfg,
-		Store:                st,
-		Collector:            collectorManager,
-		StartedAt:            startedAt,
-		ServiceID:            serviceID,
-		AdminAuthService:     adminauthsvc.New(cfg, st),
-		SetupService:         setupsvc.New(cfg, st, collectorService, managerConfigService, startedAt, serviceID),
-		ManagerConfigService: managerConfigService,
-		CollectorService:     collectorService,
-		UsageService:         usageService,
-		DashboardService:     dashboardsvc.New(st, cfg.DashboardHourlyRollupEnabled),
+		OAuthLoginService:            loginsvc.New(managerConfigService, authFileMutationCoordinator, cfg.OAuthLoginURL, cfg.OAuthLoginSecret),
+		UpdateCheckService:           updatechecksvc.New(st, buildinfo.Version, buildinfo.SourceCommit, os.Getenv("CPAMP_UPDATE_CHECK_ENABLED") != "false"),
+		Config:                       cfg,
+		Store:                        st,
+		Collector:                    collectorManager,
+		StartedAt:                    startedAt,
+		ServiceID:                    serviceID,
+		AdminAuthService:             adminauthsvc.New(cfg, st),
+		SetupService:                 setupsvc.New(cfg, st, collectorService, managerConfigService, startedAt, serviceID),
+		ManagerConfigService:         managerConfigService,
+		CredentialConcurrencyService: connectionService,
+		KiloService:                  kilosvc.New(managerConfigService, connectionService, nil),
+		CollectorService:             collectorService,
+		UsageService:                 usageService,
+		DashboardService:             dashboardsvc.New(st, cfg.DashboardHourlyRollupEnabled),
 		CodexInspectionService: codexinspectionsvc.NewWithOptions(
 			st,
 			managerConfigService,

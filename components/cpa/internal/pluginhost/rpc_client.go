@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MoeForge/moego/ojson"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginabi"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
 	log "github.com/sirupsen/logrus"
@@ -829,10 +830,48 @@ func (a rpcQuotaProvider) DescribeQuota(ctx context.Context, req pluginapi.Quota
 func (a rpcQuotaProvider) FetchQuota(ctx context.Context, req pluginapi.QuotaFetchRequest) (pluginapi.QuotaFetchResponse, error) {
 	callbackID, closeCallback := a.openHostCallbackContext(ctx)
 	defer closeCallback()
-	return callPlugin[pluginapi.QuotaFetchResponse](ctx, a.client, pluginabi.MethodQuotaFetch, rpcQuotaFetchRequest{
+	raw, err := callPlugin[json.RawMessage](ctx, a.client, pluginabi.MethodQuotaFetch, rpcQuotaFetchRequest{
 		QuotaFetchRequest: req,
 		HostCallbackID:    callbackID,
 	})
+	if err != nil {
+		return pluginapi.QuotaFetchResponse{}, err
+	}
+	var response pluginapi.QuotaFetchResponse
+	if len(raw) == 0 {
+		return response, nil
+	}
+	doc := ojson.NewDoc(raw)
+	summary := doc.Get("summary")
+	if err := doc.Delete("summary"); err != nil {
+		return response, fmt.Errorf("decode plugin result quota.fetch: %w", err)
+	}
+	if err := json.Unmarshal(doc.Bytes(), &response); err != nil {
+		return pluginapi.QuotaFetchResponse{}, fmt.Errorf("decode plugin result quota.fetch: %w", err)
+	}
+	if !summary.Exists() || summary.Type == ojson.Null {
+		return response, nil
+	}
+	var metrics []json.RawMessage
+	if err := json.Unmarshal([]byte(summary.Raw), &metrics); err != nil {
+		return pluginapi.QuotaFetchResponse{}, fmt.Errorf("decode plugin result quota.fetch: %w", err)
+	}
+	for _, rawMetric := range metrics {
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(rawMetric, &fields); err != nil {
+			return pluginapi.QuotaFetchResponse{}, fmt.Errorf("decode plugin result quota.fetch summary: %w", err)
+		}
+		var metric pluginapi.QuotaMetric
+		if err := json.Unmarshal(rawMetric, &metric); err != nil {
+			return pluginapi.QuotaFetchResponse{}, fmt.Errorf("decode plugin result quota.fetch summary: %w", err)
+		}
+		value := bytes.TrimSpace(fields["value"])
+		if len(value) == 0 || bytes.Equal(value, []byte("null")) {
+			continue
+		}
+		response.Summary = append(response.Summary, metric)
+	}
+	return response, nil
 }
 
 func (a rpcQuotaProvider) ResetQuota(ctx context.Context, req pluginapi.QuotaResetRequest) (pluginapi.QuotaResetResponse, error) {

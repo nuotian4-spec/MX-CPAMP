@@ -132,8 +132,22 @@ func TestBPSFailureDiagnosticsPublicProtocols(t *testing.T) {
 					if diag.Get("stage").String() != tc.stage || diag.Get("code").String() != tc.code || diag.Get("upstream_http_status").Int() != int64(tc.upstream) || diag.Get("inband_status").Int() != int64(tc.inband) {
 						t.Fatal("diagnostic classification or status provenance changed")
 					}
-					if len(diag.Map()) != 4 {
+					fields := map[string]bool{"stage": true, "code": true, "upstream_http_status": true, "inband_status": true}
+					if tc.stage == "tool_validation" {
+						for _, key := range []string{"upstream_completed", "tool_batch_withheld", "usage_known", "reason", "tool_type", "catalog_count"} {
+							fields[key] = true
+						}
+						if diag.Get("reason").String() != "outside_catalog" || diag.Get("tool_type").String() != "function_call" || diag.Get("catalog_count").Type != ojson.Number || diag.Get("catalog_count").Int() != 1 || !diag.Get("upstream_completed").Bool() || !diag.Get("tool_batch_withheld").Bool() || !diag.Get("usage_known").IsBool() {
+							t.Fatal("bounded tool diagnostics changed")
+						}
+					}
+					if len(diag.Map()) != len(fields) {
 						t.Fatal("unexpected diagnostic fields")
+					}
+					for key := range diag.Map() {
+						if !fields[key] {
+							t.Fatalf("unexpected diagnostic field %s", key)
+						}
 					}
 					if tc.inband == 0 && diag.Get("inband_status").Raw != "null" {
 						t.Fatal("unknown in-band status must be null")

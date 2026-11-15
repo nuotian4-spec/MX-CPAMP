@@ -21,6 +21,9 @@ func StripEncryptedContent(raw []byte) ([]byte, error) {
 	if err := validateNewAgentMessage(source["input"]); err != nil {
 		return nil, err
 	}
+	if err := validateCurrentUserContent(source["input"]); err != nil {
+		return nil, err
+	}
 	input, _ := source["input"].([]any)
 	changed := false
 	for _, rawItem := range input {
@@ -67,4 +70,23 @@ func StripEncryptedContent(raw []byte) ([]byte, error) {
 		return raw, nil
 	}
 	return json.Marshal(source)
+}
+
+func validateCurrentUserContent(value any) error {
+	items, _ := value.([]any)
+	for i := len(items) - 1; i >= 0; i-- {
+		item, _ := items[i].(object)
+		if text(item["role"]) != "user" {
+			continue
+		}
+		parts, _ := item["content"].([]any)
+		for j, raw := range parts {
+			part, _ := raw.(object)
+			if text(part["type"]) == "encrypted_content" {
+				return &ContentValidationError{Path: fmt.Sprintf("input[%d].content[%d]", i, j), ContentType: "encrypted_content", message: "BPS当前任务包含不可读加密内容，请提供原始明文任务"}
+			}
+		}
+		break
+	}
+	return nil
 }

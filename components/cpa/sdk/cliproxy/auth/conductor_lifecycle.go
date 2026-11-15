@@ -129,6 +129,11 @@ func (m *Manager) Register(ctx context.Context, auth *Auth) (*Auth, error) {
 	m.authEpochs[auth.ID]++
 	auth.RegistrationEpoch = m.authEpochs[auth.ID]
 	if existing, exists := m.auths[auth.ID]; exists && existing != nil {
+		preserveKiloRestriction(existing, auth)
+		auth.PermissionSuspensions = append([]PermissionSuspension(nil), existing.PermissionSuspensions...)
+		auth.permissionStateRecorded = existing.permissionStateRecorded
+		auth.permissionStateUnknown = existing.permissionStateUnknown
+		auth.permissionReleasedAt = existing.permissionReleasedAt
 		if auth.AuthSourceKind() != AuthSourceConfig && !concurrencyAuthIdentity(existing).conflicts(concurrencyAuthIdentity(auth)) {
 			if _, supplied := auth.Metadata[AttributeConcurrencyLimit]; !supplied {
 				if limit, ok := existing.Metadata[AttributeConcurrencyLimit]; ok {
@@ -388,6 +393,11 @@ func (m *Manager) updateInternalLocked(ctx context.Context, base, auth *Auth, mo
 		auth.CreatedAt = existing.CreatedAt
 	}
 	auth.Success = existing.Success
+	// Ordinary replacement and token refresh never release permission state.
+	auth.PermissionSuspensions = append([]PermissionSuspension(nil), existing.PermissionSuspensions...)
+	auth.permissionStateRecorded = existing.permissionStateRecorded
+	auth.permissionStateUnknown = existing.permissionStateUnknown
+	auth.permissionReleasedAt = existing.permissionReleasedAt
 	auth.Failed = existing.Failed
 	auth.recentRequests = existing.recentRequests
 	if auth.Generation <= existing.Generation {
@@ -556,6 +566,7 @@ func (m *Manager) updateInternalLocked(ctx context.Context, base, auth *Auth, mo
 			auth.Metadata["antigravity_capability_hints"] = persistedHints
 		}
 	}
+	preserveKiloRestriction(existing, auth)
 	auth.EnsureIndex()
 	// Save before publication, including the transactional Meta mint path.
 	// Runtime-only changes made during I/O are merged below, never overwritten.
@@ -765,6 +776,11 @@ func (m *Manager) Load(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if e, ok := m.Executor("kilo"); ok {
+		if err = m.reconcileKiloDeviceSaves(e, items); err != nil {
+			return err
+		}
+	}
 	m.mu.Lock()
 	now := time.Now()
 	previousAuths := m.auths
@@ -789,6 +805,7 @@ func (m *Manager) Load(ctx context.Context) error {
 		auth.RegistrationEpoch = m.authEpochs[auth.ID]
 		auth.Generation = 1
 		if prev, exists := previousAuths[auth.ID]; exists && prev != nil {
+			preserveKiloRestriction(prev, auth)
 			auth.CredentialVersion = max(auth.CredentialVersion, prev.CredentialVersion)
 			if CredentialsChanged(prev, auth) {
 				auth.CredentialVersion++

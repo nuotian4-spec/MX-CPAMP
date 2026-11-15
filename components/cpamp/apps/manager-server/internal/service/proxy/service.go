@@ -110,6 +110,7 @@ var cpaBuiltinManagementPathHeads = map[string]struct{}{
 	"auth-files":                {},
 	"codex-inspection":          {},
 	"config":                    {},
+	"config.yaml":               {},
 	"dashboard":                 {},
 	"model-prices":              {},
 	"monitoring":                {},
@@ -200,7 +201,7 @@ func (s *Service) ProxyV8APIKeysConfig(w http.ResponseWriter, r *http.Request, w
 	s.proxyToSavedSetup(w, r, writeError, true, false)
 }
 
-func (s *Service) proxyToSavedSetup(w http.ResponseWriter, r *http.Request, writeError func(http.ResponseWriter, int, error), useSavedManagementKey bool, rewritePluginOrigin bool) {
+func (s *Service) proxyToSavedSetup(w http.ResponseWriter, r *http.Request, writeError func(http.ResponseWriter, int, error), useSavedManagementKey bool, rewritePluginOrigin bool, guards ...*configYAMLGuard) {
 	setup, ok, err := s.resolveSetup(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
@@ -209,6 +210,14 @@ func (s *Service) proxyToSavedSetup(w http.ResponseWriter, r *http.Request, writ
 	if !ok {
 		writeError(w, http.StatusPreconditionRequired, errors.New("usage service is not configured"))
 		return
+	}
+	var guard *configYAMLGuard
+	if len(guards) > 0 {
+		guard = guards[0]
+		if err := guard.connections.CheckConnection(r.Context(), guard.reference, guard.setup); err != nil || setup != guard.setup {
+			writeError(w, http.StatusConflict, errors.New("配置管理连接已变化，未发送保存"))
+			return
+		}
 	}
 	target, err := url.Parse(setup.CPAUpstreamURL)
 	if err != nil {
@@ -264,6 +273,11 @@ func (s *Service) proxyToSavedSetup(w http.ResponseWriter, r *http.Request, writ
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		originalDirector(req)
+		// 配置页外层兼容路径统一使用现有v8配置事务。
+		if useSavedManagementKey && r.URL.Path == "/v0/management/config.yaml" {
+			req.URL.Path = strings.TrimRight(target.Path, "/") + "/v8/management/config.yaml"
+			req.URL.RawPath = ""
+		}
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.Host = target.Host
@@ -284,6 +298,10 @@ func (s *Service) proxyToSavedSetup(w http.ResponseWriter, r *http.Request, writ
 	}
 	responseProcessed := false
 	proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, proxyErr error) {
+		if guard != nil && guard.changed {
+			writeError(w, http.StatusConflict, errors.New("配置管理连接已变化；原目标操作状态待核，禁止自动重放"))
+			return
+		}
 		if !responseProcessed {
 			if restoreErr := s.restoreInspectionOwnershipDetached(r.Context(), revokedOwnership); restoreErr != nil {
 				proxyErr = fmt.Errorf("%w; restore inspection ownership: %v", proxyErr, restoreErr)
@@ -292,6 +310,14 @@ func (s *Service) proxyToSavedSetup(w http.ResponseWriter, r *http.Request, writ
 		writeError(w, http.StatusBadGateway, proxyErr)
 	}
 	proxy.ModifyResponse = func(response *http.Response) error {
+		if guard != nil {
+			if err := guard.connections.CheckConnection(r.Context(), guard.reference, guard.setup); err != nil {
+				guard.changed = true
+				_ = response.Body.Close()
+				return err
+			}
+			response.Header.Set(ConfigConnectionHeader, guard.reference)
+		}
 		responseProcessed = true
 		if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 			return s.restoreInspectionOwnershipDetached(r.Context(), revokedOwnership)

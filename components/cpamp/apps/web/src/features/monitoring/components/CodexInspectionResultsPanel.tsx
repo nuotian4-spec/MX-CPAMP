@@ -178,9 +178,11 @@ export function CodexInspectionResultsPanel({
   };
 
   const probeSourceLabel = (source: InspectionProbeSource) =>
-    source === 'bps_access'
-      ? 'BPS只读权限'
-      : t(`monitoring.codex_inspection_probe_source_${source}`);
+    source === 'cpa_bps_quota'
+      ? 'BPS 插件只读额度'
+      : source === 'bps_access'
+        ? 'BPS只读权限'
+        : t(`monitoring.codex_inspection_probe_source_${source}`);
   const probeStateLabel = (state: InspectionProbeState) =>
     t(`monitoring.codex_inspection_probe_state_${state}`);
   const probeStateClass: Record<InspectionProbeState, string> = {
@@ -310,11 +312,13 @@ export function CodexInspectionResultsPanel({
                             isXai ? styles.providerBadgeXai : styles.providerBadgeCodex
                           }`}
                         >
-                          {isBps
-                            ? 'BPS'
-                            : isXai
-                              ? t('monitoring.codex_inspection_target_xai')
-                              : t('monitoring.codex_inspection_target_codex')}
+                          {item.provider === 'cpa-bps'
+                            ? 'BPS 插件'
+                            : isBps
+                              ? 'BPS'
+                              : isXai
+                                ? t('monitoring.codex_inspection_target_xai')
+                                : t('monitoring.codex_inspection_target_codex')}
                         </span>
                         <span
                           className={`${styles.stateChip} ${

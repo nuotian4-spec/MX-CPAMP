@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/channelscope"
+
 	"github.com/MoeForge/moego/ojson"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -222,6 +224,14 @@ func NewPreFirstTokenKeepAliveTicker(cfg *config.SDKConfig) (<-chan time.Time, f
 		return nil, func() {}
 	}
 	return NewStreamingKeepAliveTicker(StreamingKeepAliveInterval(cfg))
+}
+
+// NewRequestPreFirstTokenKeepAliveTicker preserves a local Kilo error's HTTP status.
+func NewRequestPreFirstTokenKeepAliveTicker(ctx context.Context, cfg *config.SDKConfig) (<-chan time.Time, func()) {
+	if channelscope.KiloPayload(ctx) {
+		return nil, func() {}
+	}
+	return NewPreFirstTokenKeepAliveTicker(cfg)
 }
 
 // SetStreamingKeepAliveTickerFactoryForTest overrides the keep-alive ticker factory for deterministic tests
@@ -475,7 +485,8 @@ type BaseAPIHandler struct {
 	AuthManager *coreauth.Manager
 
 	// Cfg holds the current application configuration.
-	Cfg *config.SDKConfig
+	Cfg                *config.SDKConfig
+	fullConfigSnapshot func() *config.Config
 
 	// PluginHost optionally applies plugin interceptors around upstream execution.
 	PluginHost PluginInterceptorHost
@@ -635,6 +646,8 @@ func (h *BaseAPIHandler) GetContextWithCancel(handler interfaces.APIHandler, c *
 
 	if requestCtx != nil {
 		parentCtx = httptransport.InheritDecorator(parentCtx, requestCtx)
+		parentCtx = channelscope.With(parentCtx, channelscope.From(requestCtx))
+		parentCtx = channelscope.WithKiloPayload(parentCtx, channelscope.KiloPayload(requestCtx))
 	}
 	if requestCtx != nil && logging.GetRequestID(parentCtx) == "" {
 		if requestID := logging.GetRequestID(requestCtx); requestID != "" {
@@ -644,6 +657,7 @@ func (h *BaseAPIHandler) GetContextWithCancel(handler interfaces.APIHandler, c *
 		}
 	}
 	newCtx, cancel := context.WithCancel(parentCtx)
+	newCtx, _ = coreauth.WithBPSClientDelivery(newCtx)
 
 	endpoint := ""
 	if c != nil && c.Request != nil {
@@ -747,6 +761,9 @@ func (h *BaseAPIHandler) StartNonStreamingKeepAlive(c *gin.Context, ctx context.
 	if h == nil || c == nil {
 		return func() {}
 	}
+	if channelscope.KiloPayload(ctx) {
+		return func() {}
+	}
 	interval := NonStreamingKeepAliveInterval(h.CurrentConfig())
 	if interval <= 0 {
 		return func() {}
@@ -774,6 +791,7 @@ func (h *BaseAPIHandler) StartNonStreamingKeepAlive(c *gin.Context, ctx context.
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
+				coreauth.MarkBPSClientEvent(ctx)
 				_, _ = c.Writer.Write([]byte("\n"))
 				flusher.Flush()
 			}

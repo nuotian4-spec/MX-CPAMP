@@ -1,10 +1,14 @@
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import type { ReactNode } from 'react';
+import zhCN from '@/i18n/locales/zh-CN.json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Button } from '@/components/ui/Button';
 import type { ApiKeyMutation } from '@/components/config/ApiKeysCardEditor';
 import type { ManagerConfigResponse } from '@/services/api/usageService';
 import type { VisualConfigValues } from '@/types/visualConfig';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+
+declare const process: { env: Record<string, string | undefined> };
 
 vi.mock('react-dom', () => ({
   createPortal: (children: ReactNode) => children,
@@ -12,6 +16,13 @@ vi.mock('react-dom', () => ({
 
 const mocks = vi.hoisted(() => ({
   fetchConfigYaml: vi.fn(),
+  fetchSnapshot: vi.fn(),
+  realKeyEditor: false,
+  connection: {
+    apiBase: 'http://panel.local',
+    managementKey: 'management-key',
+    connectionStatus: 'connected',
+  },
   saveConfigYaml: vi.fn(),
   apiKeysList: vi.fn(),
   apiKeysReplace: vi.fn(),
@@ -55,62 +66,111 @@ vi.mock('@/hooks/useMediaQuery', () => ({
   useMediaQuery: () => false,
 }));
 
-vi.mock('@/components/config/VisualConfigEditor', () => ({
-  VisualConfigEditor: ({
-    values,
-    onChange,
-    onPersistApiKeyMutation,
-    onApiKeyOperationStart,
-    onApiKeyOperationEnd,
-  }: {
-    values: VisualConfigValues;
-    onChange: (values: Partial<VisualConfigValues>) => void;
-    onPersistApiKeyMutation: (mutation: ApiKeyMutation) => Promise<string[]>;
-    onApiKeyOperationStart: () => void;
-    onApiKeyOperationEnd: () => void;
-  }) => {
-    mocks.capturedApiKeyOperationStart = onApiKeyOperationStart;
-    mocks.capturedApiKeyOperationEnd = onApiKeyOperationEnd;
-    const runMutation = async (mutation: ApiKeyMutation) => {
-      try {
-        onApiKeyOperationStart();
-        await onPersistApiKeyMutation(mutation);
-      } catch (error) {
-        // The real editor renders mutation errors. This harness only observes the page contract.
-        mocks.apiKeyMutationErrors.push(error);
-      } finally {
-        onApiKeyOperationEnd();
-      }
-    };
-
-    return (
-      <div data-test="visual-editor">
-        <output data-test="api-keys">{values.apiKeysText}</output>
-        <button type="button" data-test="enable-debug" onClick={() => onChange({ debug: true })} />
-        <button
-          type="button"
-          data-test="enable-commercial"
-          onClick={() => onChange({ commercialMode: true })}
-        />
-        <button
-          type="button"
-          data-test="create-key"
-          onClick={() => runMutation({ type: 'create', apiKey: 'sk-new' })}
-        />
-        <button
-          type="button"
-          data-test="replace-key"
-          onClick={() => runMutation({ type: 'replace', oldApiKey: 'sk-old', newApiKey: 'sk-new' })}
-        />
-        <button
-          type="button"
-          data-test="delete-key"
-          onClick={() => runMutation({ type: 'delete', apiKey: 'sk-old' })}
-        />
+vi.mock('@/components/ui/Modal', () => ({
+  Modal: ({ open, children, footer }: { open: boolean; children: ReactNode; footer: ReactNode }) =>
+    open ? (
+      <div>
+        {children}
+        {footer}
       </div>
-    );
-  },
+    ) : null,
 }));
+vi.mock('@/hooks/usePanelFeatureAvailability', () => ({
+  usePanelFeatureAvailability: () => ({
+    checking: false,
+    panelHostConfirmed: true,
+    panelHostMode: 'cpa_embedded',
+    managerServiceAvailable: false,
+    managerServiceBase: '',
+  }),
+}));
+
+vi.mock('@/components/config/VisualConfigEditor', async () => {
+  const { ApiKeysCardEditor } = await import('@/components/config/ApiKeysCardEditor');
+  return {
+    VisualConfigEditor: ({
+      values,
+      onChange,
+      onPersistApiKeyMutation,
+      onApiKeyOperationStart,
+      onApiKeyOperationEnd,
+      onRefreshApiKeys,
+    }: {
+      values: VisualConfigValues;
+      onChange: (values: Partial<VisualConfigValues>) => void;
+      onPersistApiKeyMutation: (mutation: ApiKeyMutation) => Promise<string[]>;
+      onApiKeyOperationStart: () => void;
+      onApiKeyOperationEnd: () => void;
+      onRefreshApiKeys: () => Promise<string[]>;
+    }) => {
+      mocks.capturedApiKeyOperationStart = onApiKeyOperationStart;
+      mocks.capturedApiKeyOperationEnd = onApiKeyOperationEnd;
+      const runMutation = async (mutation: ApiKeyMutation) => {
+        try {
+          onApiKeyOperationStart();
+          await onPersistApiKeyMutation(mutation);
+        } catch (error) {
+          // The real editor renders mutation errors. This harness only observes the page contract.
+          mocks.apiKeyMutationErrors.push(error);
+        } finally {
+          onApiKeyOperationEnd();
+        }
+      };
+
+      if (mocks.realKeyEditor)
+        return (
+          <div>
+            <ApiKeysCardEditor
+              value={values.apiKeysText}
+              scopes={values.clientKeyScopes}
+              onPersistApiKeyMutation={onPersistApiKeyMutation}
+              onRefreshApiKeys={onRefreshApiKeys}
+              onApiKeyOperationStart={onApiKeyOperationStart}
+              onApiKeyOperationEnd={onApiKeyOperationEnd}
+            />
+            <button data-test="enable-debug" onClick={() => onChange({ debug: true })} />
+            <button
+              type="button"
+              data-test="enable-commercial"
+              onClick={() => onChange({ commercialMode: true })}
+            />
+          </div>
+        );
+      return (
+        <div data-test="visual-editor">
+          <output data-test="api-keys">{values.apiKeysText}</output>
+          <button
+            type="button"
+            data-test="enable-debug"
+            onClick={() => onChange({ debug: true })}
+          />
+          <button
+            type="button"
+            data-test="enable-commercial"
+            onClick={() => onChange({ commercialMode: true })}
+          />
+          <button
+            type="button"
+            data-test="create-key"
+            onClick={() => runMutation({ type: 'create', apiKey: 'sk-new' })}
+          />
+          <button
+            type="button"
+            data-test="replace-key"
+            onClick={() =>
+              runMutation({ type: 'replace', oldApiKey: 'sk-old', newApiKey: 'sk-new' })
+            }
+          />
+          <button
+            type="button"
+            data-test="delete-key"
+            onClick={() => runMutation({ type: 'delete', apiKey: 'sk-old' })}
+          />
+        </div>
+      );
+    },
+  };
+});
 
 vi.mock('./components/ManagerConfigPanel', () => ({
   ManagerConfigPanel: ({
@@ -148,8 +208,21 @@ vi.mock('./components/ManagerConfigPanel', () => ({
 }));
 
 vi.mock('@/components/config/DiffModal', () => ({
-  DiffModal: ({ open, onConfirm }: { open: boolean; onConfirm: () => Promise<void> }) =>
-    open ? <button type="button" data-test="confirm-save" onClick={onConfirm} /> : null,
+  DiffModal: ({
+    open,
+    onConfirm,
+    onCancel,
+  }: {
+    open: boolean;
+    onConfirm: () => Promise<void>;
+    onCancel: () => void;
+  }) =>
+    open ? (
+      <div>
+        <button type="button" data-test="confirm-save" onClick={onConfirm} />
+        <button data-test="cancel-save" onClick={onCancel} />
+      </div>
+    ) : null,
 }));
 
 vi.mock('@/components/config/ConfigSourceEditor', () => ({
@@ -208,8 +281,9 @@ vi.mock('@/stores', () => ({
     }) => unknown
   ) =>
     selector({
-      connectionStatus: 'connected',
-      managementKey: 'management-key',
+      ...mocks.connection,
+      connectionStatus: mocks.connection.connectionStatus,
+      managementKey: mocks.connection.managementKey,
       serverVersion: 'v8.0.11',
       serverCommit: 'e2bff01',
     }),
@@ -263,6 +337,7 @@ vi.mock('@/hooks/useVisualConfig', async (importOriginal) => {
 vi.mock('@/services/api/configFile', () => ({
   configFileApi: {
     fetchConfigYaml: mocks.fetchConfigYaml,
+    fetchSnapshot: mocks.fetchSnapshot,
     saveConfigYaml: mocks.saveConfigYaml,
   },
 }));
@@ -287,14 +362,14 @@ vi.mock('@/services/api/usageService', () => ({
   },
 }));
 
-vi.mock('@/utils/connection', () => ({
+vi.mock('@/utils/connection', async (original) => ({
+  ...(await original<typeof import('@/utils/connection')>()),
   detectApiBaseFromLocation: () => 'http://panel.local',
 }));
 
 const { ConfigPage } = await import('./ConfigPage');
 
 const INITIAL_YAML = 'api-keys:\n  - sk-old\n';
-const LATEST_WITHOUT_OLD_KEY = 'api-keys: []\n';
 const MANAGER_CONFIG_RESPONSE: ManagerConfigResponse = {
   config: {
     cpaConnection: {
@@ -367,7 +442,8 @@ const click = async (testId: string) => {
   const target = renderer?.root.findByProps({ 'data-test': testId });
   if (!target) throw new Error(`Test target not found: ${testId}`);
   await act(async () => {
-    await target.props.onClick();
+    if (testId.endsWith('-key')) void target.props.onClick();
+    else await target.props.onClick();
   });
   await flush();
 };
@@ -425,6 +501,13 @@ const configureManagerMode = () => {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.useRealVisualConfig = false;
+  mocks.realKeyEditor = false;
+  mocks.translate = (key: string) => key;
+  mocks.connection = {
+    apiBase: 'http://panel.local',
+    managementKey: 'management-key',
+    connectionStatus: 'connected',
+  };
   Object.defineProperty(globalThis, 'localStorage', {
     configurable: true,
     value: {
@@ -433,6 +516,11 @@ beforeEach(() => {
     },
   });
   mocks.fetchConfigYaml.mockResolvedValue(INITIAL_YAML);
+  mocks.fetchSnapshot.mockImplementation(async () => ({
+    yaml: await mocks.fetchConfigYaml(),
+    etag: '"test-etag"',
+    connectionRef: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  }));
   mocks.saveConfigYaml.mockResolvedValue(undefined);
   mocks.apiKeysList.mockResolvedValue([]);
   mocks.apiKeysReplace.mockResolvedValue(undefined);
@@ -452,7 +540,7 @@ beforeEach(() => {
   });
   mocks.visualState.apiKeysText = 'sk-old';
   mocks.visualState.dirty = false;
-  vi.stubGlobal('window', { location: { reload: mocks.reloadPage } });
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload: mocks.reloadPage } }));
   Object.defineProperty(globalThis, 'document', {
     configurable: true,
     value: { body: {} },
@@ -481,80 +569,6 @@ afterEach(() => {
       value: originalDocument,
     });
   }
-});
-
-describe('ConfigPage v8 API-key persistence with the real visual config hook', () => {
-  it.each([
-    { operation: 'create', expectedKeys: ['sk-old', 'sk-new'] },
-    { operation: 'replace', expectedKeys: ['sk-new'] },
-    { operation: 'delete', expectedKeys: [] },
-  ])(
-    'keeps client and upstream keys separate across $operation, reload, and save',
-    async ({ operation, expectedKeys }) => {
-      mocks.useRealVisualConfig = true;
-      const initialConfig = {
-        debug: false,
-        access: { 'api-keys': ['sk-old'] },
-        'api-keys': {
-          gemini: [{ keys: [{ 'api-key': 'upstream-gemini' }] }],
-        },
-      };
-      let serverConfig = structuredClone(initialConfig);
-      mocks.fetchConfigYaml.mockImplementation(async () => stringifyYaml(serverConfig));
-      mocks.saveConfigYaml.mockImplementation(async (yaml: string) => {
-        serverConfig = parseYaml(yaml);
-      });
-      mocks.apiKeysList.mockImplementation(async () => [...serverConfig.access['api-keys']]);
-      mocks.apiKeysReplace.mockImplementation(async (keys: string[]) => {
-        serverConfig.access['api-keys'] = [...keys];
-      });
-      mocks.apiKeysReplaceValue.mockImplementation(async (oldKey: string, newKey: string) => {
-        serverConfig.access['api-keys'] = serverConfig.access['api-keys'].map((key) =>
-          key === oldKey ? newKey : key
-        );
-      });
-      mocks.apiKeysDeleteValue.mockImplementation(async (key: string) => {
-        serverConfig.access['api-keys'] = serverConfig.access['api-keys'].filter(
-          (existing) => existing !== key
-        );
-      });
-      const displayedKeys = () =>
-        renderer?.root.findByProps({ 'data-test': 'api-keys' }).children.join('');
-
-      await mountPage();
-      expect(displayedKeys()).toBe('sk-old');
-      expect(mocks.apiKeysList).not.toHaveBeenCalled();
-
-      await click(`${operation}-key`);
-      expect(mocks.apiKeyMutationErrors).toEqual([]);
-      expect(displayedKeys()).toBe(expectedKeys.join('\n'));
-      expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
-      if (operation === 'create') {
-        expect(mocks.apiKeysReplace).toHaveBeenCalledWith(['sk-old', 'sk-new']);
-      } else if (operation === 'replace') {
-        expect(mocks.apiKeysReplaceValue).toHaveBeenCalledWith('sk-old', 'sk-new');
-      } else {
-        expect(mocks.apiKeysDeleteValue).toHaveBeenCalledWith('sk-old');
-      }
-
-      // A fresh mount must get the same list from YAML, not the canonical API response in memory.
-      act(() => renderer?.unmount());
-      await mountPage();
-      expect(displayedKeys()).toBe(expectedKeys.join('\n'));
-
-      await click('enable-debug');
-      await clickSave();
-      await click('confirm-save');
-
-      expect(mocks.saveConfigYaml).toHaveBeenCalledTimes(1);
-      expect(serverConfig).toEqual({
-        access: { 'api-keys': expectedKeys },
-        'api-keys': initialConfig['api-keys'],
-        observability: { logs: { debug: true } },
-      });
-      expect(displayedKeys()).toBe(expectedKeys.join('\n'));
-    }
-  );
 });
 
 describe('ConfigPage CPA v8 visual persistence', () => {
@@ -611,369 +625,6 @@ describe('ConfigPage CPA v8 visual persistence', () => {
     expect(mocks.showNotification).toHaveBeenCalledWith(
       'notification.commercial_mode_restart_required',
       'warning'
-    );
-  });
-});
-
-describe('ConfigPage API-key source snapshot safety', () => {
-  it('marks Source stale and reports an unknown outcome when create PUT rejects', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce([]);
-    mocks.apiKeysReplace.mockRejectedValueOnce(new Error('create response lost'));
-    mocks.fetchConfigYaml
-      .mockReset()
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockResolvedValueOnce(LATEST_WITHOUT_OLD_KEY);
-    await mountPage();
-
-    await click('create-key');
-
-    expect(mocks.apiKeysReplace).toHaveBeenCalledWith(['sk-new']);
-    expect(mocks.apiKeysList).toHaveBeenCalledTimes(1);
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_mutation_outcome_unknown'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(2);
-    expect(renderer?.root.findByProps({ 'data-tab': 'source' }).props['data-active']).toBe(true);
-    expect(renderer?.root.findByProps({ 'data-test': 'source-editor' }).props.value).toBe(
-      LATEST_WITHOUT_OLD_KEY
-    );
-  });
-
-  it('keeps Source unavailable when create PUT rejects and the stale refresh also fails', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce([]);
-    mocks.apiKeysReplace.mockRejectedValueOnce(new Error('create response lost'));
-    mocks.fetchConfigYaml
-      .mockReset()
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockRejectedValueOnce(new Error('source refresh failed'));
-    await mountPage();
-
-    await click('create-key');
-    await clickTab('source');
-
-    expect(renderer?.root.findByProps({ 'data-tab': 'visual' }).props['data-active']).toBe(true);
-    expect(renderer?.root.findAllByProps({ 'data-test': 'source-editor' })).toHaveLength(0);
-    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
-  });
-
-  it('does not PUT when the create preflight response is malformed', async () => {
-    mocks.apiKeysList.mockRejectedValueOnce(new Error('Invalid API key list response'));
-    await mountPage();
-
-    await click('create-key');
-
-    expect(mocks.apiKeysList).toHaveBeenCalledTimes(1);
-    expect(mocks.apiKeysReplace).not.toHaveBeenCalled();
-    expect(mocks.apiKeysReplaceValue).not.toHaveBeenCalled();
-    expect(mocks.apiKeysDeleteValue).not.toHaveBeenCalled();
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).not.toBe(
-      'api_key_mutation_outcome_unknown'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(1);
-    expect(renderer?.root.findAllByProps({ 'data-test': 'source-editor' })).toHaveLength(1);
-  });
-
-  it('does not PATCH when the replace preflight response is malformed', async () => {
-    mocks.apiKeysList.mockRejectedValueOnce(new Error('Invalid API key list response'));
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysList).toHaveBeenCalledTimes(1);
-    expect(mocks.apiKeysReplace).not.toHaveBeenCalled();
-    expect(mocks.apiKeysReplaceValue).not.toHaveBeenCalled();
-    expect(mocks.apiKeysDeleteValue).not.toHaveBeenCalled();
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).not.toBe(
-      'api_key_mutation_outcome_unknown'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(1);
-    expect(renderer?.root.findAllByProps({ 'data-test': 'source-editor' })).toHaveLength(1);
-  });
-
-  it('marks Source stale and reports an unknown outcome when replace PATCH rejects', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce(['sk-old']);
-    mocks.apiKeysReplaceValue.mockRejectedValueOnce(new Error('replace response lost'));
-    mocks.fetchConfigYaml
-      .mockReset()
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockResolvedValueOnce(LATEST_WITHOUT_OLD_KEY);
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysReplaceValue).toHaveBeenCalledWith('sk-old', 'sk-new');
-    expect(mocks.apiKeysList).toHaveBeenCalledTimes(1);
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_mutation_outcome_unknown'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(2);
-    expect(renderer?.root.findByProps({ 'data-tab': 'source' }).props['data-active']).toBe(true);
-  });
-
-  it('marks Source stale and reports an unknown outcome when delete rejects', async () => {
-    mocks.apiKeysDeleteValue.mockRejectedValueOnce(new Error('delete response lost'));
-    mocks.fetchConfigYaml
-      .mockReset()
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockResolvedValueOnce(LATEST_WITHOUT_OLD_KEY);
-    await mountPage();
-
-    await click('delete-key');
-
-    expect(mocks.apiKeysDeleteValue).toHaveBeenCalledWith('sk-old');
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_mutation_outcome_unknown'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(2);
-    expect(renderer?.root.findByProps({ 'data-tab': 'source' }).props['data-active']).toBe(true);
-  });
-
-  it('marks Source stale after delete succeeds but canonical key refresh fails', async () => {
-    mocks.apiKeysList.mockRejectedValueOnce(new Error('canonical refresh failed'));
-    mocks.fetchConfigYaml
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockRejectedValueOnce(new Error('source refresh failed'));
-    await mountPage();
-
-    await click('delete-key');
-
-    expect(mocks.apiKeysDeleteValue).toHaveBeenCalledWith('sk-old');
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_state_refresh_failed'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(2);
-    expect(renderer?.root.findByProps({ 'data-tab': 'visual' }).props['data-active']).toBe(true);
-    expect(renderer?.root.findAllByProps({ 'data-test': 'source-editor' })).toHaveLength(0);
-    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
-    expect(mocks.showNotification).toHaveBeenCalledWith('notification.refresh_failed', 'error');
-  });
-
-  it('keeps Source stale after a malformed post-write canonical response', async () => {
-    mocks.apiKeysList
-      .mockResolvedValueOnce([])
-      .mockRejectedValueOnce(new Error('Invalid API key list response'));
-    mocks.fetchConfigYaml
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockRejectedValueOnce(new Error('source refresh failed'));
-    await mountPage();
-
-    await click('create-key');
-
-    expect(mocks.apiKeysReplace).toHaveBeenCalledWith(['sk-new']);
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_state_refresh_failed'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(2);
-    expect(renderer?.root.findByProps({ 'data-tab': 'visual' }).props['data-active']).toBe(true);
-  });
-
-  it('keeps Source stale and skips alias migration after replace canonical refresh fails', async () => {
-    mocks.apiKeysList
-      .mockResolvedValueOnce(['sk-old'])
-      .mockRejectedValueOnce(new Error('canonical refresh failed'));
-    mocks.fetchConfigYaml
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockRejectedValueOnce(new Error('source refresh failed'));
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysReplaceValue).toHaveBeenCalledWith('sk-old', 'sk-new');
-    expect(mocks.commitApiKeysText).not.toHaveBeenCalled();
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_state_refresh_failed'
-    );
-
-    await clickTab('source');
-
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(2);
-    expect(renderer?.root.findByProps({ 'data-tab': 'visual' }).props['data-active']).toBe(true);
-  });
-
-  it('keeps a successful API-key commit when the source snapshot refresh fails', async () => {
-    mocks.fetchConfigYaml
-      .mockReset()
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockRejectedValueOnce(new Error('snapshot refresh failed'));
-    mocks.apiKeysList.mockResolvedValueOnce([]).mockResolvedValueOnce(['sk-new']);
-    mocks.visualState.dirty = true;
-    await mountPage();
-
-    await click('create-key');
-
-    expect(mocks.apiKeysReplace).toHaveBeenCalledWith(['sk-new']);
-    expect(mocks.commitApiKeysText).toHaveBeenCalledWith('sk-new');
-    expect(mocks.visualState.dirty).toBe(false);
-    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
-  });
-
-  it('keeps the Visual tab and does not show the stale source buffer when refresh fails', async () => {
-    mocks.fetchConfigYaml
-      .mockReset()
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockRejectedValueOnce(new Error('snapshot refresh failed'))
-      .mockRejectedValueOnce(new Error('source refresh failed'));
-    mocks.apiKeysList.mockResolvedValueOnce([]).mockResolvedValueOnce(['sk-new']);
-    await mountPage();
-
-    await click('create-key');
-    await clickTab('source');
-
-    expect(renderer?.root.findByProps({ 'data-tab': 'visual' }).props['data-active']).toBe(true);
-    expect(renderer?.root.findAllByProps({ 'data-test': 'source-editor' })).toHaveLength(0);
-    expect(mocks.showNotification).toHaveBeenCalledWith('notification.refresh_failed', 'error');
-  });
-
-  it('reloads the latest YAML before opening Source after a stale snapshot', async () => {
-    mocks.fetchConfigYaml
-      .mockReset()
-      .mockResolvedValueOnce(INITIAL_YAML)
-      .mockRejectedValueOnce(new Error('snapshot refresh failed'))
-      .mockResolvedValueOnce(LATEST_WITHOUT_OLD_KEY);
-    mocks.apiKeysList.mockResolvedValueOnce([]).mockResolvedValueOnce(['sk-new']);
-    await mountPage();
-
-    await click('create-key');
-    await clickTab('source');
-
-    const sourceEditor = renderer?.root.findByProps({ 'data-test': 'source-editor' });
-    expect(sourceEditor?.props.value).toBe(LATEST_WITHOUT_OLD_KEY);
-    expect(renderer?.root.findByProps({ 'data-tab': 'source' }).props['data-active']).toBe(true);
-  });
-});
-
-describe('ConfigPage API-key replace preflight', () => {
-  it('commits the canonical list when create preflight finds a duplicate', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce(['sk-new']);
-    await mountPage();
-
-    await click('create-key');
-
-    expect(mocks.apiKeysReplace).not.toHaveBeenCalled();
-    expect(mocks.commitApiKeysText).toHaveBeenCalledWith('sk-new');
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_duplicate'
-    );
-  });
-
-  it('does not PATCH a stale old key and commits the canonical list', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce(['sk-other']);
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysReplaceValue).not.toHaveBeenCalled();
-    expect(mocks.commitApiKeysText).toHaveBeenCalledWith('sk-other');
-    expect(mocks.showNotification).not.toHaveBeenCalledWith(
-      'notification.save_failed',
-      expect.anything()
-    );
-  });
-
-  it('does not PATCH and commits the canonical list when the replacement key already exists', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce(['sk-old', 'sk-new']);
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysReplaceValue).not.toHaveBeenCalled();
-    expect(mocks.commitApiKeysText).toHaveBeenCalledWith('sk-old\nsk-new');
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_duplicate'
-    );
-  });
-
-  it('orders normal replace as preflight GET, PATCH, canonical GET', async () => {
-    const events: string[] = [];
-    mocks.apiKeysList.mockImplementation(async () => {
-      events.push('get');
-      return events.filter((event) => event === 'get').length === 1 ? ['sk-old'] : ['sk-new'];
-    });
-    mocks.apiKeysReplaceValue.mockImplementation(async () => {
-      events.push('patch');
-    });
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(events).toEqual(['get', 'patch', 'get']);
-    expect(mocks.apiKeysReplaceValue).toHaveBeenCalledWith('sk-old', 'sk-new');
-  });
-
-  it('sends the raw canonical old key when replacing a whitespace-padded entry', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce(['  sk-old  ']).mockResolvedValueOnce(['sk-new']);
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysReplaceValue).toHaveBeenCalledWith('  sk-old  ', 'sk-new');
-  });
-
-  it('does not PATCH when the old runtime identity is canonically ambiguous', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce(['sk-old', '  sk-old  ']);
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysReplaceValue).not.toHaveBeenCalled();
-    expect(mocks.commitApiKeysText).toHaveBeenCalledWith('sk-old\n  sk-old  ');
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_ambiguous'
-    );
-
-    const fetchCallsAfterPreflight = mocks.fetchConfigYaml.mock.calls.length;
-    await clickTab('source');
-    expect(mocks.fetchConfigYaml).toHaveBeenCalledTimes(fetchCallsAfterPreflight);
-  });
-
-  it('does not PATCH when the new runtime identity already exists with whitespace', async () => {
-    mocks.apiKeysList.mockResolvedValueOnce(['sk-old', '  sk-new  ']);
-    await mountPage();
-
-    await click('replace-key');
-
-    expect(mocks.apiKeysReplaceValue).not.toHaveBeenCalled();
-    expect(mocks.commitApiKeysText).toHaveBeenCalledWith('sk-old\n  sk-new  ');
-    expect(mocks.apiKeyMutationErrors).toHaveLength(1);
-    expect((mocks.apiKeyMutationErrors[0] as Error & { code?: string }).code).toBe(
-      'api_key_duplicate'
     );
   });
 });
@@ -1172,8 +823,10 @@ describe('ConfigPage Manager/API-key operation lock', () => {
     await clickTab('visual');
     await click('create-key');
 
-    expect(mocks.apiKeysList).toHaveBeenCalled();
-    expect(mocks.apiKeysReplace).toHaveBeenCalledWith(['sk-new']);
+    expect(mocks.fetchSnapshot).toHaveBeenCalled();
+    expect(renderer!.root.findAllByProps({ 'data-test': 'confirm-save' })).toHaveLength(1);
+    await click('cancel-save');
+    expect(mocks.apiKeysReplace).not.toHaveBeenCalled();
     expect(mocks.reloadPage).not.toHaveBeenCalled();
   });
 
@@ -1196,7 +849,407 @@ describe('ConfigPage Manager/API-key operation lock', () => {
     await clickTab('visual');
     await click('create-key');
 
-    expect(mocks.apiKeysList).toHaveBeenCalled();
-    expect(mocks.apiKeysReplace).toHaveBeenCalledWith(['sk-new']);
+    expect(mocks.fetchSnapshot).toHaveBeenCalled();
+    expect(renderer!.root.findAllByProps({ 'data-test': 'confirm-save' })).toHaveLength(1);
+    await click('cancel-save');
+    expect(mocks.apiKeysReplace).not.toHaveBeenCalled();
   });
+});
+
+describe('三通道Key真实组件与配置事务', () => {
+  const yaml =
+    'config-version: 8\naccess:\n  api-keys: [sk-old, sk-kilo, sk-codex, sk-bps]\n  client-key-scopes:\n    - {api-key: sk-kilo, channel: kilo}\n    - {api-key: sk-codex, channel: codex}\n    - {api-key: sk-bps, channel: bps}\napi-keys: {codex: [{api-key: upstream-only}]}\ncustom: {keep: true}\n';
+  let disk: string;
+  const editorButton = (label: string, index = 0) => {
+    const matches = renderer!.root
+      .findAllByType(Button)
+      .filter((node) =>
+        label === 'config_management.visual.common.save'
+          ? [
+              'config_management.visual.common.add',
+              'config_management.visual.common.update',
+            ].includes(node.props.children)
+          : node.props.children === label
+      );
+    if (!matches[index]) throw new Error(`找不到按钮 ${label}`);
+    return matches[index];
+  };
+  const press = async (label: string, index = 0) => {
+    await act(async () => {
+      void editorButton(label, index).props.onClick();
+    });
+    await flush();
+  };
+  const fill = (key: string, channel?: string) => {
+    act(() => {
+      renderer!.root
+        .findByProps({ placeholder: 'config_management.visual.api_keys.input_placeholder' })
+        .props.onChange({ target: { value: key } });
+      if (channel !== undefined)
+        renderer!.root.findByType('select').props.onChange({ target: { value: channel } });
+    });
+  };
+  const prepare = async (initialYaml = yaml) => {
+    mocks.realKeyEditor = true;
+    mocks.useRealVisualConfig = true;
+    disk = initialYaml;
+    mocks.fetchConfigYaml.mockImplementation(async () => disk);
+    mocks.fetchSnapshot.mockImplementation(async () => ({
+      yaml: disk,
+      etag: '"version-1"',
+      connectionRef: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    }));
+    mocks.saveConfigYaml.mockImplementation(async (content: string) => {
+      disk = content;
+    });
+    await mountPage();
+  };
+  const startAdd = async (key = 'sk-added', channel = 'kilo') => {
+    await press('config_management.visual.api_keys.add');
+    fill(key, channel);
+    await press('config_management.visual.common.save');
+  };
+  it.each(['kilo', 'codex', 'bps'])(
+    '创建%s仅在diff确认后原子保存并保留旧Key及未知字段',
+    async (channel) => {
+      await prepare();
+      await startAdd('sk-added', channel);
+      expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
+      expect(parseYaml(disk)).toEqual(parseYaml(yaml));
+      await click('confirm-save');
+      const result = parseYaml(disk);
+      expect(result.access['api-keys']).toEqual([
+        'sk-old',
+        'sk-kilo',
+        'sk-codex',
+        'sk-bps',
+        'sk-added',
+      ]);
+      expect(result.access['client-key-scopes']).toContainEqual({ 'api-key': 'sk-added', channel });
+      expect(
+        result.access['client-key-scopes'].some(
+          (scope: { 'api-key': string }) => scope['api-key'] === 'sk-old'
+        )
+      ).toBe(false);
+      expect(result['api-keys']).toEqual(parseYaml(yaml)['api-keys']);
+      expect(result.custom).toEqual({ keep: true });
+      expect(mocks.saveConfigYaml).toHaveBeenCalledTimes(1);
+      expect(mocks.saveConfigYaml.mock.calls[0][1]).toMatchObject({
+        scope: { apiBase: mocks.connection.apiBase, managementKey: mocks.connection.managementKey },
+        etag: '"version-1"',
+        connectionRef: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      });
+      expect(mocks.apiKeysReplace).not.toHaveBeenCalled();
+      expect(mocks.apiKeysReplaceValue).not.toHaveBeenCalled();
+    }
+  );
+  it('Key事务同时提交visual草稿后刷新全局缓存并提示商用模式重启', async () => {
+    const initialYaml = yaml.replace(
+      'api-keys: {codex: [{api-key: upstream-only}]}',
+      'server:\n  commercial-mode: false\napi-keys: {codex: [{api-key: upstream-only}]}'
+    );
+    await prepare(initialYaml);
+    await click('enable-commercial');
+    await startAdd('sk-commercial', 'kilo');
+
+    expect(parseYaml(disk).server['commercial-mode']).toBe(false);
+    expect(mocks.clearCache).not.toHaveBeenCalled();
+    await click('confirm-save');
+
+    const saved = parseYaml(disk);
+    expect(saved.server['commercial-mode']).toBe(true);
+    expect(saved.access['api-keys']).toContain('sk-commercial');
+    expect(saved.access['client-key-scopes']).toContainEqual({
+      'api-key': 'sk-commercial',
+      channel: 'kilo',
+    });
+    expect(mocks.saveConfigYaml).toHaveBeenCalledTimes(1);
+    expect(mocks.clearCache).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchGlobalConfig).toHaveBeenCalledWith(undefined, true);
+    expect(mocks.showNotification).toHaveBeenCalledWith(
+      'notification.commercial_mode_restart_required',
+      'warning'
+    );
+  });
+  it('替换保归属，显式改绑及解除归属，删除撤引用', async () => {
+    await prepare();
+    await press('config_management.visual.common.edit', 1);
+    fill('sk-replaced');
+    await press('config_management.visual.common.save');
+    await click('confirm-save');
+    expect(parseYaml(disk).access['client-key-scopes']).toContainEqual({
+      'api-key': 'sk-replaced',
+      channel: 'kilo',
+    });
+    await press('config_management.visual.common.edit', 1);
+    fill('sk-replaced', 'bps');
+    await press('config_management.visual.common.save');
+    await click('confirm-save');
+    expect(parseYaml(disk).access['client-key-scopes']).toContainEqual({
+      'api-key': 'sk-replaced',
+      channel: 'bps',
+    });
+    await press('config_management.visual.common.edit', 1);
+    fill('sk-replaced', '');
+    await press('config_management.visual.common.save');
+    await click('confirm-save');
+    expect(
+      parseYaml(disk).access['client-key-scopes'].some(
+        (scope: { 'api-key': string }) => scope['api-key'] === 'sk-replaced'
+      )
+    ).toBe(false);
+    await press('config_management.visual.common.delete', 2);
+    await act(async () => {
+      void getPendingConfirmation().onConfirm();
+    });
+    await flush();
+    await click('confirm-save');
+    expect(parseYaml(disk).access['api-keys']).not.toContain('sk-codex');
+    expect(parseYaml(disk).access['client-key-scopes']).toEqual([
+      { 'api-key': 'sk-bps', channel: 'bps' },
+    ]);
+  });
+  it('取消和保存失败保留原状态，不写入别名或部分列表', async () => {
+    await prepare();
+    await startAdd();
+    await click('cancel-save');
+    expect(disk).toBe(yaml);
+    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
+    await press('config_management.visual.common.save');
+    mocks.saveConfigYaml.mockRejectedValueOnce(new Error('保存失败'));
+    await click('confirm-save');
+    expect(disk).toBe(yaml);
+    expect(mocks.saveConfigYaml).toHaveBeenCalledTimes(1);
+  });
+  it('确认前配置漂移拒绝，连接漂移取消且不发写请求', async () => {
+    await prepare();
+    await startAdd();
+    disk = yaml + 'changed: true\n';
+    await click('confirm-save');
+    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
+    disk = yaml;
+    await press('config_management.visual.common.save');
+    mocks.connection = { ...mocks.connection, apiBase: 'http://other.local' };
+    await act(async () => {
+      renderer!.update(<ConfigPage />);
+    });
+    await flush();
+    expect(renderer!.root.findAllByProps({ 'data-test': 'confirm-save' })).toHaveLength(0);
+    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
+  });
+  it('保存后回读失败不发布成功列表，也不重放写请求', async () => {
+    await prepare();
+    await startAdd();
+    mocks.saveConfigYaml.mockImplementationOnce(async (content: string) => {
+      disk = content;
+      mocks.fetchSnapshot.mockRejectedValue(new Error('回读失败'));
+    });
+    await click('confirm-save');
+    expect(mocks.saveConfigYaml).toHaveBeenCalledTimes(1);
+    expect(renderer!.root.findAllByProps({ 'data-test': 'confirm-save' })).toHaveLength(0);
+    expect(
+      renderer!.root.findByProps({
+        placeholder: 'config_management.visual.api_keys.input_placeholder',
+      }).props.value
+    ).toBe('sk-added');
+  });
+  it('原始YAML回读归属与无关visual保存互保', async () => {
+    await prepare();
+    await clickTab('source');
+    const changed = yaml.replace('channel: kilo', 'channel: bps');
+    act(() =>
+      renderer!.root
+        .findByProps({ 'data-test': 'source-editor' })
+        .props.onChange({ target: { value: changed } })
+    );
+    await clickSave();
+    await click('confirm-save');
+    await clickTab('visual');
+    await press('config_management.visual.common.edit', 1);
+    expect(renderer!.root.findByType('select').props.value).toBe('bps');
+    await press('config_management.visual.common.cancel');
+    await click('enable-debug');
+    await clickSave();
+    await click('confirm-save');
+    expect(parseYaml(disk).access).toEqual(parseYaml(changed).access);
+    expect(parseYaml(disk).custom).toEqual({ keep: true });
+  });
+  it.each([
+    'access: {api-keys: [sk-old, sk-old]}',
+    'access: {api-keys: [sk-old], client-key-scopes: [{api-key: sk-old, channel: other}]}',
+    'access: {api-keys: [sk-old], client-key-scopes: [{api-key: missing, channel: kilo}]}',
+  ])('最新配置非法时不发PUT: %s', async (invalid) => {
+    await prepare();
+    mocks.fetchSnapshot.mockResolvedValue({
+      yaml: invalid,
+      etag: '"v2"',
+      connectionRef: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    });
+    await startAdd();
+    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
+    expect(renderer!.root.findAllByProps({ 'data-test': 'confirm-save' })).toHaveLength(0);
+    expect(disk).toBe(yaml);
+  });
+
+  it.each(['etag', 'connectionRef'])('缺少%s时拒绝保护保存', async (field) => {
+    await prepare();
+    mocks.fetchSnapshot.mockResolvedValue({
+      yaml,
+      etag: '"version-1"',
+      connectionRef: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      [field]: '',
+    });
+    await startAdd();
+    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
+    expect(renderer!.root.findAllByProps({ 'data-test': 'confirm-save' })).toHaveLength(0);
+  });
+  it('保存已发出后回读引用改变不发布成功、不重放', async () => {
+    await prepare();
+    await startAdd();
+    mocks.saveConfigYaml.mockImplementationOnce(async (content: string) => {
+      disk = content;
+      mocks.fetchSnapshot.mockResolvedValue({
+        yaml: disk,
+        etag: '"version-2"',
+        connectionRef: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      });
+    });
+    await click('confirm-save');
+    expect(mocks.saveConfigYaml).toHaveBeenCalledTimes(1);
+    expect(
+      renderer!.root.findByProps({
+        placeholder: 'config_management.visual.api_keys.input_placeholder',
+      }).props.value
+    ).toBe('sk-added');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('原目标状态待核');
+    expect(mocks.showNotification.mock.calls.some((call) => call[1] === 'success')).toBe(false);
+  });
+  it('重复Key在真实表单拒绝，不生成差异或写请求', async () => {
+    await prepare();
+    await startAdd('sk-old', 'kilo');
+    expect(mocks.saveConfigYaml).not.toHaveBeenCalled();
+    expect(renderer!.root.findAllByProps({ 'data-test': 'confirm-save' })).toHaveLength(0);
+  });
+
+  it('实际中文标签与差异确认提示在真实Key编辑器中渲染', async () => {
+    mocks.translate = (key: string) => {
+      let value: unknown = zhCN;
+      for (const part of key.split('.')) value = (value as Record<string, unknown> | undefined)?.[part];
+      return typeof value === 'string' ? value : key;
+    };
+    await prepare();
+    const visible = JSON.stringify(renderer!.toJSON());
+    expect(visible).toContain('兼容旧规则（未绑定）');
+    expect(visible).toContain('新增、修改或删除API密钥后，在“确认变更”中检查差异并确认保存。');
+    expect(visible).not.toContain('会立即保存');
+    await press('添加 API 密钥');
+    const select = renderer!.root.findByType('select');
+    expect(select.props['aria-label']).toBe('客户端通道');
+    expect(select.findAllByType('option').map((option) => option.props.children)).toEqual(['兼容旧规则（未绑定）', 'Kilo', 'Codex', 'BPS']);
+    expect(JSON.stringify(renderer!.toJSON())).toContain('添加或更新后确认配置差异，才会保存到CPA');
+  });
+  it.skipIf(!process.env.KILO_KEYS_MANAGER_URL || !process.env.KILO_KEYS_CONTROL_URL)(
+    '真实组件经Manager和Core保存三通道Key',
+    async () => {
+      const managerURL = process.env.KILO_KEYS_MANAGER_URL!;
+      const controlURL = process.env.KILO_KEYS_CONTROL_URL!;
+      const managementKey = process.env.KILO_KEYS_MANAGER_KEY!;
+      for (const address of [managerURL, controlURL]) {
+        const target = new URL(address);
+        expect(target.protocol).toBe('http:');
+        expect(['127.0.0.1', '[::1]']).toContain(target.hostname);
+      }
+      const fixture = (await (await fetch(controlURL + '/fixture')).json()) as {
+        legacy_key: string;
+      };
+      expect(fixture.legacy_key).toBe('m9-legacy');
+      mocks.realKeyEditor = true;
+      mocks.useRealVisualConfig = true;
+      mocks.connection = { apiBase: managerURL, managementKey, connectionStatus: 'connected' };
+      const actual = await vi.importActual<typeof import('@/services/api/configFile')>(
+        '@/services/api/configFile'
+      );
+      const { apiClient } = await import('@/services/api/client');
+      apiClient.setConfig({ apiBase: managerURL, managementKey });
+      mocks.fetchSnapshot.mockImplementation(actual.configFileApi.fetchSnapshot);
+      mocks.saveConfigYaml.mockImplementation(actual.configFileApi.saveConfigYaml);
+      const until = async (predicate: () => boolean) => {
+        const deadline = Date.now() + 20000;
+        while (!predicate()) {
+          const errors = renderer!.root.findAllByProps({ className: 'error-box' });
+          if (errors.length > 0)
+            throw new Error('真实配置页面失败：' + errors.map((node) => node.children.join(' ')).join('; '));
+          if (Date.now() > deadline) throw new Error('真实配置事务等待超时');
+          await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 20));
+          });
+        }
+      };
+      await mountPage();
+      await until(() =>
+        renderer!.root
+          .findAllByType(Button)
+          .some((node) => node.props.children === 'config_management.visual.common.edit')
+      );
+      const commit = async () => {
+        await until(
+          () => renderer!.root.findAllByProps({ 'data-test': 'confirm-save' }).length === 1
+        );
+        await click('confirm-save');
+        await until(() => renderer!.root.findAllByType('select').length === 0);
+      };
+      for (const channel of ['kilo', 'codex', 'bps']) {
+        await startAdd('m9-' + channel, channel);
+        await commit();
+      }
+      await startAdd('m9-temporary', 'bps');
+      await commit();
+      const snapshot = await actual.configFileApi.fetchSnapshot({
+        scope: { apiBase: managerURL, managementKey },
+      });
+      const keys = parseYaml(snapshot.yaml).access['api-keys'] as string[];
+      await press('config_management.visual.common.edit', keys.indexOf('m9-kilo'));
+      fill('m9-kilo-rotated');
+      await press('config_management.visual.common.save');
+      await commit();
+      await press('config_management.visual.common.delete', keys.indexOf('m9-temporary'));
+      await act(async () => {
+        void getPendingConfirmation().onConfirm();
+      });
+      await flush();
+      await until(
+        () => renderer!.root.findAllByProps({ 'data-test': 'confirm-save' }).length === 1
+      );
+      await click('confirm-save');
+      const saved = await actual.configFileApi.fetchSnapshot({
+        scope: { apiBase: managerURL, managementKey },
+      });
+      const access = parseYaml(saved.yaml).access;
+      expect(access['api-keys']).toContain(fixture.legacy_key);
+      expect(access['api-keys']).not.toContain('m9-temporary');
+      expect(access['client-key-scopes']).toEqual(
+        expect.arrayContaining([
+          { 'api-key': 'm9-kilo-rotated', channel: 'kilo' },
+          { 'api-key': 'm9-codex', channel: 'codex' },
+          { 'api-key': 'm9-bps', channel: 'bps' },
+        ])
+      );
+      expect(
+        access['client-key-scopes'].some((scope: { 'api-key': string }) =>
+          [fixture.legacy_key, 'm9-temporary', 'm9-kilo'].includes(scope['api-key'])
+        )
+      ).toBe(false);
+      expect(mocks.saveConfigYaml).toHaveBeenCalledTimes(6);
+      const verified = await fetch(controlURL + '/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keys: { kilo: 'm9-kilo-rotated', codex: 'm9-codex', bps: 'm9-bps' },
+          legacy: fixture.legacy_key,
+        }),
+      });
+      expect(verified.status).toBe(200);
+    },
+    60000
+  );
 });

@@ -176,7 +176,7 @@ func convertOpenAIRequestToCodex(modelName string, inputRawJSON []byte, stream b
 				toolOutputDoc := ojson.NewDocString(`{}`)
 				_ = toolOutputDoc.Set("type", outputType)
 				_ = toolOutputDoc.Set("call_id", toolCallID)
-				setToolCallOutputContentDoc(toolOutputDoc, m.Get("content"))
+				SetToolCallOutputContentDoc(toolOutputDoc, m.Get("content"))
 				inputItems = append(inputItems, toolOutputDoc.Bytes())
 
 			default:
@@ -524,12 +524,14 @@ func convertOpenAIRequestToCodex(modelName string, inputRawJSON []byte, stream b
 	return outDoc.Bytes(), drops.Err()
 }
 
-func setToolCallOutputContentDoc(doc *ojson.Doc, content ojson.Result) {
+// SetToolCallOutputContentDoc maps tool content to Responses output, parsing a
+// string as structured content only when it contains a supported image part.
+func SetToolCallOutputContentDoc(doc *ojson.Doc, content ojson.Result) {
 	switch {
 	case content.Type == ojson.String:
 		structuredContent := ojson.Parse(content.String())
 		if hasToolOutputImagePart(structuredContent) {
-			setToolCallOutputContentDoc(doc, structuredContent)
+			SetToolCallOutputContentDoc(doc, structuredContent)
 			return
 		}
 		_ = doc.Set("output", content.String())

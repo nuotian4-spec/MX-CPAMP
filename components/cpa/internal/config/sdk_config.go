@@ -99,6 +99,9 @@ type SDKConfig struct {
 	// APIKeys is a list of keys for authenticating clients to this proxy server.
 	APIKeys []string `yaml:"api-keys" json:"api-keys"`
 
+	// ClientKeyScopes binds existing client keys to exactly one provider channel.
+	ClientKeyScopes []ClientKeyScope `yaml:"client-key-scopes,omitempty" json:"client-key-scopes,omitempty"`
+
 	// PassthroughHeaders controls whether upstream response headers are forwarded to downstream clients.
 	// Default is false (disabled).
 	PassthroughHeaders bool `yaml:"passthrough-headers" json:"passthrough-headers"`
@@ -378,4 +381,10 @@ type StreamingConfig struct {
 	// SendKeepAliveBeforeFT controls whether SSE heartbeats are sent before the first token arrives
 	// when KeepAliveSeconds > 0. Default is false.
 	SendKeepAliveBeforeFT bool `yaml:"send-keepalive-before-ft,omitempty" json:"send-keepalive-before-ft,omitempty"`
+}
+
+// ClientKeyScope never grants management access.
+type ClientKeyScope struct {
+	APIKey  string `yaml:"api-key" json:"api-key"`
+	Channel string `yaml:"channel" json:"channel"`
 }

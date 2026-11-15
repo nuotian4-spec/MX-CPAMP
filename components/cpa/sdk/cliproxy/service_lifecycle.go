@@ -92,7 +92,7 @@ func (s *Service) Run(ctx context.Context) error {
 			log.Warnf("failed to load auth store: %v", errLoad)
 		}
 		s.registerConfigAPIKeyAuths(coreauth.WithSkipPersist(ctx), cfg)
-		if cfg != nil && cfg.SaveCooldownStatus {
+		if cfg != nil && (cfg.SaveCooldownStatus || cfg.IsBPSProtocolEnabled()) {
 			if errRestoreCooldown := s.coreManager.RestoreCooldownStates(ctx); errRestoreCooldown != nil {
 				log.Warnf("failed to restore cooldown state: %v", errRestoreCooldown)
 			}
@@ -103,6 +103,8 @@ func (s *Service) Run(ctx context.Context) error {
 		})
 		interval := 15 * time.Minute
 		s.coreManager.StartAutoRefresh(ctx, interval)
+		s.coreManager.StartKiloRecovery(ctx)
+		s.coreManager.StartKiloProbes(ctx)
 		log.Infof("core auth auto-refresh started (interval=%s)", interval)
 	}
 
@@ -328,6 +330,8 @@ func (s *Service) Shutdown(ctx context.Context) error {
 			watcherCancel()
 		}
 		if s.coreManager != nil {
+			s.coreManager.StopKiloProbes()
+			s.coreManager.StopKiloRecovery()
 			s.coreManager.StopAutoRefresh()
 		}
 		if watcher := s.currentWatcher(); watcher != nil {

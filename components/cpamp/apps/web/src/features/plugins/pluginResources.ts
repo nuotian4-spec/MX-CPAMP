@@ -47,6 +47,11 @@ export const getPluginTitle = (plugin: PluginListEntry) =>
 export const buildPluginResourceRoute = (pluginID: string, menuIndex: number) =>
   `/plugin-pages/${encodeURIComponent(pluginID)}/${menuIndex}`;
 
+export const CPA_BPS_OAUTH_ROUTE = '/oauth?provider=cpa-bps';
+
+export const isCpaBpsAuthorizationResource = (pluginID: string, resourcePath: string) =>
+  pluginID === 'cpa-bps' && resourcePath.trim() === '/v0/resource/plugins/cpa-bps/index.html';
+
 export const resolvePluginAssetURL = (value: string, apiBase: string) => {
   const trimmed = value.trim();
   if (!trimmed) return '';
@@ -115,7 +120,9 @@ export const collectPluginResourceEntries = (
           menu: { ...menu, path },
           label: menuLabel || pluginTitle,
           description: menu.description.trim() || pluginTitle,
-          route: buildPluginResourceRoute(plugin.id, menuIndex),
+          route: isCpaBpsAuthorizationResource(plugin.id, path)
+            ? CPA_BPS_OAUTH_ROUTE
+            : buildPluginResourceRoute(plugin.id, menuIndex),
         };
       })
       .filter((entry): entry is PluginResourceEntry => Boolean(entry));

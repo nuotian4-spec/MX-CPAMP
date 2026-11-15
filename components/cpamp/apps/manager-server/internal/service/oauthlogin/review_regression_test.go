@@ -19,6 +19,9 @@ func TestCallbackRejectedCanCorrectAndUnknownRetainsLock(t *testing.T) {
 		t.Run(map[bool]string{false: "400_corrected", true: "timeout_retains_lock"}[timeout], func(t *testing.T) {
 			var calls atomic.Int32
 			cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if serveBuiltinBPSConfig(w, r) {
+					return
+				}
 				switch {
 				case strings.HasSuffix(r.URL.Path, "auth-url"):
 					jsonReply(w, map[string]string{"url": "https://auth.invalid", "state": "state"})
@@ -77,11 +80,17 @@ func TestCallbackRejectedCanCorrectAndUnknownRetainsLock(t *testing.T) {
 func TestKnownIDLostResponseAndEarlyCancelNeverImport(t *testing.T) {
 	var imports, creates atomic.Int32
 	cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if serveBuiltinBPSConfig(w, r) {
+			return
+		}
 		imports.Add(1)
 		jsonReply(w, map[string]string{"status": "ok"})
 	}))
 	defer cpa.Close()
 	worker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if serveBuiltinBPSConfig(w, r) {
+			return
+		}
 		if r.Method == "POST" {
 			var in Input
 			_ = json.NewDecoder(r.Body).Decode(&in)

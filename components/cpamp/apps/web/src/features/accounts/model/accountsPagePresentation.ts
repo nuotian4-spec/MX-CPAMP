@@ -786,6 +786,7 @@ export const selectAccountQuotaMainListWindows = (
   let candidates: AccountQuotaDisplayWindow[];
 
   switch (row.provider) {
+    case 'cpa-bps':
     case 'bps':
       candidates = quotaWindows;
       break;
@@ -860,6 +861,7 @@ export const selectAccountQuotaListWindows = (
   standardQuotaWindows: AccountQuotaDisplayWindow[]
 ): AccountQuotaDisplayWindow[] => {
   switch (row.provider) {
+    case 'cpa-bps':
     case 'bps': return quotaWindows;
     case 'codex':
       return selectCodexQuotaListWindows(quotaWindows);

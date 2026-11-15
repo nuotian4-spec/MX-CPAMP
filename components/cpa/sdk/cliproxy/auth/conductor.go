@@ -32,6 +32,13 @@ type ProviderExecutor interface {
 	HttpRequest(ctx context.Context, auth *Auth, req *http.Request) (*http.Response, error)
 }
 
+// EgressAdmitter reserves an executor-specific exit without waiting or I/O.
+// The returned auth is execution-local; release joins the existing account lease.
+type EgressAdmitter interface {
+	EgressChanges() <-chan struct{}
+	TryAcquireEgress(*Auth) (*Auth, func(), bool, error)
+}
+
 // APIKeyConfigExecutor provides an execution-local view without OAuth-only
 // configuration. The registered executor and its shared session state stay intact.
 type APIKeyConfigExecutor interface {
@@ -100,7 +107,8 @@ type Result struct {
 	// success dispatched before a cooldown was recorded cannot clear that
 	// cooldown. Zero means unknown (direct MarkResult callers) and is exempt
 	// from the ordering guard.
-	ExecutionSeq uint64
+	ExecutionSeq     uint64
+	PermissionDenial *PermissionDenial
 }
 
 // Selector chooses an auth candidate for execution.
@@ -175,6 +183,8 @@ type Manager struct {
 	store                     Store
 	cooldownStore             CooldownStateStore
 	pendingCooldownStateStore CooldownStateStore
+	permissionLoadFailed      bool
+	permissionSaveFailed      bool
 	executors                 map[string]ProviderExecutor
 	selector                  Selector
 	hook                      Hook
@@ -187,13 +197,25 @@ type Manager struct {
 	syncSchedulerMu           sync.Mutex
 	// executionSeq stamps upstream dispatches with a monotonic sequence used
 	// to reject cooldown clears from executions dispatched before the cooldown.
-	executionSeq       atomic.Uint64
-	structuralEpoch    atomic.Uint64
-	syncedVersion      atomic.Uint64
-	auths              map[string]*Auth
-	authEpochs         map[string]uint64
-	authChangeWatchers map[string]map[chan struct{}]struct{}
-	scheduler          *authScheduler
+	executionSeq         atomic.Uint64
+	structuralEpoch      atomic.Uint64
+	syncedVersion        atomic.Uint64
+	auths                map[string]*Auth
+	authEpochs           map[string]uint64
+	authChangeWatchers   map[string]map[chan struct{}]struct{}
+	kiloPolicyStates     map[string]*kiloPolicyRuntime
+	kiloQuotaRecords     map[string]*kiloQuotaRecord
+	kiloSourceFlights    map[kiloSourceQueryKey]*kiloSourceFlight
+	kiloQuotaBusy        map[string]bool
+	kiloRecoveryStates   map[string]*kiloRecoveryRuntime
+	kiloRecoveryLoop     *kiloRecoveryLifecycle
+	kiloRecoveryCycleMu  sync.Mutex
+	kiloProbeStates      map[string]*kiloProbeRuntime
+	kiloProbeStarted     time.Time
+	kiloProbeStopped     bool
+	kiloProbeLoop        *kiloProbeLifecycle
+	kiloProbeLifecycleMu sync.Mutex
+	scheduler            *authScheduler
 	// pluginScheduler runs outside m.mu before falling back to native selection.
 	pluginScheduler PluginScheduler
 	// homeRuntimeAuths retains legacy session auth lookups for non-execution callers.

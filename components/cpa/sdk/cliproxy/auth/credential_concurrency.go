@@ -130,21 +130,59 @@ func credentialConcurrencyLimit(auth *Auth) (int, *int) {
 	return DefaultCredentialConcurrency, nil
 }
 
+// Caller holds m.mu; executor capacity is configuration, never current free slots.
+func (m *Manager) credentialLimitLocked(a *Auth) (int, *int) {
+	limit, manual := credentialConcurrencyLimit(a)
+	if a != nil && a.Provider == "kilo" {
+		if source, ok := m.executors["kilo"].(interface{ KiloConfiguredIPCapacity(string) (int, bool) }); ok {
+			if capacity, enabled := source.KiloConfiguredIPCapacity(a.ID); enabled {
+				limit = capacity
+				if manual != nil {
+					limit = min(limit, *manual)
+				}
+			}
+		}
+	}
+	return limit, manual
+}
+
 type credentialLease struct {
-	once  sync.Once
-	gate  *localConcurrency
-	state *concurrencyCounter
+	once          sync.Once
+	gate          *localConcurrency
+	state         *concurrencyCounter
+	releaseEgress func()
+}
+
+// Caller holds concurrencyPickMu and has not acquired egress or delivered the lease.
+func (l *credentialLease) rollbackReservation() {
+	if l == nil {
+		return
+	}
+	l.once.Do(func() {
+		l.gate.mu.Lock()
+		defer l.gate.mu.Unlock()
+		l.state.active--
+	})
 }
 
 func (l *credentialLease) release() {
 	if l == nil {
 		return
 	}
-	l.once.Do(func() { l.gate.mu.Lock(); defer l.gate.mu.Unlock(); l.state.active--; l.gate.signalLocked() })
+	l.once.Do(func() {
+		if l.releaseEgress != nil {
+			l.releaseEgress()
+		}
+		l.gate.mu.Lock()
+		defer l.gate.mu.Unlock()
+		l.state.active--
+		l.gate.signalLocked()
+	})
 }
 
 // Caller holds m.mu, so deletion cannot attach an admission to a removed identity.
 func (m *Manager) tryCredentialLeaseLocked(auth *Auth) *credentialLease {
+	limit, _ := m.credentialLimitLocked(auth)
 	g := &m.concurrency
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -154,7 +192,6 @@ func (m *Manager) tryCredentialLeaseLocked(auth *Auth) *credentialLease {
 		state = &concurrencyCounter{identity: concurrencyAuthIdentity(auth)}
 		g.states[auth.ID] = state
 	}
-	limit, _ := credentialConcurrencyLimit(auth)
 	if state.active >= limit {
 		return nil
 	}
@@ -164,6 +201,12 @@ func (m *Manager) tryCredentialLeaseLocked(auth *Auth) *credentialLease {
 
 type concurrencyBudgetKey struct{}
 type concurrencyBudget struct{ spent time.Duration }
+
+// WithSharedCredentialWaitBudget shares only accumulated admission waiting.
+// Sequential internal calls retain their existing inference cancellation policy.
+func WithSharedCredentialWaitBudget(ctx context.Context) context.Context {
+	return withConcurrencyBudget(ctx)
+}
 
 func withConcurrencyBudget(ctx context.Context) context.Context {
 	if ctx == nil {
@@ -183,7 +226,11 @@ func isConcurrencyError(err error) bool {
 	}
 	return false
 }
-func (m *Manager) waitCredentialCapacity(ctx context.Context, changed <-chan struct{}, pinned string) error {
+func (m *Manager) waitCredentialCapacity(ctx context.Context, changed <-chan struct{}, pinned string, exits ...<-chan struct{}) error {
+	var exitChanged <-chan struct{}
+	if len(exits) > 0 {
+		exitChanged = exits[0]
+	}
 	g := &m.concurrency
 	g.mu.Lock()
 	g.initLocked()
@@ -226,6 +273,8 @@ func (m *Manager) waitCredentialCapacity(ctx context.Context, changed <-chan str
 		return concurrencyError("credential_concurrency_timeout")
 	case <-changed:
 		return nil
+	case <-exitChanged:
+		return nil
 	}
 }
 func (m *Manager) capacitySnapshot() (map[string]int, <-chan struct{}) {
@@ -247,6 +296,11 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 		return a, e, p, nil, err
 	}
 	ctx = withConcurrencyBudget(ctx)
+	diagnostic := kiloDiagnosticFrom(ctx)
+	exitExcluded := make(map[string]struct{})
+	var exitChanged <-chan struct{}
+	var exitErr error
+	exitBusy := false
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, nil, "", nil, err
@@ -263,7 +317,10 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 		if excluded == nil {
 			excluded = make(map[string]struct{})
 		}
-		busy := false
+		for id := range exitExcluded {
+			excluded[id] = struct{}{}
+		}
+		busy := exitBusy
 		providerSet := make(map[string]bool, len(providers))
 		for _, p := range providers {
 			providerSet[canonicalSchedulingProvider(p)] = true
@@ -271,7 +328,8 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 		eligibility := authSelectionEligibilityForRequest(ctx, opts)
 		m.mu.RLock()
 		for id, a := range m.auths {
-			if a == nil || a.Disabled || !providerSet[executorKeyFromAuth(a)] || !eligibility.allows(a) {
+			manualDiagnostic := KiloManualDiagnostic(ctx, a)
+			if a == nil || (a.Disabled && !manualDiagnostic) || !providerSet[executorKeyFromAuth(a)] || (!manualDiagnostic && !eligibility.allows(a)) {
 				continue
 			}
 			if _, used := tried[id]; used {
@@ -283,16 +341,16 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 			if _, ok := m.executorLocked(executorKeyFromAuth(a)); !ok {
 				continue
 			}
-			if model != "" && !m.authSupportsRouteModel(registry.GetGlobalRegistry(), a, model) {
+			if diagnostic == nil && model != "" && !m.authSupportsRouteModel(registry.GetGlobalRegistry(), a, model) {
 				continue
 			}
-			limit, _ := credentialConcurrencyLimit(a)
+			limit, _ := m.credentialLimitLocked(a)
 			if active[id] < limit {
 				continue
 			}
 			// A capacity wait is justified only by a credential otherwise available for this request.
 			available, _, err := m.availableAuthsForSelector(ctx, m.selector, []*Auth{a}, "mixed", model, time.Now(), true, opts.Headers)
-			if err == nil && len(available) > 0 {
+			if manualDiagnostic || (err == nil && len(available) > 0) {
 				excluded[id] = struct{}{}
 				busy = true
 			}
@@ -302,33 +360,102 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 			if _, full := excluded[pinned]; full {
 				if _, already := tried[pinned]; !already && busy {
 					m.concurrencyPickMu.Unlock()
-					if err := m.waitCredentialCapacity(ctx, changed, pinned); err != nil {
+					if err := m.waitCredentialCapacity(ctx, changed, pinned, exitChanged); err != nil {
 						return nil, nil, "", nil, err
 					}
+					clear(exitExcluded)
+					exitChanged = nil
+					exitBusy = false
+					exitErr = nil
 					continue
 				}
 			}
 		}
-		a, e, p, err := m.pickNextMixed(ctx, providers, model, opts, excluded)
+		var a *Auth
+		var e ProviderExecutor
+		var p string
+		var err error
+		if diagnostic != nil {
+			a, e, p, err = m.pickKiloDiagnostic(ctx, excluded)
+		} else {
+			a, e, p, err = m.pickNextMixed(ctx, providers, model, opts, excluded)
+		}
+		if err == nil && a != nil && a.Provider == "kilo" {
+			a, err = m.ensureKiloMachineLocked(ctx, a)
+			if err != nil {
+				m.concurrencyPickMu.Unlock()
+				return nil, nil, "", nil, err
+			}
+		}
 		var lease *credentialLease
 		if err == nil && a != nil {
 			m.mu.RLock()
 			current := m.auths[a.ID]
-			if current != nil {
+			if staleKiloDiagnostic(ctx, current) {
+				err = ErrKiloIdentityChanged
+			} else if kiloAutoBlocked(current) && !KiloManualDiagnostic(ctx, current) {
+				err = NewRequestScopedError("Kilo account is automatically restricted", 409)
+			}
+			if current != nil && err == nil {
 				lease = m.tryCredentialLeaseLocked(current)
 			}
 			m.mu.RUnlock()
+		}
+		if lease != nil {
+			if admission, ok := e.(EgressAdmitter); ok {
+				// Kilo accounts share one executor's notification across this exclusion pass.
+				if a.Provider != "kilo" || exitChanged == nil {
+					exitChanged = admission.EgressChanges()
+				}
+				selected, release, isBusy, errExit := admission.TryAcquireEgress(a)
+				if errExit != nil || isBusy {
+					lease.rollbackReservation()
+					lease = nil
+					if a.Provider == "kilo" && isRequestScopedError(errExit) {
+						m.concurrencyPickMu.Unlock()
+						return nil, nil, "", nil, errExit
+					}
+					exitExcluded[a.ID] = struct{}{}
+					exitBusy = exitBusy || isBusy
+					if errExit != nil {
+						exitErr = errExit
+					}
+					m.concurrencyPickMu.Unlock()
+					if pinned != "" {
+						if errExit != nil {
+							return nil, nil, "", nil, errExit
+						}
+						if err := m.waitCredentialCapacity(ctx, changed, pinned, exitChanged); err != nil {
+							return nil, nil, "", nil, err
+						}
+						clear(exitExcluded)
+						exitChanged = nil
+						exitBusy = false
+						exitErr = nil
+					}
+					continue
+				}
+				a = selected
+				lease.releaseEgress = release
+			}
 		}
 		m.concurrencyPickMu.Unlock()
 		if lease != nil {
 			return a, e, p, lease, nil
 		}
 		if err != nil && !busy {
+			if exitErr != nil {
+				return nil, nil, "", nil, exitErr
+			}
 			return nil, nil, "", nil, err
 		}
-		if err := m.waitCredentialCapacity(ctx, changed, pinned); err != nil {
+		if err := m.waitCredentialCapacity(ctx, changed, pinned, exitChanged); err != nil {
 			return nil, nil, "", nil, err
 		}
+		clear(exitExcluded)
+		exitChanged = nil
+		exitBusy = false
+		exitErr = nil
 	}
 }
 
@@ -346,7 +473,7 @@ func (m *Manager) AcquireCredentialGeneration(ctx context.Context, id string) (f
 		_, changed := m.capacitySnapshot()
 		m.mu.RLock()
 		a := m.auths[id]
-		if a == nil || a.Disabled {
+		if a == nil || a.Disabled || kiloAutoBlocked(a) {
 			m.mu.RUnlock()
 			m.concurrencyPickMu.Unlock()
 			return nil, &Error{Code: "auth_unavailable", Message: "credential is no longer enabled", HTTPStatus: http.StatusConflict}
@@ -407,6 +534,12 @@ func (m *Manager) CredentialConcurrencySnapshot() map[string]any {
 		return map[string]any{"mode": "home", "credentials": []CredentialConcurrencyEntry{}}
 	}
 	auths := m.List()
+	limits := map[string]int{}
+	m.mu.RLock()
+	for _, a := range auths {
+		limits[a.ID], _ = m.credentialLimitLocked(a)
+	}
+	m.mu.RUnlock()
 	g := &m.concurrency
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -417,13 +550,17 @@ func (m *Manager) CredentialConcurrencySnapshot() map[string]any {
 		pinnedTotal += n
 	}
 	for _, a := range auths {
-		limit, override := credentialConcurrencyLimit(a)
+		_, override := credentialConcurrencyLimit(a)
+		limit := limits[a.ID]
 		name := a.FileName
 		if name == "" {
 			name = a.ID
 		}
 		entry := CredentialConcurrencyEntry{AuthID: a.ID, AuthIndex: a.Index, Name: name, Provider: a.Provider, Source: "file", Editable: true, ConcurrencyLimit: override, EffectiveLimit: limit, LimitSource: "default", PinnedWaiting: g.pinned[a.ID]}
-		if override != nil {
+		if a.Provider == "kilo" && limit != DefaultCredentialConcurrency && (override == nil || limit != *override) {
+			entry.LimitSource = "ip_capacity"
+		}
+		if override != nil && limit == *override {
 			entry.LimitSource = "override"
 		}
 		if s := g.states[a.ID]; s != nil {

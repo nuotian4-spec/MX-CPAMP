@@ -20,6 +20,16 @@ func (b *Bridge) validateToolResponse(response object) error {
 	check := *b
 	check.replay = nil
 	output, _ := response["output"].([]any)
+	count := 0
+	for _, raw := range output {
+		item, _ := raw.(object)
+		if isTool(item) {
+			count++
+		}
+	}
+	if count > 1024 || b.disallowParallel && count > 1 {
+		return fmt.Errorf("basispoints response violates the tool call count limit")
+	}
 	ids, calls := make(map[string]bool), make(map[string]bool)
 	for _, raw := range output {
 		item, _ := raw.(object)
@@ -371,6 +381,11 @@ func BuildToolRepairRequest(prepared []byte, failed map[string]any, validation e
 // ReadToolRepairResponse withholds all intermediate events from the client.
 // Only the terminal native response is authoritative, as in the primary stream.
 func ReadToolRepairResponse(reader io.Reader) (map[string]any, error) {
+	return ReadBufferedResponse(reader, nil)
+}
+
+// ReadBufferedResponse exposes only created while retaining the authoritative terminal batch.
+func ReadBufferedResponse(reader io.Reader, created func([]byte) error) (map[string]any, error) {
 	var response object
 	var observedUsage object
 	var terminalError error
@@ -394,6 +409,11 @@ func ReadToolRepairResponse(reader io.Reader) (map[string]any, error) {
 		kind := text(payload["type"])
 		if kind == "" {
 			kind = event
+		}
+		if kind == "response.created" && created != nil {
+			if err := created(data); err != nil {
+				return err
+			}
 		}
 		item, _ := payload["item"].(object)
 		if kind == "response.output_item.done" && isTool(item) {

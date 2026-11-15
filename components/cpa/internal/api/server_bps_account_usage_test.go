@@ -81,6 +81,8 @@ func TestBPSAccountUsagePublicHandlerReadOnly(t *testing.T) {
 		status                            int
 	}{
 		{"source fixture", bpsUsageFixture, "", "pro", "17", 200},
+		{"exact prolite", strings.Replace(bpsUsageFixture, `"plan_type":"pro"`, `"plan_type":"self_serve_business_prolite"`, 1), "", "self_serve_business_prolite", "17", 200},
+		{"private prolite suffix", strings.Replace(bpsUsageFixture, `"plan_type":"pro"`, `"plan_type":"self_serve_business_prolite_PRIVATE"`, 1), "", "", "17", 200},
 		{"zero", `{"rate_limit":{"allowed":false,"limit_reached":false,"primary_window":{"used_percent":0,"reset_at":0,"reset_after_seconds":0}}}`, "", "", "0", 200},
 		{"reset only", `{"plan_type":"UNKNOWN_PRIVATE_PLAN","rate_limit":{"primary_window":{"reset_at":1796977220}}}`, "", "", "null", 200},
 		{"secondary only", `{"rate_limit":{"secondary_window":{"used_percent":100}}}`, "", "", "null", 200},

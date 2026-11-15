@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/auth/bps"
+	kilotoken "github.com/router-for-me/CLIProxyAPI/v8/internal/auth/kilo"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -118,6 +119,15 @@ func (s *FileTokenStore) Save(ctx context.Context, auth *cliproxyauth.Auth) (str
 		}
 	} else {
 		switch {
+		case strings.EqualFold(strings.TrimSpace(auth.Provider), "kilo"):
+			if auth.Metadata == nil {
+				return "", fmt.Errorf("Kilo credential metadata is missing")
+			}
+			auth.Metadata["disabled"] = auth.Disabled
+			storage := &kilotoken.TokenStorage{Metadata: auth.Metadata}
+			if err = storage.SaveTokenToFile(path); err != nil {
+				return "", err
+			}
 		case strings.EqualFold(strings.TrimSpace(auth.Provider), "bps"):
 			if auth.Metadata == nil {
 				return "", fmt.Errorf("BPS credential metadata is missing")
@@ -373,6 +383,9 @@ func (s *FileTokenStore) readAuthFiles(path, baseDir string) ([]*cliproxyauth.Au
 	}
 	if email, ok := metadata["email"].(string); ok && email != "" {
 		auth.Attributes["email"] = email
+	}
+	if strings.EqualFold(provider, "kilo") {
+		cliproxyauth.ApplyAuthPriorityMetadata(auth, metadata)
 	}
 	cliproxyauth.ApplyCustomHeadersFromMetadata(auth)
 	return []*cliproxyauth.Auth{auth}, nil

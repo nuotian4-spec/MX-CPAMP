@@ -94,3 +94,53 @@ describe('pluginConfigDraft', () => {
   });
 
 });
+
+describe('cpa-bps 原生模型配置', () => {
+  const fields = [
+    { name: 'models', type: 'array', enumValues: [], description: '', defaultValue: [] },
+    { name: 'auto_discover', type: 'boolean', enumValues: [], description: '', defaultValue: true },
+    { name: 'fast_mode', type: 'boolean', enumValues: [], description: '', defaultValue: false },
+  ];
+
+  it('首次配置显示插件原生自动发现默认值，打开面板不写配置', () => {
+    const draft = createPluginConfigDraft(fields, {}, true);
+
+    expect(draft.values).toEqual({ models: '[]', auto_discover: true, fast_mode: false });
+    expect(buildPluginConfigPatch(draft, fields, t)).toEqual({ patch: {}, errors: {} });
+  });
+
+  it('已有手动模型和关闭开关优先于默认值，修改其他字段不覆盖模型模式', () => {
+    const draft = createPluginConfigDraft(
+      fields,
+      { models: ['fixture-model'], auto_discover: false },
+      true
+    );
+
+    expect(draft.values.models).toBe(JSON.stringify(['fixture-model'], null, 2));
+    expect(draft.values.auto_discover).toBe(false);
+    draft.values.fast_mode = true;
+    draft.touched.add('fast_mode');
+
+    expect(buildPluginConfigPatch(draft, fields, t)).toEqual({
+      patch: { fast_mode: true },
+      errors: {},
+    });
+  });
+
+  it('显式切换自动模式只提交空模型列表和开启开关', () => {
+    const draft = createPluginConfigDraft(
+      fields,
+      { models: ['fixture-model'], auto_discover: false, model_suffix: 'none' },
+      true
+    );
+    draft.values.models = '[]';
+    draft.values.auto_discover = true;
+    draft.touched.add('models');
+    draft.touched.add('auto_discover');
+
+    expect(buildPluginConfigPatch(draft, fields, t)).toEqual({
+      patch: { models: [], auto_discover: true },
+      errors: {},
+    });
+  });
+});

@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/channelscope"
+
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/logging"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/util"
@@ -165,11 +167,29 @@ func isOpenAIImageExecutionOptions(opts cliproxyexecutor.Options) bool {
 }
 
 func (m *Manager) Execute(ctx context.Context, providers []string, req cliproxyexecutor.Request, opts cliproxyexecutor.Options) (cliproxyexecutor.Response, error) {
+	hadProviders := len(providers) > 0
+	providers = m.FilterChannelProviders(ctx, providers)
+	if len(providers) == 0 && (hadProviders || channelscope.From(ctx) != "") {
+		return cliproxyexecutor.Response{}, &Error{Code: "channel_scope", Message: "no provider in client channel", HTTPStatus: 403}
+	}
+	var prepareErr error
+	ctx, prepareErr = m.prepareKiloPayload(ctx, providers, req, opts)
+	if prepareErr != nil {
+		return cliproxyexecutor.Response{}, prepareErr
+	}
+	ctx = WithBPSRequestState(ctx, providers, req, opts)
 	ctx = withConcurrencyBudget(ctx)
 	ctx = cliproxyexecutor.WithRequestProxyURL(ctx, opts.ProxyURL)
 	req, opts = cliproxysession.Enrich(req, opts)
 	ctx = WithCodexClientRequest(ctx, isOpenAIImageExecutionOptions(opts) || IsCodexClientRequest(ctx, opts.Headers))
 	ctx = coreusage.CaptureIdentity(ctx)
+	var releaseKilo func()
+	var errKilo error
+	ctx, opts, releaseKilo, errKilo = m.bindKiloHistory(ctx, providers, req, opts)
+	if errKilo != nil {
+		return cliproxyexecutor.Response{}, errKilo
+	}
+	defer releaseKilo()
 	var errBinding error
 	providers, opts, errBinding = m.bindBPSToolHistory(providers, req, opts)
 	if errBinding != nil {
@@ -178,7 +198,7 @@ func (m *Manager) Execute(ctx context.Context, providers []string, req cliproxye
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return cliproxyexecutor.Response{}, errBoundary
 	}
-	normalized, errCapability := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	normalized, errCapability := filterBPSProviders(ctx, m.FilterChannelProviders(ctx, m.normalizeProviders(providers)), req, opts)
 	if errCapability != nil {
 		return cliproxyexecutor.Response{}, errCapability
 	}
@@ -202,7 +222,7 @@ func (m *Manager) Execute(ctx context.Context, providers []string, req cliproxye
 		if errExec == nil {
 			return resp, nil
 		}
-		if isConcurrencyError(errExec) || isRequestTerminatedError(errExec) || isRequestStopError(errExec) {
+		if BPSAutomaticRetryBlocked(ctx) || isConcurrencyError(errExec) || isRequestTerminatedError(errExec) || isRequestStopError(errExec) {
 			return cliproxyexecutor.Response{}, unwrapExecutionBoundaryError(errExec)
 		}
 		if hasUpstreamExecutionAttempt(errExec) {
@@ -240,11 +260,23 @@ func (m *Manager) Execute(ctx context.Context, providers []string, req cliproxye
 
 // It supports multiple providers for the same model and round-robins the starting provider per model.
 func (m *Manager) ExecuteCount(ctx context.Context, providers []string, req cliproxyexecutor.Request, opts cliproxyexecutor.Options) (cliproxyexecutor.Response, error) {
+	hadProviders := len(providers) > 0
+	providers = m.FilterChannelProviders(ctx, providers)
+	if len(providers) == 0 && (hadProviders || channelscope.From(ctx) != "") {
+		return cliproxyexecutor.Response{}, &Error{Code: "channel_scope", Message: "no provider in client channel", HTTPStatus: 403}
+	}
 	ctx = withConcurrencyBudget(ctx)
 	ctx = cliproxyexecutor.WithRequestProxyURL(ctx, opts.ProxyURL)
 	req, opts = cliproxysession.Enrich(req, opts)
 	ctx = WithCodexClientRequest(ctx, IsCodexClientRequest(ctx, opts.Headers))
 	ctx = coreusage.CaptureIdentity(ctx)
+	var releaseKilo func()
+	var errKilo error
+	ctx, opts, releaseKilo, errKilo = m.bindKiloHistory(ctx, providers, req, opts)
+	if errKilo != nil {
+		return cliproxyexecutor.Response{}, errKilo
+	}
+	defer releaseKilo()
 	var errBinding error
 	providers, opts, errBinding = m.bindBPSToolHistory(providers, req, opts)
 	if errBinding != nil {
@@ -253,7 +285,7 @@ func (m *Manager) ExecuteCount(ctx context.Context, providers []string, req clip
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return cliproxyexecutor.Response{}, errBoundary
 	}
-	normalized, errCapability := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	normalized, errCapability := filterBPSProviders(ctx, m.FilterChannelProviders(ctx, m.normalizeProviders(providers)), req, opts)
 	if errCapability != nil {
 		return cliproxyexecutor.Response{}, errCapability
 	}
@@ -309,6 +341,17 @@ func (m *Manager) ExecuteCount(ctx context.Context, providers []string, req clip
 // ExecuteStream performs a streaming execution using the configured selector and executor.
 // It supports multiple providers for the same model and round-robins the starting provider per model.
 func (m *Manager) ExecuteStream(ctx context.Context, providers []string, req cliproxyexecutor.Request, opts cliproxyexecutor.Options) (*cliproxyexecutor.StreamResult, error) {
+	hadProviders := len(providers) > 0
+	providers = m.FilterChannelProviders(ctx, providers)
+	if len(providers) == 0 && (hadProviders || channelscope.From(ctx) != "") {
+		return nil, &Error{Code: "channel_scope", Message: "no provider in client channel", HTTPStatus: 403}
+	}
+	var prepareErr error
+	ctx, prepareErr = m.prepareKiloPayload(ctx, providers, req, opts)
+	if prepareErr != nil {
+		return nil, prepareErr
+	}
+	ctx = WithBPSRequestState(ctx, providers, req, opts)
 	ctx = withConcurrencyBudget(ctx)
 	ctx = cliproxyexecutor.WithRequestProxyURL(ctx, opts.ProxyURL)
 	req, opts = cliproxysession.Enrich(req, opts)
@@ -319,6 +362,13 @@ func (m *Manager) ExecuteStream(ctx context.Context, providers []string, req cli
 			defer unlockSession()
 		}
 	}
+	var releaseKilo func()
+	var errKilo error
+	ctx, opts, releaseKilo, errKilo = m.bindKiloHistory(ctx, providers, req, opts)
+	if errKilo != nil {
+		return nil, errKilo
+	}
+	defer releaseKilo()
 	var errBinding error
 	providers, opts, errBinding = m.bindBPSToolHistory(providers, req, opts)
 	if errBinding != nil {
@@ -327,7 +377,7 @@ func (m *Manager) ExecuteStream(ctx context.Context, providers []string, req cli
 	if errBoundary := validateBPSReplayBoundary(providers, req, opts); errBoundary != nil {
 		return nil, errBoundary
 	}
-	normalized, errCapability := filterBPSProviders(ctx, m.normalizeProviders(providers), req, opts)
+	normalized, errCapability := filterBPSProviders(ctx, m.FilterChannelProviders(ctx, m.normalizeProviders(providers)), req, opts)
 	if errCapability != nil {
 		return nil, errCapability
 	}
@@ -368,7 +418,7 @@ func (m *Manager) ExecuteStream(ctx context.Context, providers []string, req cli
 		}
 		retryRoundPending = false
 		retryRoundWaited = false
-		if isConcurrencyError(errStream) || isRequestTerminatedError(errStream) || isRequestStopError(errStream) {
+		if BPSAutomaticRetryBlocked(ctx) || isConcurrencyError(errStream) || isRequestTerminatedError(errStream) || isRequestStopError(errStream) {
 			return nil, unwrapExecutionBoundaryError(errStream)
 		}
 		lastErr = errStream
@@ -617,7 +667,7 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 	for {
 		localLease.release()
 		localLease = nil
-		if maxRetryCredentials > 0 && len(attempted) >= maxRetryCredentials {
+		if maxRetryCredentials > 0 && len(attempted) >= maxRetryCredentials && !bpsFailoverPending(ctx) {
 			if lastErr != nil {
 				return cliproxyexecutor.Response{}, preferredExecutionAttemptError(lastErr, upstreamErr)
 			}
@@ -630,6 +680,7 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 			pickOpts = withHomeAuthCount(pickOpts, homeAuthCount)
 			pickOpts = withHomeExcludedAuthIDs(pickOpts, tried)
 		}
+		m.excludeBPSFailoverCandidates(ctx, tried, routeModel)
 		auth, executor, provider, acquired, errPick := m.pickNextMixedAdmitted(ctx, providers, routeModel, pickOpts, tried)
 		localLease = acquired
 		if errPick != nil {
@@ -657,6 +708,7 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 		execCtx = newUpstreamAttemptContext(execCtx)
 
 		models, pooled, aliasResult, routing := m.preparedExecutionModelsWithAliasForRequest(execCtx, auth, routeModel, pickOpts.Headers)
+		models = bpsFailoverModels(ctx, auth, models)
 		if len(models) == 0 {
 			continue
 		}
@@ -717,25 +769,33 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 			execCtx = syncMetadataSessionToContext(execCtx, execOpts.Metadata)
 			executionSeq := m.nextExecutionSeq()
 			startExec := time.Now()
-			resp, errExec := executor.Execute(execCtx, auth, execReq, execOpts)
+			resp, errExec := m.executePermissionChecked(execCtx, executor, auth, execReq, execOpts)
+			errExec = noReplayProviderError(provider, errExec)
 			errExec = markUpstreamExecutionAttemptFromContext(execCtx, errExec)
+			if localKiloPayloadFailure(provider, errExec) {
+				return cliproxyexecutor.Response{}, errExec
+			}
 			durationExec := time.Since(startExec)
 			if errExec != nil {
 				if hasUpstreamExecutionAttempt(errExec) {
 					upstreamErr = errExec
 				}
 				if errCtx := execCtx.Err(); errCtx != nil {
+					m.recordNoReplayCanceledResult(execCtx, auth, provider, resultModel, routeModel, execOpts, errExec, false, executionSeq)
+					if auth.Provider == "bps" && permissionDenialFromError(errExec) != nil {
+						m.recordCanceledUpstreamCooldown(execCtx, auth, provider, resultModel, routeModel, execOpts, errExec, false, executionSeq)
+					}
 					return cliproxyexecutor.Response{}, errCtx
 				}
 				refreshCtx := newUpstreamAttemptContext(execCtx)
-				if refreshed, okRefresh := m.tryRefreshAfterUnauthorized(refreshCtx, auth, errExec, didRefreshOnUnauthorized, execOpts.Headers); okRefresh {
+				if refreshed, okRefresh := m.tryRefreshAfterUnauthorized(refreshCtx, auth, errExec, didRefreshOnUnauthorized || auth.Provider == "bps", execOpts.Headers); okRefresh {
 					auth = refreshed
 					didRefreshOnUnauthorized = true
 					execCtx = newUpstreamAttemptContext(execCtx)
 					execCtx = syncMetadataSessionToContext(execCtx, execOpts.Metadata)
 					executionSeq = m.nextExecutionSeq()
 					startRetry := time.Now()
-					resp, errExec = executor.Execute(execCtx, auth, execReq, execOpts)
+					resp, errExec = m.executePermissionChecked(execCtx, executor, auth, execReq, execOpts)
 					errExec = markUpstreamExecutionAttemptFromContext(execCtx, errExec)
 					durationRetry := time.Since(startRetry)
 					if errExec != nil {
@@ -744,6 +804,9 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 						}
 						warnLogUpstreamFailure(execCtx, entry, provider, upstreamModel, auth, durationRetry, errExec)
 						if errCtx := execCtx.Err(); errCtx != nil {
+							if auth.Provider == "bps" && permissionDenialFromError(errExec) != nil {
+								m.recordCanceledUpstreamCooldown(execCtx, auth, provider, resultModel, routeModel, execOpts, errExec, false, executionSeq)
+							}
 							return cliproxyexecutor.Response{}, errCtx
 						}
 					}
@@ -757,6 +820,7 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 			result := Result{AuthID: auth.ID, Provider: provider, Model: resultModel, RouteModel: routeModel, Success: errExec == nil, CompletedResponse: errExec == nil && !resp.Incomplete && isCompletedExecutionPayload(resp.Payload), Options: execOpts, AccessToken: authAccessTokenForRequest(execCtx, auth, execOpts.Headers), CredentialVersion: auth.CredentialVersion, RegistrationEpoch: auth.RegistrationEpoch, ExecutionSeq: executionSeq}
 			if errExec != nil {
 				result.Error = resultErrorFromError(errExec)
+				result.PermissionDenial = permissionDenialFromError(errExec)
 				if ra := retryAfterFromError(errExec); ra != nil {
 					result.RetryAfter = ra
 				}
@@ -765,12 +829,22 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 				}
 				action, okAction := matchRequestScopedErrorAction(auth, errExec, m.runtimeConfigSnapshot())
 				applyRequestScopedActionToResult(action, okAction, &result)
-				if isResponsesCompactAvailabilityNeutralError(execOpts, errExec, result.Error) {
+				if noReplayCancellation(errExec) || isResponsesCompactAvailabilityNeutralError(execOpts, errExec, result.Error) {
 					m.recordAvailabilityNeutralResult(execCtx, result)
 				} else {
 					m.MarkResult(execCtx, result)
 					errExec = annotateTrustedRetryAfterByHint(errExec)
 					syncPreferredUpstreamError(&upstreamErr, errExec)
+				}
+				if channelscope.NoReplay(errExec) {
+					return cliproxyexecutor.Response{}, errExec
+				}
+				if auth.Provider == "bps" && BPSAutomaticRetryBlocked(ctx) {
+					if authorizeBPSFailover(ctx, errExec) {
+						authErr = errExec
+						break
+					}
+					return cliproxyexecutor.Response{}, wrapRequestStopError(errExec)
 				}
 				if okAction {
 					if isRequestScopedStop(action, okAction) {
@@ -797,6 +871,10 @@ func (m *Manager) executeMixedOnce(ctx context.Context, providers []string, req 
 			return resp, nil
 		}
 		if authErr != nil {
+			if bpsFailoverPending(ctx) {
+				lastErr = authErr
+				continue
+			}
 			action, okAction := matchRequestScopedErrorAction(auth, authErr, m.runtimeConfigSnapshot())
 			if okAction {
 				if isRequestScopedStop(action, okAction) {
@@ -944,6 +1022,7 @@ func (m *Manager) executeCountMixedOnce(ctx context.Context, providers []string,
 			executionSeq := m.nextExecutionSeq()
 			startExec := time.Now()
 			resp, errExec := executor.CountTokens(execCtx, auth, execReq, execOpts)
+			errExec = noReplayProviderError(provider, errExec)
 			errExec = markUpstreamExecutionAttemptFromContext(execCtx, errExec)
 			durationExec := time.Since(startExec)
 			if errExec != nil {
@@ -951,6 +1030,7 @@ func (m *Manager) executeCountMixedOnce(ctx context.Context, providers []string,
 					upstreamErr = errExec
 				}
 				if errCtx := execCtx.Err(); errCtx != nil {
+					m.recordNoReplayCanceledResult(execCtx, auth, provider, resultModel, routeModel, execOpts, errExec, false, executionSeq)
 					return cliproxyexecutor.Response{}, errCtx
 				}
 				refreshCtx := newUpstreamAttemptContext(execCtx)
@@ -983,6 +1063,7 @@ func (m *Manager) executeCountMixedOnce(ctx context.Context, providers []string,
 			result := Result{AuthID: auth.ID, Provider: provider, Model: resultModel, RouteModel: routeModel, Success: errExec == nil, Options: execOpts, SkipQuotaObservation: true, AccessToken: authAccessTokenForRequest(execCtx, auth, execOpts.Headers), CredentialVersion: auth.CredentialVersion, RegistrationEpoch: auth.RegistrationEpoch, ExecutionSeq: executionSeq}
 			if errExec != nil {
 				result.Error = resultErrorFromError(errExec)
+				result.PermissionDenial = permissionDenialFromError(errExec)
 				if ra := retryAfterFromError(errExec); ra != nil {
 					result.RetryAfter = ra
 				}
@@ -993,7 +1074,7 @@ func (m *Manager) executeCountMixedOnce(ctx context.Context, providers []string,
 				// explicit 501 / unsupported-capability error. Record the failure
 				// for hooks and metrics without suspending a model that remains
 				// usable through the messages endpoint.
-				if isCountTokensEndpointNotFoundError(errExec, execReq.Model) && (result.Error == nil || result.Error.Code != ErrorCodeForceCooldown) {
+				if noReplayCancellation(errExec) || isCountTokensEndpointNotFoundError(errExec, execReq.Model) && (result.Error == nil || result.Error.Code != ErrorCodeForceCooldown) {
 					m.recordAvailabilityNeutralResult(execCtx, result)
 				} else {
 					if isCredentialScopedError(errExec) {
@@ -1002,6 +1083,9 @@ func (m *Manager) executeCountMixedOnce(ctx context.Context, providers []string,
 					m.MarkResult(execCtx, result)
 					errExec = annotateTrustedRetryAfterByHint(errExec)
 					syncPreferredUpstreamError(&upstreamErr, errExec)
+				}
+				if channelscope.NoReplay(errExec) {
+					return cliproxyexecutor.Response{}, errExec
 				}
 				if okAction {
 					if isRequestScopedStop(action, okAction) {
@@ -1081,7 +1165,7 @@ func (m *Manager) executeStreamMixedOnce(ctx context.Context, providers []string
 		localLease.release()
 		localLease = nil
 		allowSameAuthRetry := homeMode && homeSameAuthRetryPending && lastHomeAuthID != "" && homeSameAuthRetries[lastHomeAuthID] == 0
-		if maxRetryCredentials > 0 && len(attempted) >= maxRetryCredentials && !allowSameAuthRetry {
+		if maxRetryCredentials > 0 && len(attempted) >= maxRetryCredentials && !allowSameAuthRetry && !bpsFailoverPending(ctx) {
 			if lastErr != nil {
 				preferredErr := preferredExecutionAttemptError(lastErr, upstreamErr)
 				if homeMode {
@@ -1112,6 +1196,7 @@ func (m *Manager) executeStreamMixedOnce(ctx context.Context, providers []string
 				provider = selection.Provider
 			}
 		} else {
+			m.excludeBPSFailoverCandidates(ctx, tried, routeModel)
 			auth, executor, provider, localLease, errPick = m.pickNextMixedAdmitted(ctx, providers, routeModel, pickOpts, tried)
 		}
 		if errPick != nil {
@@ -1222,6 +1307,7 @@ func (m *Manager) executeStreamMixedOnce(ctx context.Context, providers []string
 		}
 		execCtx = newUpstreamAttemptContext(execCtx)
 		models, pooled, aliasResult, routing := m.executionModelCandidatesWithAlias(auth, routeModel)
+		models = bpsFailoverModels(ctx, auth, models)
 		// Home owns dispatched credential availability; only local selections need state filtering.
 		if selection == nil {
 			models = m.filterExecutionModelsForRequest(execCtx, auth, routeModel, models, pooled, pickOpts.Headers)
@@ -1346,8 +1432,29 @@ func (m *Manager) executeStreamMixedOnce(ctx context.Context, providers []string
 		}
 		streamResult, errStream := m.executeStreamWithModelPool(execCtx, executor, auth, provider, execReq, execOpts, routeModel, streamExecutionModel, models, pooled, aliasResult, routing, !homeMode || selection != nil, selection != nil)
 		if errStream != nil {
+			if channelscope.NoReplay(errStream) {
+				return nil, errStream
+			}
 			if hasUpstreamExecutionAttempt(errStream) {
 				upstreamErr = errStream
+			}
+			if auth.Provider == "bps" && BPSAutomaticRetryBlocked(ctx) {
+				if authorizeBPSFailover(ctx, errStream) {
+					if selection != nil {
+						releaseAttempt()
+						if errEnd := m.endHomeSelectionBeforeRedispatch(ctx, selection, "bps_failover"); errEnd != nil {
+							return nil, errEnd
+						}
+						homeExcludedAuthIDs[auth.ID] = struct{}{}
+					}
+					lastErr = errStream
+					continue
+				}
+				if selection != nil {
+					releaseAttempt()
+					selection.End("request_stopped")
+				}
+				return nil, wrapRequestStopError(errStream)
 			}
 			action, okAction := matchRequestScopedErrorAction(auth, errStream, m.runtimeConfigSnapshot())
 			if isRequestScopedStop(action, okAction) || (!okAction && (isRequestInvalidError(errStream) || cliproxyexecutor.IsUpstreamWebsocketTurnError(errStream))) {
@@ -2439,12 +2546,12 @@ func (m *Manager) VerifyInference(ctx context.Context, id, model string) (*Auth,
 	credVersion := auth.CredentialVersion
 	regEpoch := auth.RegistrationEpoch
 
-	streamRes, errStream := executor.ExecuteStream(execCtx, auth, req, opts)
+	streamRes, errStream := m.executeStreamPermissionChecked(execCtx, executor, auth, req, opts)
 	if errStream != nil {
 		rerr := resultErrorFromError(errStream)
 		if rerr != nil && rerr.HTTPStatus == http.StatusNotImplemented {
 			opts.Stream = false
-			resp, errExec := executor.Execute(execCtx, auth, req, opts)
+			resp, errExec := m.executePermissionChecked(execCtx, executor, auth, req, opts)
 			rerrExec := resultErrorFromError(errExec)
 			if rerrExec != nil {
 				rerrExec.Message = sanitizeRenewalMessage(rerrExec.Message)
@@ -2457,6 +2564,7 @@ func (m *Manager) VerifyInference(ctx context.Context, id, model string) (*Auth,
 					RouteModel:        routeModel,
 					Success:           false,
 					Error:             rerrExec,
+					PermissionDenial:  permissionDenialFromError(errExec),
 					RetryAfter:        retryAfterFromError(errExec),
 					CredentialScope:   isCredentialScopedError(errExec),
 					Options:           opts,
@@ -2505,6 +2613,7 @@ func (m *Manager) VerifyInference(ctx context.Context, id, model string) (*Auth,
 			RouteModel:        routeModel,
 			Success:           false,
 			Error:             rerr,
+			PermissionDenial:  permissionDenialFromError(errStream),
 			RetryAfter:        retryAfterFromError(errStream),
 			CredentialScope:   isCredentialScopedError(errStream),
 			Options:           opts,
@@ -2551,6 +2660,7 @@ func (m *Manager) VerifyInference(ctx context.Context, id, model string) (*Auth,
 			RouteModel:        routeModel,
 			Success:           false,
 			Error:             rerrChunk,
+			PermissionDenial:  permissionDenialFromError(chunkErr),
 			RetryAfter:        retryAfterFromError(chunkErr),
 			CredentialScope:   isCredentialScopedError(chunkErr),
 			Options:           opts,

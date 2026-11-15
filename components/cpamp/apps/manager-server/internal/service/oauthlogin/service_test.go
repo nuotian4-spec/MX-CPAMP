@@ -67,6 +67,9 @@ func TestTaskImportContract(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var imports atomic.Int32
 			cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if serveBuiltinBPSConfig(w, r) {
+					return
+				}
 				if r.Method != "POST" || r.URL.Path != "/v8/management/oauth/import" || r.URL.Query().Get("provider") != test.profile || r.Header.Get("Authorization") != "Bearer CPA_SECRET" {
 					t.Error("CPA契约或认证错误")
 				}
@@ -80,6 +83,9 @@ func TestTaskImportContract(t *testing.T) {
 			}))
 			defer cpa.Close()
 			worker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if serveBuiltinBPSConfig(w, r) {
+					return
+				}
 				if r.Header.Get("Authorization") != "Bearer WORKER_SECRET" {
 					t.Error("Worker认证缺失")
 				}
@@ -129,6 +135,9 @@ func TestTaskCancelTimeoutAndBusy(t *testing.T) {
 		t.Run(map[bool]string{false: "cancel", true: "timeout"}[expire], func(t *testing.T) {
 			var stopped atomic.Bool
 			worker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if serveBuiltinBPSConfig(w, r) {
+					return
+				}
 				if r.Method == "POST" {
 					var in Input
 					_ = json.NewDecoder(r.Body).Decode(&in)
@@ -171,12 +180,18 @@ func TestImportCannotClaimCancelled(t *testing.T) {
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if serveBuiltinBPSConfig(w, r) {
+			return
+		}
 		close(entered)
 		<-release
 		jsonReply(w, map[string]any{"status": "ok", "provider": "codex", "auth_id": "a.json", "saved": true, "registered": true})
 	}))
 	defer cpa.Close()
 	worker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if serveBuiltinBPSConfig(w, r) {
+			return
+		}
 		if r.Method == "POST" {
 			var in Input
 			_ = json.NewDecoder(r.Body).Decode(&in)
@@ -205,6 +220,9 @@ func TestTargetDriftRejectsTaskAndOAuth(t *testing.T) {
 	once := sync.Once{}
 	allow := make(chan struct{})
 	cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if serveBuiltinBPSConfig(w, r) {
+			return
+		}
 		if strings.HasSuffix(r.URL.Path, "auth-url") {
 			jsonReply(w, map[string]string{"url": "https://auth.example.invalid/authorize", "state": "state"})
 			return
@@ -214,6 +232,9 @@ func TestTargetDriftRejectsTaskAndOAuth(t *testing.T) {
 	}))
 	defer cpa.Close()
 	worker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if serveBuiltinBPSConfig(w, r) {
+			return
+		}
 		if r.Method == "POST" {
 			var in Input
 			_ = json.NewDecoder(r.Body).Decode(&in)
@@ -255,8 +276,15 @@ func TestTargetDriftRejectsTaskAndOAuth(t *testing.T) {
 
 func TestOAuthMutationHeldUntilRegisteredStatus(t *testing.T) {
 	cpa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if serveBuiltinBPSConfig(w, r) {
+			return
+		}
 		if strings.HasSuffix(r.URL.Path, "auth-url") {
 			jsonReply(w, map[string]string{"url": "https://auth.example.invalid", "state": "state"})
+			return
+		}
+		if strings.HasSuffix(r.URL.Path, "status") {
+			jsonReply(w, map[string]any{"status": "ok", "saved": true, "adopted": true})
 			return
 		}
 		jsonReply(w, map[string]string{"status": "ok"})

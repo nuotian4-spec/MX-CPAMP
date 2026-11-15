@@ -6,6 +6,7 @@ package cliproxy
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	configaccess "github.com/router-for-me/CLIProxyAPI/v8/internal/access/config_access"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/api"
@@ -294,6 +295,7 @@ func (b *Builder) Build() (*Service, error) {
 		serverOptions:       append([]api.ServerOption(nil), b.serverOptions...),
 	}
 	service.proxyPoolPublisher = helps.RegisterProxyPoolPublisher()
+	service.initializeModelExecutor()
 	helps.AdvanceProxyPoolGeneration(service.proxyPoolPublisher, service.cfg)
 	if b.postAuthHook != nil {
 		service.serverOptions = append(service.serverOptions, api.WithPostAuthHook(b.postAuthHook))
@@ -311,6 +313,22 @@ func (b *Builder) Build() (*Service, error) {
 func (s *Service) runtimeAuthSyncHook() coreauth.PostAuthHook {
 	return func(ctx context.Context, auth *coreauth.Auth) error {
 		if s == nil || auth == nil || auth.ID == "" {
+			return nil
+		}
+
+		// Kilo management has already committed runtime state atomically. A delayed
+		// callback must only reconcile the live registration, never recreate it.
+		if strings.EqualFold(auth.Provider, "kilo") {
+			if s.coreManager == nil {
+				return nil
+			}
+			current, ok := s.coreManager.GetByID(auth.ID)
+			if !ok || current.RegistrationEpoch != auth.RegistrationEpoch {
+				return nil
+			}
+			syncCtx := coreauth.WithSkipPersist(context.Background())
+			s.ensureExecutorsForAuthWithContext(syncCtx, current, false)
+			s.completeModelRegistrationForAuth(syncCtx, current)
 			return nil
 		}
 		action := watcher.AuthUpdateActionAdd

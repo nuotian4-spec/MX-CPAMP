@@ -141,7 +141,19 @@ func TestFunctionCodeBranchCatalogAndReplay(t *testing.T) {
 		for i, cache := range []*ReplayCache{bridge.replay, new(ReplayCache)} {
 			next, replayBridge := mustPrepare(t, source, "scope", cache)
 			input := mustTestValue[[]any](t, next["input"])
-			restored := mustTestValue[object](t, input[len(input)-2])
+			var restored object
+			for _, raw := range input {
+				item, ok := raw.(object)
+				if ok && text(item["type"]) == "function_call" && text(item["call_id"]) == "call_code" {
+					if restored != nil {
+						t.Fatal("duplicate replayed function_call for call_code")
+					}
+					restored = item
+				}
+			}
+			if restored == nil {
+				t.Fatal("missing replayed function_call for call_code")
+			}
 			if i == 0 && !reflect.DeepEqual(native, restored) {
 				t.Fatal("cached native call was not replayed verbatim")
 			}

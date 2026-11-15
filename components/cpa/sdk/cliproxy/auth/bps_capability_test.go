@@ -18,7 +18,7 @@ func TestBPSProviderFilterPreservesCodex(t *testing.T) {
 	}{
 		{context.Background(), `{"input":"hi"}`, 2},
 		{context.Background(), `{"input":"hi","previous_response_id":"resp_old"}`, 1},
-		{context.Background(), `{"input":[{"type":"reasoning","encrypted_content":"opaque"}]}`, 1},
+		{context.Background(), `{"input":[{"type":"reasoning","encrypted_content":"opaque"}]}`, 2},
 		{coreexecutor.WithDownstreamWebsocket(context.Background()), `{"input":"hi"}`, 1},
 	} {
 		providers, err := filterBPSProviders(tc.ctx, []string{"codex", "bps"}, coreexecutor.Request{Payload: []byte(tc.payload)}, coreexecutor.Options{SourceFormat: sdktranslator.FormatOpenAIResponse})

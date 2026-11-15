@@ -1,3 +1,4 @@
+import { getCpaBpsQuotaState, type CpaBpsQuotaState } from './cpaBpsQuotaState';
 import { getBpsQuotaState } from '@/utils/quota/bpsIdentity';
 import type {
   AntigravityQuotaState,
@@ -79,6 +80,7 @@ export interface AccountQuotaStores {
   claudeQuota: Record<string, ClaudeQuotaState>;
   codexQuota: Record<string, CodexQuotaState>;
   bpsQuota?: Record<string, CodexQuotaState>;
+  cpaBpsQuota?: Record<string, CpaBpsQuotaState>;
   devinQuota: Record<string, DevinQuotaState>;
   kimiQuota: Record<string, KimiQuotaState>;
   metaQuota: Record<string, MetaQuotaState>;
@@ -954,6 +956,25 @@ export const resolveAccountQuota = (
     };
   }
 
+  if (provider === 'cpa-bps') {
+    const state = getCpaBpsQuotaState(stores.cpaBpsQuota, file);
+    if (!state) return emptyQuota(filePlanType);
+    if (state.status === 'loading') return loadingQuota(filePlanType);
+    if (state.status === 'error') return quotaFromError(state.error, filePlanType);
+    const quota = state.result?.quota;
+    const values = quota?.groups.flatMap((group) => group.buckets)
+      .map((bucket) => bucket.remainingFraction).filter((value): value is number => value !== null) ?? [];
+    const bucketCount = quota?.groups.reduce((count, group) => count + group.buckets.length, 0) ?? 0;
+    const remaining = values.length > 0 && values.length === bucketCount ? Math.min(...values) * 100 : null;
+    return {
+      ...emptyQuota(quota?.subscription?.plan || quota?.subscription?.tierName || filePlanType),
+      status: remaining === null ? 'unknown' : remaining === 0 ? 'exhausted' : remaining < 20 ? 'low' : 'ok',
+      remainingPercent: remaining,
+      usedPercent: remaining === null ? null : 100 - remaining,
+      source: 'cache',
+      fetchedAtMs: state.lastQueriedAt ? Date.parse(state.lastQueriedAt) : undefined,
+    };
+  }
   if (provider === 'bps') {
     const quota = overrides?.bpsQuotaBySelectionKey
       ? overrides.bpsQuotaBySelectionKey.get(getAuthFileSelectionKey(file))

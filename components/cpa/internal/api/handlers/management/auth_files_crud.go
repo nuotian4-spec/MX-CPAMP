@@ -45,6 +45,10 @@ func (h *Handler) DownloadAuthFile(c *gin.Context) {
 		}
 		return
 	}
+	if isKiloJSON(data) || h.isKiloFile(name) {
+		rejectKiloLegacy(c)
+		return
+	}
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", name))
 	c.Data(200, "application/json", data)
 }
@@ -62,8 +66,36 @@ func (h *Handler) UploadAuthFile(c *gin.Context) {
 		c.JSON(clienterror.HTTPStatusFromErrorOr(errMultipart, http.StatusBadRequest), gin.H{"error": fmt.Sprintf("invalid multipart form: %v", errMultipart)})
 		return
 	}
+
+	// Preflight every upload before the first file is changed.
+	for _, file := range fileHeaders {
+		if file == nil {
+			continue
+		}
+		if h.isKiloFile(filepath.Base(file.Filename)) {
+			rejectKiloLegacy(c)
+			return
+		}
+		src, err := file.Open()
+		if err != nil {
+			continue
+		}
+		data, err := io.ReadAll(src)
+		_ = src.Close()
+		if err != nil {
+			continue
+		}
+		if isKiloJSON(data) {
+			rejectKiloLegacy(c)
+			return
+		}
+	}
 	if len(fileHeaders) == 1 {
 		if _, errUpload := h.storeUploadedAuthFile(ctx, fileHeaders[0]); errUpload != nil {
+			if errors.Is(errUpload, errBPSBuiltinReplaced) || errors.Is(errUpload, errKiloDedicated) {
+				c.JSON(http.StatusConflict, gin.H{"error": errUpload.Error()})
+				return
+			}
 			if errors.Is(errUpload, errAuthFileMustBeJSON) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "file must be .json"})
 				return
@@ -129,6 +161,9 @@ func (h *Handler) UploadAuthFile(c *gin.Context) {
 	}
 	if err = h.writeAuthFile(ctx, filepath.Base(name), data); err != nil {
 		status := http.StatusInternalServerError
+		if errors.Is(err, errBPSBuiltinReplaced) || errors.Is(err, errKiloDedicated) {
+			status = http.StatusConflict
+		}
 		if errors.Is(err, errInvalidAuthFile) {
 			status = http.StatusBadRequest
 		}
@@ -150,6 +185,12 @@ func (h *Handler) DeleteAuthFile(c *gin.Context) {
 		if err != nil {
 			c.JSON(500, gin.H{"error": fmt.Sprintf("failed to read auth dir: %v", err)})
 			return
+		}
+		for _, e := range entries {
+			if !e.IsDir() && h.isKiloFile(e.Name()) {
+				rejectKiloLegacy(c)
+				return
+			}
 		}
 		deleted := 0
 		for _, e := range entries {
@@ -192,6 +233,12 @@ func (h *Handler) DeleteAuthFile(c *gin.Context) {
 	if errNames != nil {
 		c.JSON(clienterror.HTTPStatusFromErrorOr(errNames, http.StatusBadRequest), gin.H{"error": errNames.Error()})
 		return
+	}
+	for _, name := range names {
+		if h.isKiloFile(name) {
+			rejectKiloLegacy(c)
+			return
+		}
 	}
 	if len(names) == 0 {
 		c.JSON(400, gin.H{"error": "invalid name"})
@@ -278,6 +325,9 @@ func (h *Handler) storeUploadedAuthFile(ctx context.Context, file *multipart.Fil
 }
 
 func (h *Handler) writeAuthFile(ctx context.Context, name string, data []byte) error {
+	if isKiloJSON(data) || h.isKiloFile(name) {
+		return errKiloDedicated
+	}
 	dst := filepath.Join(h.cfg.AuthDir, filepath.Base(name))
 	if !filepath.IsAbs(dst) {
 		if abs, errAbs := filepath.Abs(dst); errAbs == nil {
@@ -287,6 +337,9 @@ func (h *Handler) writeAuthFile(ctx context.Context, name string, data []byte) e
 	auth, err := h.buildAuthFromFileData(dst, data)
 	if err != nil {
 		return err
+	}
+	if h.builtinBPSReplaced(auth.Provider) {
+		return errBPSBuiltinReplaced
 	}
 	release := h.beginSIWCFileMutation(ctx, dst)
 	defer release()
@@ -391,6 +444,9 @@ func uniqueAuthFileNames(names []string) []string {
 }
 
 func (h *Handler) deleteAuthFileByName(ctx context.Context, name string) (string, int, error) {
+	if h.isKiloFile(name) {
+		return "", http.StatusConflict, errKiloDedicated
+	}
 	name = strings.TrimSpace(name)
 	if isUnsafeAuthFileName(name) {
 		return "", http.StatusBadRequest, fmt.Errorf("invalid name")

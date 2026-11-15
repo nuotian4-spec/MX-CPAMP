@@ -2,6 +2,7 @@ package cliproxy
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -183,11 +184,44 @@ func (s *Service) registerModelsForAuthWithConfigAndCache(ctx context.Context, c
 			models = registry.GetCodexProModels()
 		}
 		models = applyExcludedModels(models, excluded)
+	case "kilo":
+		for _, id := range helps.KiloModels {
+			models = append(models, &ModelInfo{ID: id, Object: "model", OwnedBy: "kilo", Type: "kilo", DisplayName: id, UserDefined: true})
+		}
+		models = applyExcludedModels(models, excluded)
 	case "bps":
 		if cfg != nil {
 			seen := make(map[string]bool)
-			for _, configured := range cfg.BPS.Models {
+			catalog := cfg.BPS.Models
+			discovered := false
+			if len(catalog) == 0 && cfg.BPS.DiscoverModels() {
+				access := helps.QueryBPSAccess(ctx, cfg, a)
+				if s.coreManager != nil {
+					current, ok := s.coreManager.GetByID(a.ID)
+					if !ok || current.Disabled || current.Provider != "bps" {
+						return false
+					}
+					for _, key := range []string{"account_id", "sub", "access_token"} {
+						before, _ := a.Metadata[key].(string)
+						after, _ := current.Metadata[key].(string)
+						if before != after {
+							return false
+						}
+					}
+				}
+				if current := s.currentConfig(); current != nil && (current.BPS.DiscoverModels() != cfg.BPS.DiscoverModels() || current.BPS.ModelSuffix != cfg.BPS.ModelSuffix || !slices.Equal(current.BPS.Models, cfg.BPS.Models)) {
+					return false
+				}
+				if access.Error == nil && access.Allowed != nil && *access.Allowed {
+					catalog = access.Models
+					discovered = true
+				}
+			}
+			for _, configured := range catalog {
 				id := strings.TrimSpace(configured)
+				if discovered && cfg.BPS.ModelSuffix != "" && !strings.HasSuffix(id, cfg.BPS.ModelSuffix) {
+					id += cfg.BPS.ModelSuffix
+				}
 				if id != "" && !seen[id] {
 					seen[id] = true
 					models = append(models, &ModelInfo{ID: id, Object: "model", OwnedBy: "bps", Type: "bps", DisplayName: id, UserDefined: true})

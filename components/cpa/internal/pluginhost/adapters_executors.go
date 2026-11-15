@@ -506,6 +506,7 @@ func (a *executorAdapter) Identifier() string {
 type preparedExecutorCall struct {
 	req             coreexecutor.Request
 	opts            coreexecutor.Options
+	clientRequest   []byte
 	inputRequested  sdktranslator.Format
 	requestedFormat sdktranslator.Format
 	inputFormat     sdktranslator.Format
@@ -575,6 +576,24 @@ func (a *executorAdapter) prepareExecutorCall(req coreexecutor.Request, opts cor
 	// User payload rules are the last host-side mutation before the plugin sees
 	// the request, matching on the suffix-free model like the built-in executors
 	// and using the canonical client format as source protocol.
+	bpsManaged, bpsFast := a.pluginID == "cpa-bps", false
+	if bpsManaged && a.host != nil {
+		if cfg := a.host.currentRuntimeConfig(); cfg != nil {
+			bpsConfig := cfg.Plugins.Configs[a.pluginID]
+			var bpsSettings struct {
+				Fast bool `yaml:"fast_mode"`
+			}
+			if err := bpsConfig.Raw.Decode(&bpsSettings); err != nil {
+				return preparedExecutorCall{}, fmt.Errorf("BPS插件Fast配置无效")
+			}
+			bpsFast = bpsSettings.Fast
+		}
+	}
+	if bpsManaged {
+		if err := helps.ApplyBPSRequestPolicy(doc, bpsFast); err != nil {
+			return preparedExecutorCall{}, err
+		}
+	}
 	if a.host != nil {
 		if cfg := a.host.currentRuntimeConfig(); cfg != nil {
 			finalizeOpts := opts
@@ -592,6 +611,11 @@ func (a *executorAdapter) prepareExecutorCall(req coreexecutor.Request, opts cor
 			helps.FinalizePayloadDoc(helps.WithPayloadFinalizer(context.Background(), finalize), doc)
 		}
 	}
+	if bpsManaged {
+		if err := helps.ValidateBPSRequestPolicy(doc, bpsFast); err != nil {
+			return preparedExecutorCall{}, err
+		}
+	}
 	if doc.Len() > 0 {
 		nativeReq.Payload = doc.Bytes()
 	}
@@ -605,6 +629,7 @@ func (a *executorAdapter) prepareExecutorCall(req coreexecutor.Request, opts cor
 	return preparedExecutorCall{
 		req:             nativeReq,
 		opts:            nativeOpts,
+		clientRequest:   req.Payload,
 		inputRequested:  inputRequested,
 		requestedFormat: requestedFormat,
 		inputFormat:     inputFormat,
@@ -743,6 +768,30 @@ func executorNativeStreamResponseTranslatorExists(from, to sdktranslator.Format)
 	return sdktranslator.HasStreamResponseTransformer(to, from)
 }
 
+func isResponsesChatBridge(prepared preparedExecutorCall) bool {
+	return prepared.outputFormat == sdktranslator.FormatOpenAIResponse && prepared.requestedFormat == sdktranslator.FormatOpenAI
+}
+
+func executorResponseTranslationError(param *any) error {
+	if param != nil {
+		if state, ok := (*param).(interface{ ResponseTranslationError() error }); ok {
+			return state.ResponseTranslationError()
+		}
+	}
+	return nil
+}
+
+func executorTranslationOriginalRequest(prepared preparedExecutorCall) []byte {
+	// The bridge consumes client stream controls, never an original tool catalog.
+	if isResponsesChatBridge(prepared) && len(prepared.clientRequest) > 0 {
+		return prepared.clientRequest
+	}
+	if len(prepared.opts.OriginalRequest) > 0 {
+		return prepared.opts.OriginalRequest
+	}
+	return prepared.req.Payload
+}
+
 func (a *executorAdapter) translateExecutorResponse(ctx context.Context, prepared preparedExecutorCall, payload []byte, stream bool, param *any) []byte {
 	if prepared.requestedFormat == "" || prepared.outputFormat == prepared.requestedFormat {
 		out := bytes.Clone(payload)
@@ -751,10 +800,7 @@ func (a *executorAdapter) translateExecutorResponse(ctx context.Context, prepare
 		}
 		return out
 	}
-	originalRequest := prepared.opts.OriginalRequest
-	if len(originalRequest) == 0 {
-		originalRequest = prepared.req.Payload
-	}
+	originalRequest := executorTranslationOriginalRequest(prepared)
 	if stream {
 		frames := a.translateExecutorStreamPayload(ctx, prepared, payload, param)
 		if len(frames) == 0 {
@@ -804,7 +850,7 @@ func (a *executorAdapter) translateExecutorStreamChunks(ctx context.Context, pre
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if sameFormat && sdktranslator.HasStreamResponseTransformer(prepared.outputFormat, prepared.requestedFormat) {
+	if isResponsesChatBridge(prepared) || sameFormat && sdktranslator.HasStreamResponseTransformer(prepared.outputFormat, prepared.requestedFormat) {
 		in = deframeExecutorSSEChunks(ctx, in)
 	}
 	out := make(chan pluginapi.ExecutorStreamChunk)
@@ -817,14 +863,30 @@ func (a *executorAdapter) translateExecutorStreamChunks(ctx context.Context, pre
 				return
 			case chunk, ok := <-in:
 				if !ok {
+					if isResponsesChatBridge(prepared) {
+						_ = a.translateExecutorStreamPayload(ctx, prepared, nil, &param)
+						if err := executorResponseTranslationError(&param); err != nil {
+							_ = sendExecutorPluginStreamChunk(ctx, out, pluginapi.ExecutorStreamChunk{Err: err})
+						}
+						return
+					}
 					a.emitTranslatedExecutorStreamTail(ctx, prepared, out, &param)
 					return
 				}
 				if chunk.Err != nil {
 					_ = sendExecutorPluginStreamChunk(ctx, out, chunk)
+					if isResponsesChatBridge(prepared) {
+						return
+					}
 					continue
 				}
 				frames := a.translateExecutorStreamPayload(ctx, prepared, chunk.Payload, &param)
+				if isResponsesChatBridge(prepared) {
+					if err := executorResponseTranslationError(&param); err != nil {
+						_ = sendExecutorPluginStreamChunk(ctx, out, pluginapi.ExecutorStreamChunk{Err: err})
+						return
+					}
+				}
 				for _, frame := range frames {
 					if !sendExecutorPluginStreamChunk(ctx, out, pluginapi.ExecutorStreamChunk{Payload: frame}) {
 						return
@@ -837,10 +899,7 @@ func (a *executorAdapter) translateExecutorStreamChunks(ctx context.Context, pre
 }
 
 func (a *executorAdapter) translateExecutorStreamPayload(ctx context.Context, prepared preparedExecutorCall, payload []byte, param *any) [][]byte {
-	originalRequest := prepared.opts.OriginalRequest
-	if len(originalRequest) == 0 {
-		originalRequest = prepared.req.Payload
-	}
+	originalRequest := executorTranslationOriginalRequest(prepared)
 	frames := sdktranslator.TranslateStream(ctx, prepared.outputFormat, prepared.requestedFormat, prepared.req.Model, originalRequest, prepared.req.Payload, payload, param)
 	if executorStreamTranslationFellBack(prepared, payload, frames) {
 		return nil
@@ -901,6 +960,9 @@ func (a *executorAdapter) Execute(ctx context.Context, auth *coreauth.Auth, req 
 	if a == nil || a.executor == nil || a.host.isPluginFused(a.pluginID) || !a.host.pluginIdentityCurrent(a.pluginID, a.path, a.version) {
 		return coreexecutor.Response{}, fmt.Errorf("plugin executor %s is unavailable", a.Identifier())
 	}
+	if errScope := a.checkChannelScope(ctx); errScope != nil {
+		return coreexecutor.Response{}, errScope
+	}
 
 	var reporter *helps.UsageReporter
 	if auth != nil {
@@ -940,6 +1002,15 @@ func (a *executorAdapter) Execute(ctx context.Context, auth *coreauth.Auth, req 
 	if errExecute != nil {
 		return coreexecutor.Response{}, errExecute
 	}
+	var translationState any
+	var translationParam *any
+	if isResponsesChatBridge(prepared) {
+		translationParam = &translationState
+	}
+	translated := a.translateExecutorResponse(ctx, prepared, pluginResp.Payload, false, translationParam)
+	if errTranslate := executorResponseTranslationError(translationParam); errTranslate != nil {
+		return coreexecutor.Response{}, errTranslate
+	}
 
 	if reporter != nil {
 		reporter.RecordFirstPacket()
@@ -949,7 +1020,7 @@ func (a *executorAdapter) Execute(ctx context.Context, auth *coreauth.Auth, req 
 	}
 
 	return coreexecutor.Response{
-		Payload:  a.translateExecutorResponse(ctx, prepared, pluginResp.Payload, false, nil),
+		Payload:  translated,
 		Metadata: cloneAnyMap(pluginResp.Metadata),
 		Headers:  cloneHeader(pluginResp.Headers),
 	}, nil
@@ -958,6 +1029,9 @@ func (a *executorAdapter) Execute(ctx context.Context, auth *coreauth.Auth, req 
 func (a *executorAdapter) ExecuteStream(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options) (result *coreexecutor.StreamResult, err error) {
 	if a == nil || a.executor == nil || a.host.isPluginFused(a.pluginID) || !a.host.pluginIdentityCurrent(a.pluginID, a.path, a.version) {
 		return nil, fmt.Errorf("plugin executor %s is unavailable", a.Identifier())
+	}
+	if errScope := a.checkChannelScope(ctx); errScope != nil {
+		return nil, errScope
 	}
 
 	var reporter *helps.UsageReporter
@@ -994,21 +1068,135 @@ func (a *executorAdapter) ExecuteStream(ctx context.Context, auth *coreauth.Auth
 		reporter.StartResponseTTFT()
 	}
 
-	pluginResp, errExecuteStream := a.executor.ExecuteStream(ctx, buildExecutorRequest(a.host, a.provider, auth, prepared.req, prepared.opts))
+	streamCtx := ctx
+	var cancel context.CancelFunc
+	if isResponsesChatBridge(prepared) {
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		streamCtx, cancel = context.WithCancel(ctx)
+		defer func() {
+			if result == nil || err != nil {
+				cancel()
+			}
+		}()
+	}
+	pluginResp, errExecuteStream := a.executor.ExecuteStream(streamCtx, buildExecutorRequest(a.host, a.provider, auth, prepared.req, prepared.opts))
 	if errExecuteStream != nil {
 		return nil, errExecuteStream
 	}
 
-	chunks := a.observeAndTranslateExecutorStream(ctx, prepared, pluginResp.Chunks, reporter)
+	var chunks <-chan coreexecutor.StreamChunk
+	if cancel != nil {
+		chunks = a.observeAndTranslateResponsesChatStream(ctx, streamCtx, cancel, prepared, pluginResp.Chunks, reporter)
+	} else {
+		chunks = a.observeAndTranslateExecutorStream(ctx, prepared, pluginResp.Chunks, reporter)
+	}
 	return &coreexecutor.StreamResult{
 		Headers: cloneHeader(pluginResp.Headers),
 		Chunks:  chunks,
 	}, nil
 }
 
+func (a *executorAdapter) observeAndTranslateResponsesChatStream(parentCtx, ctx context.Context, cancel context.CancelFunc, prepared preparedExecutorCall, in <-chan pluginapi.ExecutorStreamChunk, reporter *helps.UsageReporter) <-chan coreexecutor.StreamChunk {
+	observedIn := make(chan pluginapi.ExecutorStreamChunk)
+	collectorDone := make(chan struct{})
+	var streamUsage helps.StreamUsageBuffer
+	go func() {
+		defer close(collectorDone)
+		defer close(observedIn)
+		var lineBuffer []byte
+		defer func() {
+			if reporter != nil && len(lineBuffer) > 0 {
+				helps.ObservePluginExecutorStreamUsage(prepared.outputFormat.String(), lineBuffer, &streamUsage)
+			}
+		}()
+		if in == nil {
+			return
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case chunk, ok := <-in:
+				if !ok {
+					return
+				}
+				if reporter != nil && len(chunk.Payload) > 0 {
+					helps.ObservePluginExecutorStreamTTFT(prepared.outputFormat.String(), reporter, chunk.Payload)
+					lineBuffer = append(lineBuffer, chunk.Payload...)
+					for {
+						idx := bytes.IndexByte(lineBuffer, '\n')
+						if idx < 0 {
+							break
+						}
+						helps.ObservePluginExecutorStreamUsage(prepared.outputFormat.String(), lineBuffer[:idx+1], &streamUsage)
+						lineBuffer = lineBuffer[idx+1:]
+					}
+					if jsonBytes := helps.ExtractStreamJSONPayload(lineBuffer); len(jsonBytes) > 0 && json.Valid(jsonBytes) {
+						helps.ObservePluginExecutorStreamUsage(prepared.outputFormat.String(), lineBuffer, &streamUsage)
+						lineBuffer = nil
+					}
+				}
+				select {
+				case observedIn <- chunk:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	translatedOut := a.translateExecutorStreamChunks(ctx, prepared, observedIn)
+	out := make(chan coreexecutor.StreamChunk)
+	go func() {
+		defer close(out)
+		var streamErr error
+		defer func() {
+			cancel()
+			<-collectorDone
+			if reporter == nil {
+				return
+			}
+			if streamErr == nil {
+				streamErr = parentCtx.Err()
+			}
+			if streamErr != nil {
+				streamUsage.PublishFailure(parentCtx, reporter, streamErr)
+			} else {
+				streamUsage.Publish(parentCtx, reporter)
+			}
+			reporter.EnsurePublished(parentCtx)
+		}()
+		for {
+			select {
+			case <-parentCtx.Done():
+				return
+			case chunk, ok := <-translatedOut:
+				if !ok {
+					return
+				}
+				if chunk.Err != nil && streamErr == nil {
+					streamErr = chunk.Err
+				}
+				select {
+				case out <- coreexecutor.StreamChunk{Payload: chunk.Payload, Err: chunk.Err}:
+				case <-parentCtx.Done():
+					return
+				}
+			}
+		}
+	}()
+	return out
+}
+
 func (a *executorAdapter) observeAndTranslateExecutorStream(ctx context.Context, prepared preparedExecutorCall, in <-chan pluginapi.ExecutorStreamChunk, reporter *helps.UsageReporter) <-chan coreexecutor.StreamChunk {
 	if ctx == nil {
 		ctx = context.Background()
+	}
+	if in == nil && isResponsesChatBridge(prepared) {
+		empty := make(chan pluginapi.ExecutorStreamChunk)
+		close(empty)
+		in = empty
 	}
 	if in == nil {
 		out := make(chan coreexecutor.StreamChunk)
@@ -1207,6 +1395,9 @@ func (a *executorAdapter) Refresh(ctx context.Context, auth *coreauth.Auth) (ref
 func (a *executorAdapter) CountTokens(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options) (resp coreexecutor.Response, err error) {
 	if a == nil || a.executor == nil || a.host.isPluginFused(a.pluginID) || !a.host.pluginIdentityCurrent(a.pluginID, a.path, a.version) {
 		return coreexecutor.Response{}, fmt.Errorf("plugin executor %s is unavailable", a.Identifier())
+	}
+	if errScope := a.checkChannelScope(ctx); errScope != nil {
+		return coreexecutor.Response{}, errScope
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {

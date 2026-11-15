@@ -49,6 +49,27 @@ const mountUseVisualConfig = (runtime?: VisualConfigRuntime): UseVisualConfigHar
 };
 
 describe('useVisualConfig', () => {
+  it('读取三通道归属并在无关可视化保存时保留旧Key和未知字段', () => {
+    const harness = mountUseVisualConfig();
+    const yaml =
+      'config-version: 8\naccess:\n  api-keys: [old, k, c, b]\n  client-key-scopes:\n    - {api-key: k, channel: kilo}\n    - {api-key: c, channel: codex}\n    - {api-key: b, channel: bps}\ncustom: {keep: true}\n';
+    act(() => {
+      harness.getCurrent().loadVisualValuesFromYaml(yaml);
+    });
+    expect(harness.getCurrent().visualValues.clientKeyScopes).toEqual([
+      { 'api-key': 'k', channel: 'kilo' },
+      { 'api-key': 'c', channel: 'codex' },
+      { 'api-key': 'b', channel: 'bps' },
+    ]);
+    expect(harness.getCurrent().visualDirty).toBe(false);
+    act(() => {
+      harness.getCurrent().setVisualValues({ debug: true });
+    });
+    const saved = parseYaml(harness.getCurrent().applyVisualChangesToYaml(yaml));
+    expect(saved.access).toEqual(parseYaml(yaml).access);
+    expect(saved.custom).toEqual({ keep: true });
+    harness.unmount();
+  });
   it('loads v8 client API keys separately from upstream provider credentials', () => {
     const harness = mountUseVisualConfig();
     const yaml = [
@@ -191,12 +212,7 @@ describe('useVisualConfig', () => {
 
   it('does not resurrect a cleared sibling when another field recreates the same v8 parent', () => {
     const harness = mountUseVisualConfig();
-    const yaml = [
-      'observability:',
-      '  logs:',
-      '    logs-max-total-size-mb: 256',
-      '',
-    ].join('\n');
+    const yaml = ['observability:', '  logs:', '    logs-max-total-size-mb: 256', ''].join('\n');
 
     act(() => {
       expect(harness.getCurrent().loadVisualValuesFromYaml(yaml).ok).toBe(true);
@@ -664,9 +680,7 @@ describe('useVisualConfig', () => {
 
     expect(harness.getCurrent().visualValues.disableClaudeCloakMode).toBe(false);
     expect(harness.getCurrent().visualValues.claudeHeaderUserAgent).toBe('canonical-agent');
-    expect(harness.getCurrent().visualValues.claudeHeaderPackageVersion).toBe(
-      'historical-package'
-    );
+    expect(harness.getCurrent().visualValues.claudeHeaderPackageVersion).toBe('historical-package');
     expect(harness.getCurrent().visualValues.claudeHeaderOs).toBe('historical-os');
     expect(harness.getCurrent().visualValues.claudeHeaderRuntimeVersion).toBe('legacy-runtime');
     harness.unmount();
@@ -687,12 +701,8 @@ describe('useVisualConfig', () => {
       expect(historicalOnly.getCurrent().loadVisualValuesFromYaml(historicalYaml).ok).toBe(true);
     });
     expect(historicalOnly.getCurrent().visualValues.disableClaudeCloakMode).toBe(true);
-    expect(historicalOnly.getCurrent().visualValues.claudeHeaderUserAgent).toBe(
-      'historical-only'
-    );
-    expect(
-      historicalOnly.getCurrent().visualValues.claudeHeaderStabilizeDeviceProfile
-    ).toBe(false);
+    expect(historicalOnly.getCurrent().visualValues.claudeHeaderUserAgent).toBe('historical-only');
+    expect(historicalOnly.getCurrent().visualValues.claudeHeaderStabilizeDeviceProfile).toBe(false);
 
     act(() => {
       historicalOnly.getCurrent().setVisualValues({
@@ -727,9 +737,7 @@ describe('useVisualConfig', () => {
       historicalUpdated.oauth?.providers?.claude?.['header-defaults']?.['user-agent']
     ).toBeUndefined();
     expect(
-      historicalUpdated.oauth?.providers?.claude?.['header-defaults']?.[
-        'stabilize-device-profile'
-      ]
+      historicalUpdated.oauth?.providers?.claude?.['header-defaults']?.['stabilize-device-profile']
     ).toBe(false);
     historicalOnly.unmount();
   });
@@ -942,9 +950,7 @@ describe('useVisualConfig', () => {
     });
 
     expect(harness.getCurrent().visualDirty).toBe(false);
-    expect(harness.getCurrent().applyVisualChangesToYaml(initialYaml)).toBe(
-      initialYaml
-    );
+    expect(harness.getCurrent().applyVisualChangesToYaml(initialYaml)).toBe(initialYaml);
     harness.unmount();
   });
 
@@ -967,9 +973,10 @@ describe('useVisualConfig', () => {
       harness.getCurrent().commitApiKeysText('old-key\nnew-key');
     });
 
-    const parsed = parseYaml(
-      harness.getCurrent().applyVisualChangesToYaml(latestYaml)
-    ) as { ['api-keys']?: string[]; ['proxy-url']?: string };
+    const parsed = parseYaml(harness.getCurrent().applyVisualChangesToYaml(latestYaml)) as {
+      ['api-keys']?: string[];
+      ['proxy-url']?: string;
+    };
     expect(parsed['proxy-url']).toBe('http://next-proxy.local:8080');
     expect(parsed['api-keys']).toEqual(['old-key', 'new-key']);
     expect(harness.getCurrent().visualDirty).toBe(true);
@@ -1559,9 +1566,9 @@ describe('useVisualConfig', () => {
       harness.getCurrent().setVisualValues({ redisUsageQueueRetentionSeconds: '0' });
     });
 
-    expect(
-      harness.getCurrent().visualValidationErrors.redisUsageQueueRetentionSeconds
-    ).toBe('retention_seconds_range');
+    expect(harness.getCurrent().visualValidationErrors.redisUsageQueueRetentionSeconds).toBe(
+      'retention_seconds_range'
+    );
     harness.unmount();
   });
 
@@ -1791,13 +1798,7 @@ describe('useVisualConfig', () => {
 
     it('removes the devin map completely when clearing sensitive words and no other fields exist', () => {
       const harness = mountUseVisualConfig();
-      const yaml = [
-        'devin:',
-        '  sensitive-words:',
-        '    - secret',
-        'port: 8080',
-        '',
-      ].join('\n');
+      const yaml = ['devin:', '  sensitive-words:', '    - secret', 'port: 8080', ''].join('\n');
 
       act(() => {
         expect(harness.getCurrent().loadVisualValuesFromYaml(yaml).ok).toBe(true);
@@ -1909,13 +1910,7 @@ describe('useVisualConfig', () => {
 
     it('tracks the dirty lifecycle accurately for devinSensitiveWords', () => {
       const harness = mountUseVisualConfig();
-      const yaml = [
-        'devin:',
-        '  sensitive-words:',
-        '    - foo',
-        '    - bar',
-        '',
-      ].join('\n');
+      const yaml = ['devin:', '  sensitive-words:', '    - foo', '    - bar', ''].join('\n');
 
       act(() => {
         expect(harness.getCurrent().loadVisualValuesFromYaml(yaml).ok).toBe(true);

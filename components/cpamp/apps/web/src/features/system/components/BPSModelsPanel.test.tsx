@@ -70,6 +70,31 @@ afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
 });
 describe('BPS模型发现与人工发布', () => {
+  it('cpa-bps插件凭证显示独立模型入口而非暂无BPS凭证', async () => {
+    vi.mocked(authFilesApi.list).mockResolvedValue({
+      files: [
+        {
+          name: 'plugin-one.json',
+          id: 'plugin-runtime-one',
+          type: 'cpa-bps',
+          provider: 'cpa-bps',
+          auth_index: 'plugin-one',
+        },
+      ],
+    });
+    await act(async () => {
+      renderer = create(<BPSModelsPanel scope={scope} />);
+    });
+    expect(authFilesApi.list).toHaveBeenCalledWith(scope);
+    expect(bpsAccessApi.query).not.toHaveBeenCalled();
+    expect(bpsModelsApi.save).not.toHaveBeenCalled();
+    const text = JSON.stringify(renderer.toJSON());
+    expect(text).not.toContain('暂无BPS凭证');
+    expect(renderer.root.findAllByType('a').some((link) => link.props.href === '#/plugins')).toBe(
+      true
+    );
+  });
+
   it('发现和一键选用不写配置，保存/清空才提交全局清单', async () => {
     await act(async () => {
       renderer = create(<BPSModelsPanel scope={scope} />);

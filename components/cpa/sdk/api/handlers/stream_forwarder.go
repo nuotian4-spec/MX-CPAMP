@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/interfaces"
+	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 	"golang.org/x/net/context"
 )
 
@@ -29,6 +30,7 @@ func (h *BaseAPIHandler) ExecuteStreamWithPreFTKeepAlive(
 		return dataChan, upstreamHeaders, errChan, true
 	}
 
+	cliCtx, markBPSDelivery := coreauth.WithBPSClientDelivery(cliCtx)
 	type streamBootstrapResult struct {
 		data    <-chan []byte
 		headers http.Header
@@ -51,6 +53,9 @@ func (h *BaseAPIHandler) ExecuteStreamWithPreFTKeepAlive(
 		case result := <-bootstrapResult:
 			return result.data, result.headers, result.errs, true
 		case <-keepAliveC:
+			if writeKeepAlive != nil {
+				markBPSDelivery()
+			}
 			if writeKeepAlive != nil && !writeKeepAlive() {
 				if cliCancel != nil {
 					cliCancel(context.Canceled)

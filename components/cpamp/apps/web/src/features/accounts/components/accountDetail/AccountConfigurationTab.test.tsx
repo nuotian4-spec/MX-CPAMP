@@ -1,3 +1,4 @@
+import { useCredentialConcurrencySnapshot } from '../../hooks/useCredentialConcurrencySnapshot';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { Input } from '@/components/ui/Input';
@@ -6,6 +7,11 @@ import type { AccountRow } from '@/features/accounts/model/accountRows';
 import type { UseAuthFileConfigurationEditorResult } from '@/features/authFiles/hooks/useAuthFileConfigurationEditor';
 import type { AuthFileConfigurationDraft } from '@/features/authFiles/model/authFileConfiguration';
 import { AccountConfigurationTab } from './AccountConfigurationTab';
+import { AccountConcurrencySection } from './AccountConcurrencySection';
+import { credentialConcurrencyApi } from '@/services/api/credentialConcurrency';
+vi.mock('@/services/api/credentialConcurrency', () => ({
+  credentialConcurrencyApi: { list: vi.fn(), update: vi.fn() },
+}));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -156,9 +162,16 @@ describe('AccountConfigurationTab', () => {
         ).toHaveLength(1);
       }
       editor.state = { ...editor.state!, loading: false, error: '' };
-      act(() => renderer.update(
-        <AccountConfigurationTab row={makeRow()} disableControls={false} editor={editor} onCopyText={vi.fn()} />
-      ));
+      act(() =>
+        renderer.update(
+          <AccountConfigurationTab
+            row={makeRow()}
+            disableControls={false}
+            editor={editor}
+            onCopyText={vi.fn()}
+          />
+        )
+      );
       expect(renderer.root.findAllByType(Input).some((node) => !node.props.disabled)).toBe(true);
       act(() => renderer.unmount());
     }
@@ -369,6 +382,133 @@ describe('AccountConfigurationTab', () => {
       );
     } finally {
       mockAuthState.serverVersion = null;
+    }
+  });
+  it.each(['runtime', 'loading', 'failed', 'ready'])('通用配置%s时仍显示独立并发区', (mode) => {
+    const editor = makeEditor('codex');
+    if (mode === 'loading' || mode === 'runtime') {
+      editor.state = null;
+      editor.draft = null;
+    }
+    if (mode === 'failed') {
+      editor.state = { ...editor.state!, record: null, error: '读取失败' };
+      editor.draft = null;
+    }
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = create(
+        <AccountConfigurationTab
+          row={makeRow('codex', { runtimeOnly: mode === 'runtime' })}
+          disableControls={false}
+          editor={editor}
+          onCopyText={vi.fn()}
+          concurrencySection={<div>独立并发状态</div>}
+        />
+      );
+    });
+    expect(readText(renderer.toJSON())).toContain('独立并发状态');
+    act(() => renderer.unmount());
+  });
+
+  it('通用配置加载、失败和成功之间保留并发草稿与在途保存', async () => {
+    vi.useFakeTimers();
+    const row = makeRow('codex', {
+      raw: { name: 'credential.json', id: 'real-id', provider: 'codex' },
+    });
+    const scope = { apiBase: 'https://panel.invalid', managementKey: 'test' };
+    vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+      mode: 'local',
+      connection_ref: 'ref-a',
+      default_limit: 20,
+      pool_waiting: 0,
+      credentials: [
+        {
+          auth_id: 'real-id',
+          auth_index: 'codex-1',
+          name: '账号',
+          provider: 'codex',
+          source: 'file',
+          editable: true,
+          read_only_reason: '',
+          concurrency_limit: null,
+          effective_limit: 20,
+          limit_source: 'default',
+          active: 0,
+          pinned_waiting: 0,
+        },
+      ],
+    });
+    let resolveSave!: (value: { status: 'saved' }) => void;
+    vi.mocked(credentialConcurrencyApi.update).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        })
+    );
+    function SharedSection() {
+      const concurrency = useCredentialConcurrencySnapshot(scope);
+      return (
+        <AccountConcurrencySection
+          row={row}
+          scope={scope}
+          disabled={false}
+          concurrency={concurrency}
+        />
+      );
+    }
+    const section = <SharedSection />;
+    const ready = makeEditor('codex');
+    const loading = { ...ready, state: null, draft: null };
+    const failed = {
+      ...ready,
+      state: { ...ready.state!, record: null, error: '读取失败' },
+      draft: null,
+    };
+    const view = (editor: UseAuthFileConfigurationEditorResult) => (
+      <AccountConfigurationTab
+        row={row}
+        disableControls={false}
+        editor={editor}
+        onCopyText={vi.fn()}
+        concurrencySection={section}
+      />
+    );
+    let renderer!: ReactTestRenderer;
+    try {
+      await act(async () => {
+        renderer = create(view(loading));
+      });
+      const input = () =>
+        renderer.root.findAllByType(Input).find((node) => node.props.label === '并发上限')!;
+      await act(async () => {
+        input().props.onChange({ target: { value: '8' } });
+      });
+      for (const editor of [failed, ready]) {
+        await act(async () => {
+          renderer.update(view(editor));
+        });
+        expect(input().props.value).toBe('8');
+      }
+      let saving!: Promise<void>;
+      await act(async () => {
+        saving = renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
+      });
+      for (const editor of [loading, failed, ready]) {
+        await act(async () => {
+          renderer.update(view(editor));
+        });
+        expect(input().props.disabled).toBe(true);
+      }
+      await act(async () => {
+        resolveSave({ status: 'saved' });
+        await saving;
+      });
+      expect(readText(renderer.toJSON())).toContain('并发设置已保存');
+      expect(ready.save).not.toHaveBeenCalled();
+      expect(ready.reset).not.toHaveBeenCalled();
+    } finally {
+      if (renderer) await act(async () => renderer.unmount());
+      vi.useRealTimers();
     }
   });
 });

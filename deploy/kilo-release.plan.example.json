@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "input_id": "m10-local-03 + m10-release-03-待绑定现场输入",
+  "ready": false,
+  "root": "/待填/实际工作目录",
+  "project": "待填实际项目名",
+  "state_dir": "/待填/实际工作目录/本次独立发布状态目录",
+  "compose_files": ["/待填/实际工作目录/全部实际Compose文件按顺序填写"],
+  "cpa_config": "/待填/实际CPA配置宿主路径",
+  "kilo_state": {"container": "/待填/实际Kilo状态容器路径", "host": "/待填/实际Kilo状态宿主路径"},
+  "lifecycle": {"network": "待填实际Compose受管local-bridge网络名"},
+  "protected_files": ["/待填/实际wrapper或其他需保留配置来源"],
+  "candidates": {
+    "cli-proxy-api": {"role": "cpa", "ref": "待填实际CPA镜像", "revision": "待填实际revision", "accepted_ids": ["sha256:待填实际完整ID"]},
+    "cpa-manager-plus": {"role": "manager", "ref": "待填实际Manager镜像", "revision": "待填实际revision", "accepted_ids": ["sha256:待填实际完整ID"]},
+    "oauth-login": {"role": "worker", "ref": "待填实际Worker镜像", "revision": "待填实际revision", "accepted_ids": ["sha256:待填实际完整ID"]}
+  },
+  "baseline": {
+    "cli-proxy-api": {"id": "待填容器ID", "image_id": "待填镜像ID", "image_ref": "待填镜像引用", "working_dir": "待填实际目录", "compose_files": ["待填完整链"], "mounts": []},
+    "cpa-manager-plus": {"id": "待填容器ID", "image_id": "待填镜像ID", "image_ref": "待填镜像引用", "working_dir": "待填实际目录", "compose_files": ["待填完整链"], "mounts": []},
+    "oauth-login": {"id": "待填容器ID", "image_id": "待填镜像ID", "image_ref": "待填镜像引用", "working_dir": "待填实际目录", "compose_files": ["待填完整链"], "mounts": []},
+    "caddy": {"id": "待填容器ID", "image_id": "待填镜像ID", "image_ref": "待填镜像引用", "working_dir": "待填实际目录", "compose_files": ["待填该服务实际链"], "mounts": []}
+  }
+}

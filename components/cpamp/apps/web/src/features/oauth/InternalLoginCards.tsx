@@ -3,7 +3,14 @@ import { BatchPasswordLogin, type PasswordLoginStatus } from './BatchPasswordLog
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { publishAccountCredentialMutationRevision } from '@/stores';
-import { loginTasksApi } from '@/services/api/loginTasks';
+import {
+  loginTasksApi,
+  bpsOutcome,
+  bpsOutcomeLabel,
+  type BPSLoginMode,
+  type BPSOutcome,
+  type BPSOAuthStatus,
+} from '@/services/api/loginTasks';
 import type { ApiClientRequestScope } from '@/services/api/client';
 import { createCodexInspectionConnectionFingerprint } from '@/features/monitoring/codexInspection';
 
@@ -36,109 +43,344 @@ function InputURL({ value }: { value: string }) {
   );
 }
 
+type BPSPhase =
+  | 'authorizing'
+  | 'submitting'
+  | 'observing'
+  | 'cancelling'
+  | 'confirmed'
+  | 'failed'
+  | 'unknown'
+  | 'cancelled';
+type BPSAttempt = {
+  url: string;
+  state: string;
+  generation: number;
+  scope: ApiClientRequestScope;
+  phase: BPSPhase;
+  submitted: boolean;
+  queryVersion: number;
+  querying: boolean;
+  notified: boolean;
+};
 function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
-  const [session, setSession] = useState<{ url: string; state: string }>();
+  const [session, setSession] = useState<BPSAttempt>();
+  const [phase, setPhase] = useState<BPSPhase>();
   const [status, setStatus] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [lastOutcome, setLastOutcome] = useState<BPSOutcome>();
+  const [creating, setCreating] = useState(false);
+  const creatingRef = useRef(false);
+  const [querying, setQuerying] = useState(false);
   const callback = useRef<HTMLInputElement>(null);
-  const liveSession = useRef(session);
-  liveSession.current = session;
+  const liveSession = useRef<BPSAttempt | undefined>(undefined);
   const generation = useRef(0);
-  useEffect(
-    () => () => {
+  const mounted = useRef(true);
+  const currentScope = useRef(scope);
+  currentScope.current = scope;
+  const isCurrent = (attempt: BPSAttempt) =>
+    mounted.current &&
+    liveSession.current === attempt &&
+    generation.current === attempt.generation &&
+    currentScope.current.apiBase === attempt.scope.apiBase &&
+    currentScope.current.managementKey === attempt.scope.managementKey;
+  const transition = (attempt: BPSAttempt, next: BPSPhase) => {
+    if (!isCurrent(attempt)) return;
+    attempt.phase = next;
+    setPhase(next);
+  };
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       generation.current += 1;
       const previous = liveSession.current;
-      if (previous) void loginTasksApi.cancelOAuth(previous.state, scope).catch(() => {});
-    },
-    [scope]
-  );
-  useEffect(() => {
-    if (!session) return;
-    let disposed = false;
-    const timer = window.setInterval(() => {
-      loginTasksApi
-        .status(session.state, scope)
-        .then((result) => {
-          if (disposed) return;
-          if (result.status === 'ok') {
-            setStatus('账号已保存并注册');
-            setSession(undefined);
-            publishAccountCredentialMutationRevision({
-              connectionFingerprint:
-                createCodexInspectionConnectionFingerprint(scope.apiBase, scope.managementKey) ||
-                '',
-              provider: 'bps',
-              kind: 'oauth',
-            });
-          } else if (result.status === 'error') {
-            setStatus('授权失败，请检查官方页面验证');
-            setSession(undefined);
-          }
-        })
-        .catch(() => {
-          if (!disposed) setStatus('状态查询失败，请稍后查询，不要重复提交回调。');
+      if (previous && !previous.submitted && previous.phase === 'authorizing') {
+        void loginTasksApi.cancelOAuth(previous.state, previous.scope).catch(() => {});
+      }
+    };
+  }, [scope]);
+  const recordUnknown = (attempt: BPSAttempt, raw: BPSOAuthStatus) => {
+    transition(attempt, 'unknown');
+    setLastOutcome(bpsOutcome(raw, attempt.submitted));
+    setStatus(
+      attempt.submitted
+        ? '授权结果尚未确认，可只读查询；不会重新提交回调。'
+        : '尚未提交回调，可查询状态或重新开始授权。'
+    );
+  };
+  const consumeResult = (attempt: BPSAttempt, result: BPSOAuthStatus, manual: boolean) => {
+    if (!isCurrent(attempt) || attempt.phase === 'confirmed') return;
+    if (result.status === 'ok' && result.saved === true && result.adopted === true) {
+      attempt.queryVersion += 1;
+      transition(attempt, 'confirmed');
+      setStatus('账号已保存并注册');
+      setLastOutcome({
+        provider: 'bps',
+        stage: 'cpa_import',
+        error_code: 'unknown',
+        reason: 'unknown',
+        http_status: null,
+        save_outcome: 'confirmed',
+      });
+      if (!attempt.notified) {
+        attempt.notified = true;
+        publishAccountCredentialMutationRevision({
+          connectionFingerprint:
+            createCodexInspectionConnectionFingerprint(
+              attempt.scope.apiBase,
+              attempt.scope.managementKey
+            ) || '',
+          provider: 'bps',
+          kind: 'oauth',
         });
-    }, 1500);
+      }
+    } else if (result.status === 'wait') {
+      if (manual && !attempt.submitted) {
+        transition(attempt, 'authorizing');
+        setLastOutcome(undefined);
+        setStatus('授权会话已恢复，可继续提交完整回调地址。');
+      } else if (manual) setStatus('CPA 尚未返回完成结果，可稍后再次查询。');
+    } else {
+      const outcome = bpsOutcome(result, attempt.submitted);
+      if (result.status === 'error' && outcome.save_outcome === 'not_saved') {
+        attempt.queryVersion += 1;
+        transition(attempt, 'failed');
+        setLastOutcome(outcome);
+        setStatus('授权未完成');
+      } else {
+        recordUnknown(attempt, result);
+      }
+    }
+  };
+  const queryStatus = async (attempt: BPSAttempt, manual: boolean) => {
+    if (
+      !isCurrent(attempt) ||
+      attempt.querying ||
+      !['authorizing', 'observing', 'unknown'].includes(attempt.phase)
+    )
+      return;
+    const version = attempt.queryVersion;
+    attempt.querying = true;
+    setQuerying(true);
+    try {
+      const result = await loginTasksApi.status(attempt.state, attempt.scope);
+      if (isCurrent(attempt) && attempt.queryVersion === version)
+        consumeResult(attempt, result, manual);
+    } catch (error) {
+      if (!isCurrent(attempt) || attempt.queryVersion !== version) return;
+      const detail = (error as { data?: BPSOAuthStatus }).data;
+      consumeResult(
+        attempt,
+        {
+          ...detail,
+          status: 'error',
+          error_code:
+            detail?.error_code ||
+            ((error as { status?: number }).status === 404
+              ? 'session_missing_or_expired'
+              : 'oauth_status_unavailable'),
+        },
+        manual
+      );
+    } finally {
+      attempt.querying = false;
+      if (isCurrent(attempt)) setQuerying(false);
+    }
+  };
+  const queryRef = useRef(queryStatus);
+  queryRef.current = queryStatus;
+  useEffect(() => {
+    if (!session || (phase !== 'authorizing' && phase !== 'observing')) return;
+    let disposed = false;
+    let timer: number;
+    const tick = async () => {
+      await queryRef.current(session, false);
+      if (!disposed) timer = window.setTimeout(tick, 1500);
+    };
+    timer = window.setTimeout(tick, 1500);
     return () => {
       disposed = true;
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
     };
-  }, [session, scope]);
-  const start = async () => {
-    setBusy(true);
-    const attempt = generation.current;
+  }, [session, phase]);
+  const start = async (restart = false) => {
+    const previous = liveSession.current;
+    const restartingUnsubmitted = restart && previous?.phase === 'unknown' && !previous.submitted;
+    if (
+      creatingRef.current ||
+      (previous &&
+        !['confirmed', 'failed', 'cancelled'].includes(previous.phase) &&
+        !restartingUnsubmitted)
+    )
+      return;
+    creatingRef.current = true;
+    setCreating(true);
+    setLastOutcome(undefined);
+    setStatus('');
+    const attemptGeneration = ++generation.current;
+    if (restartingUnsubmitted) {
+      previous.queryVersion += 1;
+      liveSession.current = undefined;
+      setSession(undefined);
+      setPhase(undefined);
+      setQuerying(false);
+    }
+    const sameCreation = () =>
+      mounted.current &&
+      attemptGeneration === generation.current &&
+      currentScope.current.apiBase === scope.apiBase &&
+      currentScope.current.managementKey === scope.managementKey;
     try {
       const created = await loginTasksApi.startBPS(scope);
-      if (attempt !== generation.current) {
+      if (!sameCreation()) {
         void loginTasksApi.cancelOAuth(created.state, scope).catch(() => {});
         return;
       }
-      setSession(created);
+      const attempt: BPSAttempt = {
+        ...created,
+        scope,
+        generation: attemptGeneration,
+        phase: 'authorizing',
+        submitted: false,
+        queryVersion: 0,
+        querying: false,
+        notified: false,
+      };
+      liveSession.current = attempt;
+      setSession(attempt);
+      setPhase('authorizing');
+      setQuerying(false);
       setStatus('等待官方授权');
-    } catch {
+    } catch (error) {
+      if (!sameCreation()) return;
+      setLastOutcome(
+        bpsOutcome(
+          {
+            ...(error as { data?: BPSOAuthStatus }).data,
+            status: 'error',
+            error_code: 'oauth_start_failed',
+          },
+          false
+        )
+      );
       setStatus('创建授权失败，请检查管理员权限或 CPA。');
     } finally {
-      setBusy(false);
+      if (sameCreation()) {
+        creatingRef.current = false;
+        setCreating(false);
+      }
     }
   };
   const submit = async () => {
-    if (!session || !callback.current) return;
+    const attempt = liveSession.current;
+    if (
+      !attempt ||
+      !isCurrent(attempt) ||
+      !callback.current ||
+      attempt.submitted ||
+      attempt.phase !== 'authorizing'
+    )
+      return;
     let value = callback.current.value;
     callback.current.value = '';
-    setBusy(true);
+    attempt.submitted = true;
+    attempt.queryVersion += 1;
+    transition(attempt, 'submitting');
+    setLastOutcome(undefined);
     try {
-      await loginTasksApi.callback(session.state, value, scope);
-      setStatus('回调已接收，等待 CPA 保存注册结果');
+      const result = await loginTasksApi.callback(attempt.state, value, attempt.scope);
+      if (!isCurrent(attempt) || liveSession.current?.phase !== 'submitting') return;
+      if (result?.status === 'error') consumeResult(attempt, result, false);
+      else {
+        transition(attempt, 'observing');
+        setStatus('回调已接收，等待 CPA 保存注册结果');
+      }
     } catch (error) {
-      const status = (error as { status?: number }).status;
-      setStatus(
-        status === 400
-          ? '回调地址未通过校验，请核对完整地址和本次授权会话。'
-          : '回调结果未确认，请查询状态；不会自动重复兑换授权码。'
-      );
+      if (!isCurrent(attempt) || liveSession.current?.phase !== 'submitting') return;
+      const httpStatus = (error as { status?: number }).status;
+      const detail = (error as { data?: BPSOAuthStatus }).data;
+      if (httpStatus === 400) {
+        attempt.submitted = false;
+        transition(attempt, 'authorizing');
+        setLastOutcome(
+          bpsOutcome(
+            {
+              ...detail,
+              status: 'error',
+              error_code: detail?.error_code || 'invalid_callback_input',
+            },
+            false
+          )
+        );
+        setStatus('回调地址未通过校验，请核对完整地址和本次授权会话。');
+      } else {
+        consumeResult(
+          attempt,
+          {
+            ...detail,
+            status: 'error',
+            error_code: detail?.error_code || 'callback_result_unknown',
+          },
+          false
+        );
+      }
     } finally {
       value = '';
-      setBusy(false);
     }
   };
   const cancel = async () => {
-    if (!session) return;
+    const attempt = liveSession.current;
+    if (!attempt || !isCurrent(attempt) || attempt.submitted || attempt.phase !== 'authorizing')
+      return;
+    attempt.queryVersion += 1;
+    transition(attempt, 'cancelling');
     try {
-      await loginTasksApi.cancelOAuth(session.state, scope);
-      setSession(undefined);
-      setStatus('授权会话已取消');
-    } catch {
-      setStatus('取消结果待确认，请查询 CPA 状态。');
+      const result = await loginTasksApi.cancelOAuth(attempt.state, attempt.scope);
+      if (!isCurrent(attempt)) return;
+      if (result.cancelled === true) {
+        transition(attempt, 'cancelled');
+        setLastOutcome(undefined);
+        setStatus('授权会话已取消');
+      } else
+        recordUnknown(attempt, {
+          ...result,
+          status: 'error',
+          error_code: result.error_code || 'oauth_status_unavailable',
+        });
+    } catch (error) {
+      if (!isCurrent(attempt)) return;
+      const detail = (error as { data?: BPSOAuthStatus }).data;
+      recordUnknown(attempt, {
+        ...detail,
+        status: 'error',
+        error_code: detail?.error_code || 'oauth_status_unavailable',
+      });
     }
   };
+  const stopObserving = () => {
+    const attempt = liveSession.current;
+    if (!attempt || !isCurrent(attempt) || attempt.phase !== 'observing') return;
+    attempt.queryVersion += 1;
+    recordUnknown(attempt, { status: 'error', error_code: 'callback_result_unknown' });
+    setStatus('已停止自动查询，可继续只读查询结果。');
+  };
+  const busy = creating || phase === 'submitting' || phase === 'cancelling';
+  const active =
+    session && !['confirmed', 'failed', 'unknown', 'cancelled'].includes(session.phase);
   return (
     <div id="oauth-provider-bps">
       <Card title="BPS OAuth">
         <p>生成链接后前往官方页面授权，再提交完整回调地址。仅申请 BPS 授权。</p>
-        <Button onClick={start} disabled={busy || Boolean(session)}>
+        <Button
+          onClick={() => start()}
+          disabled={
+            creating ||
+            Boolean(session && !['confirmed', 'failed', 'cancelled'].includes(session.phase))
+          }
+        >
           生成授权链接
         </Button>
-        {session && (
+        {active && (
           <>
             <p>
               <a href={session.url} target="_blank" rel="noopener noreferrer">
@@ -154,15 +396,35 @@ function BPSOAuth({ scope }: { scope: ApiClientRequestScope }) {
               完整回调 URL
               <input ref={callback} type="password" autoComplete="off" />
             </label>
-            <Button onClick={submit} disabled={busy}>
+            <Button onClick={submit} disabled={busy || session.submitted}>
               提交回调
             </Button>
-            <Button onClick={cancel} disabled={busy}>
-              取消
+            {!session.submitted && (
+              <Button onClick={cancel} disabled={busy}>
+                取消
+              </Button>
+            )}
+            {phase === 'observing' && <Button onClick={stopObserving}>停止观察</Button>}
+          </>
+        )}
+        {session && phase === 'unknown' && (
+          <>
+            <Button onClick={() => queryStatus(session, true)} disabled={querying}>
+              查询结果
             </Button>
+            {!session.submitted && (
+              <Button onClick={() => start(true)} disabled={creating}>
+                重新开始授权
+              </Button>
+            )}
           </>
         )}
         <p role="status">{status}</p>
+        {lastOutcome && (
+          <p role="status" data-testid="bps-last-outcome">
+            {bpsOutcomeLabel(lastOutcome)}
+          </p>
+        )}
       </Card>
     </div>
   );
@@ -175,6 +437,7 @@ export function InternalLoginCards({ scope }: { scope: ApiClientRequestScope }) 
   const [capabilities, setCapabilities] = useState<{
     scope: ApiClientRequestScope;
     status: PasswordLoginStatus;
+    bpsMode?: BPSLoginMode;
   }>();
   useEffect(() => {
     let disposed = false;
@@ -183,6 +446,10 @@ export function InternalLoginCards({ scope }: { scope: ApiClientRequestScope }) 
         if (!disposed)
           setCapabilities({
             scope: capabilityScope,
+            bpsMode:
+              result?.bps_login_mode === 'builtin' || result?.bps_login_mode === 'plugin'
+                ? result.bps_login_mode
+                : 'unavailable',
             status:
               result?.password_login_configured === true
                 ? 'configured'
@@ -201,11 +468,28 @@ export function InternalLoginCards({ scope }: { scope: ApiClientRequestScope }) 
   }, [capabilityScope]);
   const passwordLoginStatus =
     capabilities?.scope === capabilityScope ? capabilities.status : 'loading';
+  const bpsMode = capabilities?.scope === capabilityScope ? capabilities.bpsMode : undefined;
   return (
     <>
       <BatchPasswordLogin profile="codex" scope={scope} passwordLoginStatus={passwordLoginStatus} />
-      <BPSOAuth scope={scope} />
-      <BatchPasswordLogin profile="bps" scope={scope} passwordLoginStatus={passwordLoginStatus} />
+      {bpsMode === 'builtin' ? (
+        <>
+          <BPSOAuth scope={scope} />
+          <BatchPasswordLogin
+            profile="bps"
+            scope={scope}
+            passwordLoginStatus={passwordLoginStatus}
+          />
+        </>
+      ) : (
+        <Card title="BPS 登录">
+          <p role="status">
+            {bpsMode === 'plugin'
+              ? '已启用 cpa-bps 插件，请使用插件 OAuth 卡片。BPS 2FA 暂未接入；插件未加载时不会回退旧登录。'
+              : 'BPS 登录模式未确认，旧 BPS OAuth 和 2FA 入口已停用。请检查 CPA 插件配置或连接。'}
+          </p>
+        </Card>
+      )}
     </>
   );
 }

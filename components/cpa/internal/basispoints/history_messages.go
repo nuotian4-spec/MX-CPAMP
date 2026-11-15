@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-// Codex-created sibling threads carry a host handoff as an output-only item.
+// IsCodexThreadDelegation identifies a supported host handoff, not a tool result.
 // It is context, not an executed tool result. Restrict this exception to the
 // observed shape; even an empty or invented call_id stays on the pairing path.
-func isCodexThreadDelegation(item object) bool {
+func IsCodexThreadDelegation(item object) bool {
 	if text(item["type"]) != "function_call_output" || text(item["namespace"]) != "codex_app" || text(item["name"]) != "create_thread" {
 		return false
 	}

@@ -1,0 +1,217 @@
+.card {
+  min-width: 0;
+  color: var(--color-text, var(--text-primary));
+
+  :global(.card-header) {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.heading {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.plan {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  user-select: text;
+  padding: 3px 9px;
+  border: 1px solid var(--color-border, var(--border-color));
+  border-radius: 999px;
+  color: var(--color-text-secondary, var(--text-secondary));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 20px;
+  color: var(--color-text-secondary, var(--text-secondary));
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.timezone {
+  color: var(--color-text-tertiary, var(--text-secondary));
+}
+
+.group + .group {
+  margin-top: 20px;
+}
+
+.groupTitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary, var(--text-secondary));
+}
+
+.windows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 12px;
+}
+
+.window {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border, var(--border-color));
+  border-radius: 12px;
+  background: var(--color-surface, var(--bg-primary));
+}
+
+.windowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.windowLabel {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.remaining {
+  display: flex;
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--color-text-secondary, var(--text-secondary));
+  font-size: 12px;
+
+  strong {
+    color: var(--color-text, var(--text-primary));
+    font-size: 24px;
+    font-weight: 650;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.unknownTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--data-track-bg);
+}
+
+.reset {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  color: var(--color-text-secondary, var(--text-secondary));
+  font-size: 12px;
+
+  time {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.description {
+  margin: 0;
+  color: var(--color-text-secondary, var(--text-secondary));
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.resetCredits {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border, var(--border-color));
+}
+
+.metric {
+  min-width: 0;
+
+  dt {
+    font-size: 12px;
+    color: var(--color-text-secondary, var(--text-secondary));
+  }
+
+  dd {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin: 5px 0 0;
+    font-size: 12px;
+
+    strong {
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .metricHint {
+    display: block;
+    margin: 5px 0 0;
+    color: var(--color-text-tertiary, var(--text-secondary));
+    font-size: 11px;
+    line-height: 1.6;
+  }
+}
+
+.empty,
+.error {
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  background: var(--data-track-bg);
+  color: var(--color-text-secondary, var(--text-secondary));
+}
+
+.error {
+  margin-bottom: 10px;
+  color: var(--data-red-base);
+  border: 1px solid color-mix(in srgb, var(--data-red-base) 30%, transparent);
+  background: color-mix(in srgb, var(--data-red-base) 7%, transparent);
+}
+
+@media (max-width: 520px) {
+  .windows,
+  .metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .window {
+    padding: 14px;
+  }
+
+  .meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

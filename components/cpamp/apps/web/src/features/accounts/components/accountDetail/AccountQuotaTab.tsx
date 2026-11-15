@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
 import {
   IconBinary,
@@ -15,9 +15,7 @@ import {
   formatQuotaResetTimestamp,
   getQuotaResetRemainingDuration,
 } from '@/features/accounts/model/accountsPagePresentation';
-import {
-  getAccountQuotaSemanticGroup,
-} from '@/features/accounts/model/accountQuotaDisplayWindows';
+import { getAccountQuotaSemanticGroup } from '@/features/accounts/model/accountQuotaDisplayWindows';
 import { useInterval } from '@/hooks/useInterval';
 import { formatCompactNumber, formatUsd } from '@/utils/usage';
 import { QuotaWindowCard } from '../QuotaWindowCard';
@@ -96,6 +94,7 @@ const MetricCell = ({ icon, tone, label, value, valueTitle }: MetricCellProps): 
 
 interface AccountQuotaTabProps {
   detailView: AccountDetailViewModel;
+  resetCreditsSection?: ReactNode;
   windowUsageError: string;
   historyAvailable: boolean;
   historyRefreshing: boolean;
@@ -134,6 +133,7 @@ const renderResetCreditRemainingText = (
 
 export function AccountQuotaTab({
   detailView,
+  resetCreditsSection,
   windowUsageError,
   historyAvailable,
   historyRefreshing,
@@ -178,6 +178,7 @@ export function AccountQuotaTab({
 
   return (
     <div className={styles.quotaTab} data-account-quota-tab="true">
+      {resetCreditsSection}
       <div className={styles.quotaTabHeader}>
         <div className={styles.quotaPageHeading}>
           <h2 className={styles.quotaPageTitle}>{t('accounts.detail_tab_quota')}</h2>
@@ -241,8 +242,6 @@ export function AccountQuotaTab({
       </section>
 
       {windowUsageError ? <div className={styles.errorBox}>{windowUsageError}</div> : null}
-
-
 
       {standardWindows.length > 0 || allWindows.length === 0 ? (
         <section className={styles.quotaSection} data-quota-window-group="standard">
@@ -380,8 +379,8 @@ export function AccountQuotaTab({
                     >
                       <span>{t('codex_quota.reset_credit_expiry_item', { index: index + 1 })}</span>
                       <strong data-quota-reset-credit-expiry={item.id}>
-                        {renderResetCreditRemainingText(item.expiresAtMs, nowMs, t)}{' '}
-                        · {formatQuotaResetTimestamp(item.expiresAtMs, i18n.language)}
+                        {renderResetCreditRemainingText(item.expiresAtMs, nowMs, t)} ·{' '}
+                        {formatQuotaResetTimestamp(item.expiresAtMs, i18n.language)}
                       </strong>
                     </div>
                   ))}

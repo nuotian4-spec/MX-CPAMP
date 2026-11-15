@@ -87,6 +87,100 @@ func TestSavePluginLoginRecordsRollsBackSavedAuthsOnFailure(t *testing.T) {
 	}
 }
 
+type pluginOAuthVerifyRecorder struct {
+	recordingRefreshVerifyExecutor
+}
+
+func (e *pluginOAuthVerifyRecorder) Identifier() string { return "cpa-bps" }
+
+func TestPluginOAuthSingleCredentialCompletion(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		withManager bool
+		failSave    bool
+		failPersist bool
+	}{
+		{name: "adopted", withManager: true},
+		{name: "not_adopted"},
+		{name: "save_failed", withManager: true, failSave: true},
+		{name: "post_persist_failed", withManager: true, failPersist: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			authDir := t.TempDir()
+			pluginsDir := writeManagementPluginFile(t, "cpa-bps")
+			enabled := true
+			state := "plugin-outcome-" + tc.name
+			t.Cleanup(func() { CancelOAuthSession(state) })
+			pollCalls := 0
+			host := pluginhost.New()
+			host.RegisterPluginForTest("cpa-bps", pluginapi.Plugin{
+				Metadata: pluginapi.Metadata{Name: "Fixture BPS", Version: "1.0.0"},
+				Capabilities: pluginapi.Capabilities{AuthProvider: &testAuthProvider{
+					identifier: "cpa-bps",
+					startLogin: func(context.Context, pluginapi.AuthLoginStartRequest) (pluginapi.AuthLoginStartResponse, error) {
+						return pluginapi.AuthLoginStartResponse{Provider: "cpa-bps", URL: "https://fixture.invalid/authorize", State: state, ExpiresAt: time.Now().Add(time.Hour)}, nil
+					},
+					pollLogin: func(context.Context, pluginapi.AuthLoginPollRequest) (pluginapi.AuthLoginPollResponse, error) {
+						pollCalls++
+						return pluginapi.AuthLoginPollResponse{Status: pluginapi.AuthLoginStatusSuccess, Auth: pluginapi.AuthData{
+							Provider: "cpa-bps", ID: "fixture-bps.json", FileName: "fixture-bps.json",
+							StorageJSON: []byte(`{"type":"cpa-bps","access_token":"fixture-token","account_id":"fixture-account"}`),
+							Metadata:    map[string]any{"type": "cpa-bps", "access_token": "fixture-token", "account_id": "fixture-account"},
+						}}, nil
+					},
+				}},
+			})
+			var manager *coreauth.Manager
+			verify := &pluginOAuthVerifyRecorder{}
+			if tc.withManager {
+				manager = coreauth.NewManager(nil, nil, nil)
+				manager.RegisterExecutor(verify)
+			}
+			h := NewHandlerWithoutConfigFilePath(&config.Config{AuthDir: authDir, Port: 8317, Plugins: config.PluginsConfig{
+				Enabled: true, Dir: pluginsDir, Configs: map[string]config.PluginInstanceConfig{"cpa-bps": {Enabled: &enabled}},
+			}}, manager)
+			h.SetPluginHost(host)
+			if tc.failSave {
+				h.tokenStore = &pluginLoginRollbackStore{failAt: 1}
+			}
+			if tc.failPersist {
+				h.postAuthPersistHook = func(context.Context, *coreauth.Auth) error { return errors.New("fixture adoption failed") }
+			}
+			router := gin.New()
+			router.GET("/v8/management/oauth/auth-url", h.StartOAuthV8)
+			router.GET("/v0/management/get-auth-status", h.GetAuthStatus)
+			start := httptest.NewRecorder()
+			router.ServeHTTP(start, httptest.NewRequest(http.MethodGet, "/v8/management/oauth/auth-url?provider=cpa-bps&verify=true&verify_model=fixture-model", nil))
+			if start.Code != http.StatusOK {
+				t.Fatalf("启动合成插件登录失败：status=%d body=%s", start.Code, start.Body.String())
+			}
+			for poll := 0; poll < 2; poll++ {
+				response := httptest.NewRecorder()
+				router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v0/management/get-auth-status?state="+state, nil))
+				var status map[string]any
+				if errDecode := json.Unmarshal(response.Body.Bytes(), &status); errDecode != nil || response.Code != http.StatusOK {
+					t.Fatalf("轮询%d响应错误：status=%d body=%s err=%v", poll, response.Code, response.Body.String(), errDecode)
+				}
+				if tc.failSave || tc.failPersist {
+					if status["status"] != "error" || status["saved"] == true || status["adopted"] == true {
+						t.Fatalf("轮询%d把保存或采用失败误报为成功：%#v", poll, status)
+					}
+				} else if status["status"] != "ok" || status["auth_id"] != "fixture-bps.json" || status["saved"] != true || status["adopted"] != tc.withManager {
+					t.Fatalf("轮询%d缺少真实完成结果：%#v，期望auth_id=fixture-bps.json saved=true adopted=%v", poll, status, tc.withManager)
+				}
+			}
+			if pollCalls != 1 || verify.calls != 0 {
+				t.Fatalf("重复轮询重新调用插件或普通登录触发推理验证：poll=%d verify=%d", pollCalls, verify.calls)
+			}
+			if !tc.failSave && !tc.failPersist {
+				if _, errStat := os.Stat(filepath.Join(authDir, "fixture-bps.json")); errStat != nil {
+					t.Fatalf("成功结果缺少已保存文件：%v", errStat)
+				}
+			}
+		})
+	}
+}
+
 func TestPatchPluginVirtualAuthStatusReturnsConflictForVirtualChild(t *testing.T) {
 	manager := coreauth.NewManager(nil, nil, nil)
 	auth := pluginVirtualAuthForTest(t.TempDir(), "source.json", "auth-1")

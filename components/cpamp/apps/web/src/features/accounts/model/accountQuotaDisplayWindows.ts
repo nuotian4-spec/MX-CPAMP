@@ -1,3 +1,4 @@
+import { getCpaBpsQuotaState } from './cpaBpsQuotaState';
 import { getBpsQuotaState } from '@/utils/quota/bpsIdentity';
 import type { TFunction } from 'i18next';
 import { getCredentialScopedQuotaState } from '@/utils/quota/credentialScope';
@@ -41,6 +42,7 @@ export type AccountQuotaWindowKind =
   | 'unknown';
 
 export type AccountQuotaWindowSource =
+  | 'cpa-bps'
   | 'bps'
   | 'codex'
   | 'claude'
@@ -828,6 +830,28 @@ export const buildAccountQuotaDisplayWindows = (
   row: AccountRow,
   options: BuildAccountQuotaDisplayWindowsOptions
 ): AccountQuotaDisplayWindow[] => {
+  if (row.provider === 'cpa-bps') {
+    const state = getCpaBpsQuotaState(options.stores.cpaBpsQuota, row.raw);
+    const quota = state?.status === 'success' ? state.result?.quota : undefined;
+    if (!quota) return [];
+    const windows = quota.groups.flatMap((group, groupIndex) => group.buckets.map((bucket, index) =>
+      buildAccountQuotaDisplayWindow({
+        key: `cpa-bps:${groupIndex}:${index}`, label: bucket.window || group.displayName || '插件额度',
+        groupLabel: group.displayName, description: bucket.description,
+        remainingPercent: bucket.remainingFraction === null ? null : bucket.remainingFraction * 100,
+        usedPercent: bucket.remainingFraction === null ? null : (1 - bucket.remainingFraction) * 100,
+        resetLabel: bucket.resetTime || '-', resetAtMs: Date.parse(bucket.resetTime) || null,
+        source: 'cpa-bps', observedAtMs: state?.lastQueriedAt ? Date.parse(state.lastQueriedAt) : null,
+        nowMs: options.nowMs,
+      })
+    ));
+    return [...windows, ...quota.summary.map((metric, index) => buildAccountQuotaDisplayWindow({
+      key: `cpa-bps:summary:${index}`, label: metric.label || metric.key || '插件额度',
+      remainingPercent: null, usedPercent: null, resetLabel: '-', source: 'cpa-bps',
+      amountLabel: `${metric.value === null ? '未知' : metric.value} ${metric.currency || metric.unit}`.trim(),
+      nowMs: options.nowMs,
+    }))];
+  }
   if (row.provider === 'bps') {
     const quota = options.getDisplayBpsQuota
       ? options.getDisplayBpsQuota(row.raw)

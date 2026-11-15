@@ -37,6 +37,7 @@ type Bridge struct {
 	completedToolHistory map[string]bool
 	disallowParallel     bool
 	clientStream         bool
+	RequiresCompaction   bool
 }
 
 func decode(raw []byte, target any) error {
@@ -124,6 +125,14 @@ func prepareWithInheritedCatalog(raw []byte, scope string, replay *ReplayCache, 
 	}
 	b := &Bridge{nativeToolImages: nativeToolImages, RequestedEffort: requested, Effort: effort, tools: make(map[string]tool), unsupportedTools: make(map[string]bool), structured: structured, replay: replay, scope: scope}
 	b.clientStream, _ = source["stream"].(bool)
+	if input, ok := source["input"].([]any); ok {
+		for _, value := range input {
+			item, _ := value.(object)
+			if text(item["type"]) == "compaction_trigger" {
+				b.RequiresCompaction = true
+			}
+		}
+	}
 	choice := source["tool_choice"]
 	if choice != nil && text(choice) != "auto" && text(choice) != "none" {
 		return nil, nil, fmt.Errorf("basispoints supports tool_choice auto or none only")
@@ -138,7 +147,7 @@ func prepareWithInheritedCatalog(raw []byte, scope string, replay *ReplayCache, 
 	if items, ok := source["input"].([]any); ok {
 		for _, v := range items {
 			item, _ := v.(object)
-			if isCodexThreadDelegation(item) {
+			if IsCodexThreadDelegation(item) {
 				continue
 			}
 			if isTool(item) || strings.HasSuffix(text(item["type"]), "_call_output") {
@@ -246,7 +255,7 @@ func prepareWithInheritedCatalog(raw []byte, scope string, replay *ReplayCache, 
 	output := object{
 		"model": model, "model_selection": "explicit", "stream": true, "store": false,
 		"input": append(prologue, translated...), "reasoning_effort": effort,
-		"context_management": []any{object{"type": "compaction", "compact_threshold": 920000}},
+		"context_management": []any{object{"type": "compaction", "compact_threshold": 200000}},
 		"metadata": object{
 			"task_id": fingerprint([]any{scope, conversation}),
 			"turn_id": fingerprint([]any{scope, input[:turnEnd]}), "agent_iteration": fmt.Sprint(iteration),

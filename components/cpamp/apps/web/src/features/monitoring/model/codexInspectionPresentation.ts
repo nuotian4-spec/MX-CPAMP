@@ -136,8 +136,12 @@ export const formatPercent = (value: number | null) =>
 
 export const formatInspectionTargetLabel = (targetTypes: unknown, t: TFunction): string => {
   const normalized = normalizeCodexInspectionTargetTypes(targetTypes);
-  if (normalized.includes('bps'))
-    return normalized.map((p) => (p === 'bps' ? 'BPS' : p === 'xai' ? 'xAI' : 'Codex')).join(' + ');
+  if (normalized.includes('bps') || normalized.includes('cpa-bps'))
+    return normalized
+      .map((p) =>
+        p === 'cpa-bps' ? 'BPS 插件' : p === 'bps' ? 'BPS' : p === 'xai' ? 'xAI' : 'Codex'
+      )
+      .join(' + ');
   if (normalized.includes('codex') && normalized.includes('xai')) {
     return t('monitoring.codex_inspection_target_codex_xai');
   }
@@ -947,6 +951,7 @@ export const filterInspectionResults = (
 export type XaiInferenceState = 'success' | 'failed' | 'skipped' | 'not-applicable';
 
 export type InspectionProbeSource =
+  | 'cpa_bps_quota'
   | 'bps_access'
   | 'codex_usage'
   | 'xai_billing'
@@ -975,7 +980,13 @@ export const shouldShowInspectionConclusionReason = (
   item: Pick<CodexInspectionResultItem, 'action' | 'disabled' | 'errorKind' | 'statusCode'> &
     Partial<Pick<CodexInspectionResultItem, 'provider'>>
 ): boolean => {
-  if (item.provider === 'bps' || item.action !== 'keep' || item.disabled) return true;
+  if (
+    item.provider === 'bps' ||
+    item.provider === 'cpa-bps' ||
+    item.action !== 'keep' ||
+    item.disabled
+  )
+    return true;
   const errorKind = item.errorKind?.trim() ?? '';
   if (!HEALTHY_KEEP_KINDS.has(errorKind)) return true;
   const statusCode = item.statusCode ?? null;
@@ -990,6 +1001,12 @@ export const getInspectionProbePresentation = (
   const errorKind = item.errorKind ?? '';
   const statusCode = item.statusCode ?? null;
 
+  if (provider === 'cpa-bps')
+    return {
+      source: 'cpa_bps_quota',
+      state: statusCode === 200 && !errorKind ? 'success' : 'failed',
+      statusCode,
+    };
   if (provider === 'bps')
     return {
       source: 'bps_access',
@@ -1052,6 +1069,7 @@ export const summarizeInspectionError = (
   t: TFunction,
   options: { xaiInferenceEnabled?: boolean } = {}
 ) => {
+  if (item.provider === 'cpa-bps') return item.errorKind ? '插件额度查询未确认；保留账号' : '';
   if (item.provider === 'bps') return item.errorKind ? `BPS权限查询未确认：${item.errorKind}` : '';
   if (item.action === 'reauth' || item.statusCode === 401) {
     return t('monitoring.codex_inspection_error_summary_reauth');

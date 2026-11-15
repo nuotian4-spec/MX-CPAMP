@@ -20,6 +20,10 @@ func (h *Handler) Management(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if ok {
+		if r.URL.Path == "/v0/management/config.yaml" && r.Header.Get(proxysvc.ConfigConnectionHeader) != "" {
+			h.App.ProxyService.ProxyConfigYAML(w, r, h.App.CredentialConcurrencyService, response.Error)
+			return
+		}
 		if proxysvc.IsCPAPluginManagementPath(r.URL.Path) {
 			h.App.ProxyService.ProxyPluginManagement(w, r, response.Error)
 			return

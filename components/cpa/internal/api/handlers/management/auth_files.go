@@ -145,6 +145,9 @@ func (h *Handler) ListAuthFiles(c *gin.Context) {
 		files := make([]gin.H, 0, end-start)
 		for _, auth := range matching[start:end] {
 			if entry := h.buildAuthFileEntry(auth, quota); entry != nil {
+				if quota.v8 {
+					h.addPermissionSnapshot(entry, auth)
+				}
 				entry["cooldowns"] = nil
 				if cooldownsKnown {
 					entry["cooldowns"] = coreauth.CooldownSnapshotForAuth(auth, observedAt)
@@ -161,6 +164,9 @@ func (h *Handler) ListAuthFiles(c *gin.Context) {
 			continue
 		}
 		if entry := h.buildAuthFileEntry(auth, quota); entry != nil {
+			if quota.v8 {
+				h.addPermissionSnapshot(entry, auth)
+			}
 			entry["cooldowns"] = nil
 			if cooldownsKnown {
 				entry["cooldowns"] = coreauth.CooldownSnapshotForAuth(auth, observedAt)
@@ -419,6 +425,9 @@ func (h *Handler) listAuthFilesFromDisk(c *gin.Context, pagination authFilesPagi
 	for _, candidate := range matching[start:end] {
 		name := candidate.entry.Name()
 		fileData := gin.H{"name": name, "size": candidate.info.Size(), "modtime": candidate.info.ModTime(), "cooldowns": nil}
+		if c.GetBool(ConfigV8ContextKey) {
+			h.addPermissionSnapshot(fileData, nil)
+		}
 
 		// Read file to get type field
 		full := filepath.Join(h.cfg.AuthDir, name)
@@ -683,6 +692,20 @@ func (h *Handler) buildAuthFileEntryLocked(auth *coreauth.Auth, quota authFileQu
 		"runtime_only":   runtimeOnly,
 		"source":         "memory",
 		"size":           int64(0),
+	}
+
+	if isKiloAccount(auth) {
+		// The generic list is also a public projection, not a metadata export.
+		delete(entry, "status_message")
+		if path != "" {
+			entry["source"] = "file"
+		}
+		if priority, err := strconv.Atoi(auth.Attributes["priority"]); err == nil {
+			entry["priority"] = priority
+		}
+		entry["created_at"] = auth.CreatedAt
+		entry["updated_at"] = auth.UpdatedAt
+		return entry
 	}
 	entry["success"] = auth.Success
 	entry["failed"] = auth.Failed

@@ -10,21 +10,10 @@ import { maskApiKey } from '@/utils/format';
 import { sha256Hex } from '@/utils/apiKeyHash';
 import { isValidApiKeyCharset } from '@/utils/validation';
 import styles from './VisualConfigEditor.module.scss';
+import type { ClientKeyChannel, ClientKeyScope } from '@/types/visualConfig';
+import type { ClientKeyMutation } from '@/hooks/clientKeyConfig';
 
-export type ApiKeyMutation =
-  | {
-      type: 'create';
-      apiKey: string;
-    }
-  | {
-      type: 'replace';
-      oldApiKey: string;
-      newApiKey: string;
-    }
-  | {
-      type: 'delete';
-      apiKey: string;
-    };
+export type ApiKeyMutation = ClientKeyMutation;
 
 type OrphanAliasConflict = {
   apiKeyHash: string;
@@ -33,6 +22,7 @@ type OrphanAliasConflict = {
 
 export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
   value,
+  scopes = [],
   disabled,
   onPersistApiKeyMutation,
   onRefreshApiKeys,
@@ -40,6 +30,7 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
   onApiKeyOperationEnd,
 }: {
   value: string;
+  scopes?: ClientKeyScope[];
   disabled?: boolean;
   onPersistApiKeyMutation: (mutation: ApiKeyMutation) => Promise<string[]>;
   onRefreshApiKeys: () => Promise<string[]>;
@@ -68,6 +59,9 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingApiKey, setEditingApiKey] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [inputChannel, setInputChannel] = useState<ClientKeyChannel>('');
+  const channelFor = (key: string): ClientKeyChannel =>
+    scopes.find((scope) => scope['api-key'] === key)?.channel ?? '';
   const [inputAliasValue, setInputAliasValue] = useState('');
   const [formError, setFormError] = useState('');
   const [apiKeyAliases, setApiKeyAliases] = useState<ApiKeyAlias[]>([]);
@@ -346,6 +340,7 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
   };
 
   const openAddModal = () => {
+    setInputChannel('');
     setEditingApiKey(null);
     setInputValue('');
     setInputAliasValue('');
@@ -354,6 +349,7 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
   };
 
   const openEditModal = (apiKey: string) => {
+    setInputChannel(channelFor(apiKey));
     setEditingApiKey(apiKey);
     setInputValue(apiKey);
     setInputAliasValue(getAliasForApiKey(apiKey));
@@ -362,6 +358,7 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
   };
 
   const closeModal = () => {
+    setInputChannel('');
     setModalOpen(false);
     setInputValue('');
     setInputAliasValue('');
@@ -446,7 +443,10 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
 
     showConfirmation({
       title: t('config_management.visual.api_keys.delete_title'),
-      message: t('config_management.visual.api_keys.delete_confirm'),
+      message:
+        apiKeys.length === 1
+          ? '这是最后一个Key，删除后可能进入无Key访问模式。确定删除Key及通道绑定？'
+          : t('config_management.visual.api_keys.delete_confirm'),
       confirmText: t('config_management.visual.common.delete'),
       cancelText: t('config_management.visual.common.cancel'),
       variant: 'danger',
@@ -491,6 +491,11 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
     const oldApiKey = editingApiKey;
     const isCreate = oldApiKey === null;
     const isReplace = oldApiKey !== null && oldApiKey !== trimmed;
+    const channelChanged = inputChannel !== (oldApiKey ? channelFor(oldApiKey) : '');
+    if (!inputChannel && (isCreate || isReplace || (oldApiKey && channelFor(oldApiKey)))) {
+      setFormError('新增或轮换Key必须选择Codex、CPA-BPS或Kilo通道');
+      return;
+    }
     if (isCreate && apiKeys.some((key) => key === trimmed)) {
       setFormError(t('config_management.visual.api_keys.error_duplicate'));
       return;
@@ -519,7 +524,7 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
 
     try {
       const oldAlias = oldApiKey ? getAliasForApiKey(oldApiKey) : '';
-      if (!isCreate && !isReplace) {
+      if (!isCreate && !isReplace && !channelChanged) {
         const canonicalKeys = await onRefreshApiKeys();
         if (!hasCanonicalApiKey(canonicalKeys, trimmed)) {
           showNotification(t('config_management.visual.api_keys.stale_key_refreshed'), 'warning');
@@ -592,10 +597,28 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
         allowOrphanAliasCleanup = cleanupDecision.allowOrphanAliasCleanup;
       }
 
+      if (!isCreate && channelChanged) {
+        const accepted = await new Promise<boolean>((resolve) =>
+          showConfirmation({
+            title: '确认更改Key通道',
+            message: '此操作将改变该Key的访问范围，不影响其他Key。',
+            confirmText: '确认更改',
+            variant: 'danger',
+            onConfirm: () => resolve(true),
+            onCancel: () => resolve(false),
+          })
+        );
+        if (!accepted) return;
+      }
       const canonicalKeys = await onPersistApiKeyMutation(
         isCreate
-          ? { type: 'create', apiKey: trimmed }
-          : { type: 'replace', oldApiKey: oldApiKey!, newApiKey: trimmed }
+          ? { type: 'create', apiKey: trimmed, ...(inputChannel ? { channel: inputChannel } : {}) }
+          : {
+              type: 'replace',
+              oldApiKey: oldApiKey!,
+              newApiKey: trimmed,
+              ...(channelChanged ? { channel: inputChannel } : {}),
+            }
       );
       if (!hasCanonicalApiKey(canonicalKeys, trimmed)) {
         setFormError(t('config_management.visual.api_keys.canonical_key_missing'));
@@ -794,6 +817,9 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
                     {alias || t('config_management.visual.api_keys.input_label')}
                   </div>
                   <div className="item-subtitle">{maskApiKey(String(key || ''))}</div>
+                  <div className="item-subtitle">
+                    {t(`config_management.visual.api_keys.channel_${channelFor(key) || 'legacy'}`)}
+                  </div>
                 </div>
                 <div className="item-actions">
                   <Button
@@ -836,6 +862,7 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
       )}
 
       <div className="hint">{t('config_management.visual.api_keys.hint')}</div>
+      <div className="hint">{t('config_management.visual.api_keys.channel_hint')}</div>
       {!aliasesAvailable && !aliasesLoading ? (
         <div className="hint">{t('config_management.visual.api_keys.alias_unavailable')}</div>
       ) : null}
@@ -868,6 +895,32 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
           </>
         }
       >
+        <div className="form-group">
+          <label htmlFor={`${apiKeyInputId}-channel`}>
+            {t('config_management.visual.api_keys.channel')}
+          </label>
+          <select
+            id={`${apiKeyInputId}-channel`}
+            value={inputChannel}
+            disabled={disabled || mutationSaving}
+            aria-label={t('config_management.visual.api_keys.channel')}
+            onChange={(event) => setInputChannel(event.target.value as ClientKeyChannel)}
+          >
+            <option
+              value=""
+              disabled={
+                editingApiKey === null || Boolean(editingApiKey && channelFor(editingApiKey))
+              }
+            >
+              {editingApiKey && !channelFor(editingApiKey) ? '旧Key（保留原行为）' : '请选择通道'}
+            </option>
+            {(['codex', 'bps', 'kilo'] as const).map((channel) => (
+              <option key={channel} value={channel}>
+                {t(`config_management.visual.api_keys.channel_${channel || 'legacy'}`)}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="form-group">
           <label htmlFor={apiKeyInputId}>
             {t('config_management.visual.api_keys.input_label')}

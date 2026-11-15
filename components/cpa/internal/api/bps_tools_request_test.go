@@ -53,6 +53,9 @@ func TestBPSToolsPublicHTTPRoundTrip(t *testing.T) {
 						if r.Header.Get("x-openai-account-id") != firstAccount {
 							t.Fatal("tool continuation switched credentials")
 						}
+						if path == "/v1/responses" && !strings.Contains(string(body), "HTTP_HANDOFF_MARKER") {
+							t.Fatal("mixed handoff lost")
+						}
 						if strings.Contains(string(body), bpsbinding.Prefix) || !strings.Contains(string(body), "call_native") || !strings.Contains(string(body), "sunny") {
 							t.Fatalf("native history missing: %s", body)
 						}
@@ -101,7 +104,7 @@ func TestBPSToolsPublicHTTPRoundTrip(t *testing.T) {
 					t.Fatalf("public tool identity missing: %s", first.Body.String())
 				}
 				if !chat {
-					_ = doc.Set("input", []any{map[string]any{"role": "user", "content": "Check weather"}, map[string]any{"type": "function_call", "call_id": id, "name": "get_weather", "arguments": `{"city":"Tokyo"}`}, map[string]any{"type": "function_call_output", "call_id": id, "output": "sunny"}})
+					_ = doc.Set("input", []any{map[string]any{"type": "function_call_output", "namespace": "codex_app", "name": "create_thread", "output": "<codex_delegation>HTTP_HANDOFF_MARKER</codex_delegation>"}, map[string]any{"role": "user", "content": "Check weather"}, map[string]any{"type": "function_call", "call_id": id, "name": "get_weather", "arguments": `{"city":"Tokyo"}`}, map[string]any{"type": "function_call_output", "call_id": id, "output": "sunny"}})
 				} else {
 					_ = doc.Set("messages", []any{map[string]any{"role": "user", "content": "Check weather"}, map[string]any{"role": "assistant", "tool_calls": []any{map[string]any{"id": id, "type": "function", "function": map[string]any{"name": "get_weather", "arguments": `{"city":"Tokyo"}`}}}}, map[string]any{"role": "tool", "tool_call_id": id, "content": "sunny"}})
 				}

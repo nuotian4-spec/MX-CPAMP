@@ -24,7 +24,6 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/home"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/logging"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
-	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	responsesclaude "github.com/router-for-me/CLIProxyAPI/v8/internal/translator/claude/openai/responses"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/api/handlers"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/api/handlers/claude"
@@ -43,6 +42,7 @@ const codexAlphaSearchSourceFormat = "codex-alpha-search"
 // setupRoutes configures the API routes for the server.
 // It defines the endpoints and associates them with their respective handlers.
 func (s *Server) setupRoutes() {
+	s.handlers.SetFullConfigSnapshot(s.getConfig)
 	healthzHandler := func(c *gin.Context) {
 		if c.Request.Method == http.MethodHead {
 			c.Status(http.StatusOK)
@@ -249,10 +249,10 @@ func (s *Server) codexAlphaSearchModelRouterHost() handlers.PluginModelRouterHos
 	return nil
 }
 
-func (s *Server) codexAlphaSearchSelectionModel(ctx context.Context, c *gin.Context, body []byte, model string) (string, error) {
+func (s *Server) codexAlphaSearchSelectionModel(ctx context.Context, c *gin.Context, body []byte, model string) (string, string, error) {
 	host := s.codexAlphaSearchModelRouterHost()
 	if host == nil {
-		return model, nil
+		return model, alphaSearchModelProvider(model), nil
 	}
 
 	var headers http.Header
@@ -280,71 +280,26 @@ func (s *Server) codexAlphaSearchSelectionModel(ctx context.Context, c *gin.Cont
 		Metadata:       metadata,
 	})
 	if !handled || !resp.Handled {
-		return model, nil
+		return model, alphaSearchModelProvider(model), nil
 	}
-	if resp.TargetKind != pluginapi.ModelRouteTargetProvider || !strings.EqualFold(strings.TrimSpace(resp.Target), "codex") {
-		return "", fmt.Errorf("unsupported Codex Alpha Search model route target %q (%q)", resp.TargetKind, resp.Target)
+	provider := strings.ToLower(strings.TrimSpace(resp.Target))
+	if resp.TargetKind != pluginapi.ModelRouteTargetProvider || (provider != "codex" && provider != "bps" && provider != "cpa-bps") {
+		if (resp.TargetKind != pluginapi.ModelRouteTargetExecutor && resp.TargetKind != pluginapi.ModelRouteTargetSelf) || provider != "cpa-bps" {
+			return "", "", fmt.Errorf("unsupported Codex Alpha Search model route target %q (%q)", resp.TargetKind, resp.Target)
+		}
 	}
 	if targetModel := strings.TrimSpace(resp.TargetModel); targetModel != "" {
-		return targetModel, nil
+		return targetModel, provider, nil
 	}
-	return model, nil
+	return model, provider, nil
 }
 
 func sanitizeCodexAlphaSearchBody(body []byte) []byte {
-	var payload map[string]json.RawMessage
-	if errUnmarshal := json.Unmarshal(body, &payload); errUnmarshal != nil || payload == nil {
-		return body
-	}
-
-	removed := false
-	for _, field := range []string{"prompt_cache_key", "prompt_cache_retention"} {
-		if _, exists := payload[field]; exists {
-			delete(payload, field)
-			removed = true
-		}
-	}
-	if !removed {
-		return body
-	}
-
-	sanitizedBody, errMarshal := json.Marshal(payload)
-	if errMarshal != nil {
-		return body
-	}
-	return sanitizedBody
+	return handlers.SanitizeCodexAlphaSearchBody(body)
 }
 
-// rewriteCodexAlphaSearchModel replaces the top-level model field with the
-// credential-resolved upstream model before the request is forwarded.
 func rewriteCodexAlphaSearchModel(body []byte, upstreamModel string) []byte {
-	upstreamModel = strings.TrimSpace(upstreamModel)
-	if upstreamModel == "" {
-		return body
-	}
-
-	var payload map[string]json.RawMessage
-	if errUnmarshal := json.Unmarshal(body, &payload); errUnmarshal != nil || payload == nil {
-		return body
-	}
-	if _, exists := payload["model"]; !exists {
-		return body
-	}
-
-	modelJSON, errMarshalModel := json.Marshal(upstreamModel)
-	if errMarshalModel != nil {
-		return body
-	}
-	if string(payload["model"]) == string(modelJSON) {
-		return body
-	}
-
-	payload["model"] = modelJSON
-	rewrittenBody, errMarshal := json.Marshal(payload)
-	if errMarshal != nil {
-		return body
-	}
-	return rewrittenBody
+	return handlers.RewriteCodexAlphaSearchModel(body, upstreamModel)
 }
 
 func homeSelectionAttemptContext(ctx context.Context, selection *auth.HomeDispatchSelection) (context.Context, func(), error) {
@@ -368,200 +323,57 @@ func (s *Server) codexAlphaSearch(c *gin.Context) {
 		c.JSON(clienterror.HTTPStatusFromErrorOr(err, http.StatusBadRequest), gin.H{"error": "Failed to read search request"})
 		return
 	}
+	if s.kiloAlphaSearch(c, body) {
+		return
+	}
 
 	var routing struct {
 		ID    string `json:"id"`
 		Model string `json:"model"`
 	}
 	_ = json.Unmarshal(body, &routing)
-	upstreamRequestBody := sanitizeCodexAlphaSearchBody(body)
-
 	selectionHeaders := c.Request.Header.Clone()
 	if sessionID := strings.TrimSpace(routing.ID); sessionID != "" {
 		selectionHeaders.Set("X-Session-ID", sessionID)
 	}
 	ctx := context.WithValue(c.Request.Context(), "gin", c)
 	ctx = handlers.EnrichContextWithSessionHierarchy(ctx, selectionHeaders, body, nil)
-	selectionModel, errRoute := s.codexAlphaSearchSelectionModel(ctx, c, body, strings.TrimSpace(routing.Model))
+	selectionModel, provider, errRoute := s.codexAlphaSearchSelectionModel(ctx, c, body, strings.TrimSpace(routing.Model))
 	if errRoute != nil {
 		log.WithError(errRoute).Warn("codex alpha search: model router returned an unsupported target")
 		c.JSON(clienterror.HTTPStatusFromErrorOr(errRoute, http.StatusServiceUnavailable), gin.H{"error": errRoute.Error()})
 		return
 	}
-	selectionOpts := coreexecutor.Options{Headers: selectionHeaders, OriginalRequest: body}
-	var selection *auth.HomeDispatchSelection
-	var selected *auth.Auth
-	if s.handlers.AuthManager.HomeEnabled() {
-		selection, err = s.handlers.AuthManager.SelectHomeAuthWithCredentialPolicy(ctx, "codex", selectionModel, auth.CredentialPolicyCodexAlphaSearchV1, selectionOpts)
-		if selection != nil {
-			selected = selection.CloneAuth()
-		}
-	} else {
-		selected, err = s.handlers.AuthManager.SelectAuthWithCredentialPolicy(ctx, "codex", selectionModel, auth.CredentialPolicyCodexAlphaSearchV1, selectionOpts)
+	if !s.handlers.AuthManager.ProviderChannelAllowed(ctx, provider) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "no provider in client channel"})
+		return
 	}
-	if err != nil {
-		status := clienterror.HTTPStatusFromErrorOr(err, http.StatusServiceUnavailable)
-		for _, value := range auth.SafeResponseHeaders(err).Values("Retry-After") {
+	if provider == "bps" || provider == "cpa-bps" {
+		s.bpsAlphaSearch(ctx, c, provider, selectionModel, body, selectionHeaders)
+		return
+	}
+	s.forwardCodexAlphaSearch(ctx, c, body, selectionModel, coreexecutor.Options{Headers: selectionHeaders, OriginalRequest: body}, nil, nil, false)
+}
+
+func (s *Server) forwardCodexAlphaSearch(ctx context.Context, c *gin.Context, body []byte, selectionModel string, selectionOpts coreexecutor.Options, selected *auth.Auth, selection *auth.HomeDispatchSelection, bpsBackend bool) {
+	response, failure := s.handlers.ExecuteCodexAlphaSearch(ctx, s.getConfig(), handlers.CodexAlphaSearchRequest{
+		Body: body, Model: selectionModel, Options: selectionOpts, Selected: selected, Selection: selection, BPSBackend: bpsBackend,
+		SelectedAuthIndex: func(index string) { logging.SetGinCPATraceID(c, index) },
+	})
+	if failure != nil {
+		for _, value := range failure.Headers.Values("Retry-After") {
 			c.Writer.Header().Add("Retry-After", value)
 		}
-		c.JSON(status, gin.H{"error": err.Error()})
+		c.JSON(failure.StatusCode, gin.H{"error": failure.Error.Error()})
 		return
 	}
-	if selected == nil {
-		if selection != nil {
-			selection.End("missing_auth")
-		}
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Codex auth unavailable"})
-		return
-	}
-	if selection != nil && selection.CanonicalSessionID != "" {
-		meta := logging.GetClientRequestMetadata(ctx)
-		meta.SessionID = selection.CanonicalSessionID
-		if selection.ParentSessionID != "" {
-			meta.ParentSessionID = selection.ParentSessionID
-		} else {
-			meta.ParentSessionID = ""
-		}
-		if meta.SessionID == meta.ParentSessionID {
-			meta.ParentSessionID = ""
-		}
-		ctx = logging.WithClientRequestMetadata(ctx, meta)
-	}
-	var releaseAttempt func()
-	if selection != nil {
-		attemptCtx, release, errBind := homeSelectionAttemptContext(ctx, selection)
-		if errBind != nil {
-			selection.End("attempt_bind_failed")
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": errBind.Error()})
-			return
-		}
-		ctx = attemptCtx
-		releaseAttempt = release
-		defer releaseAttempt()
-	}
-	logging.SetGinCPATraceID(c, selected.EnsureIndex())
-
-	baseHeaders := make(http.Header)
-	baseHeaders.Set("Content-Type", "application/json")
-	baseHeaders.Set("Accept", "application/json")
-	baseHeaders.Set("Originator", "codex_cli_rs")
-	for _, name := range []string{"Version", "User-Agent", "Session_id", "X-Client-Request-Id"} {
-		if value := strings.TrimSpace(c.GetHeader(name)); value != "" {
-			baseHeaders.Set(name, value)
+	for name, values := range response.Headers {
+		for _, value := range values {
+			c.Writer.Header().Add(name, value)
 		}
 	}
-
-	errMissingBaseURL := errors.New("Codex Alpha Search API key base URL unavailable")
-	routeModel := strings.TrimSpace(selectionModel)
-	if routeModel == "" {
-		routeModel = strings.TrimSpace(routing.Model)
-	}
-	performRequest := func(current *auth.Auth) (*http.Response, error) {
-		headers := baseHeaders.Clone()
-		if accountID, ok := current.Metadata["account_id"].(string); ok && strings.TrimSpace(accountID) != "" {
-			headers.Set("Chatgpt-Account-Id", accountID)
-		}
-		upstreamURL := "https://chatgpt.com/backend-api/codex/alpha/search"
-		requestBody := upstreamRequestBody
-		// API-key Alpha Search reuses normal credential-aware model resolution so
-		// CPA routing prefixes and model aliases are not forwarded upstream.
-		if current.AuthKind() == auth.AuthKindAPIKey {
-			baseURL := ""
-			if current.Attributes != nil {
-				baseURL = strings.TrimSpace(current.Attributes["base_url"])
-			}
-			if baseURL == "" {
-				return nil, errMissingBaseURL
-			}
-			upstreamURL = strings.TrimRight(baseURL, "/") + "/alpha/search"
-			if upstreamModel := s.handlers.AuthManager.ResolveExecutionModel(current, routeModel); upstreamModel != "" {
-				requestBody = rewriteCodexAlphaSearchModel(upstreamRequestBody, upstreamModel)
-			}
-		}
-		req, errRequest := s.handlers.AuthManager.NewHttpRequest(ctx, current, http.MethodPost, upstreamURL, requestBody, headers)
-		if errRequest != nil {
-			return nil, errRequest
-		}
-		authType, authValue := current.AccountInfo()
-		helps.RecordAPIRequest(ctx, s.getConfig(), helps.UpstreamRequestLog{
-			URL:       upstreamURL,
-			Method:    http.MethodPost,
-			Headers:   req.Header.Clone(),
-			Body:      requestBody,
-			Provider:  "codex",
-			AuthID:    current.ID,
-			AuthLabel: current.Label,
-			AuthType:  authType,
-			AuthValue: authValue,
-		})
-		return s.handlers.AuthManager.HttpRequest(ctx, current, req)
-	}
-
-	if errCtx := ctx.Err(); errCtx != nil {
-		if selection != nil {
-			selection.End("attempt_canceled")
-		}
-		c.JSON(clienterror.HTTPStatusFromErrorOr(errCtx, http.StatusRequestTimeout), gin.H{"error": errCtx.Error()})
-		return
-	}
-	cfg := s.getConfig()
-	resp, err := performRequest(selected)
-	if err != nil {
-		if errors.Is(err, errMissingBaseURL) {
-			if selection != nil {
-				selection.End("missing_base_url")
-			}
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
-			return
-		}
-		if selection != nil {
-			selection.End("request_failed")
-		}
-		helps.RecordAPIResponseError(ctx, cfg, err)
-		c.JSON(clienterror.HTTPStatusFromErrorOr(err, http.StatusBadGateway), gin.H{"error": err.Error()})
-		return
-	}
-	closeResponseBody := func() error {
-		errClose := resp.Body.Close()
-		if errClose != nil {
-			log.Errorf("codex alpha search: close response body error: %v", errClose)
-		}
-		return errClose
-	}
-	if selection != nil {
-		if errBind := selection.Bind(closeResponseBody); errBind != nil {
-			if resp.StatusCode == http.StatusUnauthorized {
-				s.handlers.AuthManager.ReportHomeUnauthorized(ctx, selected, "codex", selectionModel)
-			}
-			selection.End("response_bind_failed")
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": errBind.Error()})
-			return
-		}
-		defer selection.End("response_closed")
-	} else {
-		defer func() { _ = closeResponseBody() }()
-	}
-	helps.RecordAPIResponseMetadata(ctx, cfg, resp.StatusCode, resp.Header.Clone())
-	upstreamBody, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
-	if err != nil {
-		helps.AppendAPIResponseChunk(ctx, cfg, upstreamBody)
-		if selection != nil && resp.StatusCode == http.StatusUnauthorized {
-			s.handlers.AuthManager.ReportHomeUnauthorized(ctx, selected, "codex", selectionModel, upstreamBody)
-		}
-		helps.RecordAPIResponseError(ctx, cfg, err)
-		c.JSON(clienterror.HTTPStatusFromErrorOr(err, http.StatusBadGateway), gin.H{"error": "Failed to read Codex search response"})
-		return
-	}
-	helps.AppendAPIResponseChunk(ctx, cfg, upstreamBody)
-	if selection != nil && resp.StatusCode == http.StatusUnauthorized {
-		s.handlers.AuthManager.ReportHomeUnauthorized(ctx, selected, "codex", selectionModel, upstreamBody)
-		log.WithField("status", resp.StatusCode).Warnf("codex alpha search upstream request failed: %s", logging.SafeDiagnosticForLog(string(upstreamBody)))
-	}
-	if contentType := resp.Header.Get("Content-Type"); contentType != "" {
-		c.Header("Content-Type", contentType)
-	}
-	c.Status(resp.StatusCode)
-	_, _ = c.Writer.Write(upstreamBody)
+	c.Status(response.StatusCode)
+	_, _ = c.Writer.Write(response.Body)
 }
 
 // AttachWebsocketRoute registers a websocket upgrade handler on the primary Gin engine.

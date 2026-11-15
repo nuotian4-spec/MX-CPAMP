@@ -25,6 +25,7 @@ type BatchInputItem struct {
 	TOTPSecret string `json:"totp_secret"`
 }
 type BatchTask struct {
+	HTTPDiagnostics
 	ID        string    `json:"id"`
 	Profile   string    `json:"profile"`
 	Status    string    `json:"status"`
@@ -36,7 +37,8 @@ type BatchTask struct {
 }
 
 func batchTaskSnapshot(t *Task) BatchTask {
-	out := BatchTask{ID: t.ID, Profile: t.Profile, Status: t.Status, ErrorCode: t.ErrorCode, Stage: t.Stage, Reason: t.Reason, CreatedAt: t.CreatedAt}
+	normalized := snapshot(t)
+	out := BatchTask{HTTPDiagnostics: normalized.HTTPDiagnostics, ID: t.ID, Profile: t.Profile, Status: t.Status, ErrorCode: t.ErrorCode, Stage: t.Stage, Reason: t.Reason, CreatedAt: t.CreatedAt}
 	if t.Status == "succeeded" {
 		out.AuthIndex = t.authIndex
 	}
@@ -110,6 +112,9 @@ func (s *Service) CreateBatch(input BatchInput) (Batch, error) {
 	setup, ok, err := s.resolver.ResolveSetup(context.Background())
 	if err != nil || !ok || setup.CPAUpstreamURL == "" || setup.ManagementKey == "" {
 		return Batch{}, ErrUnavailable
+	}
+	if err := s.requireBuiltinBPS(context.Background(), setup, input.Profile); err != nil {
+		return Batch{}, err
 	}
 	s.mu.Lock()
 	if existing := s.batches[input.BatchID]; existing != nil {

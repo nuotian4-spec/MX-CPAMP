@@ -7,6 +7,7 @@ import (
 
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/bpsbinding"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
 	coreexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
 )
 
@@ -44,6 +45,15 @@ func (m *Manager) bindBPSToolHistory(providers []string, req coreexecutor.Reques
 		}
 		if original.AuthID != "" && original != record.Identity {
 			return fail("BPS tool history mixes different credentials")
+		}
+		if record.Kind == "compaction" {
+			model := thinking.ParseSuffix(req.Model).ModelName
+			if cfg != nil {
+				model = cfg.BPS.UpstreamModel(model)
+			}
+			if record.Model != model {
+				return fail("BPS压缩状态需要原模型")
+			}
 		}
 		original = record.Identity
 	}

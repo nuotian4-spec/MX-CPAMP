@@ -74,11 +74,12 @@ var v8KeyFamilies = []configPath{
 func buildV8Paths() []configPath {
 	prefixes := []configPath{
 		{"bps-protocol", "upstream.bps.protocol"},
+		{"kilo", "upstream.kilo"},
 		{"bps", "oauth.providers.bps"},
 		{"host", "server.host"}, {"port", "server.port"}, {"max-request-body-bytes", "server.max-request-body-bytes"}, {"trusted-proxies", "server.trusted-proxies"},
 		{"github-token", "server.github-token"},
 		{"tls", "server.tls"}, {"commercial-mode", "server.commercial-mode"}, {"discovery", "server.discovery"}, {"kv-store", "server.kv-store"},
-		{"remote-management", "management"}, {"api-keys", "access.api-keys"},
+		{"remote-management", "management"}, {"api-keys", "access.api-keys"}, {"client-key-scopes", "access.client-key-scopes"},
 		{"credential-concurrency", "credentials.concurrency"}, {"credential-in-flight", "credentials.in-flight"},
 		{"force-model-prefix", "routing.force-model-prefix"},
 		{"request-retry", "routing.retry.request-retry"}, {"max-retry-credentials", "routing.retry.max-retry-credentials"},
@@ -281,6 +282,9 @@ func (cfg *Config) UnmarshalYAML(node *yaml.Node) error {
 	decoded := legacyConfig(*cfg)
 	if err = root.Decode(&decoded); err != nil {
 		return err
+	}
+	if errValidate := decoded.SDKConfig.ValidateClientKeyScopes(); errValidate != nil {
+		return errValidate
 	}
 	if errValidate := decoded.Models.Validate(); errValidate != nil {
 		return errValidate
@@ -975,6 +979,9 @@ func ValidateV8Config(data []byte) error {
 	var cfg legacyConfig
 	if errDecode := decoder.Decode(&cfg); errDecode != nil {
 		return errDecode
+	}
+	if errValidate := cfg.SDKConfig.ValidateClientKeyScopes(); errValidate != nil {
+		return errValidate
 	}
 	return cfg.Models.Validate()
 }

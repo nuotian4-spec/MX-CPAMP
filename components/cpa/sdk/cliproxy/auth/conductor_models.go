@@ -265,6 +265,11 @@ func (m *Manager) clientModelProjectionForAuth(auth *Auth, routeModel string, no
 		suspendReason = cooldownReason(auth.StatusMessage, auth.Quota, auth.LastError)
 	}
 
+	if kiloAutoBlocked(auth) {
+		isSuspended = true
+		suspendReason = kiloRestriction(auth).Reason
+		isQuotaExceeded = isQuotaExceeded || suspendReason == kiloQuotaExhausted
+	}
 	return registry.ClientModelProjection{
 		ModelID:       targetModel,
 		Suspended:     isSuspended,
@@ -334,6 +339,9 @@ func (m *Manager) preparedExecutionModelsWithAlias(auth *Auth, routeModel string
 }
 
 func (m *Manager) preparedExecutionModelsWithAliasForRequest(ctx context.Context, auth *Auth, routeModel string, clientHeaders ...http.Header) ([]string, bool, OAuthModelAliasResult, *apiKeyModelRoutingSnapshot) {
+	if KiloDiagnostic(ctx) {
+		return []string{routeModel}, false, OAuthModelAliasResult{}, m.loadAPIKeyModelRouting()
+	}
 	candidates, pooled, aliasResult, routing := m.executionModelCandidatesWithAlias(auth, routeModel)
 	return m.filterExecutionModelsForRequest(ctx, auth, routeModel, candidates, pooled, clientHeaders...), pooled, aliasResult, routing
 }

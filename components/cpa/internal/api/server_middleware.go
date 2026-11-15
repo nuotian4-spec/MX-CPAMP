@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/channelscope"
+
 	"github.com/gin-gonic/gin"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/api/middleware"
 	codexlive "github.com/router-for-me/CLIProxyAPI/v8/internal/client/codex/live"
@@ -518,10 +520,21 @@ func accessAuthMiddleware(manager *sdkaccess.Manager, realtimeError bool) gin.Ha
 				if len(result.Metadata) > 0 {
 					c.Set("accessMetadata", result.Metadata)
 				}
-				reqCtx := coreusage.WithAPIKey(c.Request.Context(), result.Principal)
+				reqCtx := channelscope.With(c.Request.Context(), result.Metadata["channel_scope"])
+				reqCtx = coreusage.WithAPIKey(reqCtx, result.Principal)
 				reqCtx = coreusage.WithAccessProvider(reqCtx, result.Provider)
 				reqCtx = coreusage.WithIsNativeKey(reqCtx, coreusage.IsNativeAccessProvider(result.Provider))
 				c.Request = c.Request.WithContext(reqCtx)
+			}
+			if channelscope.From(c.Request.Context()) == "kilo" && channelscope.KiloPayloadRoute(c.Request.Method, c.Request.URL.Path) {
+				c.Request = c.Request.WithContext(channelscope.WithKiloPayload(c.Request.Context(), true))
+				middleware.SuppressAuthenticatedRequestBody(c)
+				limit := int64(64 << 20)
+				if configured := c.GetInt64(handlers.MaxRequestBodyBytesContextKey); configured > 0 && configured < limit {
+					limit = configured
+				}
+				c.Set(handlers.MaxRequestBodyBytesContextKey, limit)
+				c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 			}
 			middleware.CaptureAuthenticatedRequestBody(c)
 			if c.IsAborted() {

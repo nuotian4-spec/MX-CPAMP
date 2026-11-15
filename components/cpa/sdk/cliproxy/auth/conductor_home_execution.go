@@ -45,7 +45,7 @@ func (m *Manager) executeHome(ctx context.Context, providers []string, req clipr
 		}
 		retryRoundPending = false
 		retryRoundWaited = false
-		if isRequestTerminatedError(errExecute) || isRequestStopError(errExecute) {
+		if BPSAutomaticRetryBlocked(ctx) || isRequestTerminatedError(errExecute) || isRequestStopError(errExecute) {
 			return cliproxyexecutor.Response{}, unwrapExecutionBoundaryError(errExecute)
 		}
 		wait, shouldRetry := m.shouldRetryAfterErrorWithHomeRetryLimit(ctx, opts, errExecute, attempt, providers, retryModel, maxWait, homeRetryLimit, defaultRequestRetry)
@@ -80,7 +80,7 @@ func (m *Manager) executeHomeOnce(ctx context.Context, providers []string, req c
 	var upstreamErr error
 	var roundTiming homeRetryRoundTiming
 	for homeAuthCount := 1; ; homeAuthCount++ {
-		if maxRetryCredentials > 0 && len(attempted) >= maxRetryCredentials {
+		if maxRetryCredentials > 0 && len(attempted) >= maxRetryCredentials && !bpsFailoverPending(ctx) {
 			if lastErr != nil {
 				return cliproxyexecutor.Response{}, markHomeRetryRoundExhausted(preferredExecutionAttemptError(lastErr, upstreamErr), roundTiming.RetryAfter(), true)
 			}
@@ -145,6 +145,7 @@ func (m *Manager) executeHomeOnce(ctx context.Context, providers []string, req c
 		}
 		// Home owns credential availability; execute its dispatch without local state filtering.
 		models, pooled, aliasResult, routing := m.executionModelCandidatesWithAlias(auth, routeModel)
+		models = bpsFailoverModels(ctx, auth, models)
 		if aliasResult.ForceMapping && responseAlias != "" {
 			aliasResult.OriginalAlias = responseAlias
 		}
@@ -245,7 +246,7 @@ func (m *Manager) executeHomeOnce(ctx context.Context, providers []string, req c
 				if countTokens {
 					return executor.CountTokens(executorCtx, preparedAuth, execReq, execOpts)
 				}
-				return executor.Execute(execCtx, preparedAuth, execReq, execOpts)
+				return m.executePermissionChecked(execCtx, executor, preparedAuth, execReq, execOpts)
 			}
 			startHomeExec := time.Now()
 			response, errExecute = execute()
@@ -283,6 +284,14 @@ func (m *Manager) executeHomeOnce(ctx context.Context, providers []string, req c
 			m.reportHomeResult(execCtx, result, preparedAuth)
 			roundTiming.Observe(errExecute)
 			lastErr = errExecute
+			if preparedAuth.Provider == "bps" && BPSAutomaticRetryBlocked(ctx) {
+				if authorizeBPSFailover(ctx, errExecute) {
+					break
+				}
+				releaseAttempt()
+				selection.End("request_stopped")
+				return cliproxyexecutor.Response{}, wrapRequestStopError(errExecute)
+			}
 			if okAction {
 				if isRequestScopedStop(action, okAction) {
 					errExecute = annotateTrustedRetryAfterByHint(errExecute)

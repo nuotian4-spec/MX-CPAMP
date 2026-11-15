@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
@@ -13,6 +13,8 @@ import {
 } from './pluginHostStyle';
 import {
   collectPluginResourceEntries,
+  CPA_BPS_OAUTH_ROUTE,
+  isCpaBpsAuthorizationResource,
   PLUGIN_RESOURCES_REFRESH_EVENT,
   resolvePluginAssetURL,
 } from './pluginResources';
@@ -117,7 +119,11 @@ function PluginResourcePageContent() {
     return entries.find((entry) => entry.pluginID === pluginID && entry.menuIndex === menuIndex);
   }, [data?.plugins, menuIndex, pluginID]);
 
-  const iframeSrc = resource ? resolvePluginAssetURL(resource.menu.path, apiBase) : '';
+  const useUnifiedBpsOAuth = Boolean(
+    resource && isCpaBpsAuthorizationResource(resource.pluginID, resource.menu.path)
+  );
+  const iframeSrc =
+    resource && !useUnifiedBpsOAuth ? resolvePluginAssetURL(resource.menu.path, apiBase) : '';
 
   const refreshPluginHostStyle = useCallback(() => {
     const iframe = iframeRef.current;
@@ -175,6 +181,8 @@ function PluginResourcePageContent() {
             description={t('plugin_resource.not_found_desc')}
           />
         </div>
+      ) : useUnifiedBpsOAuth ? (
+        <Navigate to={CPA_BPS_OAUTH_ROUTE} replace />
       ) : !iframeSrc ? (
         <div className={styles.stateShell}>
           <EmptyState

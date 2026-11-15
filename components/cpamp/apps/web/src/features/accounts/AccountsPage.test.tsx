@@ -1,3 +1,25 @@
+import { QuotaEstimateSummary } from '@/features/kilo/QuotaEstimateSummary';
+import { kiloApi, type KiloAccount } from '@/services/api/kilo';
+import { kiloProxiesApi } from '@/services/api/kiloProxies';
+import { KiloAccountsPanel } from '@/features/kilo/KiloAccountsPage';
+import { KiloQuotaSummary } from '@/features/kilo/KiloQuotaSummary';
+import { KiloEgressSummary } from '@/features/kilo/KiloEgressSummary';
+import { KiloQuotaPanel } from '@/features/kilo/KiloQuotaPanel';
+vi.mock('@/features/kilo/KiloQuotaPanel', () => ({
+  KiloQuotaPanel: ({
+    renderEstimate,
+  }: {
+    renderEstimate?: (query: () => Promise<void>, disabled: boolean) => React.ReactNode;
+  }) => renderEstimate?.(async () => {}, false) ?? null,
+}));
+vi.mock('@/services/api/kilo', async (original) => ({
+  ...(await original<typeof import('@/services/api/kilo')>()),
+  kiloApi: { list: vi.fn(), update: vi.fn(), organizations: vi.fn() },
+}));
+vi.mock('@/services/api/kiloProxies', async (original) => ({
+  ...(await original<typeof import('@/services/api/kiloProxies')>()),
+  kiloProxiesApi: { list: vi.fn() },
+}));
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
 import { isValidElement, StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -55,10 +77,7 @@ import {
   listAccountCredentialMutationMarkers,
   recordAccountCredentialMutationMarker,
 } from './model/accountCredentialMutationMarker';
-import {
-  CODEX_RATE_LIMIT_RESET_CREDITS_URL,
-  type CodexQuotaData,
-} from '@/utils/quota';
+import { CODEX_RATE_LIMIT_RESET_CREDITS_URL, type CodexQuotaData } from '@/utils/quota';
 import { buildKimiQuotaRows } from '@/utils/quota/builders';
 import type {
   CredentialInspectionSnapshot,
@@ -71,7 +90,11 @@ import { AccountOverviewTab } from './components/accountDetail/AccountOverviewTa
 import { AccountQuotaTab } from './components/accountDetail/AccountQuotaTab';
 import { QuotaWindowCard } from './components/QuotaWindowCard';
 import { IconChartLine, IconRefreshCw, IconTrendingUp } from '@/components/ui/icons';
-import { formatQuotaResetTimestamp, formatQuotaResetDisplay, formatQuotaResetRelative } from './model/accountsPagePresentation';
+import {
+  formatQuotaResetTimestamp,
+  formatQuotaResetDisplay,
+  formatQuotaResetRelative,
+} from './model/accountsPagePresentation';
 import { buildAccountQuotaDisplayWindow } from './model/accountQuotaDisplayWindows';
 import type { AccountQuotaDisplayWindow } from './model/accountQuotaDisplayWindows';
 import {
@@ -84,7 +107,17 @@ import {
 } from './model/accountDirectReauth';
 import { useUsageHeaderSnapshotStore } from '@/stores/useUsageHeaderSnapshotStore';
 import { publishAccountCredentialMutationRevision } from '@/stores';
+import { cpaBpsQuotaApi } from '@/services/api/cpaBpsQuota';
+import { useQuotaStore as pluginQuotaStore } from '@/stores/useQuotaStore';
+vi.mock('@/services/api/cpaBpsQuota', () => ({ cpaBpsQuotaApi: { query: vi.fn() } }));
+import { credentialConcurrencyApi } from '@/services/api/credentialConcurrency';
+vi.mock('@/services/api/credentialConcurrency', () => ({
+  credentialConcurrencyApi: { list: vi.fn(), update: vi.fn() },
+}));
 import { AccountsPage } from './AccountsPage';
+import { BpsResetCreditsCard } from './components/BpsResetCreditsCard';
+import { getBpsResetCreditsKey, type BpsResetCreditsState } from './model/bpsResetCreditsState';
+import { getCpaBpsQuotaScope } from './model/cpaBpsQuotaState';
 
 type AnalyticsRequestForTest = {
   from_ms?: number;
@@ -566,6 +599,8 @@ const { mocks } = vi.hoisted(() => {
         onOpenCredential: (target: CredentialInspectionTarget) => void;
       },
       quotaState: {
+        bpsResetCredits: {} as Record<string, BpsResetCreditsState>,
+        bpsQuota: {},
         antigravityQuota: {},
         claudeQuota: {},
         codexQuota: {},
@@ -1008,12 +1043,7 @@ const readText = (value: unknown): string => {
 
 const findQuotaBarByWindow = (card: ReactTestInstance, windowKey: string) => {
   const quotaWindow = card.findByProps({ 'data-account-quota-window': windowKey });
-  const bar = quotaWindow.findAll(
-    (node) =>
-      typeof node.props.className === 'string' &&
-      node.props.className.includes('quotaBar') &&
-      !node.props.className.includes('quotaTrack')
-  )[0];
+  const bar = quotaWindow.findAll((node) => typeof node.props['data-quota-tone'] === 'string')[0];
   if (!bar) throw new Error(`Quota bar not found: ${windowKey}`);
   return bar;
 };
@@ -1149,8 +1179,8 @@ const findGridQuotaRegion = (renderer: ReactTestRenderer, selectionKey: string) 
   const region = findAccountCardByKey(renderer, selectionKey).findAll(
     (node) =>
       node.props.role === 'button' &&
-      node.findAll((child) => typeof child.props['data-account-quota-window'] === 'string')
-        .length > 0
+      node.findAll((child) => typeof child.props['data-account-quota-window'] === 'string').length >
+        0
   )[0];
   if (!region) throw new Error('Grid quota region not found');
   return region;
@@ -1305,7 +1335,215 @@ describe('AccountsPage replacement flows', () => {
     vi.unstubAllGlobals();
   });
 
+  it.each(['grid', 'table'])('组合账号页 %s同时保留Kilo身份和BPS次数详情接线', async (layout) => {
+    const kiloFile = {
+      ...makeCodexFile('combined-kilo.json', 'combined-kilo-index', '组合Kilo'),
+      id: 'combined-kilo', provider: 'kilo', type: 'kilo',
+    };
+    const bpsFile = {
+      ...makeCodexFile('combined-bps.json', 'combined-bps-index', '组合BPS'),
+      id: 'combined-bps', provider: 'bps', type: 'bps',
+    };
+    mocks.files = [kiloFile, bpsFile];
+    mocks.location = { pathname: '/accounts', search: `?layout=${layout}` };
+    const scope = { apiBase: mocks.apiBase, managementKey: mocks.managementKey };
+    const reset: BpsResetCreditsState = {
+      status: 'known', connectionScope: getCpaBpsQuotaScope(scope), connectionRef: 'ref-a',
+      result: {
+        provider: 'bps', auth_id: bpsFile.id, auth_index: String(bpsFile.authIndex),
+        source: 'chatgpt_account_reset_credits', query_mode: 'direct',
+        queried_at: '2026-11-15T10:00:00Z', count: 0, status: 'known', error: null,
+      },
+    };
+    mocks.quotaState.bpsResetCredits = { [getBpsResetCreditsKey(bpsFile)]: reset };
+    pluginQuotaStore.getState().setBpsResetCredits(mocks.quotaState.bpsResetCredits);
+    vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+      mode: 'local', connection_ref: 'ref-a', default_limit: 20, pool_waiting: 0, credentials: [],
+    });
+    const account: KiloAccount = {
+      id: kiloFile.id, name: '组合Kilo', enabled: true, priority: 0,
+      concurrency_limit: null, effective_limit: 40, active: 0, waiting: 0,
+      allow_direct_when_proxy_full: false,
+      client_identity: { state: 'persisted', profiles: [{ ref: 'profile-1', exits: [{ kind: 'ip', ip: '203.0.113.10' }] }] },
+    };
+    vi.mocked(kiloApi.list).mockResolvedValue({ accounts: [account], connection_ref: 'ref-a' });
+    vi.mocked(kiloProxiesApi.list).mockResolvedValue({
+      revision: 1, runtime_revision: 1, managed: true, proxy_limit: 20,
+      proxies: [], recycle: [], connection_ref: 'ref-a',
+      accounts: [{ account_id: kiloFile.id, mode: 'auto', primary_proxy_id: '',
+        capacity_mode: 'ip', max_ips: 2, assigned_ips: ['203.0.113.10', '203.0.113.11'],
+        configured_capacity: 40, current_capacity: 40, effective_limit: 40 }],
+    });
+    const renderer = await renderAccountsPage();
+    await flushPromises();
+    const kiloCard = findAccountCardByKey(renderer, getAuthFileSelectionKey(kiloFile));
+    const egress = kiloCard.findByType(KiloEgressSummary);
+    expect(egress.props.identity).toEqual(account.client_identity);
+    expect(egress.props.snapshot.accounts[0]).toMatchObject({ capacity_mode: 'ip', current_capacity: 40 });
+    expect(readText(egress)).toContain('档案 1');
+    expect(kiloCard.findAllByType('details').every((node) => !node.props.open)).toBe(true);
+    const bpsCard = findAccountCardByKey(renderer, getAuthFileSelectionKey(bpsFile));
+    expect(bpsCard.findByType(QuotaEstimateSummary).props.resetCount).toBe(0);
+    expect(bpsCard.findByType(QuotaEstimateSummary).props.onUseReset).toBeUndefined();
+    mocks.location = { pathname: '/accounts', search: `?layout=${layout}&account=${encodeURIComponent(getAuthFileSelectionKey(bpsFile))}&tab=quota` };
+    await act(async () => renderer.update(<AccountsPage />));
+    const detail = renderer.root.findByType(BpsResetCreditsCard);
+    expect(detail.props.file.id).toBe(bpsFile.id);
+    expect(detail.props.connectionRef).toBe('ref-a');
+    expect(readText(detail)).toContain('0 次');
+    expect(mocks.consumeResetCredit).not.toHaveBeenCalled();
+    expect(credentialConcurrencyApi.update).not.toHaveBeenCalled();
+  });
+
+  it('cpa-bps单账号行和批量刷新可用，详情共享列表额度并保留失败时间', async () => {
+    const file = {
+      name: 'plugin.json',
+      id: 'plugin-id',
+      provider: 'cpa-bps',
+      type: 'cpa-bps',
+      auth_index: 'plugin-index',
+    };
+    mocks.files = [file];
+    const result = {
+      provider: 'cpa-bps' as const,
+      source: 'cpa_bps_plugin_quota' as const,
+      auth_index: 'plugin-index',
+      auth_id: 'plugin-id',
+      queried_at: '2026-11-12T01:00:00Z',
+      quota: {
+        subscription: null,
+        summary: [],
+        groups: [
+          {
+            displayName: '插件组',
+            buckets: [{ window: '插件窗口', remainingFraction: 0, resetTime: '', description: '' }],
+          },
+        ],
+      },
+    };
+    vi.mocked(cpaBpsQuotaApi.query).mockResolvedValue(result);
+    const renderer = await renderAccountsPage();
+    expect(cpaBpsQuotaApi.query).not.toHaveBeenCalled();
+    const batch = findButtonByText(renderer, 'accounts.refresh_quota');
+    expect(batch.props.disabled).toBe(false);
+    const row = renderer.root
+      .findAllByType(Button)
+      .find((button) => button.props['aria-label'] === 'accounts.refresh_quota');
+    expect(row).toBeDefined();
+    expect(row!.props.disabled).toBe(false);
+    await act(async () => {
+      await row!.props.onClick();
+    });
+    expect(cpaBpsQuotaApi.query).toHaveBeenCalledTimes(1);
+    expect(readText(renderer.toJSON())).toContain('插件窗口');
+    expect(readText(renderer.toJSON())).toContain('0');
+    await act(async () => {
+      await findButtonByText(renderer, 'accounts.refresh_quota').props.onClick();
+    });
+    expect(cpaBpsQuotaApi.query).toHaveBeenCalledTimes(2);
+    await openCodexQuotaTab(renderer, file.name);
+    expect(cpaBpsQuotaApi.query).toHaveBeenCalledTimes(2);
+    expect(accountQuotaSnapshotApi.write).not.toHaveBeenCalled();
+    expect(readText(renderer.toJSON())).toContain('上次查询时间');
+    vi.mocked(cpaBpsQuotaApi.query).mockResolvedValue({
+      ...result,
+      quota: {
+        ...result.quota,
+        groups: [
+          {
+            displayName: '',
+            buckets: [
+              { window: '详情新窗口', remainingFraction: null, resetTime: '', description: '' },
+            ],
+          },
+        ],
+      },
+    });
+    await act(async () => {
+      await findHostButtonByText(renderer, '查询插件额度').props.onClick();
+    });
+    expect(
+      readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(file)).props.children)
+    ).toContain('详情新窗口');
+    vi.mocked(cpaBpsQuotaApi.query).mockRejectedValue(new Error('查询失败'));
+    await act(async () => {
+      await findHostButtonByText(renderer, '查询插件额度').props.onClick();
+    });
+    expect(readText(renderer.toJSON())).toContain('额度未知');
+    expect(
+      renderer.root.findAllByType('time').some((node) => node.props.dateTime === result.queried_at)
+    ).toBe(true);
+  });
+
+  it.each(['connection', 'identity'])('cpa-bps主列表迟到结果不进入新%s', async (change) => {
+    mocks.files = [
+      {
+        name: 'plugin.json',
+        id: 'old-id',
+        provider: 'cpa-bps',
+        type: 'cpa-bps',
+        auth_index: 'plugin-index',
+      },
+    ];
+    let resolve!: (value: Awaited<ReturnType<typeof cpaBpsQuotaApi.query>>) => void;
+    vi.mocked(cpaBpsQuotaApi.query).mockReturnValue(
+      new Promise((done) => {
+        resolve = done;
+      })
+    );
+    const renderer = await renderAccountsPage();
+    let pending!: Promise<void>;
+    act(() => {
+      pending = renderer.root
+        .findAllByType(Button)
+        .find((button) => button.props['aria-label'] === 'accounts.refresh_quota')!
+        .props.onClick();
+    });
+    if (change === 'connection') mocks.apiBase = 'http://other.invalid';
+    else mocks.files = [{ ...mocks.files[0], id: 'new-id' }];
+    await act(async () => {
+      renderer.update(<AccountsPage />);
+    });
+    await act(async () => {
+      resolve({
+        provider: 'cpa-bps',
+        source: 'cpa_bps_plugin_quota',
+        auth_index: 'plugin-index',
+        auth_id: 'old-id',
+        queried_at: '2026-11-12T01:00:00Z',
+        quota: {
+          subscription: null,
+          summary: [],
+          groups: [
+            {
+              displayName: '',
+              buckets: [
+                { window: 'STALE_WINDOW', remainingFraction: 1, resetTime: '', description: '' },
+              ],
+            },
+          ],
+        },
+      });
+      await pending;
+    });
+    expect(readText(renderer.toJSON())).not.toContain('STALE_WINDOW');
+    expect(
+      Object.values(pluginQuotaStore.getState().cpaBpsQuota).some(
+        (state) => state.status === 'success'
+      )
+    ).toBe(false);
+  });
+
   beforeEach(() => {
+    mocks.quotaState.bpsResetCredits = {};
+    mocks.quotaState.bpsQuota = {};
+    vi.mocked(kiloApi.list)
+      .mockReset()
+      .mockResolvedValue({ accounts: [], connection_ref: 'ref-a' });
+    vi.mocked(kiloApi.update).mockReset();
+    vi.mocked(kiloProxiesApi.list).mockReset().mockRejectedValue(new Error('未提供代理fixture'));
+    pluginQuotaStore.getState().clearQuotaCache();
+    vi.mocked(cpaBpsQuotaApi.query).mockReset();
     clearAccountCredentialEvidenceBoundaryStateCache();
     clearAccountCredentialMutationMarkersForTests();
     clearPendingAccountDirectReauthsForTests();
@@ -1327,6 +1565,10 @@ describe('AccountsPage replacement flows', () => {
     mocks.selectedFiles = new Set<string>();
     mocks.selectionCount = 0;
     mocks.batchFieldsUpdating = false;
+    vi.mocked(credentialConcurrencyApi.list)
+      .mockReset()
+      .mockResolvedValue({ mode: 'home', credentials: [] });
+    vi.mocked(credentialConcurrencyApi.update).mockReset().mockResolvedValue({ status: 'saved' });
     mocks.configurationDirty = false;
     mocks.configurationSaving = false;
     mocks.configurationEnabledCalls = [];
@@ -3133,6 +3375,115 @@ describe('AccountsPage replacement flows', () => {
     );
   });
 
+  it('并发草稿阻止关闭及config切models，确认后保留通用配置草稿', async () => {
+    mocks.configurationDirty = true;
+    mocks.files = [{ ...mocks.files[0], id: 'concurrency-id' }];
+    mocks.location = { pathname: '/accounts', search: '?account=codex.json%00auth-1&tab=config' };
+    vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+      mode: 'local',
+      connection_ref: 'ref-a',
+      default_limit: 20,
+      pool_waiting: 0,
+      credentials: [
+        {
+          auth_id: 'concurrency-id',
+          auth_index: 'auth-1',
+          name: '账号',
+          provider: 'codex',
+          source: 'file',
+          editable: true,
+          read_only_reason: '',
+          concurrency_limit: null,
+          effective_limit: 20,
+          limit_source: 'default',
+          active: 0,
+          pinned_waiting: 0,
+        },
+      ],
+    });
+    const renderer = await renderAccountsPage();
+    const input = renderer.root
+      .findAllByType(Input)
+      .find((node) => node.props.label === '并发上限');
+    expect(input).toBeDefined();
+    await act(async () => {
+      input!.props.onChange({ target: { value: '8' } });
+    });
+    const shouldBlock = mocks.lastUnsavedGuardOptions!.shouldBlock;
+    if (typeof shouldBlock !== 'function') throw new Error('缺少离开确认');
+    expect(
+      shouldBlock({
+        currentLocation: mocks.location,
+        nextLocation: { pathname: '/accounts', search: '?account=codex.json%00auth-1&tab=models' },
+      })
+    ).toBe(true);
+    const closing = renderer.root.findByType(Drawer).props.onBeforeClose();
+    mocks.showConfirmation.mock.calls[mocks.showConfirmation.mock.calls.length - 1]![0].onCancel();
+    await expect(closing).resolves.toBe(false);
+    await act(async () => {
+      findHostButtonByText(renderer, 'accounts.detail_tab_models').props.onClick();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      mocks.showConfirmation.mock.calls[
+        mocks.showConfirmation.mock.calls.length - 1
+      ]![0].onConfirm();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(mocks.configurationReset).not.toHaveBeenCalled();
+    expect(
+      findHostButtonByText(renderer, 'accounts.detail_tab_models').props['aria-selected']
+    ).toBe(true);
+  });
+
+  it('保存并发不保存或重置通用配置草稿', async () => {
+    mocks.configurationDirty = true;
+    mocks.files = [{ ...mocks.files[0], id: 'concurrency-id' }];
+    mocks.location = { pathname: '/accounts', search: '?account=codex.json%00auth-1&tab=config' };
+    vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+      mode: 'local',
+      connection_ref: 'ref-a',
+      default_limit: 20,
+      pool_waiting: 0,
+      credentials: [
+        {
+          auth_id: 'concurrency-id',
+          auth_index: 'auth-1',
+          name: '账号',
+          provider: 'codex',
+          source: 'file',
+          editable: true,
+          read_only_reason: '',
+          concurrency_limit: null,
+          effective_limit: 20,
+          limit_source: 'default',
+          active: 0,
+          pinned_waiting: 0,
+        },
+      ],
+    });
+    const renderer = await renderAccountsPage();
+    const input = renderer.root
+      .findAllByType(Input)
+      .find((node) => node.props.label === '并发上限');
+    await act(async () => {
+      input!.props.onChange({ target: { value: '8' } });
+    });
+    await act(async () => {
+      await renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
+    });
+    expect(credentialConcurrencyApi.update).toHaveBeenCalledWith(
+      'concurrency-id',
+      8,
+      'ref-a',
+      expect.any(Object)
+    );
+    expect(mocks.configurationSave).not.toHaveBeenCalled();
+    expect(mocks.configurationReset).not.toHaveBeenCalled();
+    expect(mocks.configurationReload).not.toHaveBeenCalled();
+  });
+
   it('preserves a dirty draft when switching between configuration and models', async () => {
     mocks.configurationDirty = true;
     mocks.location = {
@@ -3450,9 +3801,7 @@ describe('AccountsPage replacement flows', () => {
     mocks.location = { pathname: '/accounts', search: '?layout=table' };
     const renderer = await renderAccountsPage();
 
-    expect(
-      renderer.root.findAllByProps({ 'data-account-list-header': 'true' })
-    ).toHaveLength(1);
+    expect(renderer.root.findAllByProps({ 'data-account-list-header': 'true' })).toHaveLength(1);
     const tableButton = renderer.root.findByProps({
       'aria-label': 'accounts.view_mode_table',
     });
@@ -3468,9 +3817,7 @@ describe('AccountsPage replacement flows', () => {
       await Promise.resolve();
     });
 
-    expect(
-      renderer.root.findAllByProps({ 'data-account-list-header': 'true' })
-    ).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ 'data-account-list-header': 'true' })).toHaveLength(0);
     expect(
       renderer.root.findByProps({ 'aria-label': 'accounts.view_mode_grid' }).props['aria-pressed']
     ).toBe(true);
@@ -3484,9 +3831,7 @@ describe('AccountsPage replacement flows', () => {
       await Promise.resolve();
     });
 
-    expect(
-      renderer.root.findAllByProps({ 'data-account-list-header': 'true' })
-    ).toHaveLength(1);
+    expect(renderer.root.findAllByProps({ 'data-account-list-header': 'true' })).toHaveLength(1);
     expect(
       renderer.root.findByProps({ 'aria-label': 'accounts.view_mode_table' }).props['aria-pressed']
     ).toBe(true);
@@ -8217,6 +8562,40 @@ describe('AccountsPage replacement flows', () => {
     }
   });
 
+  it('Kilo default状态在分页前组织，不把待处理留在后页', async () => {
+    const enabled = Array.from({ length: 11 }, (_, index) => ({
+      ...makeCodexFile('available-' + index + '.json', 'available-' + index, '可用' + index),
+      recent_requests: [{ success: 1, failed: 0 }],
+    }));
+    const waiting = makeCodexFile('waiting.json', 'waiting', '待处理');
+    mocks.files = [...enabled, waiting];
+    mocks.location = { pathname: '/accounts', search: '?layout=grid&sort=default&pageSize=10' };
+    mocks.quotaState.codexQuota = Object.assign(
+      {},
+      ...enabled.map((file) =>
+        buildCredentialScopedQuotaRecord(file, {
+          status: 'success',
+          windows: [{ id: 'weekly', label: 'Weekly', usedPercent: 10, resetLabel: '2026-11-20' }],
+        })
+      )
+    );
+    const renderer = await renderAccountsPage();
+    const cards = renderer.root.findAll(
+      (node) => node.type === 'article' && typeof node.props['data-account-card'] === 'string'
+    );
+    expect(cards).toHaveLength(10);
+    expect(cards[0].props['data-account-card']).toBe(getAuthFileSelectionKey(waiting));
+    const pin = cards[1]
+      .findAllByType('button')
+      .find((button) => String(button.props['aria-label']).includes('accounts.pin_account'))!;
+    const pinnedKey = cards[1].props['data-account-card'];
+    await act(async () => pin.props.onClick({ stopPropagation() {} }));
+    const reordered = renderer.root.findAll(
+      (node) => node.type === 'article' && typeof node.props['data-account-card'] === 'string'
+    );
+    expect(reordered[0].props['data-account-card']).toBe(pinnedKey);
+  });
+
   it('sorts account cards from the toolbar sort control', async () => {
     mocks.files = [
       {
@@ -8557,8 +8936,8 @@ describe('AccountsPage replacement flows', () => {
     const renderer = await renderAccountsPage();
     const card = findAccountCardByKey(renderer, getAuthFileSelectionKey(file));
 
-    expect(findQuotaBarByWindow(card, 'billing').props.className).toContain('quotaBarWarn');
-    expect(findQuotaBarByWindow(card, 'pay-as-you-go').props.className).toContain('quotaBarGood');
+    expect(findQuotaBarByWindow(card, 'billing').props['data-quota-tone']).toBe('low');
+    expect(findQuotaBarByWindow(card, 'pay-as-you-go').props['data-quota-tone']).toBe('high');
   });
 
   it('keeps retained xAI fallback windows visible with error-tone bars after refresh failure', async () => {
@@ -8640,8 +9019,8 @@ describe('AccountsPage replacement flows', () => {
     expect(readText(card)).toContain('xai_quota.monthly_credits');
     expect(readText(card)).toContain('xai_quota.pay_as_you_go_label');
     expect(readText(card)).not.toContain('Grok Code Fast');
-    expect(findQuotaBarByWindow(card, 'billing').props.className).toContain('quotaBarGood');
-    expect(findQuotaBarByWindow(card, 'pay-as-you-go').props.className).toContain('quotaBarGood');
+    expect(findQuotaBarByWindow(card, 'billing').props['data-quota-tone']).toBe('high');
+    expect(findQuotaBarByWindow(card, 'pay-as-you-go').props['data-quota-tone']).toBe('high');
 
     await act(async () => {
       quotaRegion.props.onClick({ stopPropagation: vi.fn() });
@@ -8699,7 +9078,9 @@ describe('AccountsPage replacement flows', () => {
     expect(quotaRegion.props['aria-label']).toContain('xai_quota.pay_as_you_go_label');
 
     await act(async () => {
-      findAccountDetailRegion(renderer, selectionKey, 'quota').props.onClick({ stopPropagation: vi.fn() });
+      findAccountDetailRegion(renderer, selectionKey, 'quota').props.onClick({
+        stopPropagation: vi.fn(),
+      });
     });
     await flushPromises();
 
@@ -9064,8 +9445,12 @@ describe('AccountsPage replacement flows', () => {
     expect(quotaText).not.toContain('accounts.detail_snapshot_window_weekly');
 
     const windows = quotaTab.props.detailView.quota.windows;
-    expect(windows.find((w: { providerWindowId: string }) => w.providerWindowId === 'meta:window')?.label).toBe('meta_quota.window');
-    expect(windows.find((w: { providerWindowId: string }) => w.providerWindowId === 'meta:weekly')?.label).toBe('meta_quota.weekly');
+    expect(
+      windows.find((w: { providerWindowId: string }) => w.providerWindowId === 'meta:window')?.label
+    ).toBe('meta_quota.window');
+    expect(
+      windows.find((w: { providerWindowId: string }) => w.providerWindowId === 'meta:weekly')?.label
+    ).toBe('meta_quota.weekly');
   });
 
   it('renders live Meta quota window and weekly in accounts list', async () => {
@@ -9296,8 +9681,9 @@ describe('AccountsPage replacement flows', () => {
       'gemini-models:gemini-5h',
       'gemini-models:gemini-weekly',
     ]);
-    expect(card.findAll((node) => typeof node.props['data-account-quota-group'] === 'string'))
-      .toHaveLength(2);
+    expect(
+      card.findAll((node) => typeof node.props['data-account-quota-group'] === 'string')
+    ).toHaveLength(2);
     expect(readText(card)).not.toContain('accounts.quota_details_only');
     expect(readText(card)).toContain('Gemini');
     expect(readText(card)).toContain('Claude');
@@ -9403,8 +9789,9 @@ describe('AccountsPage replacement flows', () => {
       'gemini-models:gemini-weekly',
       'gemini-4-argon:gemini-argon-wtu-weekly',
     ]);
-    expect(card.findAll((node) => typeof node.props['data-account-quota-group'] === 'string'))
-      .toHaveLength(3);
+    expect(
+      card.findAll((node) => typeof node.props['data-account-quota-group'] === 'string')
+    ).toHaveLength(3);
     expect(readText(card)).toContain('Argon Weekly');
 
     const tableButton = renderer.root.find(
@@ -9715,7 +10102,9 @@ describe('AccountsPage replacement flows', () => {
     );
 
     await act(async () => {
-      findAccountDetailRegion(renderer, selectionKey, 'quota').props.onClick({ stopPropagation: vi.fn() });
+      findAccountDetailRegion(renderer, selectionKey, 'quota').props.onClick({
+        stopPropagation: vi.fn(),
+      });
     });
 
     const modelQuotaGroup = renderer.root.findByProps({ 'data-quota-window-group': 'model' });
@@ -9983,12 +10372,14 @@ describe('AccountsPage replacement flows', () => {
 
     beforeEach(() => {
       mocks.location = { pathname: '/accounts', search: `?layout=${layout}` };
-      mocks.files = [{
-        ...makeCodexFile('history.json', 'auth-history', 'history@example.com'),
-        success: 9,
-        failed: 1,
-        recent_requests: [{ success: 9, failed: 1 }],
-      }];
+      mocks.files = [
+        {
+          ...makeCodexFile('history.json', 'auth-history', 'history@example.com'),
+          success: 9,
+          failed: 1,
+          recent_requests: [{ success: 9, failed: 1 }],
+        },
+      ];
       mocks.panelFeatureAvailability = {
         checking: false,
         managerServiceBase: 'http://manager.local:18317',
@@ -10006,19 +10397,33 @@ describe('AccountsPage replacement flows', () => {
       expect(region.props.type).toBe('button');
       expect(region.props['aria-label']).toContain('accounts.detail_tab_quota');
       expect(region.findAllByType('strong').map(readText)).toEqual([
-        '1.2M', '1.0B', '$12.35K', '98.3%',
+        '1.2M',
+        '1.0B',
+        '$12.35K',
+        '98.3%',
       ]);
-      expect(region.findAll((node) => node.type === 'span' && node.props['aria-label'])
-        .map((node) => node.props['aria-label'])).toEqual([
+      expect(
+        region
+          .findAll((node) => node.type === 'span' && node.props['aria-label'])
+          .map((node) => node.props['aria-label'])
+      ).toEqual([
         'accounts.history_requests: 1,234,567',
         'accounts.history_tokens: 1,000,190,000',
         'accounts.history_cost: $12,345.67',
         'accounts.history_success: 98.32%',
       ]);
       // The trigger contains phrasing content and has no interactive ancestor or descendants.
-      expect(region.findAll((node) => node !== region &&
-        (node.type === 'button' || node.type === 'a' || node.props.role === 'button' ||
-          node.props.tabIndex !== undefined || node.type === 'div'))).toHaveLength(0);
+      expect(
+        region.findAll(
+          (node) =>
+            node !== region &&
+            (node.type === 'button' ||
+              node.type === 'a' ||
+              node.props.role === 'button' ||
+              node.props.tabIndex !== undefined ||
+              node.type === 'div')
+        )
+      ).toHaveLength(0);
       for (let parent = region.parent; parent; parent = parent.parent) {
         expect(parent.type).not.toBe('button');
         expect(parent.props.role).not.toBe('button');
@@ -10035,15 +10440,19 @@ describe('AccountsPage replacement flows', () => {
       );
     });
 
-    it.each(['unmatched', 'error'] as const)('uses only recent requests and success for %s history', async (state) => {
-      if (state === 'error') mocks.getAccountHistory.mockRejectedValue(new Error('offline'));
-      else mocks.getAccountHistory.mockResolvedValue(makeAccountHistoryResponse([]));
-      const renderer = await renderAccountsPage();
-      await flushPromises();
-      const region = findAccountDetailRegion(renderer, selectionKey, 'history');
-      expect(region.findAllByType('strong').map(readText)).toEqual(['10', '-', '-', '90.0%']);
-      if (state === 'error') expect(readText(region)).toContain('accounts.history_recent_fallback');
-    });
+    it.each(['unmatched', 'error'] as const)(
+      'uses only recent requests and success for %s history',
+      async (state) => {
+        if (state === 'error') mocks.getAccountHistory.mockRejectedValue(new Error('offline'));
+        else mocks.getAccountHistory.mockResolvedValue(makeAccountHistoryResponse([]));
+        const renderer = await renderAccountsPage();
+        await flushPromises();
+        const region = findAccountDetailRegion(renderer, selectionKey, 'history');
+        expect(region.findAllByType('strong').map(readText)).toEqual(['10', '-', '-', '90.0%']);
+        if (state === 'error')
+          expect(readText(region)).toContain('accounts.history_recent_fallback');
+      }
+    );
 
     it('shows unavailable without inventing zero metrics when no fallback exists', async () => {
       mocks.files = [makeCodexFile('history.json', 'auth-history', 'history@example.com')];
@@ -10060,12 +10469,14 @@ describe('AccountsPage replacement flows', () => {
       mocks.getAccountHistory.mockReturnValue(pending.promise);
       const renderer = await renderAccountsPage();
       await flushPromises();
-      expect(readText(findAccountDetailRegion(renderer, selectionKey, 'history')))
-        .toContain('accounts.history_loading');
+      expect(readText(findAccountDetailRegion(renderer, selectionKey, 'history'))).toContain(
+        'accounts.history_loading'
+      );
       pending.resolve(makeAccountHistoryResponse([{ ...item, sync_status: 'pending' }]));
       await flushPromises();
-      expect(readText(findAccountDetailRegion(renderer, selectionKey, 'history')))
-        .toContain('accounts.history_syncing');
+      expect(readText(findAccountDetailRegion(renderer, selectionKey, 'history'))).toContain(
+        'accounts.history_syncing'
+      );
       expect(mocks.getAccountHistory).toHaveBeenCalledTimes(1);
     });
 
@@ -10075,8 +10486,11 @@ describe('AccountsPage replacement flows', () => {
       const renderer = await renderAccountsPage();
       await flushPromises();
       expect(mocks.getAccountHistory).not.toHaveBeenCalled();
-      expect(findAccountDetailRegion(renderer, selectionKey, 'history').findAllByType('strong')
-        .map(readText)).toEqual(['-', '-', '-', '-']);
+      expect(
+        findAccountDetailRegion(renderer, selectionKey, 'history')
+          .findAllByType('strong')
+          .map(readText)
+      ).toEqual(['-', '-', '-', '-']);
     });
 
     it('leaves history non-interactive in selection mode and preserves row selection', async () => {
@@ -10321,7 +10735,9 @@ describe('AccountsPage replacement flows', () => {
     expect(cardText).not.toContain('Billing credits');
 
     await act(async () => {
-      findAccountDetailRegion(renderer, selectionKey, 'quota').props.onClick({ stopPropagation: vi.fn() });
+      findAccountDetailRegion(renderer, selectionKey, 'quota').props.onClick({
+        stopPropagation: vi.fn(),
+      });
       await Promise.resolve();
     });
     await flushPromises();
@@ -11316,13 +11732,26 @@ describe('AccountsPage replacement flows', () => {
       requestMonitoringAvailable: true,
       serverCodexInspectionAvailable: false,
     };
-    mocks.getAccountHistory.mockResolvedValue(makeAccountHistoryResponse([{
-      row_key: getAuthFileSelectionKey(file), account_key: 'history@example.com', matched: true,
-      total_requests: 1, success_calls: 1, failure_calls: 0, total_tokens: 100, total_cost: 0.1,
-      success_rate: 1, first_seen_ms: 1, last_seen_ms: 2, sync_status: 'ready',
-      latest_request: { timestamp_ms: 2, failed: false },
-      recent_requests: [{ timestamp_ms: 2, failed: false }],
-    }]));
+    mocks.getAccountHistory.mockResolvedValue(
+      makeAccountHistoryResponse([
+        {
+          row_key: getAuthFileSelectionKey(file),
+          account_key: 'history@example.com',
+          matched: true,
+          total_requests: 1,
+          success_calls: 1,
+          failure_calls: 0,
+          total_tokens: 100,
+          total_cost: 0.1,
+          success_rate: 1,
+          first_seen_ms: 1,
+          last_seen_ms: 2,
+          sync_status: 'ready',
+          latest_request: { timestamp_ms: 2, failed: false },
+          recent_requests: [{ timestamp_ms: 2, failed: false }],
+        },
+      ])
+    );
 
     const renderer = await renderAccountsPage();
     await flushPromises();
@@ -11457,15 +11886,21 @@ describe('AccountsPage replacement flows', () => {
     });
     await flushPromises();
 
-    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain('777');
+    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain(
+      '777'
+    );
 
     await act(async () => {
       await renderer.root.findByType(AccountQuotaTab).props.onRefreshHistory();
     });
     await flushPromises();
 
-    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).not.toContain('777');
-    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).not.toContain('999');
+    expect(
+      readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))
+    ).not.toContain('777');
+    expect(
+      readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))
+    ).not.toContain('999');
   });
 
   it('keeps a newer targeted history result when an older page request finishes later', async () => {
@@ -11520,7 +11955,9 @@ describe('AccountsPage replacement flows', () => {
     await act(async () => {
       await renderer.root.findByType(AccountQuotaTab).props.onRefreshHistory();
     });
-    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain('777');
+    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain(
+      '777'
+    );
 
     pageHistory.resolve(
       makeAccountHistoryResponse([
@@ -11570,7 +12007,9 @@ describe('AccountsPage replacement flows', () => {
       findHostButtonByText(renderer, 'accounts.detail_tab_quota').props.onClick();
     });
     await flushPromises();
-    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain('222');
+    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain(
+      '222'
+    );
   });
 
   it('ignores a targeted history result after the account is removed and recreated', async () => {
@@ -11805,12 +12244,16 @@ describe('AccountsPage replacement flows', () => {
     await act(async () => {
       await renderer.root.findByType(AccountQuotaTab).props.onRefreshHistory();
     });
-    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain('777');
+    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain(
+      '777'
+    );
 
     pageHistory.reject(new Error('page history offline'));
     await flushPromises();
 
-    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain('777');
+    expect(readText(renderer.root.findByProps({ 'data-account-quota-metrics': 'true' }))).toContain(
+      '777'
+    );
   });
 
   it('cancels a manual history refresh across capability changes without blocking the next refresh', async () => {
@@ -12532,20 +12975,22 @@ describe('AccountsPage replacement flows', () => {
       serverCodexInspectionAvailable: false,
     };
     mocks.getAccountHistory.mockResolvedValue(
-      makeAccountHistoryResponse([{
-        row_key: rowKey,
-        account_key: 'checking@example.com',
-        matched: true,
-        total_requests: 100,
-        success_calls: 99,
-        failure_calls: 1,
-        total_tokens: 12_000,
-        total_cost: 12.34,
-        success_rate: 0.99,
-        first_seen_ms: 1,
-        last_seen_ms: 2,
-        sync_status: 'ready',
-      }])
+      makeAccountHistoryResponse([
+        {
+          row_key: rowKey,
+          account_key: 'checking@example.com',
+          matched: true,
+          total_requests: 100,
+          success_calls: 99,
+          failure_calls: 1,
+          total_tokens: 12_000,
+          total_cost: 12.34,
+          success_rate: 0.99,
+          first_seen_ms: 1,
+          last_seen_ms: 2,
+          sync_status: 'ready',
+        },
+      ])
     );
 
     const renderer = await renderAccountsPage();
@@ -12572,23 +13017,28 @@ describe('AccountsPage replacement flows', () => {
       serverCodexInspectionAvailable: false,
     };
     mocks.getAccountHistory.mockImplementation(async (_base, _key, request) => {
-      if ((request.accounts[0] as { account_snapshot?: string } | undefined)?.account_snapshot !== 'old@example.com') {
+      if (
+        (request.accounts[0] as { account_snapshot?: string } | undefined)?.account_snapshot !==
+        'old@example.com'
+      ) {
         throw new Error('history temporarily unavailable');
       }
-      return makeAccountHistoryResponse([{
-        row_key: rowKey,
-        account_key: 'old@example.com',
-        matched: true,
-        total_requests: 100,
-        success_calls: 100,
-        failure_calls: 0,
-        total_tokens: 12_000,
-        total_cost: 12.34,
-        success_rate: 1,
-        first_seen_ms: 1,
-        last_seen_ms: 2,
-        sync_status: 'ready',
-      }]);
+      return makeAccountHistoryResponse([
+        {
+          row_key: rowKey,
+          account_key: 'old@example.com',
+          matched: true,
+          total_requests: 100,
+          success_calls: 100,
+          failure_calls: 0,
+          total_tokens: 12_000,
+          total_cost: 12.34,
+          success_rate: 1,
+          first_seen_ms: 1,
+          last_seen_ms: 2,
+          sync_status: 'ready',
+        },
+      ]);
     });
 
     const renderer = await renderAccountsPage();
@@ -12602,9 +13052,13 @@ describe('AccountsPage replacement flows', () => {
     });
     expect(readText(findAccountCardByKey(renderer, rowKey))).not.toContain('$12.34');
     await flushPromises();
-    expect(mocks.getAccountHistory.mock.calls.some((call) =>
-      (call[2]?.accounts[0] as { account_snapshot?: string } | undefined)?.account_snapshot === 'new@example.com'
-    )).toBe(true);
+    expect(
+      mocks.getAccountHistory.mock.calls.some(
+        (call) =>
+          (call[2]?.accounts[0] as { account_snapshot?: string } | undefined)?.account_snapshot ===
+          'new@example.com'
+      )
+    ).toBe(true);
     expect(readText(findAccountCardByKey(renderer, rowKey))).not.toContain('$12.34');
   });
 
@@ -12843,16 +13297,80 @@ describe('AccountsPage replacement flows', () => {
     expect(getAccountListItemTexts(renderer).join('\n')).toContain('offline.json');
   });
 
-  it('renders the mobile filters entrypoint in the accounts toolbar', async () => {
+  it('keeps desktop filters reachable and preserves applied conditions after collapsing', async () => {
+    mocks.files = [
+      makeCodexFile('enabled.json', 'enabled-index', 'enabled@example.invalid'),
+      {
+        ...makeCodexFile('disabled.json', 'disabled-index', 'disabled@example.invalid'),
+        disabled: true,
+      },
+    ];
     const renderer = await renderAccountsPage();
-
-    expect(treeText(renderer)).toContain('accounts.mobile_filters_button');
-    expect(treeText(renderer)).toContain('accounts.col_recent');
-
-    await act(async () => {
-      findButtonByText(renderer, 'accounts.mobile_filters_button').props.onClick();
-    });
+    await flushPromises();
+    const expandedFilters = () => renderer.root.findByProps({ 'aria-label': '细分筛选' });
+    expect(expandedFilters().props.hidden).toBe(true);
+    await act(async () =>
+      findButtonByText(renderer, 'accounts.mobile_filters_button').props.onClick()
+    );
+    expect(expandedFilters().props.hidden).toBe(false);
+    const status = renderer.root
+      .findAllByType(Select)
+      .find((node) => node.props.ariaLabel === 'accounts.status_filter')!;
+    await act(async () => status.props.onChange('disabled'));
+    await flushPromises();
+    expect(getAccountListItemTexts(renderer)).toHaveLength(1);
+    expect(getAccountListItemTexts(renderer)[0]).toContain('disabled.json');
+    await act(async () =>
+      findButtonByText(renderer, 'accounts.mobile_filters_button').props.onClick()
+    );
+    expect(expandedFilters().props.hidden).toBe(true);
+    expect(treeText(renderer)).toContain('accounts.status_disabled');
+    expect(getAccountListItemTexts(renderer)).toHaveLength(1);
+    await act(async () =>
+      findButtonByText(renderer, 'accounts.mobile_filters_button').props.onClick()
+    );
+    await act(async () =>
+      expandedFilters()
+        .findAllByType(Button)
+        .find((node) => readText(node).includes('common.reset'))!
+        .props.onClick()
+    );
+    await flushPromises();
+    expect(getAccountListItemTexts(renderer)).toHaveLength(2);
   });
+
+  it.each([0, 4])(
+    'keeps shared waiting count %s visible beside credential status',
+    async (waiting) => {
+      vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+        mode: 'local',
+        connection_ref: 'ref-a',
+        default_limit: 20,
+        pool_waiting: waiting,
+        credentials: [],
+      });
+      const renderer = await renderAccountsPage();
+      await flushPromises();
+      const metrics = renderer.root.findByProps({ 'aria-label': 'accounts.metrics_label' });
+      const status = metrics.findByProps({ role: 'status' });
+      expect(readText(status)).toContain(`共享池等待 ${waiting}`);
+      expect(status.type).toBe('span');
+      await act(async () =>
+        findButtonByText(renderer, 'accounts.mobile_filters_button').props.onClick()
+      );
+      const filter = renderer.root
+        .findAllByType(Select)
+        .find((node) => node.props.ariaLabel === 'accounts.status_filter')!;
+      await act(async () => filter.props.onChange('disabled'));
+      await act(async () =>
+        findButtonByText(renderer, 'accounts.mobile_filters_button').props.onClick()
+      );
+      expect(
+        readText(renderer.root.findByProps({ 'aria-label': 'accounts.metrics_label' }))
+      ).toContain('accounts.status_disabled');
+      expect(readText(status)).toContain(`共享池等待 ${waiting}`);
+    }
+  );
 
   it('searches diagnostic-only Codex usage header snapshots without rendering them in quota', async () => {
     mocks.files = [
@@ -13133,7 +13651,9 @@ describe('AccountsPage replacement flows', () => {
         },
       ],
     });
-    const quotaFetch = vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota').mockResolvedValue(makeCodexQuotaData());
+    const quotaFetch = vi
+      .spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
+      .mockResolvedValue(makeCodexQuotaData());
     mocks.getHeaderSnapshots
       .mockResolvedValueOnce({ generated_at_ms: 100, from_ms: 0, to_ms: 100, items: [] })
       .mockResolvedValueOnce({ generated_at_ms: 200, from_ms: 0, to_ms: 200, items: [] });
@@ -13368,7 +13888,11 @@ describe('AccountsPage replacement flows', () => {
   });
 
   it('rejects old detail quota usage after a same-row credential replacement', async () => {
-    const original = makeCodexFile('detail-replacement.json', 'auth-detail', 'old-detail@example.com');
+    const original = makeCodexFile(
+      'detail-replacement.json',
+      'auth-detail',
+      'old-detail@example.com'
+    );
     const replacement = makeCodexFile(original.name, 'auth-detail', 'new-detail@example.com');
     const rowKey = getAuthFileSelectionKey(original);
     expect(getAuthFileSelectionKey(replacement)).toBe(rowKey);
@@ -13384,16 +13908,18 @@ describe('AccountsPage replacement flows', () => {
       serverCodexInspectionAvailable: false,
     };
     const resetAtMs = Date.now() + 3 * 3600 * 1000;
-    const quotaWindows = [{
-      id: 'five-hour',
-      label: 'Five hours',
-      usedPercent: 40,
-      resetLabel: new Date(resetAtMs).toISOString(),
-      resetAtMs,
-      resetAccuracy: 'exact' as const,
-      limitWindowSeconds: 5 * 3600,
-      modelScope: CODEX_MAIN_SCOPE,
-    }];
+    const quotaWindows = [
+      {
+        id: 'five-hour',
+        label: 'Five hours',
+        usedPercent: 40,
+        resetLabel: new Date(resetAtMs).toISOString(),
+        resetAtMs,
+        resetAccuracy: 'exact' as const,
+        limitWindowSeconds: 5 * 3600,
+        modelScope: CODEX_MAIN_SCOPE,
+      },
+    ];
     mocks.quotaState.codexQuota = {
       ...buildCredentialScopedQuotaRecord(original, {
         status: 'success',
@@ -13451,9 +13977,11 @@ describe('AccountsPage replacement flows', () => {
       renderer.root.findByType(AccountQuotaTab).props.detailView.quota.windows[0].currentUsage
     ).toBeNull();
     await flushPromises();
-    expect(mocks.getAccountWindowUsage.mock.calls.some((call) =>
-      call[2]?.windows.some((window) => window.account_snapshot === 'new-detail@example.com')
-    )).toBe(true);
+    expect(
+      mocks.getAccountWindowUsage.mock.calls.some((call) =>
+        call[2]?.windows.some((window) => window.account_snapshot === 'new-detail@example.com')
+      )
+    ).toBe(true);
     expect(
       renderer.root.findByType(AccountQuotaTab).props.detailView.quota.windows[0].currentUsage
     ).toBeNull();
@@ -13543,7 +14071,9 @@ describe('AccountsPage replacement flows', () => {
     expect(cardText).not.toContain('→');
 
     // 5. Reset time is rendered in usage line (bottom right), not in header
-    const windowCards = card.findAll((node) => typeof node.props['data-account-quota-window'] === 'string');
+    const windowCards = card.findAll(
+      (node) => typeof node.props['data-account-quota-window'] === 'string'
+    );
     expect(windowCards).toHaveLength(1);
     const windowCard = windowCards[0];
     expect(windowCard.props.title).toContain('5h: Rem 60%');
@@ -13586,7 +14116,9 @@ describe('AccountsPage replacement flows', () => {
     await flushPromises();
 
     const card = findAccountCardByKey(renderer, getAuthFileSelectionKey(file));
-    const windowCards = card.findAll((node) => typeof node.props['data-account-quota-window'] === 'string');
+    const windowCards = card.findAll(
+      (node) => typeof node.props['data-account-quota-window'] === 'string'
+    );
     expect(windowCards).toHaveLength(1);
     const windowCard = windowCards[0];
 
@@ -13698,13 +14230,7 @@ describe('AccountsPage replacement flows', () => {
     mocks.getAccountWindowUsage.mockImplementation(async (_base, _managementKey, request) => {
       usageRequestCount += 1;
       const totalRequests =
-        usageRequestCount === 1
-          ? 4
-          : usageRequestCount === 2
-            ? 5
-            : usageRequestCount === 3
-              ? 6
-              : 7;
+        usageRequestCount === 1 ? 4 : usageRequestCount === 2 ? 5 : usageRequestCount === 3 ? 6 : 7;
       const totalTokens =
         usageRequestCount === 1
           ? 9_939
@@ -15028,7 +15554,9 @@ describe('AccountsPage replacement flows', () => {
       renderer.root.findByProps({ 'data-quota-reset-action': 'true' }).props.onClick();
     });
 
-    const resetCalls = mocks.apiRequest.mock.calls.filter(([call]) => call?.url === CODEX_RATE_LIMIT_RESET_CREDITS_URL);
+    const resetCalls = mocks.apiRequest.mock.calls.filter(
+      ([call]) => call?.url === CODEX_RATE_LIMIT_RESET_CREDITS_URL
+    );
     expect(resetCalls).toHaveLength(1);
     expect(mocks.showConfirmation).not.toHaveBeenCalled();
     expect(mocks.consumeResetCredit).not.toHaveBeenCalled();
@@ -15149,8 +15677,7 @@ describe('AccountsPage replacement flows', () => {
         rateLimitResetCreditsAvailableCount: 1,
       },
     };
-    vi.spyOn(CODEX_CONFIG, 'fetchQuota')
-      .mockResolvedValueOnce(makeCodexQuotaData(0));
+    vi.spyOn(CODEX_CONFIG, 'fetchQuota').mockResolvedValueOnce(makeCodexQuotaData(0));
 
     const renderer = await renderAccountsPage();
     await openCodexQuotaTab(renderer, 'codex.json');
@@ -15370,10 +15897,10 @@ describe('AccountsPage replacement flows', () => {
       },
     };
     const staleQuotaResult = createDeferred<CodexQuotaData>();
-    vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
-      .mockImplementationOnce(() => staleQuotaResult.promise);
-    vi.spyOn(CODEX_CONFIG, 'fetchQuota')
-      .mockResolvedValueOnce(makeCodexQuotaData(0));
+    vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota').mockImplementationOnce(
+      () => staleQuotaResult.promise
+    );
+    vi.spyOn(CODEX_CONFIG, 'fetchQuota').mockResolvedValueOnce(makeCodexQuotaData(0));
 
     const renderer = await renderAccountsPage();
     await act(async () => {
@@ -15420,10 +15947,10 @@ describe('AccountsPage replacement flows', () => {
       },
     };
     const staleQuotaResult = createDeferred<CodexQuotaData>();
-    vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
-      .mockImplementationOnce(() => staleQuotaResult.promise);
-    vi.spyOn(CODEX_CONFIG, 'fetchQuota')
-      .mockResolvedValueOnce(makeCodexQuotaData(0));
+    vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota').mockImplementationOnce(
+      () => staleQuotaResult.promise
+    );
+    vi.spyOn(CODEX_CONFIG, 'fetchQuota').mockResolvedValueOnce(makeCodexQuotaData(0));
 
     const renderer = await renderAccountsPage();
     await openCodexQuotaTab(renderer, 'codex.json');
@@ -17453,10 +17980,9 @@ describe('AccountsPage replacement flows', () => {
         await input.props.onBlur({ currentTarget: { value: '88' } });
       });
 
-      expect(mocks.batchPatchFields).toHaveBeenCalledWith(
-        [getAuthFilePatchTarget(targetFile)],
-        { priority: 88 }
-      );
+      expect(mocks.batchPatchFields).toHaveBeenCalledWith([getAuthFilePatchTarget(targetFile)], {
+        priority: 88,
+      });
       expect(
         renderer.root.findAllByProps({ 'data-account-priority-input': targetSelectionKey }).length
       ).toBe(0);
@@ -17929,8 +18455,8 @@ describe('AccountsPage replacement flows', () => {
 
       expect(renderer.root.findAllByProps({ 'data-account-list-header': 'true' }).length).toBe(1);
 
-      const gridButtons = renderer.root.findAll((node) =>
-        node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
+      const gridButtons = renderer.root.findAll(
+        (node) => node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
       );
       expect(gridButtons.length).toBeGreaterThan(0);
 
@@ -17942,8 +18468,8 @@ describe('AccountsPage replacement flows', () => {
 
       expect(renderer.root.findAllByProps({ 'data-account-list-header': 'true' }).length).toBe(0);
 
-      const tableButtons = renderer.root.findAll((node) =>
-        node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_table'
+      const tableButtons = renderer.root.findAll(
+        (node) => node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_table'
       );
       expect(tableButtons.length).toBeGreaterThan(0);
 
@@ -17954,9 +18480,10 @@ describe('AccountsPage replacement flows', () => {
       await flushPromises();
 
       expect(renderer.root.findAllByProps({ 'data-account-list-header': 'true' }).length).toBe(1);
-      const scroller = renderer.root.findAll((node) =>
-        typeof node.props?.className === 'string' &&
-        node.props.className.includes('tableScroller')
+      const scroller = renderer.root.findAll(
+        (node) =>
+          typeof node.props?.className === 'string' &&
+          node.props.className.includes('tableScroller')
       );
       expect(scroller.length).toBeGreaterThan(0);
     });
@@ -17983,9 +18510,10 @@ describe('AccountsPage replacement flows', () => {
 
       expect(renderer.root.findAllByProps({ 'data-account-list-header': 'true' }).length).toBe(0);
 
-      const cards = renderer.root.findAll((node) =>
-        typeof node.props?.className === 'string' &&
-        node.props.className.includes('accountGridCard')
+      const cards = renderer.root.findAll(
+        (node) =>
+          typeof node.props?.className === 'string' &&
+          node.props.className.includes('accountGridCard')
       );
       expect(cards.length).toBeGreaterThan(0);
 
@@ -18012,8 +18540,7 @@ describe('AccountsPage replacement flows', () => {
       await flushPromises();
 
       const gridButtons = renderer.root.findAll(
-        (node) =>
-          node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
+        (node) => node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
       );
       expect(gridButtons.length).toBeGreaterThan(0);
 
@@ -18044,10 +18571,10 @@ describe('AccountsPage replacement flows', () => {
       const historySection = cards[0].findByProps({
         'data-account-detail-trigger': 'history',
       });
-      expect(cards[0].children.indexOf(historySection)).toBeLessThan(
-        cards[0].children.indexOf(recentStatusSection)
+      expect(cards[0].children.indexOf(recentStatusSection.parent!)).toBeLessThan(
+        cards[0].children.indexOf(historySection)
       );
-      expect(readText(recentStatusSection)).toContain('accounts.detail_overview_recent_status_title');
+      expect(readText(recentStatusSection)).toContain('最近请求');
       const recentStatusBar = recentStatusSection.findByType(ProviderStatusBar);
       expect(recentStatusBar.props.statusData.totalSuccess).toBe(12);
       expect(recentStatusBar.props.statusData.totalFailure).toBe(1);
@@ -18064,8 +18591,7 @@ describe('AccountsPage replacement flows', () => {
       await flushPromises();
 
       const gridButton = renderer.root.find(
-        (node) =>
-          node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
+        (node) => node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
       );
       await act(async () => {
         gridButton.props.onClick();
@@ -18104,9 +18630,7 @@ describe('AccountsPage replacement flows', () => {
         [getAuthFilePatchTarget(fileWithoutNote)],
         { note: '研发VIP专席' }
       );
-      expect(
-        renderer.root.findAllByProps({ 'data-account-note-input': targetKey }).length
-      ).toBe(0);
+      expect(renderer.root.findAllByProps({ 'data-account-note-input': targetKey }).length).toBe(0);
     });
 
     it('renders note in read-only mode without button affordance for runtime-only credentials', async () => {
@@ -18121,8 +18645,7 @@ describe('AccountsPage replacement flows', () => {
       await flushPromises();
 
       const gridButton = renderer.root.find(
-        (node) =>
-          node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
+        (node) => node.type === 'button' && node.props['aria-label'] === 'accounts.view_mode_grid'
       );
       await act(async () => {
         gridButton.props.onClick();
@@ -18261,20 +18784,22 @@ describe('AccountsPage replacement flows', () => {
 
     it('synchronizes rendered quota windows and list usage targets across Table -> Grid -> Table transitions', async () => {
       mocks.getAccountHistory.mockImplementation(async () =>
-        makeAccountHistoryResponse([{
-          row_key: getAuthFileSelectionKey(mocks.files[0]),
-          account_key: 'antigravity-history',
-          matched: true,
-          total_requests: 12_400,
-          success_calls: 12_300,
-          failure_calls: 100,
-          total_tokens: 8_700_000,
-          total_cost: 18.42,
-          success_rate: 0.997,
-          first_seen_ms: 1,
-          last_seen_ms: 2,
-          sync_status: 'ready',
-        }])
+        makeAccountHistoryResponse([
+          {
+            row_key: getAuthFileSelectionKey(mocks.files[0]),
+            account_key: 'antigravity-history',
+            matched: true,
+            total_requests: 12_400,
+            success_calls: 12_300,
+            failure_calls: 100,
+            total_tokens: 8_700_000,
+            total_cost: 18.42,
+            success_rate: 0.997,
+            first_seen_ms: 1,
+            last_seen_ms: 2,
+            sync_status: 'ready',
+          },
+        ])
       );
       const file = {
         name: 'antigravity-pro-matrix.json',
@@ -18398,8 +18923,11 @@ describe('AccountsPage replacement flows', () => {
 
       const initialCard = findAccountCardByKey(renderer, selectionKey);
       const assertHistory = () => {
-        expect(findAccountDetailRegion(renderer, selectionKey, 'history').findAllByType('strong')
-          .map(readText)).toEqual(['12.4K', '8.7M', '$18.42', '99.7%']);
+        expect(
+          findAccountDetailRegion(renderer, selectionKey, 'history')
+            .findAllByType('strong')
+            .map(readText)
+        ).toEqual(['12.4K', '8.7M', '$18.42', '99.7%']);
         expect(mocks.getAccountHistory).toHaveBeenCalledTimes(1);
       };
       assertHistory();
@@ -18569,7 +19097,11 @@ describe('AccountsPage replacement flows', () => {
     it('keeps trusted list usage visible while a passive refresh is pending or fails', async () => {
       vi.useFakeTimers();
       const file = makeCodexFile('codex-refresh-retain.json', 'auth-retain', 'retain@example.com');
-      const stable = makeCodexFile('codex-stable-sibling.json', 'auth-stable', 'stable@example.com');
+      const stable = makeCodexFile(
+        'codex-stable-sibling.json',
+        'auth-stable',
+        'stable@example.com'
+      );
       mocks.files = [file, stable];
       mocks.panelFeatureAvailability = {
         checking: false,
@@ -18578,16 +19110,18 @@ describe('AccountsPage replacement flows', () => {
         serverCodexInspectionAvailable: false,
       };
       const now = Date.now();
-      const quotaWindows = [{
-        id: 'five-hour',
-        label: 'Five hours',
-        usedPercent: 40,
-        resetLabel: new Date(now + 3 * 3600 * 1000).toISOString(),
-        resetAtMs: now + 3 * 3600 * 1000,
-        resetAccuracy: 'exact' as const,
-        limitWindowSeconds: 5 * 3600,
-        modelScope: CODEX_MAIN_SCOPE,
-      }];
+      const quotaWindows = [
+        {
+          id: 'five-hour',
+          label: 'Five hours',
+          usedPercent: 40,
+          resetLabel: new Date(now + 3 * 3600 * 1000).toISOString(),
+          resetAtMs: now + 3 * 3600 * 1000,
+          resetAccuracy: 'exact' as const,
+          limitWindowSeconds: 5 * 3600,
+          modelScope: CODEX_MAIN_SCOPE,
+        },
+      ];
       mocks.quotaState.codexQuota = {
         ...buildCredentialScopedQuotaRecord(file, {
           status: 'success',
@@ -18680,8 +19214,12 @@ describe('AccountsPage replacement flows', () => {
       );
       expect(readText(findAccountCardByKey(renderer, rowKey))).not.toContain('$0.50');
       expect(readText(findAccountCardByKey(renderer, rowKey))).not.toContain('50.0K');
-      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain('$0.50');
-      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain('50.0K');
+      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain(
+        '$0.50'
+      );
+      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain(
+        '50.0K'
+      );
 
       await act(async () => {
         identityRefresh.reject?.();
@@ -18690,12 +19228,20 @@ describe('AccountsPage replacement flows', () => {
       await flushPromises();
       expect(readText(findAccountCardByKey(renderer, rowKey))).not.toContain('$0.50');
       expect(readText(findAccountCardByKey(renderer, rowKey))).not.toContain('50.0K');
-      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain('$0.50');
-      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain('50.0K');
+      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain(
+        '$0.50'
+      );
+      expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(stable)))).toContain(
+        '50.0K'
+      );
     });
 
     it('refreshes list window usage after single account quota refresh succeeds without opening drawer', async () => {
-      const file = makeCodexFile('codex-manual-row.json', 'auth-manual-row', 'manual-row@example.com');
+      const file = makeCodexFile(
+        'codex-manual-row.json',
+        'auth-manual-row',
+        'manual-row@example.com'
+      );
       mocks.files = [file];
       mocks.panelFeatureAvailability = {
         checking: false,
@@ -18881,7 +19427,11 @@ describe('AccountsPage replacement flows', () => {
 
     it('retains last verified exact usage when a live list usage request fails silently', async () => {
       vi.useFakeTimers();
-      const file = makeCodexFile('codex-fail-clear.json', 'auth-fail-clear', 'fail-clear@example.com');
+      const file = makeCodexFile(
+        'codex-fail-clear.json',
+        'auth-fail-clear',
+        'fail-clear@example.com'
+      );
       mocks.files = [file];
       mocks.panelFeatureAvailability = {
         checking: false,
@@ -19040,7 +19590,9 @@ describe('AccountsPage replacement flows', () => {
     it('calls full detail refresh on single row refresh for Codex', async () => {
       const file = makeCodexFile('codex-row-summary.json', 'auth-detail-1', 'detail@example.com');
       mocks.files = [file];
-      const detailSpy = vi.spyOn(CODEX_CONFIG, 'fetchQuota').mockResolvedValue(makeCodexQuotaData());
+      const detailSpy = vi
+        .spyOn(CODEX_CONFIG, 'fetchQuota')
+        .mockResolvedValue(makeCodexQuotaData());
       const summarySpy = vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota');
 
       const renderer = await renderAccountsPage();
@@ -19063,7 +19615,9 @@ describe('AccountsPage replacement flows', () => {
     it('calls full refresh on credential detail quota refresh for Codex (1 usage, 1 reset credits)', async () => {
       const file = makeCodexFile('codex-detail-full.json', 'auth-detail-1', 'detail@example.com');
       mocks.files = [file];
-      const detailSpy = vi.spyOn(CODEX_CONFIG, 'fetchQuota').mockResolvedValue(makeCodexQuotaData());
+      const detailSpy = vi
+        .spyOn(CODEX_CONFIG, 'fetchQuota')
+        .mockResolvedValue(makeCodexQuotaData());
       const summarySpy = vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota');
 
       const renderer = await renderAccountsPage();
@@ -19089,9 +19643,14 @@ describe('AccountsPage replacement flows', () => {
       const fileA = makeCodexFile('codex-batch-1.json', 'auth-b-1', 'b1@example.com');
       const fileB = makeCodexFile('codex-batch-2.json', 'auth-b-2', 'b2@example.com');
       mocks.files = [fileA, fileB];
-      mocks.selectedFiles = new Set([getAuthFileSelectionKey(fileA), getAuthFileSelectionKey(fileB)]);
+      mocks.selectedFiles = new Set([
+        getAuthFileSelectionKey(fileA),
+        getAuthFileSelectionKey(fileB),
+      ]);
 
-      const summarySpy = vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota').mockResolvedValue(makeCodexQuotaData());
+      const summarySpy = vi
+        .spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
+        .mockResolvedValue(makeCodexQuotaData());
       const detailSpy = vi.spyOn(CODEX_CONFIG, 'fetchQuota');
 
       const renderer = await renderAccountsPage();
@@ -19121,9 +19680,14 @@ describe('AccountsPage replacement flows', () => {
         runtimeOnly: false,
       };
       mocks.files = [fileCodex, fileMeta];
-      mocks.selectedFiles = new Set([getAuthFileSelectionKey(fileCodex), getAuthFileSelectionKey(fileMeta)]);
+      mocks.selectedFiles = new Set([
+        getAuthFileSelectionKey(fileCodex),
+        getAuthFileSelectionKey(fileMeta),
+      ]);
 
-      const summarySpy = vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota').mockResolvedValue(makeCodexQuotaData());
+      const summarySpy = vi
+        .spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
+        .mockResolvedValue(makeCodexQuotaData());
       const metaSpy = vi.spyOn(META_CONFIG, 'fetchQuota').mockResolvedValue(makeMetaQuotaData());
       const showNotificationSpy = mocks.showNotification;
 
@@ -19168,7 +19732,9 @@ describe('AccountsPage replacement flows', () => {
 
       const rowButtons = renderer.root.findAllByType(Button);
       const rowRefreshButton = rowButtons.find(
-        (b) => typeof b.props.className === 'string' && b.props.className.includes('accountIconButtonRefresh')
+        (b) =>
+          typeof b.props.className === 'string' &&
+          b.props.className.includes('accountIconButtonRefresh')
       );
       expect(rowRefreshButton).toBeDefined();
 
@@ -19180,7 +19746,9 @@ describe('AccountsPage replacement flows', () => {
       expect(metaSpy).toHaveBeenCalledTimes(1);
 
       const detailButton = rowButtons.find(
-        (b) => b.props.title === 'accounts.open_detail' || b.props['aria-label'] === 'accounts.open_detail'
+        (b) =>
+          b.props.title === 'accounts.open_detail' ||
+          b.props['aria-label'] === 'accounts.open_detail'
       );
       if (detailButton) {
         await act(async () => {
@@ -19212,7 +19780,9 @@ describe('AccountsPage replacement flows', () => {
 
       const rowButtons = renderer.root.findAllByType(Button);
       const rowRefreshButton = rowButtons.find(
-        (b) => typeof b.props.className === 'string' && b.props.className.includes('accountIconButtonRefresh')
+        (b) =>
+          typeof b.props.className === 'string' &&
+          b.props.className.includes('accountIconButtonRefresh')
       );
       expect(rowRefreshButton).toBeUndefined();
     });
@@ -19221,7 +19791,10 @@ describe('AccountsPage replacement flows', () => {
       const fileA = makeCodexFile('codex-open.json', 'auth-open-1', 'open@example.com');
       const fileB = makeCodexFile('codex-other.json', 'auth-other-1', 'other@example.com');
       mocks.files = [fileA, fileB];
-      mocks.selectedFiles = new Set([getAuthFileSelectionKey(fileA), getAuthFileSelectionKey(fileB)]);
+      mocks.selectedFiles = new Set([
+        getAuthFileSelectionKey(fileA),
+        getAuthFileSelectionKey(fileB),
+      ]);
       mocks.panelFeatureAvailability = {
         checking: false,
         managerServiceBase: 'http://manager.local:18317',
@@ -19387,7 +19960,8 @@ describe('AccountsPage replacement flows', () => {
           ([message, type]) =>
             type === 'error' &&
             typeof message === 'string' &&
-            (message.includes('reset_verify_failed') || message.includes('reset_credits_invalid_payload'))
+            (message.includes('reset_verify_failed') ||
+              message.includes('reset_credits_invalid_payload'))
         )
       ).toBe(false);
     });
@@ -19446,7 +20020,9 @@ describe('AccountsPage replacement flows', () => {
         message: string;
         confirmText: string;
       };
-      expect(confirmationArgs.message).toBe('codex_quota.reset_confirm_message:inferred@example.com:1');
+      expect(confirmationArgs.message).toBe(
+        'codex_quota.reset_confirm_message:inferred@example.com:1'
+      );
       expect(confirmationArgs.confirmText).toBe('codex_quota.reset_button:1');
       const committed = applyCodexQuotaCommits();
       expect(committed[storeKey]?.rateLimitResetCreditsAvailableCount).toBe(1);
@@ -19509,7 +20085,9 @@ describe('AccountsPage replacement flows', () => {
         message: string;
         confirmText: string;
       };
-      expect(confirmationArgs.message).toBe('codex_quota.reset_confirm_message:explicit@example.com:5');
+      expect(confirmationArgs.message).toBe(
+        'codex_quota.reset_confirm_message:explicit@example.com:5'
+      );
       expect(confirmationArgs.confirmText).toBe('codex_quota.reset_button:5');
       const committed = applyCodexQuotaCommits();
       expect(committed[storeKey]?.rateLimitResetCreditsAvailableCount).toBe(5);
@@ -19517,7 +20095,11 @@ describe('AccountsPage replacement flows', () => {
     });
 
     it('authoritatively clears conflicting detail records to empty when live verification returns available_count=0 with credits', async () => {
-      const file = makeCodexFile('codex-zero-with-credits.json', 'auth-zwc-1', 'zero-credits@example.com');
+      const file = makeCodexFile(
+        'codex-zero-with-credits.json',
+        'auth-zwc-1',
+        'zero-credits@example.com'
+      );
       mocks.files = [file];
       const storeKey = CODEX_CONFIG.getStoreKey?.(file) ?? file.name;
       const initialDetailEvidence = Date.now() - 60_000;
@@ -19573,9 +20155,15 @@ describe('AccountsPage replacement flows', () => {
       const committed = applyCodexQuotaCommits();
       expect(committed[storeKey]?.rateLimitResetCreditsAvailableCount).toBe(0);
       expect(committed[storeKey]?.rateLimitResetCredits).toEqual([]);
-      expect(committed[storeKey]?.resetCreditsCountEvidenceAtMs).toBeGreaterThan(initialDetailEvidence);
-      expect(committed[storeKey]?.resetCreditsDetailEvidenceAtMs).toBeGreaterThan(initialDetailEvidence);
-      expect(committed[storeKey]?.resetCreditsCountEvidenceAtMs).toBe(committed[storeKey]?.resetCreditsDetailEvidenceAtMs);
+      expect(committed[storeKey]?.resetCreditsCountEvidenceAtMs).toBeGreaterThan(
+        initialDetailEvidence
+      );
+      expect(committed[storeKey]?.resetCreditsDetailEvidenceAtMs).toBeGreaterThan(
+        initialDetailEvidence
+      );
+      expect(committed[storeKey]?.resetCreditsCountEvidenceAtMs).toBe(
+        committed[storeKey]?.resetCreditsDetailEvidenceAtMs
+      );
       expect(committed[storeKey]?.resetCreditsDetailStale).toBe(false);
       expect(mocks.showNotification).toHaveBeenCalledWith(
         'codex_quota.reset_no_credits:zero-credits@example.com',
@@ -19586,13 +20174,18 @@ describe('AccountsPage replacement flows', () => {
           ([message, type]) =>
             type === 'error' &&
             typeof message === 'string' &&
-            (message.includes('reset_verify_failed') || message.includes('reset_credits_invalid_payload'))
+            (message.includes('reset_verify_failed') ||
+              message.includes('reset_credits_invalid_payload'))
         )
       ).toBe(false);
     });
 
     it('Test 11: live verification succeeds on count-only payload and preserves existing trusted details when count is unchanged', async () => {
-      const file = makeCodexFile('codex-live-count-only.json', 'auth-lco-1', 'livecount@example.com');
+      const file = makeCodexFile(
+        'codex-live-count-only.json',
+        'auth-lco-1',
+        'livecount@example.com'
+      );
       mocks.files = [file];
       const storeKey = CODEX_CONFIG.getStoreKey?.(file) ?? file.name;
       const initialDetailEvidence = 10_000;
@@ -19642,7 +20235,9 @@ describe('AccountsPage replacement flows', () => {
         message: string;
         confirmText: string;
       };
-      expect(confirmationArgs.message).toBe('codex_quota.reset_confirm_message:livecount@example.com:1');
+      expect(confirmationArgs.message).toBe(
+        'codex_quota.reset_confirm_message:livecount@example.com:1'
+      );
       expect(confirmationArgs.confirmText).toBe('codex_quota.reset_button:1');
       const committed = applyCodexQuotaCommits();
       expect(committed[storeKey]?.rateLimitResetCreditsAvailableCount).toBe(1);
@@ -19701,17 +20296,26 @@ describe('AccountsPage replacement flows', () => {
       expect(mocks.consumeResetCredit).not.toHaveBeenCalled();
       expect(
         mocks.showNotification.mock.calls.some(
-          ([message, type]) => type === 'error' && typeof message === 'string' && message.includes('reset_verify_failed')
+          ([message, type]) =>
+            type === 'error' &&
+            typeof message === 'string' &&
+            message.includes('reset_verify_failed')
         )
       ).toBe(true);
-      const preservedState = (mocks.quotaState.codexQuota as Record<string, CodexQuotaState>)[storeKey];
+      const preservedState = (mocks.quotaState.codexQuota as Record<string, CodexQuotaState>)[
+        storeKey
+      ];
       expect(preservedState?.rateLimitResetCreditsAvailableCount).toBe(1);
       expect(preservedState?.rateLimitResetCredits).toEqual([creditA]);
     });
 
     it('does not loop auto-fetch when detail endpoint returns count-only response and allows manual anchor retry', async () => {
       mocks.location = { pathname: '/accounts', search: '?layout=grid' };
-      const file = makeCodexFile('codex-autofetch-countonly.json', 'auth-af-1', 'autofetch@example.com');
+      const file = makeCodexFile(
+        'codex-autofetch-countonly.json',
+        'auth-af-1',
+        'autofetch@example.com'
+      );
       mocks.files = [file];
       const storeKey = CODEX_CONFIG.getStoreKey?.(file) ?? file.name;
       mocks.quotaState.codexQuota = {
@@ -19764,8 +20368,9 @@ describe('AccountsPage replacement flows', () => {
       expect(committed[storeKey]?.resetCreditsDetailEvidenceAtMs).toBeNull();
       expect(committed[storeKey]?.rateLimitResetCredits).toEqual([]);
 
-      const anchorButtons = renderer.root
-        .findAll((node) => node.props['data-detail-anchor'] === 'reset-records');
+      const anchorButtons = renderer.root.findAll(
+        (node) => node.props['data-detail-anchor'] === 'reset-records'
+      );
       expect(anchorButtons).toHaveLength(1);
 
       await act(async () => {
@@ -19808,8 +20413,9 @@ describe('AccountsPage replacement flows', () => {
       const renderer = await renderAccountsPage();
       await flushPromises();
 
-      const anchorButtons = renderer.root
-        .findAll((node) => node.props['data-detail-anchor'] === 'reset-records');
+      const anchorButtons = renderer.root.findAll(
+        (node) => node.props['data-detail-anchor'] === 'reset-records'
+      );
       expect(anchorButtons).toHaveLength(1);
 
       await act(async () => {
@@ -19837,7 +20443,11 @@ describe('AccountsPage replacement flows', () => {
     it('does not reuse a superseded reset request and fails closed after a stale response', async () => {
       mocks.location = { pathname: '/accounts', search: '?layout=grid' };
       const nowMs = Date.now();
-      const file = makeCodexFile('codex-stale-reset.json', 'auth-stale-reset', 'stale-reset@example.com');
+      const file = makeCodexFile(
+        'codex-stale-reset.json',
+        'auth-stale-reset',
+        'stale-reset@example.com'
+      );
       mocks.files = [file];
       const storeKey = CODEX_CONFIG.getStoreKey?.(file) ?? file.name;
       mocks.quotaState.codexQuota = {
@@ -19935,7 +20545,10 @@ describe('AccountsPage replacement flows', () => {
         statusCode: 200,
         hasStatusCode: true,
         header: {},
-        body: { available_count: 2, credits: [makeResetCredit('fresh-credit-1'), makeResetCredit('fresh-credit-2')] },
+        body: {
+          available_count: 2,
+          credits: [makeResetCredit('fresh-credit-1'), makeResetCredit('fresh-credit-2')],
+        },
         bodyText: '{"available_count":2,"credits":[]}',
       });
       await flushPromises();
@@ -19949,7 +20562,11 @@ describe('AccountsPage replacement flows', () => {
     });
 
     it('silently discards a stale reset rejection after a full quota refresh supersedes it', async () => {
-      const file = makeCodexFile('codex-stale-error.json', 'auth-stale-error', 'stale-error@example.com');
+      const file = makeCodexFile(
+        'codex-stale-error.json',
+        'auth-stale-error',
+        'stale-error@example.com'
+      );
       mocks.files = [file];
       const storeKey = CODEX_CONFIG.getStoreKey?.(file) ?? file.name;
       mocks.quotaState.codexQuota = {
@@ -20003,7 +20620,11 @@ describe('AccountsPage replacement flows', () => {
 
     it('keeps a current reset request reusable after an old connection request completes', async () => {
       mocks.location = { pathname: '/accounts', search: '?layout=grid' };
-      const file = makeCodexFile('codex-reset-connection.json', 'auth-reset-connection', 'reset-connection@example.com');
+      const file = makeCodexFile(
+        'codex-reset-connection.json',
+        'auth-reset-connection',
+        'reset-connection@example.com'
+      );
       mocks.files = [file];
       const storeKey = CODEX_CONFIG.getStoreKey?.(file) ?? file.name;
       mocks.quotaState.codexQuota = {
@@ -20111,14 +20732,14 @@ describe('AccountsPage replacement flows', () => {
         getAuthFileSelectionKey(codex1),
       ]);
 
-      const claudeSpy = vi.spyOn(CLAUDE_CONFIG, 'fetchQuota')
-        .mockResolvedValueOnce({
-          windows: [],
-          planType: null,
-          quotaInventoryObserved: true,
-          rateLimited: true,
-        });
-      const codexSpy = vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
+      const claudeSpy = vi.spyOn(CLAUDE_CONFIG, 'fetchQuota').mockResolvedValueOnce({
+        windows: [],
+        planType: null,
+        quotaInventoryObserved: true,
+        rateLimited: true,
+      });
+      const codexSpy = vi
+        .spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
         .mockResolvedValueOnce(makeCodexQuotaData());
 
       const renderer = await renderAccountsPage();
@@ -20177,21 +20798,21 @@ describe('AccountsPage replacement flows', () => {
         getAuthFileSelectionKey(codex1),
       ]);
 
-      const xaiSpy = vi.spyOn(XAI_CONFIG, 'fetchQuota')
-        .mockResolvedValueOnce({
-          periodType: 'monthly',
-          usagePercent: 10,
-          productUsage: [],
-          monthlyLimitCents: 10000,
-          usedCents: 1000,
-          includedUsedCents: 1000,
-          onDemandCapCents: 0,
-          onDemandUsedCents: 0,
-          onDemandUsedPercent: 0,
-          usedPercent: 10,
-          rateLimited: true,
-        });
-      const codexSpy = vi.spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
+      const xaiSpy = vi.spyOn(XAI_CONFIG, 'fetchQuota').mockResolvedValueOnce({
+        periodType: 'monthly',
+        usagePercent: 10,
+        productUsage: [],
+        monthlyLimitCents: 10000,
+        usedCents: 1000,
+        includedUsedCents: 1000,
+        onDemandCapCents: 0,
+        onDemandUsedCents: 0,
+        onDemandUsedPercent: 0,
+        usedPercent: 10,
+        rateLimited: true,
+      });
+      const codexSpy = vi
+        .spyOn(CODEX_SUMMARY_CONFIG, 'fetchQuota')
         .mockResolvedValueOnce(makeCodexQuotaData());
 
       const renderer = await renderAccountsPage();
@@ -20235,18 +20856,14 @@ describe('AccountsPage replacement flows', () => {
         account: 'ag2@example.com',
       } as AuthFileItem;
       mocks.files = [ag1, ag2];
-      mocks.selectedFiles = new Set([
-        getAuthFileSelectionKey(ag1),
-        getAuthFileSelectionKey(ag2),
-      ]);
+      mocks.selectedFiles = new Set([getAuthFileSelectionKey(ag1), getAuthFileSelectionKey(ag2)]);
 
-      const agSpy = vi.spyOn(ANTIGRAVITY_CONFIG, 'fetchQuota')
-        .mockResolvedValueOnce({
-          groups: [],
-          quotaInventoryObserved: true,
-          serverTimeOffsetMs: 0,
-          rateLimited: true,
-        });
+      const agSpy = vi.spyOn(ANTIGRAVITY_CONFIG, 'fetchQuota').mockResolvedValueOnce({
+        groups: [],
+        quotaInventoryObserved: true,
+        serverTimeOffsetMs: 0,
+        rateLimited: true,
+      });
 
       const renderer = await renderAccountsPage();
       await flushPromises();
@@ -20360,8 +20977,9 @@ describe('AccountsPage replacement flows', () => {
       const renderer = await renderAccountsPage();
       await flushPromises();
 
-      const anchorButtons = renderer.root
-        .findAll((node) => node.props['data-detail-anchor'] === 'reset-records');
+      const anchorButtons = renderer.root.findAll(
+        (node) => node.props['data-detail-anchor'] === 'reset-records'
+      );
       expect(anchorButtons).toHaveLength(1);
 
       // Clear quota store before clicking anchor to simulate missing active quota state
@@ -20373,11 +20991,15 @@ describe('AccountsPage replacement flows', () => {
       });
       await flushPromises();
 
-      const successState = (mocks.quotaState.codexQuota as Record<string, CodexQuotaState>)[storeKey];
+      const successState = (mocks.quotaState.codexQuota as Record<string, CodexQuotaState>)[
+        storeKey
+      ];
       expect(successState).toBeDefined();
       expect(successState.rateLimitResetCreditsAvailableCount).toBe(2);
       expect((successState as unknown as Record<string, unknown>).fetchedAtMs).toBeUndefined();
-      expect((successState as unknown as Record<string, unknown>).quotaInventoryObserved).toBeUndefined();
+      expect(
+        (successState as unknown as Record<string, unknown>).quotaInventoryObserved
+      ).toBeUndefined();
 
       // Case B: failure does not create an error state when no active state exists
       const fileFail = makeCodexFile('codex-fail.json', 'auth-fail-1', 'fail@example.com');
@@ -20404,8 +21026,9 @@ describe('AccountsPage replacement flows', () => {
       const rendererFail = await renderAccountsPage();
       await flushPromises();
 
-      const failAnchorButtons = rendererFail.root
-        .findAll((node) => node.props['data-detail-anchor'] === 'reset-records');
+      const failAnchorButtons = rendererFail.root.findAll(
+        (node) => node.props['data-detail-anchor'] === 'reset-records'
+      );
       expect(failAnchorButtons).toHaveLength(1);
 
       // Clear quota store before clicking anchor
@@ -20417,7 +21040,9 @@ describe('AccountsPage replacement flows', () => {
       });
       await flushPromises();
 
-      expect((mocks.quotaState.codexQuota as Record<string, CodexQuotaState>)[failStoreKey]).toBeUndefined();
+      expect(
+        (mocks.quotaState.codexQuota as Record<string, CodexQuotaState>)[failStoreKey]
+      ).toBeUndefined();
     });
 
     it('shares single-flight in-flight verification between anchor and consume confirmation', async () => {
@@ -20547,5 +21172,493 @@ describe('AccountsPage replacement flows', () => {
         vi.useRealTimers();
       }
     });
+  });
+  it.each(['overview', 'config', 'quota', 'models', 'diagnostics'])(
+    'Kilo %s详情走专用公开DTO且不启动原始凭据编辑器',
+    async (tab) => {
+      const file = {
+        ...makeCodexFile('kilo.json', 'kilo-index', '同名账号'),
+        id: 'kilo-real',
+        provider: 'kilo',
+        type: 'kilo',
+      };
+      mocks.files = [file];
+      mocks.location = {
+        pathname: '/accounts',
+        search: `?account=${encodeURIComponent(getAuthFileSelectionKey(file))}&tab=${tab}`,
+      };
+      vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+        mode: 'local',
+        connection_ref: 'ref-a',
+        default_limit: 20,
+        pool_waiting: 0,
+        credentials: [],
+      });
+      const renderer = await renderAccountsPage();
+      await flushPromises();
+      expect(renderer.root.findAllByType(KiloAccountsPanel)).toHaveLength(
+        ['quota', 'config'].includes(tab) ? 0 : 1
+      );
+      expect(renderer.root.findAllByType(KiloQuotaPanel)).toHaveLength(tab === 'quota' ? 1 : 0);
+      const tabs = renderer.root
+        .findAllByProps({ role: 'tab' })
+        .filter((item) => String(item.props.id || '').startsWith('accounts-detail-tab-'));
+      expect(tabs.map((item) => item.props.children)).toEqual([
+        '账号管理',
+        '出口配置',
+        'Codex订阅额度',
+      ]);
+      expect(tabs.find((item) => item.props['aria-selected'])?.props.id).toBe(
+        `accounts-detail-tab-${['quota', 'config'].includes(tab) ? tab : 'overview'}`
+      );
+      expect(mocks.configurationEnabledCalls).not.toContain(true);
+      expect(mocks.showModels).not.toHaveBeenCalled();
+      const menu = renderer.root
+        .findAllByType(DropdownMenu)
+        .find((node) => node.props.ariaLabel === `Kilo账号操作:${getAuthFileSelectionKey(file)}`)!;
+      const download = menu.props.items.find((item: { key: string }) => item.key === 'download');
+      expect(download.disabled).toBe(true);
+      await act(async () => {
+        download.onClick();
+      });
+      expect(mocks.handleDownload).not.toHaveBeenCalled();
+      expect(mocks.showNotification).toHaveBeenCalledWith(
+        'Kilo凭据不支持秘密导出，请在详情管理。',
+        'info'
+      );
+    }
+  );
+
+  it.each(['grid', 'table'])(
+    'Kilo %s实际额度区共用真实摘要，普通Codex保留空状态',
+    async (layout) => {
+      const file = {
+        ...makeCodexFile('kilo.json', 'kilo-index', '同名账号'),
+        id: 'kilo-real',
+        provider: 'kilo',
+        type: 'kilo',
+      };
+      const codex = makeCodexFile('normal.json', 'codex-index', '普通Codex');
+      mocks.files = [file, codex];
+      mocks.location = { pathname: '/accounts', search: `?layout=${layout}` };
+      vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+        mode: 'local',
+        connection_ref: 'ref-a',
+        default_limit: 20,
+        pool_waiting: 0,
+        credentials: [],
+      });
+      const account: KiloAccount = {
+        id: 'kilo-real',
+        name: '同名账号',
+        enabled: true,
+        priority: 0,
+        concurrency_limit: null,
+        effective_limit: 20,
+        active: 0,
+        waiting: 0,
+        allow_direct_when_proxy_full: false,
+        quota_source_summary: {
+          kind: 'cpa_codex',
+          credential_id: 'codex-source',
+          display_label: '额度来源一',
+          status: 'ready',
+          binding_revision: 2,
+        },
+        quota_snapshot: {
+          account_id: 'kilo-real',
+          connection_ref: 'ref-a',
+          binding_revision: 2,
+          source: { kind: 'cpa_codex', credential_id: 'codex-source', status: 'ready' },
+          query: {
+            status: 'success',
+            attempted_at: null,
+            observed_at: '2026-11-13T01:02:00Z',
+            error_code: null,
+          },
+          plan: null,
+          credits: { remaining: null, source_field: null, unit: null },
+          stale: false,
+          windows: [
+            {
+              group: 'rate_limit',
+              slot: 'primary_window',
+              duration_seconds: 18000,
+              remaining_percent: 75,
+              reset_at: null,
+              source: 'api_query',
+            },
+            {
+              group: 'rate_limit',
+              slot: 'secondary_window',
+              duration_seconds: 604800,
+              remaining_percent: 50,
+              reset_at: null,
+              source: 'api_query',
+            },
+          ],
+        },
+      };
+      vi.mocked(kiloApi.list).mockResolvedValue({ accounts: [account], connection_ref: 'ref-a' });
+      const renderer = await renderAccountsPage();
+      await flushPromises();
+      const card = findAccountCardByKey(renderer, getAuthFileSelectionKey(file));
+      const region = card.findByProps({ 'data-account-detail-region': 'quota' });
+      expect(card.findAllByType(KiloQuotaSummary)).toHaveLength(1);
+      expect(region.findAllByType(KiloQuotaSummary)).toHaveLength(1);
+      expect(readText(card)).toContain('额度来源一');
+      expect(
+        card.findAllByType('button').some((button) => readText(button).includes('来源：'))
+      ).toBe(true);
+      expect(readText(region)).toContain('75%');
+      expect(readText(region)).toContain('50%');
+      if (layout === 'grid') {
+        expect(
+          card
+            .findAll((node) => node.type === KiloQuotaSummary || node.type === KiloEgressSummary)
+            .map((node) => node.type)
+        ).toEqual([KiloQuotaSummary, KiloEgressSummary]);
+      }
+      expect(region.props.title).toBe('Codex订阅额度');
+      expect(card.findAllByProps({ 'data-account-quota-empty': 'true' })).toHaveLength(0);
+      expect(
+        findAccountCardByKey(renderer, getAuthFileSelectionKey(codex)).findAllByProps({
+          'data-account-quota-empty': 'true',
+        })
+      ).toHaveLength(1);
+      mocks.location = {
+        pathname: '/accounts',
+        search: `?layout=${layout}&account=${encodeURIComponent(getAuthFileSelectionKey(file))}&tab=quota`,
+      };
+      await act(async () => renderer.update(<AccountsPage />));
+      await flushPromises();
+      const panel = renderer.root.findByType(KiloQuotaPanel);
+      const refreshed = {
+        ...account,
+        quota_snapshot: {
+          ...account.quota_snapshot!,
+          windows: account.quota_snapshot!.windows.map((window) => ({
+            ...window,
+            remaining_percent: 25,
+          })),
+        },
+      };
+      vi.mocked(kiloApi.list).mockResolvedValue({ accounts: [refreshed], connection_ref: 'ref-a' });
+      await act(async () => panel.props.onChanged());
+      expect(readText(card.findByProps({ 'data-account-detail-region': 'quota' }))).toContain(
+        '25%'
+      );
+      expect(readText(card.findByProps({ 'data-account-detail-region': 'quota' }))).not.toContain(
+        '75%'
+      );
+      const pending = createDeferred<Awaited<ReturnType<typeof kiloApi.list>>>();
+      vi.mocked(kiloApi.list).mockReturnValueOnce(pending.promise);
+      let refresh!: Promise<void>;
+      await act(async () => {
+        refresh = panel.props.onChanged();
+      });
+      mocks.apiBase = 'http://other.local';
+      vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+        mode: 'local',
+        connection_ref: 'ref-b',
+        default_limit: 20,
+        pool_waiting: 0,
+        credentials: [],
+      });
+      vi.mocked(kiloApi.list).mockResolvedValue({ accounts: [], connection_ref: 'ref-b' });
+      await act(async () => renderer.update(<AccountsPage />));
+      await flushPromises();
+      await act(async () => {
+        pending.resolve({ accounts: [account], connection_ref: 'ref-a' });
+        await refresh;
+      });
+      expect(
+        readText(
+          findAccountCardByKey(renderer, getAuthFileSelectionKey(file)).findByProps({
+            'data-account-detail-region': 'quota',
+          })
+        )
+      ).toContain('关联额度暂未读取');
+    }
+  );
+
+  it.each(['grid', 'table'])('Kilo %s缺少额度投影时只显示未读取', async (layout) => {
+    const file = {
+      ...makeCodexFile('kilo.json', 'kilo-index', '同名账号'),
+      id: 'kilo-real',
+      provider: 'kilo',
+      type: 'kilo',
+    };
+    mocks.files = [file];
+    mocks.location = { pathname: '/accounts', search: `?layout=${layout}` };
+    const renderer = await renderAccountsPage();
+    await flushPromises();
+    const card = findAccountCardByKey(renderer, getAuthFileSelectionKey(file));
+    expect(readText(card.findByProps({ 'data-account-detail-region': 'quota' }))).toContain(
+      '关联额度暂未读取'
+    );
+    expect(card.findAllByProps({ 'data-account-quota-empty': 'true' })).toHaveLength(0);
+  });
+
+  it('Kilo窗口接入精确来源周期用量，来源缓存无窗口仍产生预计金额，改绑清除估算', async () => {
+    mocks.panelFeatureAvailability = {
+      checking: false,
+      managerServiceBase: 'http://manager.local:18317',
+      requestMonitoringAvailable: true,
+      serverCodexInspectionAvailable: false,
+    };
+    const now = Date.now();
+    const source = {
+      ...makeCodexFile('source-live.json', 'source-live', '来源账号'),
+      id: 'source-live-id',
+    };
+    const file = {
+      ...makeCodexFile('kilo-live.json', 'kilo-live', 'Kilo账号'),
+      id: 'kilo-live-id',
+      provider: 'kilo',
+      type: 'kilo',
+    };
+    mocks.files = [file, source];
+    mocks.location = { pathname: '/accounts', search: '?provider=kilo&layout=grid' };
+    vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+      mode: 'local',
+      connection_ref: 'ref-a',
+      default_limit: 20,
+      pool_waiting: 0,
+      credentials: [],
+    });
+    const account = {
+      id: 'kilo-live-id',
+      name: 'Kilo账号',
+      enabled: true,
+      priority: 0,
+      concurrency_limit: null,
+      effective_limit: 20,
+      active: 0,
+      waiting: 0,
+      allow_direct_when_proxy_full: false,
+      quota_source_summary: {
+        kind: 'cpa_codex',
+        credential_id: source.id,
+        status: 'ready',
+        binding_revision: 1,
+      },
+      quota_snapshot: {
+        account_id: 'kilo-live-id',
+        connection_ref: 'ref-a',
+        binding_revision: 1,
+        source: { kind: 'cpa_codex', credential_id: source.id, status: 'ready' },
+        query: {
+          status: 'success',
+          observed_at: new Date(now).toISOString(),
+          attempted_at: null,
+          error_code: null,
+        },
+        plan: null,
+        credits: { remaining: null, source_field: null, unit: null },
+        stale: false,
+        windows: [
+          {
+            group: 'rate_limit',
+            slot: 'primary_window',
+            duration_seconds: 18000,
+            remaining_percent: 75,
+            used_percent: 25,
+            reset_at: new Date(now + 10800000).toISOString(),
+            source: 'api_query',
+          },
+        ],
+      },
+    } as KiloAccount;
+    vi.mocked(kiloApi.list).mockResolvedValue({ connection_ref: 'ref-a', accounts: [account] });
+    mocks.getAccountWindowUsage.mockImplementation(async (_base, _key, request) => ({
+      generated_at_ms: now,
+      items: request.windows.map((w) => ({
+        ...w,
+        matched: true,
+        total_requests: w.period === 'current' ? 2 : 0,
+        success_calls: 2,
+        failure_calls: 0,
+        total_tokens: 250000,
+        total_cost: w.period === 'current' ? 0.8 : 0,
+        success_rate: 1,
+        last_seen_ms: now - 1000,
+        sync_status: 'ready',
+        scope_match_status: 'complete',
+        unmatched_requests: 0,
+      })),
+    }));
+    const renderer = await renderAccountsPage();
+    await flushPromises();
+    expect(
+      mocks.getAccountWindowUsage.mock.calls
+        .flatMap((call) => call[2].windows)
+        .every((w) => w.auth_file_snapshot === source.name)
+    ).toBe(true);
+    expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(file)))).toContain(
+      '$3.20'
+    );
+    const compact = findAccountCardByKey(renderer, getAuthFileSelectionKey(file)).findByType(
+      QuotaEstimateSummary
+    );
+    expect(compact.props.quotaObservedAtMs).toBe(now);
+    await act(async () => compact.props.onOpen());
+    await flushPromises();
+    vi.mocked(kiloApi.list).mockResolvedValue({
+      connection_ref: 'ref-a',
+      accounts: [
+        {
+          ...account,
+          quota_source_summary: { ...account.quota_source_summary!, binding_revision: 2 },
+        },
+      ],
+    });
+    await act(async () => renderer.root.findByType(KiloQuotaPanel).props.onChanged());
+    await flushPromises();
+    expect(readText(findAccountCardByKey(renderer, getAuthFileSelectionKey(file)))).not.toContain(
+      '$3.20'
+    );
+  });
+
+  it('纯Kilo批次互斥且切连接后不继续旧批次', async () => {
+    vi.useFakeTimers();
+    try {
+      const files = ['one', 'two'].map((id) => ({
+        ...makeCodexFile(`${id}.json`, id, id),
+        id,
+        provider: 'kilo',
+        type: 'kilo',
+      }));
+      mocks.files = files;
+      mocks.selectedFiles = new Set(files.map(getAuthFileSelectionKey));
+      mocks.selectionCount = 2;
+      vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+        mode: 'local',
+        connection_ref: 'ref-a',
+        default_limit: 20,
+        pool_waiting: 0,
+        credentials: [],
+      });
+      vi.mocked(kiloApi.list).mockResolvedValue({ accounts: [], connection_ref: 'ref-a' });
+      const pending = createDeferred<Awaited<ReturnType<typeof kiloApi.update>>>();
+      vi.mocked(kiloApi.update).mockReturnValue(pending.promise);
+      const renderer = await renderAccountsPage();
+      await flushPromises();
+      await act(async () => {
+        void findButtonByText(renderer, 'accounts.disable').props.onClick();
+      });
+      expect(kiloApi.update).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        void findButtonByText(renderer, 'accounts.disable').props.onClick();
+      });
+      expect(kiloApi.update).toHaveBeenCalledTimes(1);
+      mocks.apiBase = 'http://other.local';
+      await act(async () => {
+        renderer.update(<AccountsPage />);
+      });
+      await act(async () => {
+        pending.resolve({ id: 'one', connection_ref: 'ref-a' } as Awaited<
+          ReturnType<typeof kiloApi.update>
+        >);
+      });
+      expect(kiloApi.update).toHaveBeenCalledTimes(1);
+      expect(mocks.batchSetStatus).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it.each([2, null])('Kilo独立次数查询失败保留来源观测%s且不消耗重置', async (count) => {
+    const source = { ...makeCodexFile('source.json', 'source-index', '来源账号'), id: 'source-id' };
+    const file = {
+      ...makeCodexFile('kilo.json', 'kilo-index', 'Kilo账号'),
+      id: 'kilo-id',
+      provider: 'kilo',
+      type: 'kilo',
+    };
+    mocks.files = [file, source];
+    mocks.location = { pathname: '/accounts', search: '?provider=kilo' };
+    const observed = Date.now() - 1000;
+    mocks.quotaState.codexQuota = {
+      'source.json': {
+        status: 'success',
+        authFileKey: 'source.json::source-index',
+        windows: [],
+        rateLimitResetCreditsAvailableCount: count,
+        resetCreditsCountEvidenceAtMs: count === null ? null : observed,
+      },
+    };
+    vi.mocked(credentialConcurrencyApi.list).mockResolvedValue({
+      mode: 'local',
+      connection_ref: 'ref-a',
+      default_limit: 20,
+      pool_waiting: 0,
+      credentials: [],
+    });
+    vi.mocked(kiloApi.list).mockResolvedValue({
+      connection_ref: 'ref-a',
+      accounts: [
+        {
+          id: 'kilo-id',
+          name: 'Kilo账号',
+          enabled: true,
+          priority: 0,
+          concurrency_limit: null,
+          effective_limit: 20,
+          active: 0,
+          waiting: 0,
+          allow_direct_when_proxy_full: false,
+          quota_snapshot: {
+            account_id: 'kilo-id',
+            binding_revision: 1,
+            connection_ref: 'ref-a',
+            source: { kind: 'cpa_codex', credential_id: 'source-id', status: 'ready' },
+            query: {
+              status: 'success',
+              observed_at: new Date(observed).toISOString(),
+              attempted_at: null,
+              error_code: null,
+            },
+            plan: null,
+            windows: [],
+            credits: { remaining: null, source_field: null, unit: null },
+            stale: false,
+          },
+          quota_source_summary: {
+            kind: 'cpa_codex',
+            credential_id: 'source-id',
+            display_label: '来源账号',
+            status: 'ready',
+            binding_revision: 1,
+          },
+        },
+      ],
+    });
+    mocks.apiRequest.mockRejectedValue(new Error('次数查询失败'));
+    const renderer = await renderAccountsPage();
+    await flushPromises();
+    const card = findAccountCardByKey(renderer, getAuthFileSelectionKey(file));
+    const compact = card.findByType(QuotaEstimateSummary);
+    expect(compact.props.compact).toBe(true);
+    await act(async () => compact.props.onOpen());
+    await flushPromises();
+    const summary = renderer.root
+      .findAllByType(QuotaEstimateSummary)
+      .find((item) => !item.props.compact)!;
+    expect(summary.props.resetCount).toBe(count);
+    expect(
+      renderer.root.findAllByProps({ 'data-account-card': getAuthFileSelectionKey(source) })
+    ).toHaveLength(0);
+    await act(async () => {
+      summary
+        .findAllByType(Button)
+        .find((button) => button.props.children === '查询重置次数')!
+        .props.onClick();
+    });
+    await flushPromises();
+    expect(summary.props.resetCount).toBe(count);
+    expect(readText(summary)).toContain('重置次数查询失败');
+    if (count !== null) expect(readText(summary)).toContain(new Date(observed).toLocaleString());
+    expect(mocks.consumeResetCredit).not.toHaveBeenCalled();
+    expect(mocks.showConfirmation).not.toHaveBeenCalled();
   });
 });

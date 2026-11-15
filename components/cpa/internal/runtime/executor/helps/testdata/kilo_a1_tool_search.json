@@ -1,0 +1,1537 @@
+[
+  {
+    "name": "mixed-tools",
+    "request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "example",
+          "parameters": {
+            "type": "object"
+          }
+        },
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        },
+        {
+          "type": "custom",
+          "name": "custom",
+          "format": {
+            "type": "text"
+          }
+        },
+        {
+          "type": "namespace",
+          "name": "ns",
+          "tools": [
+            {
+              "type": "function",
+              "name": "example",
+              "parameters": {
+                "type": "object"
+              }
+            }
+          ]
+        },
+        {
+          "type": "web_search"
+        }
+      ],
+      "input": "unchanged",
+      "parallel_tool_calls": true
+    },
+    "events": [],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "example",
+          "parameters": {
+            "type": "object"
+          }
+        },
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        },
+        {
+          "type": "custom",
+          "name": "custom",
+          "format": {
+            "type": "text"
+          }
+        },
+        {
+          "type": "namespace",
+          "name": "ns",
+          "tools": [
+            {
+              "type": "function",
+              "name": "example",
+              "parameters": {
+                "type": "object"
+              }
+            }
+          ]
+        },
+        {
+          "type": "web_search"
+        }
+      ],
+      "input": "unchanged",
+      "parallel_tool_calls": true
+    },
+    "active": true,
+    "expected_events": []
+  },
+  {
+    "name": "choice-tool_search",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ],
+      "tool_choice": {
+        "type": "tool_search"
+      }
+    },
+    "events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "status": "completed",
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "name": "__kilo2api_tool_search",
+              "description": "Find tools",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              },
+              "strict": false
+            }
+          ],
+          "tool_choice": {
+            "type": "function",
+            "name": "__kilo2api_tool_search"
+          }
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "tool_choice": {
+        "type": "function",
+        "name": "__kilo2api_tool_search"
+      },
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "status": "completed",
+          "output": [
+            {
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "type": "tool_search_call",
+              "execution": "client",
+              "arguments": {
+                "query": "synthetic",
+                "limit": 1
+              }
+            }
+          ],
+          "tools": [
+            {
+              "type": "tool_search",
+              "execution": "client",
+              "description": "Find tools",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          ],
+          "tool_choice": {
+            "type": "tool_search"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "choice-allowed_tools",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ],
+      "tool_choice": {
+        "type": "allowed_tools",
+        "mode": "required",
+        "tools": [
+          {
+            "type": "tool_search"
+          },
+          {
+            "type": "function",
+            "name": "example"
+          }
+        ]
+      }
+    },
+    "events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "status": "completed",
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "name": "__kilo2api_tool_search",
+              "description": "Find tools",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              },
+              "strict": false
+            }
+          ],
+          "tool_choice": {
+            "type": "allowed_tools",
+            "mode": "required",
+            "tools": [
+              {
+                "type": "function",
+                "name": "__kilo2api_tool_search"
+              },
+              {
+                "type": "function",
+                "name": "example"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "tool_choice": {
+        "type": "allowed_tools",
+        "mode": "required",
+        "tools": [
+          {
+            "type": "function",
+            "name": "__kilo2api_tool_search"
+          },
+          {
+            "type": "function",
+            "name": "example"
+          }
+        ]
+      },
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "status": "completed",
+          "output": [
+            {
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "type": "tool_search_call",
+              "execution": "client",
+              "arguments": {
+                "query": "synthetic",
+                "limit": 1
+              }
+            }
+          ],
+          "tools": [
+            {
+              "type": "tool_search",
+              "execution": "client",
+              "description": "Find tools",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          ],
+          "tool_choice": {
+            "type": "allowed_tools",
+            "mode": "required",
+            "tools": [
+              {
+                "type": "tool_search"
+              },
+              {
+                "type": "function",
+                "name": "example"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "paired-history-loaded-definitions",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ],
+      "input": [
+        {
+          "role": "user",
+          "content": "unchanged"
+        },
+        {
+          "type": "tool_search_call",
+          "execution": "client",
+          "id": "native-id",
+          "call_id": "search-call",
+          "status": "completed",
+          "arguments": {
+            "query": "synthetic",
+            "limit": 1
+          }
+        },
+        {
+          "type": "tool_search_output",
+          "execution": "client",
+          "call_id": "search-call",
+          "tools": [
+            {
+              "type": "namespace",
+              "name": "fixture",
+              "tools": [
+                {
+                  "type": "function",
+                  "name": "example",
+                  "parameters": {
+                    "type": "object"
+                  },
+                  "defer_loading": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "function_call",
+          "name": "example",
+          "call_id": "normal",
+          "arguments": "{}"
+        }
+      ]
+    },
+    "events": [],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "input": [
+        {
+          "role": "user",
+          "content": "unchanged"
+        },
+        {
+          "type": "function_call",
+          "name": "__kilo2api_tool_search",
+          "call_id": "search-call",
+          "arguments": "{\"query\":\"synthetic\",\"limit\":1}",
+          "status": "completed"
+        },
+        {
+          "type": "function_call_output",
+          "call_id": "search-call",
+          "output": "{\"tools\": [{\"type\": \"namespace\", \"name\": \"fixture\", \"tools\": [{\"type\": \"function\", \"name\": \"example\", \"parameters\": {\"type\": \"object\"}}]}]}"
+        },
+        {
+          "type": "additional_tools",
+          "role": "developer",
+          "tools": [
+            {
+              "type": "namespace",
+              "name": "fixture",
+              "tools": [
+                {
+                  "type": "function",
+                  "name": "example",
+                  "parameters": {
+                    "type": "object"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "function_call",
+          "name": "example",
+          "call_id": "normal",
+          "arguments": "{}"
+        }
+      ]
+    },
+    "active": true,
+    "expected_events": []
+  },
+  {
+    "name": "history-only",
+    "request": {
+      "input": [
+        {
+          "type": "tool_search_call",
+          "execution": "client",
+          "id": "native-id",
+          "call_id": "search-call",
+          "status": "completed",
+          "arguments": {
+            "query": "synthetic",
+            "limit": 1
+          }
+        },
+        {
+          "type": "tool_search_output",
+          "execution": "client",
+          "call_id": "search-call",
+          "tools": [
+            {
+              "type": "namespace",
+              "name": "fixture",
+              "tools": [
+                {
+                  "type": "function",
+                  "name": "example",
+                  "parameters": {
+                    "type": "object"
+                  },
+                  "defer_loading": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "events": [],
+    "expected_request": {
+      "input": [
+        {
+          "type": "function_call",
+          "name": "__kilo2api_tool_search",
+          "call_id": "search-call",
+          "arguments": "{\"query\":\"synthetic\",\"limit\":1}",
+          "status": "completed"
+        },
+        {
+          "type": "function_call_output",
+          "call_id": "search-call",
+          "output": "{\"tools\": [{\"type\": \"namespace\", \"name\": \"fixture\", \"tools\": [{\"type\": \"function\", \"name\": \"example\", \"parameters\": {\"type\": \"object\"}}]}]}"
+        },
+        {
+          "type": "additional_tools",
+          "role": "developer",
+          "tools": [
+            {
+              "type": "namespace",
+              "name": "fixture",
+              "tools": [
+                {
+                  "type": "function",
+                  "name": "example",
+                  "parameters": {
+                    "type": "object"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "tools": []
+    },
+    "active": true,
+    "expected_events": []
+  },
+  {
+    "name": "additional-declaration",
+    "request": {
+      "input": [
+        {
+          "type": "additional_tools",
+          "role": "developer",
+          "tools": [
+            {
+              "type": "tool_search",
+              "execution": "client",
+              "description": "Find tools",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "events": [],
+    "expected_request": {
+      "input": [
+        {
+          "type": "additional_tools",
+          "role": "developer",
+          "tools": [
+            {
+              "type": "function",
+              "name": "__kilo2api_tool_search",
+              "description": "Find tools",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              },
+              "strict": false
+            }
+          ]
+        }
+      ],
+      "tools": []
+    },
+    "active": true,
+    "expected_events": []
+  },
+  {
+    "name": "hosted-unchanged",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search"
+        }
+      ],
+      "input": "unchanged"
+    },
+    "events": [],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "tool_search"
+        }
+      ],
+      "input": "unchanged"
+    },
+    "active": false,
+    "expected_events": []
+  },
+  {
+    "name": "ordinary-function-unchanged",
+    "request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "example",
+          "parameters": {
+            "type": "object"
+          }
+        }
+      ],
+      "input": "unchanged"
+    },
+    "events": [],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "example",
+          "parameters": {
+            "type": "object"
+          }
+        }
+      ],
+      "input": "unchanged"
+    },
+    "active": false,
+    "expected_events": []
+  },
+  {
+    "name": "reserved-name",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        },
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "parameters": {
+            "type": "object"
+          }
+        }
+      ]
+    },
+    "events": [],
+    "prepare_error": true
+  },
+  {
+    "name": "namespace-reserved-name",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        },
+        {
+          "type": "namespace",
+          "name": "ns",
+          "tools": [
+            {
+              "type": "function",
+              "name": "__kilo2api_tool_search",
+              "parameters": {
+                "type": "object"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "events": [],
+    "prepare_error": true
+  },
+  {
+    "name": "conflicting-declaration",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        },
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "different",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ]
+    },
+    "events": [],
+    "prepare_error": true
+  },
+  {
+    "name": "orphan-output",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ],
+      "input": [
+        {
+          "type": "tool_search_output",
+          "execution": "client",
+          "call_id": "search-call",
+          "tools": [
+            {
+              "type": "namespace",
+              "name": "fixture",
+              "tools": [
+                {
+                  "type": "function",
+                  "name": "example",
+                  "parameters": {
+                    "type": "object"
+                  },
+                  "defer_loading": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "events": [],
+    "prepare_error": true
+  },
+  {
+    "name": "invalid-schema",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": null
+        }
+      ]
+    },
+    "events": [],
+    "prepare_error": true
+  },
+  {
+    "name": "direct-bridge-history",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ],
+      "input": [
+        {
+          "type": "function_call",
+          "name": "__kilo2api_tool_search",
+          "id": "fc-fixture",
+          "call_id": "search-call",
+          "status": "completed",
+          "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+        }
+      ]
+    },
+    "events": [],
+    "prepare_error": true
+  },
+  {
+    "name": "nonobject-search-arguments",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ],
+      "input": [
+        {
+          "type": "tool_search_call",
+          "execution": "client",
+          "id": "native-id",
+          "call_id": "search-call",
+          "status": "completed",
+          "arguments": "{}"
+        }
+      ]
+    },
+    "events": [],
+    "prepare_error": true
+  },
+  {
+    "name": "stream-native-restoration",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "response.output_item.added",
+        "output_index": 0,
+        "item": {
+          "type": "function_call",
+          "name": "__kilo2api_tool_search",
+          "id": "fc-fixture",
+          "call_id": "search-call",
+          "status": "completed",
+          "arguments": "{"
+        }
+      },
+      {
+        "type": "response.function_call_arguments.delta",
+        "item_id": "fc-fixture",
+        "delta": "{"
+      },
+      {
+        "type": "response.function_call_arguments.done",
+        "item_id": "fc-fixture",
+        "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+      },
+      {
+        "type": "response.output_item.done",
+        "output_index": 0,
+        "item": {
+          "type": "function_call",
+          "name": "__kilo2api_tool_search",
+          "id": "fc-fixture",
+          "call_id": "search-call",
+          "status": "completed",
+          "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+        }
+      },
+      {
+        "type": "response.function_call_arguments.delta",
+        "item_id": "other",
+        "delta": "{}"
+      },
+      {
+        "type": "response.completed",
+        "response": {
+          "status": "completed",
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+            }
+          ]
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "type": "response.output_item.added",
+        "output_index": 0,
+        "item": {
+          "id": "fc-fixture",
+          "call_id": "search-call",
+          "status": "in_progress",
+          "type": "tool_search_call",
+          "execution": "client",
+          "arguments": {}
+        }
+      },
+      null,
+      null,
+      {
+        "type": "response.output_item.done",
+        "output_index": 0,
+        "item": {
+          "id": "fc-fixture",
+          "call_id": "search-call",
+          "status": "completed",
+          "type": "tool_search_call",
+          "execution": "client",
+          "arguments": {
+            "query": "synthetic",
+            "limit": 1
+          }
+        }
+      },
+      {
+        "type": "response.function_call_arguments.delta",
+        "item_id": "other",
+        "delta": "{}"
+      },
+      {
+        "type": "response.completed",
+        "response": {
+          "status": "completed",
+          "output": [
+            {
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "type": "tool_search_call",
+              "execution": "client",
+              "arguments": {
+                "query": "synthetic",
+                "limit": 1
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "completed-arguments-{",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{"
+            }
+          ]
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "error": true
+      }
+    ]
+  },
+  {
+    "name": "completed-arguments-[]",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "[]"
+            }
+          ]
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "error": true
+      }
+    ]
+  },
+  {
+    "name": "completed-arguments-null",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "null"
+            }
+          ]
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "error": true
+      }
+    ]
+  },
+  {
+    "name": "completed-arguments-{'query': 'object'}",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": {
+                "query": "object"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "output": [
+            {
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "type": "tool_search_call",
+              "execution": "client",
+              "arguments": {
+                "query": "object"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "namespaced-bridge-not-native",
+    "request": {
+      "tools": [
+        {
+          "type": "tool_search",
+          "execution": "client",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        }
+      ]
+    },
+    "events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{\"query\":\"synthetic\",\"limit\":1}",
+              "namespace": "ordinary"
+            },
+            {
+              "type": "function_call",
+              "name": "tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+            }
+          ]
+        }
+      }
+    ],
+    "expected_request": {
+      "tools": [
+        {
+          "type": "function",
+          "name": "__kilo2api_tool_search",
+          "description": "Find tools",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ]
+          },
+          "strict": false
+        }
+      ],
+      "input": []
+    },
+    "active": true,
+    "expected_events": [
+      {
+        "type": "response.completed",
+        "response": {
+          "output": [
+            {
+              "type": "function_call",
+              "name": "__kilo2api_tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{\"query\":\"synthetic\",\"limit\":1}",
+              "namespace": "ordinary"
+            },
+            {
+              "type": "function_call",
+              "name": "tool_search",
+              "id": "fc-fixture",
+              "call_id": "search-call",
+              "status": "completed",
+              "arguments": "{\"query\":\"synthetic\",\"limit\":1}"
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

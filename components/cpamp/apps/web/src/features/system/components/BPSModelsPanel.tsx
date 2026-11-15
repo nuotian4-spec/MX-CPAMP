@@ -150,8 +150,14 @@ export function BPSModelsPanel({ scope }: { scope: ApiClientRequestScope }) {
     }
   };
   return (
-    <Card title="BPS 模型设置">
-      <p>全局发布清单作用于当前 CPA 的全部 BPS 凭证。官方允许、本站注册和推理成功分别判断。</p>
+    <Card title="旧版 BPS 模型设置">
+      <p>
+        全局发布清单仅作用于旧版 bps 凭证，不控制 cpa-bps
+        插件。官方允许、本站注册和推理成功分别判断。
+      </p>
+      <p>
+        <a href="#/plugins">cpa-bps 插件模型请前往插件管理</a>
+      </p>
       <label>
         发现凭证{' '}
         <select
@@ -163,7 +169,7 @@ export function BPSModelsPanel({ scope }: { scope: ApiClientRequestScope }) {
             setMessage('');
           }}
         >
-          {!credentials.length && <option value="">暂无BPS凭证</option>}
+          {!credentials.length && <option value="">暂无旧版 bps 凭证</option>}
           {credentials.map((credential) => (
             <option key={credential.index} value={credential.index}>
               {credential.name}

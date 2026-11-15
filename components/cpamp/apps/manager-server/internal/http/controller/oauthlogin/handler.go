@@ -31,7 +31,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 			response.MethodNotAllowed(w)
 			return
 		}
-		result = map[string]bool{"password_login_configured": h.Service.PasswordLoginConfigured()}
+		result = map[string]any{"password_login_configured": h.Service.PasswordLoginConfigured(), "bps_login_mode": h.Service.BPSLoginMode(r.Context())}
 	case path == "batches" && r.Method == http.MethodPost:
 		var input login.BatchInput
 		if !decodeLimit(w, r, &input, 1024*1024) {
@@ -84,7 +84,9 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if path == "oauth/callback" {
 			if code := login.CallbackRejectionCode(err); code != "" {
-				response.JSON(w, http.StatusBadRequest, map[string]string{"error": "回调输入未通过校验", "code": code})
+				body := login.OAuthRequestDiagnostic("callback", err)
+				body["error"], body["code"] = "回调输入未通过校验", code
+				response.JSON(w, http.StatusBadRequest, body)
 				return
 			}
 		}
@@ -92,14 +94,20 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, login.ErrInput):
 			status = http.StatusBadRequest
-		case errors.Is(err, login.ErrBusy), errors.Is(err, login.ErrImporting):
+		case errors.Is(err, login.ErrBusy), errors.Is(err, login.ErrImporting), errors.Is(err, login.ErrBPSBuiltinReplaced):
 			status = http.StatusConflict
 		case errors.Is(err, login.ErrNotFound):
 			status = http.StatusNotFound
 		case errors.Is(err, login.ErrUnavailable):
 			status = http.StatusServiceUnavailable
 		}
-		response.JSON(w, status, map[string]string{"error": err.Error()})
+		body := map[string]any{"error": err.Error()}
+		if strings.HasPrefix(path, "oauth/") {
+			for key, value := range login.OAuthRequestDiagnostic(strings.TrimPrefix(path, "oauth/"), err) {
+				body[key] = value
+			}
+		}
+		response.JSON(w, status, body)
 		return
 	}
 	response.JSON(w, http.StatusOK, result)

@@ -8,6 +8,8 @@ import {
 } from 'react-router-dom';
 import { AccountsPage } from '@/pages/AccountsPage';
 import { CredentialConcurrencyPage } from '@/features/accounts/CredentialConcurrencyPage';
+import { KiloAddAccountPage } from '@/features/kilo/KiloAddAccount';
+import { KiloProxiesPage } from '@/features/kilo/KiloProxiesPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AiProvidersPage } from '@/pages/AiProvidersPage';
 import { AiProvidersClaudeEditLayout } from '@/pages/AiProvidersClaudeEditLayout';
@@ -45,6 +47,15 @@ function LegacyAccountsRedirect({ healthMode }: { healthMode: 'local' | 'server'
   params.set('healthMode', healthMode);
   const search = params.toString();
   return <Navigate to={{ pathname: '/accounts', search: search ? `?${search}` : '' }} replace />;
+}
+
+function LegacyKiloAccountsRedirect() {
+  const location = useLocation();
+  const source = new URLSearchParams(location.search);
+  const params = new URLSearchParams({ provider: 'kilo', view: 'accounts' });
+  const id = source.get('account');
+  if (id) params.set('kiloAccount', id);
+  return <Navigate to={{ pathname: '/accounts', search: `?${params.toString()}` }} replace />;
 }
 
 function PluginGate({ children }: { children: ReactElement }) {
@@ -168,6 +179,9 @@ const mainRoutes: RouteObject[] = [
   { path: '/ai-providers/*', element: <AiProvidersPage /> },
   { path: '/accounts', element: <AccountsPage /> },
   { path: '/credential-concurrency', element: <CredentialConcurrencyPage /> },
+  { path: '/kilo-accounts', element: <LegacyKiloAccountsRedirect /> },
+  { path: '/kilo-add', element: <KiloAddAccountPage /> },
+    { path: '/kilo-proxies', element: <KiloProxiesPage /> },
   { path: '/oauth', element: <OAuthPage /> },
   {
     path: '/usage-analytics',

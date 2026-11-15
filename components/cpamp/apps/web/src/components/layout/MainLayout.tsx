@@ -610,6 +610,18 @@ function MainLayoutContent({ routeBase = '', demoMode = false }: MainLayoutProps
         icon: sidebarIcons.authFiles,
       },
       {
+        path: '/kilo-add',
+        label: '添加 Kilo 凭证',
+        shortLabel: '添加',
+        icon: sidebarIcons.authFiles,
+      },
+      {
+        path: '/kilo-proxies',
+        label: 'Kilo 出口池',
+        shortLabel: '出口池',
+        icon: sidebarIcons.authFiles,
+      },
+      {
         path: '/oauth',
         label: t('nav.oauth', { defaultValue: 'OAuth' }),
         shortLabel: navShortLabel('nav.oauth', t('nav.oauth', { defaultValue: 'OAuth' })),

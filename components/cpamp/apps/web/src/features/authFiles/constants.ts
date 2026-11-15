@@ -28,6 +28,7 @@ export type AuthFileModelItem = {
 export type AuthFileIconAsset = string | { light: string; dark: string };
 
 export type QuotaProviderType =
+  | 'cpa-bps'
   | 'bps'
   | 'antigravity'
   | 'claude'
@@ -39,6 +40,7 @@ export type QuotaProviderType =
 export type OAuthConfigLoadState = 'loading' | 'ready' | 'unsupported' | 'error';
 
 export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
+  'cpa-bps',
   'bps',
   'antigravity',
   'claude',

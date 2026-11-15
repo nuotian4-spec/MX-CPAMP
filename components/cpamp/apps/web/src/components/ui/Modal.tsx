@@ -134,6 +134,7 @@ export function Modal({
   const modalRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const previousDialogRef = useRef<HTMLElement | null>(null);
 
   const getFocusableElements = useCallback(() => {
     if (!modalRef.current) return [] as HTMLElement[];
@@ -208,6 +209,11 @@ export function Modal({
 
     previouslyFocusedRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialogs = Array.from(
+      document.querySelectorAll<HTMLElement>('.modal-overlay > [role="dialog"]')
+    );
+    const position = dialogs.indexOf(modalRef.current!);
+    previousDialogRef.current = position > 0 ? dialogs[position - 1] : null;
 
     const focusTimer = window.setTimeout(() => {
       const firstFocusable = getFocusableElements()[0];
@@ -221,14 +227,40 @@ export function Modal({
 
   useEffect(() => {
     if (open || isVisible) return;
-    previouslyFocusedRef.current?.focus();
+    const previous = previouslyFocusedRef.current;
+    const background = previousDialogRef.current;
     previouslyFocusedRef.current = null;
+    previousDialogRef.current = null;
+    if (!previous && !background) return;
+    queueMicrotask(() => {
+      const dialogs = document.querySelectorAll('.modal-overlay > [role="dialog"]');
+      const top = dialogs[dialogs.length - 1];
+      if (background ? !background.isConnected || top !== background : top) return;
+      if (
+        previous?.isConnected &&
+        previous !== document.body &&
+        !previous.hasAttribute('disabled') &&
+        (!background || background.contains(previous))
+      ) {
+        previous.focus();
+        if (document.activeElement === previous) return;
+      }
+      const fallback =
+        background &&
+        Array.from(background.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).find(
+          (element) => !element.hasAttribute('disabled') && element.tabIndex !== -1
+        );
+      (fallback || background)?.focus();
+    });
   }, [isVisible, open]);
 
   useEffect(() => {
     if (!open) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      const dialogs = document.querySelectorAll('.modal-overlay > [role="dialog"]');
+      if (dialogs[dialogs.length - 1] !== modalRef.current) return;
+
       if (event.key === 'Escape') {
         if (closeDisabled) return;
         event.preventDefault();

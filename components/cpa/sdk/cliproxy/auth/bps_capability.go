@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/MoeForge/moego/ojson"
-
 	coreexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
 	sdktranslator "github.com/router-for-me/CLIProxyAPI/v8/sdk/translator"
 )
@@ -14,7 +13,7 @@ func validateBPSReplayBoundary(providers []string, req coreexecutor.Request, opt
 	if previous := ojson.GetBytes(req.Payload, "previous_response_id").String(); strings.HasPrefix(previous, "resp_bps_") {
 		return &Error{Code: ErrorCodeRequestScoped, HTTPStatus: 400, Message: "BPS requires complete text history; its response IDs cannot be continued"}
 	}
-	if !coreexecutor.HasAccountBoundHistory(req.Payload) || pinnedAuthIDFromMetadata(opts.Metadata) != "" {
+	if !coreexecutor.HasBPSIdentityBoundHistory(req.Payload) || pinnedAuthIDFromMetadata(opts.Metadata) != "" {
 		return nil
 	}
 	for _, provider := range providers {
@@ -31,7 +30,7 @@ func filterBPSProviders(ctx context.Context, providers []string, req coreexecuto
 	switch {
 	case coreexecutor.DownstreamWebsocket(ctx) || coreexecutor.RequiredUpstreamWebsocket(ctx):
 		reason = "BPS does not support WebSocket"
-	case opts.Alt != "":
+	case opts.Alt != "" && opts.Alt != "responses/compact":
 		reason = "BPS does not support this operation"
 	case opts.SourceFormat != sdktranslator.FormatOpenAI && opts.SourceFormat != sdktranslator.FormatOpenAIResponse && opts.SourceFormat != sdktranslator.FormatCodex:
 		reason = "BPS supports OpenAI text requests only"

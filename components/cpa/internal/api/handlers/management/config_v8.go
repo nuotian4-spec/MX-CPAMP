@@ -28,6 +28,10 @@ const ConfigV8ContextKey = "management.config-v8"
 func (h *Handler) ConfigV8(c *gin.Context) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	if c.Request.Method != http.MethodGet && h.authManager != nil {
+		unlock := h.authManager.LockKiloConfigUpdate()
+		defer unlock()
+	}
 	raw, err := os.ReadFile(h.configFilePath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "read_failed"})
@@ -58,6 +62,7 @@ func (h *Handler) ConfigV8(c *gin.Context) {
 	yamlRequest := strings.HasSuffix(c.FullPath(), "/config.yaml")
 	if c.Request.Method == http.MethodGet {
 		config.ProjectV8ConfigAliases(root, strings.Join(parts, "."))
+		redactKiloConfigNode(root)
 		if !yamlRequest {
 			if servers := configV8Node(root, v8ICEServersPath); servers != nil && servers.Kind == yaml.SequenceNode {
 				for _, server := range servers.Content {
@@ -75,7 +80,12 @@ func (h *Handler) ConfigV8(c *gin.Context) {
 		c.Header("Cache-Control", "no-store")
 		c.Header("ETag", configV8ETag(diskHash))
 		if yamlRequest {
-			c.Data(http.StatusOK, "application/yaml; charset=utf-8", data)
+			redacted, errRedact := redactKiloConfigYAML(data)
+			if errRedact != nil {
+				kiloProxyError(c, errRedact)
+				return
+			}
+			c.Data(http.StatusOK, "application/yaml; charset=utf-8", redacted)
 			return
 		}
 		var result any
@@ -152,6 +162,11 @@ func (h *Handler) ConfigV8(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_config", "message": err.Error()})
 		return
 	}
+	preserveKiloConfigSecrets(root, before)
+	if err = h.guardManagedKiloConfig(root, before); err != nil {
+		kiloProxyError(c, err)
+		return
+	}
 	if !yamlRequest && c.Request.Method != http.MethodDelete {
 		preserveV8TURNSecrets(root, before)
 	}
@@ -185,6 +200,15 @@ func (h *Handler) ConfigV8(c *gin.Context) {
 	next, err := config.ParseConfigBytes(data)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid_config", "message": err.Error()})
+		return
+	}
+	previous, errPrevious := config.ParseConfigBytes(raw)
+	if errPrevious != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid_config"})
+		return
+	}
+	if err = next.SDKConfig.ValidateClientKeyScopeMutation(&previous.SDKConfig); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "client_key_channel_required"})
 		return
 	}
 	if err = config.ValidateV8Config(data); err != nil {

@@ -1,3 +1,9 @@
+export type ClientKeyChannel = '' | 'kilo' | 'codex' | 'bps';
+export type ClientKeyScope = {
+  'api-key': string;
+  channel: Exclude<ClientKeyChannel, ''>;
+  [key: string]: unknown;
+};
 export type PayloadParamValueType = 'string' | 'number' | 'boolean' | 'json';
 export type DisableImageGenerationMode = 'false' | 'true' | 'chat' | 'passthrough';
 export type RemoteManagementSecretKeyAction = 'unchanged' | 'replace' | 'clear';
@@ -103,6 +109,7 @@ export type VisualConfigValues = {
   rmPanelRepo: string;
   authDir: string;
   apiKeysText: string;
+  clientKeyScopes: ClientKeyScope[];
   pluginsEnabled: boolean;
   pluginsDir: string;
   pluginStoreSourcesText: string;
@@ -180,6 +187,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   rmPanelRepo: '',
   authDir: '',
   apiKeysText: '',
+  clientKeyScopes: [],
   pluginsEnabled: false,
   pluginsDir: '',
   pluginStoreSourcesText: '',

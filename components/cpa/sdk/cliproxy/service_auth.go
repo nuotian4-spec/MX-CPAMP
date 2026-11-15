@@ -691,10 +691,13 @@ func (s *Service) configureCooldownStateStoreContext(ctx context.Context, cfg *c
 }
 
 func (s *Service) resolveCooldownStateStore(cfg *config.Config) coreauth.CooldownStateStore {
-	if cfg == nil || !cfg.SaveCooldownStatus || cfg.Home.Enabled {
+	if cfg == nil || (!cfg.SaveCooldownStatus && !cfg.IsBPSProtocolEnabled()) || cfg.Home.Enabled {
 		return nil
 	}
 	if s != nil && s.cooldownStateStore != nil {
+		if !cfg.SaveCooldownStatus {
+			return coreauth.PermissionOnlyStateStore(s.cooldownStateStore)
+		}
 		return s.cooldownStateStore
 	}
 	authDir, errResolve := resolveCooldownStateAuthDir(cfg)
@@ -705,7 +708,11 @@ func (s *Service) resolveCooldownStateStore(cfg *config.Config) coreauth.Cooldow
 	if authDir == "" {
 		return nil
 	}
-	return coreauth.NewFileCooldownStateStoreWithAuthDir(authDir, authDir)
+	store := coreauth.NewFileCooldownStateStoreWithAuthDir(authDir, authDir)
+	if !cfg.SaveCooldownStatus {
+		return coreauth.PermissionOnlyStateStore(store)
+	}
+	return store
 }
 
 func resolveCooldownStateAuthDir(cfg *config.Config) (string, error) {

@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/channelscope"
+
 	"github.com/google/uuid"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
@@ -1769,7 +1771,7 @@ func (m *Manager) shouldRetryAfterErrorWithAttempted(ctx context.Context, opts c
 	if status == http.StatusOK {
 		return 0, false
 	}
-	if isRequestInvalidError(err) || isRequestStopError(err) {
+	if channelscope.NoReplay(err) || isRequestInvalidError(err) || isRequestStopError(err) {
 		return 0, false
 	}
 	if m.HomeEnabled() {
@@ -2607,6 +2609,7 @@ func (m *Manager) HasAlternativeTargetForModel(ctx context.Context, providers []
 	if m == nil {
 		return false
 	}
+	providers = m.FilterChannelProviders(ctx, providers)
 	excludedAuthID = strings.TrimSpace(excludedAuthID)
 	opts = ensureRequestedModelMetadata(opts, model)
 	if m.HomeEnabled() {

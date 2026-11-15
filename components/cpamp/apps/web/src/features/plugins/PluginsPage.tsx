@@ -1036,6 +1036,13 @@ function InstalledPluginsView({
 
             <section className={styles.formSection}>
               <h3>{t('plugin_management.config_fields')}</h3>
+              {editingPlugin.id === 'cpa-bps' && (
+                <p className={styles.fieldHint}>
+                  默认 models=[]、auto_discover=true，OAuth 保存注册后自动发现并发布账号可用模型。
+                  非空 models 使用手动列表，后续 OAuth 不会覆盖该配置；这些设置对插件全部账号生效。
+                  自动发现的模型后缀由 model_suffix 决定。
+                </p>
+              )}
               {editingPlugin.configFields.length > 0 ? (
                 editingPlugin.configFields.map((field) => renderFieldEditor(field))
               ) : (

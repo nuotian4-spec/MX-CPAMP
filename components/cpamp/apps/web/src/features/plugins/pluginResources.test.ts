@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PluginListEntry, PluginStoreEntry } from '@/types';
 import {
   collectPluginResourceEntries,
+  CPA_BPS_OAUTH_ROUTE,
   getPluginConfirmToken,
   getPluginRepositorySlug,
   isDefaultPluginStoreSource,
@@ -135,6 +136,27 @@ describe('plugin resource helpers', () => {
     expect(getPluginRepositorySlug('router-for-me/demo.git')).toBe('router-for-me/demo');
     expect(getPluginRepositorySlug('https://github.com/owner/repo.git')).toBe('owner/repo');
     expect(getPluginConfirmToken(createStoreEntry({ repository: '' }))).toBe('demo-plugin');
+  });
+
+  it('仅将cpa-bps授权资源映射到统一OAuth入口', () => {
+    const authMenu = {
+      path: '/v0/resource/plugins/cpa-bps/index.html',
+      menu: 'BPS 授权',
+      description: '',
+    };
+    const entries = collectPluginResourceEntries([
+      createPlugin({
+        id: 'cpa-bps',
+        menus: [authMenu, { ...authMenu, path: '/v0/resource/plugins/cpa-bps/other.html' }],
+      }),
+      createPlugin({ id: 'other-plugin', menus: [authMenu] }),
+    ]);
+    expect(entries.map((entry) => entry.route)).toEqual([
+      CPA_BPS_OAUTH_ROUTE,
+      '/plugin-pages/cpa-bps/1',
+      '/plugin-pages/other-plugin/0',
+    ]);
+    expect(CPA_BPS_OAUTH_ROUTE).toBe('/oauth?provider=cpa-bps');
   });
 
   it('detects only official router-for-me GitHub repositories as first-party', () => {

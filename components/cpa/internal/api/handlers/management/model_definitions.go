@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 )
 
 // RefreshModelDefinitions triggers an immediate on-demand refresh of the model catalogs.
@@ -71,6 +72,11 @@ func (h *Handler) GetStaticModelDefinitions(c *gin.Context) {
 	}
 
 	models := registry.GetStaticModelDefinitionsByChannel(channel)
+	if strings.EqualFold(channel, "kilo") {
+		for _, id := range helps.KiloModels {
+			models = append(models, &registry.ModelInfo{ID: id, Object: "model", OwnedBy: "kilo", Type: "kilo", DisplayName: id, UserDefined: true})
+		}
+	}
 	if len(models) == 0 {
 		models = h.pluginModelDefinitionsByChannel(channel)
 	}

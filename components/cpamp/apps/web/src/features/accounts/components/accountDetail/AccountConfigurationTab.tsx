@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { Fragment, useId, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -23,6 +23,7 @@ import styles from '@/features/accounts/AccountsPage.module.scss';
 
 type AccountConfigurationTabProps = {
   row: AccountRow;
+  concurrencySection?: ReactNode;
   disableControls: boolean;
   editor: UseAuthFileConfigurationEditorResult;
   onCopyText: (text: string) => void | Promise<void>;
@@ -33,8 +34,10 @@ export function AccountConfigurationTab({
   disableControls,
   editor,
   onCopyText,
+  concurrencySection,
 }: AccountConfigurationTabProps) {
   const { t } = useTranslation();
+  const concurrencySlot = <Fragment key="credential-concurrency">{concurrencySection}</Fragment>;
   const exclusionPriority = getAccountModelExclusionPriority(
     useAuthStore((authState) => authState.serverVersion)
   );
@@ -96,14 +99,18 @@ export function AccountConfigurationTab({
             <p>{t('accounts.config_runtime_only_desc')}</p>
           </div>
         </section>
+        {concurrencySlot}
       </div>
     );
   }
 
   if (!state || (state.loading && !state.record)) {
     return (
-      <div className={styles.configurationLoading} role="status" aria-live="polite">
-        <span>{t('accounts.config_loading')}</span>
+      <div className={styles.drawerDetailStack}>
+        <div className={styles.configurationLoading} role="status" aria-live="polite">
+          <span>{t('accounts.config_loading')}</span>
+        </div>
+        {concurrencySlot}
       </div>
     );
   }
@@ -127,6 +134,7 @@ export function AccountConfigurationTab({
             </Button>
           </div>
         </section>
+        {concurrencySlot}
       </div>
     );
   }
@@ -250,6 +258,7 @@ export function AccountConfigurationTab({
           </div>
         </div>
       </section>
+      {concurrencySlot}
 
       {(capabilities.websockets || capabilities.xaiRouting || capabilities.claudeCloak) && (
         <section className={styles.configurationSection}>

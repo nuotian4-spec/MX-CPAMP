@@ -28,8 +28,8 @@ const config = (scope: ApiClientRequestScope) => ({
   baseURL: `${normalizeApiBase(scope.apiBase)}/api`,
 });
 export const credentialConcurrencyApi = {
-  list: (scope: ApiClientRequestScope) =>
-    apiClient.get<ConcurrencySnapshot>('/credential-concurrency', config(scope)),
+  list: (scope: ApiClientRequestScope, signal?: AbortSignal) =>
+    apiClient.get<ConcurrencySnapshot>('/credential-concurrency', { ...config(scope), signal }),
   update: (
     auth_id: string,
     concurrency_limit: number | null,

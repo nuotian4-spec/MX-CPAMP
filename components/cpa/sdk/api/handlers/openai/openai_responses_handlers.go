@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,9 +26,11 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/httpwire"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/interfaces"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	translatorcommon "github.com/router-for-me/CLIProxyAPI/v8/internal/translator/common"
 	sdkaccess "github.com/router-for-me/CLIProxyAPI/v8/sdk/access"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/api/handlers"
+	coreexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/usage"
 )
 
@@ -71,6 +74,8 @@ type responsesSSEFramer struct {
 	outputOrder          []int
 	unindexedOutputItems [][]byte
 	lastEvent            string
+	createdResponseID    string
+	bpsSearchStarted     bool
 	terminalEvent        string
 	terminalError        *interfaces.ErrorMessage
 	failureEvent         string
@@ -245,7 +250,22 @@ func (f *responsesSSEFramer) Flush(w io.Writer) {
 
 func (f *responsesSSEFramer) writeFrame(w io.Writer, frame []byte) {
 	if f.writeErr == nil {
-		f.writeErr = writeResponsesSSEChunk(w, f.repairFrame(responsesSSERecoverJSONFrame(frame, f.syntheticBreaks)))
+		frame = f.repairFrame(responsesSSERecoverJSONFrame(frame, f.syntheticBreaks))
+		f.writeErr = writeResponsesSSEChunk(w, frame)
+		if f.writeErr == nil {
+			if payload, ok := responsesSSEDataPayload(frame); ok {
+				switch ojson.GetBytesNoCopy(payload, "type").String() {
+				case "response.created":
+					if f.createdResponseID == "" {
+						f.createdResponseID = ojson.GetBytesNoCopy(payload, "response.id").String()
+					}
+				case "response.output_item.added":
+					if strings.HasPrefix(f.createdResponseID, "resp_bps_") && ojson.GetBytesNoCopy(payload, "item.type").String() == "web_search_call" && ojson.GetBytesNoCopy(payload, "response_id").String() == f.createdResponseID {
+						f.bpsSearchStarted = true
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -851,10 +871,7 @@ func (h *OpenAIResponsesAPIHandler) Models() []map[string]any {
 // It returns a list of available AI models with their capabilities
 // and specifications in OpenAIResponses-compatible format.
 func (h *OpenAIResponsesAPIHandler) OpenAIResponsesModels(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"object": "list",
-		"data":   h.Models(),
-	})
+	h.WriteModelListResponse(c, h.HandlerType(), gin.H{"object": "list", "data": h.Models()})
 }
 
 func (h *OpenAIResponsesAPIHandler) prepareCodexMultiAgentV2ToolsDoc(c *gin.Context, doc *ojson.Doc) bool {
@@ -1108,7 +1125,7 @@ func (h *OpenAIResponsesAPIHandler) handleStreamingResponse(c *gin.Context, rawJ
 		}
 		return true
 	}
-	keepAliveC, stopKeepAlive := handlers.NewPreFirstTokenKeepAliveTicker(h.CurrentConfig())
+	keepAliveC, stopKeepAlive := handlers.NewRequestPreFirstTokenKeepAliveTicker(cliCtx, h.CurrentConfig())
 	defer stopKeepAlive()
 
 	dataChan, resolvedHeaders, errChan, okBootstrap := h.ExecuteStreamWithPreFTKeepAlive(
@@ -1488,6 +1505,15 @@ func (h *OpenAIResponsesAPIHandler) forwardResponsesStream(c *gin.Context, flush
 		}
 		if isCodexResponsesClientRequest(c) {
 			chunk := handlers.BuildOpenAIResponsesStreamFailedChunk(status, errText, seq)
+			var searchFailure *coreexecutor.BPSSearchError
+			var boundedFailure *helps.BPSFailure
+			isSearchFailure := errors.As(errMsg.Error, &searchFailure) || errors.As(errMsg.Error, &boundedFailure) && ojson.Get(helps.BPSFailureBody(boundedFailure, status), "error.diagnostics.stage").String() == "web_search"
+			if framer.createdResponseID != "" && (framer.bpsSearchStarted || isSearchFailure) {
+				doc := ojson.NewDoc(chunk)
+				_ = doc.Set("response.id", framer.createdResponseID)
+				_ = doc.Set("response_id", framer.createdResponseID)
+				chunk = doc.Bytes()
+			}
 			_, _ = fmt.Fprintf(c.Writer, "\nevent: response.failed\ndata: %s\n\n", string(chunk))
 			return
 		}

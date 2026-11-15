@@ -93,11 +93,12 @@ func TestCallbackValidationThroughServiceAndHandler(t *testing.T) {
 			if w.Code != wantStatus {
 				t.Errorf("回调分类错误：得到%d，预期%d", w.Code, wantStatus)
 			}
-			var result map[string]string
+			var result map[string]any
 			if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 				t.Fatal(err)
 			}
-			if result["code"] != tc.code {
+			code, _ := result["code"].(string)
+			if code != tc.code {
 				t.Errorf("稳定诊断码错误：%q", result["code"])
 			}
 			for _, forbidden := range []string{"RAW_TOKEN_CANARY", "CALLBACK_CODE_CANARY", "SYNTHETIC_KEY", "callback.invalid", cpa.URL} {
@@ -144,8 +145,8 @@ func TestPasswordLoginCapabilitiesAreAuthenticatedAndConfigurationOnly(t *testin
 			h := &Handler{Service: login.New(nil, nil, tc.workerURL, tc.secret), Auth: auth(true)}
 			w := httptest.NewRecorder()
 			h.Handle(w, httptest.NewRequest(http.MethodGet, "/api/oauth-login/capabilities", nil))
-			var result map[string]bool
-			if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &result) != nil || len(result) != 1 || result["password_login_configured"] != tc.configured {
+			var result map[string]any
+			if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &result) != nil || len(result) != 2 || result["password_login_configured"] != tc.configured || result["bps_login_mode"] != "unavailable" {
 				t.Fatalf("配置契约错误：%d %s", w.Code, w.Body.String())
 			}
 			if w.Header().Get("Cache-Control") != "no-store" {

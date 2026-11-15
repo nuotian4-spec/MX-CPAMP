@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	maxErrorOnlyCapturedRequestBodyBytes       int64  = 1 << 20  // 1 MiB
-	maxDeferredErrorRequestBodyBytes           int64  = 32 << 20 // 32 MiB
-	maxCapturedZstdWindowBytes                        = 8 << 20  // 8 MiB: covers every zstd level up to 19
-	authenticatedRequestBodyCapturerContextKey string = "CPA_AUTHENTICATED_REQUEST_BODY_CAPTURER"
+	maxErrorOnlyCapturedRequestBodyBytes         int64  = 1 << 20  // 1 MiB
+	maxDeferredErrorRequestBodyBytes             int64  = 32 << 20 // 32 MiB
+	maxCapturedZstdWindowBytes                          = 8 << 20  // 8 MiB: covers every zstd level up to 19
+	authenticatedRequestBodyCapturerContextKey   string = "CPA_AUTHENTICATED_REQUEST_BODY_CAPTURER"
+	authenticatedRequestBodySuppressorContextKey string = "CPA_AUTHENTICATED_REQUEST_BODY_SUPPRESSOR"
 )
 
 // RequestLoggingMiddleware creates a Gin middleware that logs HTTP requests and responses.
@@ -60,6 +61,7 @@ func RequestLoggingMiddleware(logger logging.RequestLogger) gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		attachRequestLogSources(c, logger, loggerEnabled && hasMatchedRoute)
 
 		// Create response writer wrapper
 		wrapper := NewResponseWriterWrapper(c.Writer, logger, requestInfo)
@@ -68,8 +70,32 @@ func RequestLoggingMiddleware(logger logging.RequestLogger) gin.HandlerFunc {
 			wrapper.logOnErrorOnly = true
 		}
 		c.Writer = wrapper
-		attachRequestLogSources(c, logger, loggerEnabled && hasMatchedRoute)
 		deferredCapture := attachDeferredRequestBodyCapture(c.Request, logger, requestInfo, false, false)
+		suppressed := false
+		clearRequestSources := func() {
+			requestInfo.Body = nil
+			c.Set(requestBodyOverrideContextKey, nil)
+			c.Set("API_REQUEST", nil)
+			c.Set(logging.DeferredAPIRequestContextKey, nil)
+			if source := extractFileBodySource(c, logging.APIRequestSourceContextKey); source != nil {
+				_ = source.Cleanup()
+			}
+			c.Set(logging.APIRequestSourceContextKey, nil)
+		}
+		c.Set(authenticatedRequestBodySuppressorContextKey, func() {
+			suppressed = true
+			c.Set(authenticatedRequestBodyCapturerContextKey, nil)
+			clearRequestSources()
+			if deferredCapture != nil {
+				deferredCapture.skipCapture = true
+				if c.Request.Body == deferredCapture {
+					c.Request.Body = deferredCapture.body
+				}
+				requestInfo.deferredBodyCapture = nil
+				deferredCapture.Cleanup()
+				deferredCapture = nil
+			}
+		})
 		if captureBody {
 			c.Set(authenticatedRequestBodyCapturerContextKey, func() {
 				if deferredCapture != nil && deferredCapture.bytesRead == 0 {
@@ -92,6 +118,9 @@ func RequestLoggingMiddleware(logger logging.RequestLogger) gin.HandlerFunc {
 		// and unwinds to an outer recovery middleware.
 		defer func() {
 			recovered := recover()
+			if suppressed {
+				clearRequestSources()
+			}
 			if recovered != nil && !isAbortHandlerPanic(recovered) {
 				wrapper.panicked = true
 				if !wrapper.ResponseWriter.Written() {
@@ -112,6 +141,18 @@ func RequestLoggingMiddleware(logger logging.RequestLogger) gin.HandlerFunc {
 
 		// Process the request
 		c.Next()
+	}
+}
+
+// SuppressAuthenticatedRequestBody detaches eager and deferred capture before reading.
+func SuppressAuthenticatedRequestBody(c *gin.Context) {
+	if c == nil {
+		return
+	}
+	value, _ := c.Get(authenticatedRequestBodySuppressorContextKey)
+	c.Set(authenticatedRequestBodySuppressorContextKey, nil)
+	if suppress, ok := value.(func()); ok {
+		suppress()
 	}
 }
 

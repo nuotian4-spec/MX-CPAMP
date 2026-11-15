@@ -7,6 +7,9 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
+import { refreshCpaBpsQuota } from '@/features/accounts/model/refreshCpaBpsQuota';
+import { captureQuotaCacheGeneration, isQuotaCacheGenerationCurrent } from '@/stores/useQuotaStore';
+import { resolveAccountCredentialMutationFiles } from '@/features/accounts/model/accountCredentialMutationMarker';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
@@ -76,6 +79,8 @@ interface ProviderState {
   callbackSubmitting?: boolean;
   callbackStatus?: 'success' | 'error';
   callbackError?: string;
+  completionNotice?: string;
+  callbackSubmitted?: boolean;
 }
 
 interface ScopedOAuthProviderAttempt extends OAuthProviderAttempt {
@@ -195,6 +200,8 @@ const CALLBACK_SUPPORTED = new Set<string>([
 ]);
 const XAI_CALLBACK_URL = 'http://127.0.0.1:56121/callback';
 const SUCCESS_RESET_DELAY_MS = 5000;
+const requiresVerifiedCommit = (provider: OAuthProvider) =>
+  provider === 'codex' || provider === 'cpa-bps';
 const getProviderI18nPrefix = (provider: BuiltInOAuthProvider) => provider.replace('-', '_');
 const getAuthKey = (provider: BuiltInOAuthProvider, suffix: string) =>
   `auth_login.${getProviderI18nPrefix(provider)}_${suffix}`;
@@ -301,6 +308,12 @@ export function OAuthPage() {
   );
   const [states, setStates] = useState<Record<string, ProviderState>>({});
   const [pluginOAuthPlugins, setPluginOAuthPlugins] = useState<PluginListEntry[]>([]);
+  const [pluginOAuthLoad, setPluginOAuthLoad] = useState<{
+    scope: ApiClientRequestScope;
+    search: string;
+    status: 'loaded' | 'error';
+  }>();
+  const requestedBpsProvider = new URLSearchParams(location.search).get('provider') === 'cpa-bps';
   const [vertexState, setVertexState] = useState<VertexImportState>({
     fileName: '',
     location: '',
@@ -313,6 +326,7 @@ export function OAuthPage() {
     Partial<Record<string, { version: number; baseline: AccountCredentialMutationBaseline }>>
   >({});
   const callbackAttemptVersions = useRef<Partial<Record<string, number>>>({});
+  const callbackSubmissions = useRef<Partial<Record<string, OAuthProviderAttempt>>>({});
   const oauthPollingScopeRef = useRef(oauthPollingScope);
   const connectionFingerprintRef = useRef(connectionFingerprint);
   const vertexImportGenerationRef = useRef(0);
@@ -337,6 +351,7 @@ export function OAuthPage() {
     providerAttemptVersions.current = {};
     providerCredentialBaselines.current = {};
     callbackAttemptVersions.current = {};
+    callbackSubmissions.current = {};
     vertexImportGenerationRef.current += 1;
     clearTimers();
     setStates((prev) => (Object.keys(prev).length === 0 ? prev : {}));
@@ -366,28 +381,34 @@ export function OAuthPage() {
               hint: t('auth_login.plugin_oauth_hint', { plugin: title }),
               urlLabel: t('auth_login.plugin_oauth_url_label'),
               icon: logo || undefined,
-              supportsCallback: false,
+              supportsCallback: resolvePluginOAuthProviderId(plugin) === 'cpa-bps',
               isPlugin: true,
             };
           })
       : [];
     return [...builtIn, ...pluginProviders];
   }, [apiBase, pluginOAuthAvailable, pluginOAuthPlugins, t]);
+  const hasBpsProvider = providers.some((provider) => provider.id === 'cpa-bps');
 
   useEffect(() => {
-    const targetId = location.hash.replace(/^#/, '');
+    const targetId = requestedBpsProvider
+      ? 'oauth-provider-cpa-bps'
+      : location.hash.replace(/^#/, '');
     if (!targetId) return;
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const target = document.getElementById(targetId);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (requestedBpsProvider) target?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [location.hash, providers.length]);
+  }, [hasBpsProvider, location.hash, providers.length, requestedBpsProvider]);
 
   useEffect(() => {
     return () => {
       providerAttemptVersions.current = {};
       providerCredentialBaselines.current = {};
       callbackAttemptVersions.current = {};
+      callbackSubmissions.current = {};
       vertexImportGenerationRef.current += 1;
       clearTimers();
     };
@@ -403,16 +424,18 @@ export function OAuthPage() {
       .then((response) => {
         if (cancelled || connectionFingerprintRef.current !== loadConnectionFingerprint) return;
         setPluginOAuthPlugins(response.plugins.filter((plugin) => plugin.supportsOAuth));
+        setPluginOAuthLoad({ scope: requestScope, search: location.search, status: 'loaded' });
       })
       .catch(() => {
         if (cancelled || connectionFingerprintRef.current !== loadConnectionFingerprint) return;
         setPluginOAuthPlugins([]);
+        setPluginOAuthLoad({ scope: requestScope, search: location.search, status: 'error' });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [connectionFingerprint, pluginOAuthAvailable, requestScope]);
+  }, [connectionFingerprint, location.search, pluginOAuthAvailable, requestScope]);
 
   const getProviderDefinition = useCallback(
     (provider: OAuthProvider) => providers.find((item) => item.id === provider),
@@ -528,6 +551,7 @@ export function OAuthPage() {
   };
 
   const resetProviderAttempt = (provider: OAuthProvider) => {
+    if (requiresVerifiedCommit(provider)) delete callbackSubmissions.current[provider];
     delete providerAttemptVersions.current[provider];
     delete providerCredentialBaselines.current[provider];
     delete callbackAttemptVersions.current[provider];
@@ -590,6 +614,8 @@ export function OAuthPage() {
       callbackSubmitting: false,
       callbackStatus: undefined,
       callbackError: undefined,
+      completionNotice: undefined,
+      callbackSubmitted: false,
     });
     const timer = window.setTimeout(() => {
       if (successResetTimers.current[provider] !== timer) return;
@@ -607,7 +633,30 @@ export function OAuthPage() {
   ): 'completed' | 'waiting' | 'error' | 'stale' => {
     if (!isProviderAttemptCurrent(provider, attempt)) return 'stale';
     if (response.status === 'ok') {
+      if (requiresVerifiedCommit(provider) && (response.saved !== true || response.adopted !== true)) {
+        updateProviderState(provider, {
+          completionNotice:
+            response.saved === true && response.adopted === false
+              ? '已保存，等待注册确认'
+              : '授权结果未确认',
+        });
+        return 'waiting';
+      }
       if (!completeProviderAuth(provider, attempt)) return 'stale';
+      if (provider === 'cpa-bps' && attempt.credentialBaseline) {
+        const generation = captureQuotaCacheGeneration();
+        const isCurrent = () => isQuotaCacheGenerationCurrent(generation) &&
+          oauthPollingScopeRef.current.connectionFingerprint === attempt.scope.connectionFingerprint;
+        void authFilesApi.list(attempt.requestScope).then(async ({ files }) => {
+          if (!isCurrent()) return;
+          const candidates = resolveAccountCredentialMutationFiles({
+            id: '', createdAtMs: Date.now(), provider, requireObservedMutation: true,
+            connectionFingerprint: attempt.scope.connectionFingerprint || '',
+            baseline: attempt.credentialBaseline,
+          }, files);
+          if (candidates.length === 1) await refreshCpaBpsQuota(candidates[0], attempt.requestScope, isCurrent);
+        }).catch(() => { /* 导入已成功；额度查询失败留给手动刷新。 */ });
+      }
       showNotification(successMessage, 'success');
       return 'completed';
     }
@@ -633,6 +682,17 @@ export function OAuthPage() {
         callbackStatus: 'error',
         callbackError: response.error,
       });
+      if (requiresVerifiedCommit(provider)) {
+        setStates((prev) => ({
+          ...prev,
+          [provider]: {
+            ...prev[provider],
+            completionNotice: prev[provider]?.completionNotice?.startsWith('已保存')
+              ? '已保存，注册结果未确认；请检查凭证列表。'
+              : '授权结果未确认；请检查凭证列表或诊断信息。',
+          },
+        }));
+      }
       showNotification(
         `${getProviderActionText(provider, 'oauth_status_error')} ${response.error || ''}`,
         'error'
@@ -684,6 +744,26 @@ export function OAuthPage() {
           stopAttempt();
           return;
         }
+        if (requiresVerifiedCommit(provider)) {
+          const terminal = [401, 403, 404, 410].includes(getErrorStatus(err) || 0);
+          setStates((prev) => ({
+            ...prev,
+            [provider]: {
+              ...prev[provider],
+              completionNotice: prev[provider]?.completionNotice || '授权结果未确认',
+              status: terminal ? 'error' : 'waiting',
+              polling: !terminal,
+              error: terminal
+                ? '状态查询已停止；请检查凭证列表或诊断信息。'
+                : '状态查询暂不可用，正在继续查询；请勿重复提交回调。',
+            },
+          }));
+          if (terminal) {
+            finishProviderAttempt(provider, attempt);
+            stopAttempt();
+          }
+          return;
+        }
         if (provider === 'devin') {
           updateProviderState(provider, {
             status: 'error',
@@ -709,6 +789,8 @@ export function OAuthPage() {
   };
 
   const startAuth = async (provider: OAuthProvider) => {
+    if (requiresVerifiedCommit(provider) && providerAttemptVersions.current[provider] !== undefined) return;
+    if (requiresVerifiedCommit(provider)) delete callbackSubmissions.current[provider];
     if (provider === 'devin' && states[provider]?.state) {
       return;
     }
@@ -729,6 +811,8 @@ export function OAuthPage() {
       callbackStatus: undefined,
       callbackError: undefined,
       callbackUrl: '',
+      completionNotice: undefined,
+      callbackSubmitted: false,
     });
     try {
       try {
@@ -875,6 +959,7 @@ export function OAuthPage() {
   };
 
   const submitCallback = async (provider: OAuthProvider) => {
+    if (requiresVerifiedCommit(provider) && callbackSubmissions.current[provider]) return;
     const providerState = states[provider];
     const callbackInput = (providerState?.callbackUrl || '').trim();
     if (!callbackInput) {
@@ -926,16 +1011,21 @@ export function OAuthPage() {
           : undefined,
     };
     if (!isProviderAttemptCurrent(provider, providerAttempt)) return;
+    if (requiresVerifiedCommit(provider)) callbackSubmissions.current[provider] = providerAttempt;
     const callbackAttempt = beginCallbackAttempt(provider);
+    const callbackIsCurrent = () =>
+      isCallbackAttemptCurrent(provider, callbackAttempt) &&
+      (!requiresVerifiedCommit(provider) || callbackSubmissions.current[provider] === providerAttempt);
     updateProviderState(provider, {
       callbackSubmitting: true,
       callbackStatus: undefined,
       callbackError: undefined,
+      ...(requiresVerifiedCommit(provider) ? { callbackUrl: '', callbackSubmitted: true } : {}),
     });
     const probeStatus = async () => {
       const response = await oauthApi.getAuthStatus(state, providerAttempt.requestScope);
       if (
-        !isCallbackAttemptCurrent(provider, callbackAttempt) ||
+        !callbackIsCurrent() ||
         !isProviderAttemptCurrent(provider, providerAttempt)
       ) {
         return;
@@ -950,34 +1040,36 @@ export function OAuthPage() {
     };
     try {
       await oauthApi.submitCallback(provider, redirectUrl, callbackAttempt.requestScope);
-      if (!isCallbackAttemptCurrent(provider, callbackAttempt)) return;
+      if (!callbackIsCurrent()) return;
       if (!isProviderAttemptCurrent(provider, providerAttempt)) return;
       updateProviderState(provider, {
         callbackSubmitting: false,
-        callbackStatus: 'success',
+        callbackStatus: requiresVerifiedCommit(provider) ? undefined : 'success',
         callbackError: undefined,
+        ...(requiresVerifiedCommit(provider) ? { completionNotice: '回调已接收，等待保存和注册确认' } : {}),
       });
-      showNotification(t('auth_login.oauth_callback_success'), 'success');
+      if (!requiresVerifiedCommit(provider)) showNotification(t('auth_login.oauth_callback_success'), 'success');
       try {
         await probeStatus();
       } catch {
-        if (isCallbackAttemptCurrent(provider, callbackAttempt)) {
+        if (callbackIsCurrent()) {
           finishCallbackAttempt(provider, callbackAttempt);
         }
       }
     } catch (err: unknown) {
-      if (!isCallbackAttemptCurrent(provider, callbackAttempt)) return;
+      if (!callbackIsCurrent()) return;
       const status = getErrorStatus(err);
       if (status === 409 && isProviderAttemptCurrent(provider, providerAttempt)) {
         updateProviderState(provider, {
           callbackSubmitting: false,
-          callbackStatus: 'success',
+          callbackStatus: requiresVerifiedCommit(provider) ? undefined : 'success',
           callbackError: undefined,
+          ...(requiresVerifiedCommit(provider) ? { completionNotice: '授权结果未确认，正在查询已有授权' } : {}),
         });
         try {
           await probeStatus();
         } catch (probeError: unknown) {
-          if (!isCallbackAttemptCurrent(provider, callbackAttempt)) return;
+          if (!callbackIsCurrent()) return;
           finishCallbackAttempt(provider, callbackAttempt);
           updateProviderState(provider, {
             callbackSubmitting: false,
@@ -988,6 +1080,16 @@ export function OAuthPage() {
         return;
       }
       const message = getErrorMessage(err);
+      if (requiresVerifiedCommit(provider) && callbackSubmissions.current[provider] === providerAttempt) {
+        if (status === 400) {
+          delete callbackSubmissions.current[provider];
+          updateProviderState(provider, { callbackSubmitted: false });
+        } else {
+          updateProviderState(provider, {
+            completionNotice: '授权结果未确认，正在查询已有授权；请勿重复提交回调。',
+          });
+        }
+      }
       const errorMessage =
         status === 404
           ? t('auth_login.oauth_callback_upgrade_hint', {
@@ -1088,6 +1190,26 @@ export function OAuthPage() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
+        {requestedBpsProvider && (
+          <div role="status">
+            {hasBpsProvider ? (
+              <p>BPS 插件授权已统一到下方卡片。点击登录后生成授权链接，已有账号无需重新授权。</p>
+            ) : pluginOAuthAvailable &&
+              (pluginOAuthLoad?.scope !== requestScope ||
+                pluginOAuthLoad.search !== location.search) ? (
+              <p>正在读取 BPS 插件授权入口…</p>
+            ) : (
+              <p>
+                {pluginOAuthLoad?.scope === requestScope &&
+                pluginOAuthLoad.search === location.search &&
+                pluginOAuthLoad.status === 'error'
+                  ? '读取 BPS 插件授权入口失败。'
+                  : '当前连接没有可用的 BPS 插件授权入口。'}
+                请确认面板已连接，并在<a href="#/plugins">插件管理</a>启用 cpa-bps 后重新打开此页。
+              </p>
+            )}
+          </div>
+        )}
         <InternalLoginCards key={connectionFingerprint} scope={requestScope} />
         {providers.map((provider) => {
           const state = states[provider.id] || {};
@@ -1104,7 +1226,11 @@ export function OAuthPage() {
             .filter(Boolean)
             .join(' ');
           return (
-            <div key={provider.id} id={`oauth-provider-${provider.id}`}>
+            <div
+              key={provider.id}
+              id={`oauth-provider-${provider.id}`}
+              tabIndex={provider.id === 'codex' || provider.id === 'cpa-bps' ? -1 : undefined}
+            >
               <Card
                 title={
                   <span className={styles.cardTitle}>
@@ -1126,7 +1252,10 @@ export function OAuthPage() {
                   <Button
                     onClick={() => startAuth(provider.id)}
                     loading={state.polling}
-                    disabled={provider.id === 'devin' && Boolean(state.state)}
+                    disabled={
+                      (provider.id === 'devin' && Boolean(state.state)) ||
+                      (requiresVerifiedCommit(provider.id) && state.status === 'waiting')
+                    }
                   >
                     {loginButtonLabel}
                   </Button>
@@ -1134,6 +1263,15 @@ export function OAuthPage() {
               >
                 <div className={styles.cardContent}>
                   <div className={styles.cardHint}>{provider.hint}</div>
+                  {provider.id === 'codex' && (
+                    <p>
+                      浏览器 OAuth 是独立新授权，原2FA任务保持停止；实际账号由官方页面登录决定。
+                      若登录后 localhost 回调页面打不开，请复制地址栏完整回调地址，粘贴到下方提交。
+                    </p>
+                  )}
+                  {provider.id === 'cpa-bps' && (
+                    <p>请在官方页面完成 BPS 授权，再复制登录后地址栏中的完整回调 URL。BPS 2FA 暂未接入。</p>
+                  )}
                   {state.url && (
                     <div className={styles.authUrlBox}>
                       <div className={styles.authUrlLabel}>{provider.urlLabel}</div>
@@ -1208,8 +1346,10 @@ export function OAuthPage() {
                         )}
                         value={state.callbackUrl || ''}
                         disabled={
-                          provider.id === 'devin' &&
-                          (state.cancelling === true || state.status !== 'waiting')
+                          (provider.id === 'devin' &&
+                            (state.cancelling === true || state.status !== 'waiting')) ||
+                          (requiresVerifiedCommit(provider.id) &&
+                            (state.callbackSubmitted === true || state.status !== 'waiting'))
                         }
                         onChange={(e) =>
                           updateProviderState(provider.id, {
@@ -1233,8 +1373,10 @@ export function OAuthPage() {
                           onClick={() => submitCallback(provider.id)}
                           loading={state.callbackSubmitting}
                           disabled={
-                            provider.id === 'devin' &&
-                            (state.cancelling === true || state.status !== 'waiting')
+                            (provider.id === 'devin' &&
+                              (state.cancelling === true || state.status !== 'waiting')) ||
+                            (requiresVerifiedCommit(provider.id) &&
+                              (state.callbackSubmitted === true || state.status !== 'waiting'))
                           }
                         >
                           {t('auth_login.oauth_callback_button')}
@@ -1260,6 +1402,9 @@ export function OAuthPage() {
                           ? `${getProviderActionText(provider.id, 'oauth_status_error')} ${state.error || ''}`
                           : getProviderActionText(provider.id, 'oauth_status_waiting')}
                     </div>
+                  )}
+                  {requiresVerifiedCommit(provider.id) && state.completionNotice && (
+                    <p role="status">{state.completionNotice}</p>
                   )}
                   {state.status === 'success' && (
                     <div className={styles.successActions}>

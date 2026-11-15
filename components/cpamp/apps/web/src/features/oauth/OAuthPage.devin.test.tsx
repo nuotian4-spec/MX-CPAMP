@@ -2,6 +2,8 @@ import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OAuthPage } from './OAuthPage';
 
+vi.mock('./InternalLoginCards', () => ({ InternalLoginCards: () => null }));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const { mocks } = vi.hoisted(() => ({

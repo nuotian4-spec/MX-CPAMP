@@ -367,6 +367,28 @@
   }
 }
 
+.kiloRowActions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+
+  > * {
+    flex: 0 0 auto;
+  }
+
+  > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    white-space: nowrap;
+  }
+}
+
 .accountCardList {
   display: grid;
   gap: 8px;
@@ -837,7 +859,9 @@
     flex-shrink: 0;
     opacity: 0.65;
     color: var(--accounts-muted);
-    transition: opacity 0.14s ease, color 0.14s ease;
+    transition:
+      opacity 0.14s ease,
+      color 0.14s ease;
   }
 
   .accountGridCardNoteText {
@@ -852,7 +876,9 @@
     font-style: normal;
     opacity: 0.7;
     user-select: none;
-    transition: color 0.14s ease, opacity 0.14s ease;
+    transition:
+      color 0.14s ease,
+      opacity 0.14s ease;
   }
 }
 
@@ -894,7 +920,6 @@
   }
 }
 
-
 .accountGridCardRecentStatus {
   display: flex;
   flex-direction: column;
@@ -905,7 +930,9 @@
   border-top: 1px solid color-mix(in srgb, var(--accounts-border) 60%, transparent);
   box-sizing: border-box;
   cursor: pointer;
-  transition: color 0.15s ease, opacity 0.15s ease;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease;
 
   &:hover {
     .accountGridCardRecentStatusTitleGroup {
@@ -1216,7 +1243,6 @@
   .accountCardHeader {
     display: none;
   }
-
 }
 
 .accountCardSelected {
@@ -1697,7 +1723,10 @@
   padding: 1px 5px;
   margin: -1px -5px;
   font-family: inherit;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover:not(:disabled) {
     background: color-mix(in srgb, var(--primary-color) 10%, transparent);
@@ -1735,7 +1764,9 @@
   border-radius: 4px;
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:focus {
     border-color: var(--primary-color);
@@ -7788,4 +7819,498 @@
     flex-direction: column;
     gap: 6px;
   }
+}
+
+.credentialRelations {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.credentialSourceLink {
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  color: var(--primary-color);
+  font: inherit;
+  line-height: 1.5;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.credentialStateDetails {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: left;
+  summary {
+    cursor: pointer;
+  }
+  &[open] {
+    max-width: 240px;
+  }
+}
+.credentialGroupHeading {
+  padding: 12px 0 3px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.accountQuotaCell {
+  min-width: 0;
+  align-self: center;
+}
+.accountCardList {
+  min-width: 0;
+  padding: 0;
+  gap: 0;
+}
+.accountCardHeader,
+.accountCard {
+  grid-template-columns:
+    minmax(0, 1.25fr) minmax(48px, 0.42fr) minmax(66px, 0.65fr) minmax(84px, 0.85fr)
+    minmax(104px, 1.05fr) minmax(200px, 1.85fr) minmax(100px, 0.95fr);
+  gap: 12px;
+}
+.accountCardHeader {
+  padding: 12px;
+  font-weight: 500;
+}
+.accountCard {
+  min-height: 118px;
+  padding: 14px 12px;
+  border-radius: 0;
+  border-width: 0 0 1px;
+  align-items: center;
+}
+.accountCardIdentity {
+  align-items: flex-start;
+  gap: 8px;
+}
+.accountCardPlan {
+  align-items: flex-start;
+  text-align: left;
+}
+.accountCardPlan .accountPlanName,
+.accountCardPlan .accountPlanRemaining {
+  text-align: left;
+}
+.accountProviderLogo {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+  img {
+    max-width: 24px;
+    max-height: 24px;
+  }
+}
+.accountIdentityTitle {
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.accountCardFile {
+  font-size: 10px;
+}
+.accountGridList {
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  padding: 0;
+  gap: 14px;
+}
+.accountGridCard {
+  padding: 20px 22px 12px;
+  gap: 14px;
+  border-radius: 16px;
+}
+.accountGridCard:hover {
+  transform: none;
+}
+.accountGridCard .accountIdentityTitle {
+  font-size: 16px;
+}
+.accountGridCardHeaderRight {
+  max-width: 112px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.accountGridCardMetaSection {
+  margin: 0;
+}
+.accountGridCardQuota {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.accountGridCardQuotaList {
+  gap: 12px;
+}
+.accountGridCardRecentStatus {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.accountGridCardFooter {
+  margin: 0 -22px -12px;
+  padding: 11px 22px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+.accountGridCardHistory {
+  padding-top: 12px;
+}
+.accountCardBusiness {
+  border-left: 0;
+  padding-inline: 0;
+}
+.accountQuotaCell .accountCardBusiness {
+  width: 100%;
+}
+.quotaWindowGrid {
+  gap: 12px;
+}
+.quotaWindowUsageLine:empty {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .accountCardHeader {
+    display: none;
+  }
+  .accountCard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .accountCardIdentity,
+  .accountQuotaCell,
+  .accountCardRecommendation {
+    grid-column: 1 / -1;
+  }
+  .accountCardHealth,
+  .accountCardLatestRequest,
+  .accountCardEvidence {
+    grid-column: auto;
+  }
+  .accountCardList {
+    min-width: 0;
+  }
+}
+@media (max-width: 700px) {
+  .accountGridList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .accountGridCard {
+    padding: 18px 16px 12px;
+  }
+  .accountGridCardFooter {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+  .accountGridCard .accountIdentityTitle {
+    font-size: 15px;
+  }
+  .accountGridCardHeaderRight {
+    max-width: 94px;
+  }
+}
+
+.accountGridQuotaSection {
+  min-width: 0;
+}
+
+.credentialMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+}
+
+.credentialWorkspace {
+  gap: 16px;
+  padding: 20px;
+  background: var(--surface-subtle);
+
+  .controlsPanel,
+  .controlsFilterPanel,
+  .tablePanel {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .controlsTabsRow {
+    padding: 0;
+    gap: 16px;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .controlsFilterPanel {
+    gap: 12px;
+    padding: 0;
+  }
+
+  .tabs {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+  }
+
+  .credentialStatusToolbar {
+    .batchBar {
+      display: flex;
+      flex: 0 1 auto;
+      gap: 10px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+    }
+
+    .batchSummary small {
+      display: none;
+    }
+    .batchActions {
+      gap: 6px;
+    }
+  }
+
+  .accountGridList {
+    padding: 0;
+    gap: 14px;
+  }
+
+  .accountGridCard {
+    min-height: 0;
+    gap: 12px;
+    padding: 20px 20px 12px;
+    border: 1px solid var(--accounts-border);
+    background: var(--accounts-surface);
+    box-shadow: none;
+
+    &:hover {
+      box-shadow: none;
+      border-color: color-mix(in srgb, var(--primary-color) 35%, var(--accounts-border));
+    }
+
+    &.accountGridCardDisabled {
+      opacity: 1;
+      background: var(--accounts-surface);
+    }
+  }
+
+  .accountGridCardHeader {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .accountGridCardIdentity {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .accountGridCard .accountProviderLogo {
+    width: 18px;
+    height: 22px;
+    flex-basis: 18px;
+    img,
+    svg {
+      max-width: 18px;
+      max-height: 18px;
+    }
+  }
+  .accountGridCardHeaderRight {
+    flex: 0 0 auto;
+    max-width: 100px;
+    align-items: flex-end;
+
+    .accountPlanBadge {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+  }
+
+  .accountGridCardMetaSection {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-top: -4px;
+  }
+  .accountGridCardMetaRow {
+    flex: 0 0 auto;
+  }
+  .accountGridCardNoteRow {
+    width: auto;
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0;
+  }
+  .accountGridCardNoteRowEmpty {
+    flex: 0 0 auto;
+    opacity: 1;
+  }
+  .accountGridCardNoteEditRow {
+    flex: 1 1 140px;
+  }
+
+  .accountGridCardFooter {
+    margin: auto -20px -12px;
+    padding: 10px 20px;
+    background: var(--surface-subtle);
+  }
+}
+
+.credentialHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  min-width: 0;
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.4;
+    font-weight: 650;
+  }
+}
+.credentialToolbarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  min-width: 0;
+}
+.credentialSearchActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  .searchField {
+    width: 240px;
+  }
+}
+.credentialExpandedFilters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr)) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-block: 1px solid var(--accounts-border);
+  &[hidden] {
+    display: none;
+  }
+}
+.credentialFilterSummary {
+  margin: 0;
+  font-size: 12px;
+  color: var(--accounts-muted);
+}
+.credentialStatusToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.credentialPoolStatus {
+  margin: 0;
+  font-size: 12px;
+  color: var(--accounts-muted);
+}
+.credentialWorkspace .accountGridCard .credentialEgress {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--accounts-muted);
+  > span,
+  > details,
+  > details > summary {
+    font-size: inherit;
+    line-height: inherit;
+  }
+}
+.credentialIdentityTools {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 1100px) {
+  .credentialExpandedFilters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .credentialWorkspace {
+    padding: 14px 10px;
+    gap: 14px;
+    .controlsTabsRow {
+      gap: 12px;
+    }
+    .controlsTabsRow > .headerActions {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+    .accountGridCard {
+      padding-inline: 16px;
+    }
+    .accountGridCardFooter {
+      margin-inline: -16px;
+      padding-inline: 16px;
+    }
+  }
+  .credentialHeading {
+    align-items: flex-start;
+    h1 {
+      font-size: 22px;
+    }
+  }
+  .credentialToolbarRow {
+    align-items: stretch;
+  }
+  .credentialSearchActions {
+    width: 100%;
+    .searchField {
+      flex: 1;
+      width: auto;
+      min-width: 0;
+    }
+  }
+  .credentialStatusToolbar {
+    align-items: flex-start;
+  }
+}
+.credentialCardStatusRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+.credentialCardHealth {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  > small {
+    color: var(--text-secondary);
+    font-size: 10px;
+  }
+}
+.credentialCardStatusRow .accountGridCardRecentStatus {
+  margin: 0;
 }

@@ -12,6 +12,7 @@ type ServerResponseCompression = ResponseCompressionConfig
 
 // Config represents the application's configuration, loaded from a YAML file.
 type Config struct {
+	Kilo        KiloConfig        `yaml:"kilo" json:"kilo"`
 	BPS         BPSConfig         `yaml:"bps" json:"bps"`
 	BPSProtocol BPSProtocolConfig `yaml:"bps-protocol" json:"bps-protocol"`
 	// ServerResponseCompression is the JSON-visible mirror of the downstream
@@ -225,5 +226,11 @@ type Config struct {
 
 // BPSConfig declares the operator-confirmed catalog; no upstream model defaults are assumed.
 type BPSConfig struct {
-	Models []string `yaml:"models" json:"models"`
+	WebSearch            *bool    `yaml:"web_search,omitempty" json:"web_search,omitempty"`
+	Models               []string `yaml:"models" json:"models"`
+	AutoDiscover         *bool    `yaml:"auto_discover,omitempty" json:"auto_discover,omitempty"`
+	ModelSuffix          string   `yaml:"model_suffix" json:"model_suffix"`
+	FastMode             bool     `yaml:"fast_mode" json:"fast_mode"`
+	OmitEncryptedHistory *bool    `yaml:"omit_encrypted_history,omitempty" json:"omit_encrypted_history,omitempty"`
+	CompactThreshold     int      `yaml:"compact_threshold,omitempty" json:"compact_threshold,omitempty"`
 }

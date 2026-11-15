@@ -28,7 +28,12 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		c.JSON(200, gin.H{})
 		return
 	}
-	c.JSON(200, new(*h.cfg))
+	view := h.cfg.CloneForRuntime()
+	view.Kilo.Proxies = append([]config.KiloProxy(nil), view.Kilo.Proxies...)
+	for i := range view.Kilo.Proxies {
+		view.Kilo.Proxies[i].URL = ""
+	}
+	c.JSON(200, view)
 }
 
 type releaseInfo struct {
@@ -127,9 +132,20 @@ func WriteConfig(path string, data []byte) error {
 }
 
 func (h *Handler) PutConfigYAML(c *gin.Context) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.authManager != nil {
+		unlock := h.authManager.LockKiloConfigUpdate()
+		defer unlock()
+	}
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_yaml", "message": "cannot read request body"})
+		return
+	}
+	body, err = h.prepareLegacyKiloConfig(body)
+	if err != nil {
+		kiloProxyError(c, err)
 		return
 	}
 	var cfg config.Config
@@ -164,8 +180,6 @@ func (h *Handler) PutConfigYAML(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invalid_config", "message": err.Error()})
 		return
 	}
-	h.mu.Lock()
-	defer h.mu.Unlock()
 	if WriteConfig(h.configFilePath, body) != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "write_failed", "message": "failed to write config"})
 		return
@@ -190,6 +204,11 @@ func (h *Handler) GetConfigYAML(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "read_failed", "message": err.Error()})
+		return
+	}
+	data, err = redactKiloConfigYAML(data)
+	if err != nil {
+		kiloProxyError(c, err)
 		return
 	}
 	c.Header("Content-Type", "application/yaml; charset=utf-8")

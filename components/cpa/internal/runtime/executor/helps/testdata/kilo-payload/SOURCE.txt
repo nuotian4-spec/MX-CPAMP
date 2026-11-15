@@ -1,0 +1,1 @@
+static.webp: golang.org/x/image v0.45.0 testdata/gopher-doc.1bpp.lossless.webp (BSD license in LICENSE).

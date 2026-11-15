@@ -1,6 +1,32 @@
 package executor
 
-import "github.com/MoeForge/moego/ojson"
+import (
+	"fmt"
+
+	"github.com/MoeForge/moego/ojson"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints"
+)
+
+// HasBPSIdentityBoundHistory excludes omittable message parts from binding checks.
+// Failover still inspects the original history and never gains eligibility from omission.
+func HasBPSIdentityBoundHistory(body []byte) bool {
+	doc := ojson.NewDoc(body)
+	for i, item := range doc.Get("input").Array() {
+		kind := item.Get("type").String()
+		value, _ := item.Value().(map[string]any)
+		if basispoints.IsCodexThreadDelegation(value) {
+			_ = doc.Delete(fmt.Sprintf("input.%d.type", i))
+			continue
+		}
+		if kind == "message" || kind == "agent_message" || kind == "" {
+			_ = doc.Delete(fmt.Sprintf("input.%d.encrypted_content", i))
+			for j := range item.Get("content").Array() {
+				_ = doc.Delete(fmt.Sprintf("input.%d.content.%d.encrypted_content", i, j))
+			}
+		}
+	}
+	return HasAccountBoundHistory(doc.Bytes())
+}
 
 // HasAccountBoundHistory identifies replay that is not portable between accounts.
 func HasAccountBoundHistory(body []byte) bool {
@@ -59,16 +85,13 @@ func BPSUnsupportedReason(body []byte) string {
 			return "BPS does not support " + key
 		}
 	}
-	if v, _ := value["service_tier"].(string); v != "" && v != "auto" && v != "default" {
+	if v, _ := value["service_tier"].(string); v != "" && v != "auto" && v != "default" && v != "priority" {
 		return "BPS does not support service_tier"
 	}
 	var inspect func(any) bool
 	inspect = func(v any) bool {
 		switch item := v.(type) {
 		case map[string]any:
-			if encrypted, _ := item["encrypted_content"].(string); encrypted != "" {
-				return true
-			}
 			if item["function_call"] != nil {
 				return true
 			}
@@ -80,7 +103,7 @@ func BPSUnsupportedReason(body []byte) string {
 				switch kind {
 				case "function_call", "function_call_output", "custom_tool_call", "custom_tool_call_output":
 					return false
-				case "message", "text", "input_text", "output_text", "reasoning", "function", "input_image", "image_url", "image", "input_file":
+				case "message", "text", "input_text", "output_text", "reasoning", "function", "input_image", "image_url", "image", "input_file", "compaction", "compaction_trigger", "web_search_call", "additional_tools", "tool_search_output", "agent_message", "encrypted_content":
 				default:
 					return true
 				}

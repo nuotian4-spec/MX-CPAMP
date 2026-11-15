@@ -246,7 +246,7 @@ func (s *Service) applyConfigRuntime(ctx context.Context, commit configCommit, s
 	if errContext := ctx.Err(); errContext != nil {
 		return false
 	}
-	if s.coreManager != nil && !cfg.Home.Enabled && cfg.SaveCooldownStatus {
+	if s.coreManager != nil && !cfg.Home.Enabled && (cfg.SaveCooldownStatus || cfg.IsBPSProtocolEnabled()) {
 		if errRestoreCooldown := s.coreManager.RestoreCooldownStates(registrationCtx); errRestoreCooldown != nil && ctx.Err() == nil {
 			log.Warnf("failed to restore cooldown state after config update: %v", errRestoreCooldown)
 		}
@@ -255,6 +255,13 @@ func (s *Service) applyConfigRuntime(ctx context.Context, commit configCommit, s
 		return false
 	}
 	s.syncPluginModelRuntime(registrationCtx)
+	if s.pluginHost == nil && s.coreManager != nil {
+		for _, auth := range s.coreManager.List() {
+			if auth != nil && auth.Provider == "bps" {
+				s.completeModelRegistrationForAuth(registrationCtx, auth)
+			}
+		}
+	}
 	return ctx.Err() == nil
 }
 
@@ -285,6 +292,9 @@ func (s *Service) applyManagerConfig(ctx context.Context, commit configCommit) b
 func (s *Service) updateServerClientsContext(ctx context.Context, cfg *config.Config) bool {
 	if s == nil || cfg == nil || (ctx != nil && ctx.Err() != nil) {
 		return false
+	}
+	if s.executionHandlers != nil {
+		s.executionHandlers.UpdateClients(serviceSDKConfig(cfg))
 	}
 	if s.updateServerClientsContextFn != nil {
 		return s.updateServerClientsContextFn(ctx, cfg)

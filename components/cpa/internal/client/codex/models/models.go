@@ -648,7 +648,7 @@ func applyCodexClientSearchToolSupport(entry map[string]any, id string, template
 	}
 
 	providers := codexClientModelProviders(id, providersForModel)
-	if allCodexClientProvidersAre(providers, "claude") && toolSearchCapabilityForModel != nil && toolSearchCapabilityForModel(id) {
+	if (allCodexClientProvidersAre(providers, "claude") || allCodexClientProvidersAre(providers, "kilo")) && toolSearchCapabilityForModel != nil && toolSearchCapabilityForModel(id) {
 		return
 	}
 	if !templateModel || !allCodexClientProvidersAre(providers, "codex") {

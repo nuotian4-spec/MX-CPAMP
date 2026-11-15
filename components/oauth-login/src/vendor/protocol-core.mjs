@@ -1,5 +1,6 @@
 // 密码/TOTP、Cookie、工作区核心取自 toSub2 8548397e89bf，保留 MIT 许可。
 import crypto from 'node:crypto';
+import {safeDiagnostics, responseDiagnostics} from '../diagnostics.mjs';
 const DEFAULT_TIMEOUT_MS = 30000;
 const browserHeadersForTransport = transport => transport.headers;
 const safeUrl = value => new URL(value).origin;
@@ -17,8 +18,10 @@ const isLocalCallback = value => {
   try { const u=new URL(value); return !u.username && !u.password && (u.origin==='http://localhost:1455' && u.pathname==='/auth/callback' || u.origin==='https://bps.openai.com' && u.pathname==='/basispoints/extension/360590d7-f8f9-4d88-bf75-0edfe0a4b9f3/auth/callback'); } catch { return false; }
 };
 const createSentinelHeaders = async (client, {deviceId,flow,authBase}) => {
-  const tokens=await client.transport.sentinel({deviceId,flow,pageUrl:authBase+'/log-in/password'});
-  return {'openai-sentinel-token':tokens.token,...(tokens.soToken ? {'openai-sentinel-so-token':tokens.soToken}: {})};
+  try {
+    const tokens=await client.transport.sentinel({deviceId,flow,pageUrl:authBase+'/log-in/password'});
+    return {'openai-sentinel-token':tokens.token,...(tokens.soToken ? {'openai-sentinel-so-token':tokens.soToken}: {})};
+  } catch (error) { throw Object.assign(error, safeDiagnostics({endpoint_category:'sentinel'})); }
 };
 class CookieJar {
   constructor(cookies = []) {
@@ -170,10 +173,11 @@ class ProtocolClient {
       this.jar.merge(res.headers.transportCookies);
       text = await res.text();
     } catch (error) {
+      const diagnostic = responseDiagnostics(res, text, options.endpointCategory);
       if (error?.name === "AbortError") {
-        throw new Error(`${method} ${safeUrl(url)} timed out after ${options.timeoutMs || DEFAULT_TIMEOUT_MS}ms`);
+        throw Object.assign(new Error(`${method} ${safeUrl(url)} timed out after ${options.timeoutMs || DEFAULT_TIMEOUT_MS}ms`), diagnostic);
       }
-      throw error;
+      throw Object.assign(error, diagnostic);
     } finally {
       clearTimeout(timeout);
     }
@@ -184,13 +188,14 @@ class ProtocolClient {
       console.error(`< ${method} ${safeUrl(url)} ${res.status}${suffix}`);
     }
 
-    if (isRiskControlResponse(res, text)) {
-      throw new Error(
+    const diagnostic = responseDiagnostics(res, text, options.endpointCategory);
+    if (diagnostic.security_check_subtype !== 'unknown') {
+      throw Object.assign(new Error(
         `PROXY_RISK_CONTROL: ${method} ${safeUrl(url)} returned HTTP ${res.status} with a security-check page`,
-      );
+      ), diagnostic);
     }
 
-    return { res, text, location: location ? new URL(location, url).toString() : null, url };
+    return { res, text, location: location ? new URL(location, url).toString() : null, url, diagnostic };
   }
 
   async follow(url, options = {}) {
@@ -202,6 +207,7 @@ class ProtocolClient {
         accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         referer: options.referer,
+        endpointCategory: options.endpointCategory,
       });
       if (last.res.status >= 400) assertOk(last, `GET ${current}`);
       if (![301, 302, 303, 307, 308].includes(last.res.status) || !last.location) {
@@ -218,7 +224,7 @@ class ProtocolClient {
     try {
       return { data: JSON.parse(result.text), result };
     } catch {
-      throw new Error(`Expected JSON from ${url}, got: ${result.text.slice(0, 160)}`);
+      throw Object.assign(new Error(`Expected JSON from ${url}, got: ${result.text.slice(0, 160)}`), result.diagnostic);
     }
   }
 }
@@ -286,12 +292,14 @@ function isStoredCookie(cookie) {
 
 async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, password, totpSecret, onStage }) {
   observeStage(onStage, "web_login");
-  await client.follow(`${chatgptBase}/`, { referer: `${chatgptBase}/` });
+  await client.follow(`${chatgptBase}/`, { referer: `${chatgptBase}/`, endpointCategory: 'chatgpt_home' });
   await client.getJson("GET", `${chatgptBase}/api/auth/providers`, {
+    endpointCategory: 'chatgpt_providers',
     referer: `${chatgptBase}/`,
   });
 
   const { data: csrf } = await client.getJson("GET", `${chatgptBase}/api/auth/csrf`, {
+    endpointCategory: 'chatgpt_csrf',
     referer: `${chatgptBase}/`,
   });
   if (!csrf.csrfToken) throw new Error("Missing csrfToken");
@@ -312,6 +320,7 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
     }).toString();
 
   const { data: signin } = await client.getJson("POST", signinUrl, {
+    endpointCategory: 'chatgpt_signin',
     origin: chatgptBase,
     referer: `${chatgptBase}/`,
     form: {
@@ -323,7 +332,7 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
   if (!signin.url) throw new Error("signin/openai did not return url");
 
   const authRequestStartedAt = new Date().toISOString();
-  const authPage = await client.follow(signin.url, { referer: `${chatgptBase}/` });
+  const authPage = await client.follow(signin.url, { referer: `${chatgptBase}/`, endpointCategory: 'auth_redirect' });
   console.log(`[info] Auth page: ${safeUrl(authPage.finalUrl)}`);
   if (authPage.last?.text) {
     console.log(`[info] Page text: ${summarizeHtml(authPage.last.text)}`);
@@ -388,7 +397,7 @@ async function loginChatgptWeb(client, { chatgptBase, authBase, email, rl, passw
     payload: authenticated,
   });
   observeStage(onStage, "web_login");
-  const callback = await continueFlow(client, authenticated);
+  const callback = await continueFlow(client, authenticated, {endpointCategory:'web_finalize'});
   return {
     deviceId,
     authSessionLoggingId,
@@ -434,7 +443,7 @@ async function verifyPassword(client, { authBase, rl, deviceId, password, refere
       return data;
     } catch (error) {
       if (!isRejectedPasswordError(error)) throw error;
-      throw new Error("password_rejected");
+      throw Object.assign(new Error("password_rejected"), safeDiagnostics(error));
       console.log("[warn] Password was rejected. Enter it again, or q to quit.");
     }
   }
@@ -479,7 +488,7 @@ async function completeTotpMfaIfNeeded(client, { authBase, rl, deviceId, payload
       return data;
     } catch (error) {
       if (!isRejectedTotpError(error)) throw error;
-      throw new Error("totp_rejected");
+      throw Object.assign(new Error("totp_rejected"), safeDiagnostics(error));
       console.log(
         generatedFromSecret
           ? "[warn] The code generated from the configured 2FA key was rejected; enter a current code manually."
@@ -599,7 +608,16 @@ function decodeBase32Secret(value) {
 }
 
 async function authJsonStep(client, authBase, method, pathname, body, options = {}) {
+  const endpointCategory = {
+    '/api/accounts/authorize/continue':'oauth_authorize',
+    '/api/accounts/password/verify':'password_verify',
+    '/api/accounts/mfa/issue_challenge':'totp_issue',
+    '/api/accounts/mfa/verify':'totp_verify',
+    '/api/accounts/workspace/select':'workspace_select',
+    '/api/accounts/session/select':'session_select',
+  }[pathname] || 'unknown';
   return client.getJson(method, `${authBase}${pathname}`, {
+    endpointCategory,
     origin: authBase,
     referer: options.referer || `${authBase}/`,
     headers: options.headers,
@@ -607,14 +625,14 @@ async function authJsonStep(client, authBase, method, pathname, body, options = 
   });
 }
 
-async function continueFlow(client, payload) {
+async function continueFlow(client, payload, options = {}) {
   if (isPhoneBindingRequired(payload)) throw interaction("phone_verification_required");
   if (isAccountProfileRequired(payload)) throw interaction("account_setup_required");
   if (isEmailVerificationPage(getContinueUrl(payload))) throw interaction("email_verification_required");
   const url = payload?.continue_url || payload?.page?.payload?.url;
   if (!url) return null;
   if (isLocalCallback(url)) return { finalUrl: url, last: null };
-  return client.follow(url);
+  return client.follow(url, {endpointCategory:options.endpointCategory || 'auth_redirect'});
 }
 
 function getContinueUrl(payload) {
@@ -680,18 +698,7 @@ function assertOk(result, label) {
   const { res, text } = result;
   if (res.status >= 200 && res.status < 300) return;
   const body = text.replace(/\s+/g, " ").slice(0, 220);
-  throw new Error(`${label} failed with HTTP ${res.status}: ${body}`);
-}
-
-function isRiskControlResponse(res, text) {
-  const mitigated = res?.headers?.get?.("cf-mitigated") || res?.headers?.get?.("x-cf-mitigated");
-  if (mitigated && /challenge/i.test(mitigated)) return true;
-  const contentType = String(res?.headers?.get?.("content-type") || "");
-  const body = String(text || "");
-  const challengePage = /Just a moment|cdn-cgi|challenge-platform|cf-challenge/i.test(body);
-  if (res?.status === 403) return /text\/html/i.test(contentType) || challengePage;
-  const htmlPage = /text\/html/i.test(contentType) || /<(?:!doctype\s+html|html|head|body)\b/i.test(body);
-  return [400, 409].includes(Number(res?.status)) && htmlPage && challengePage;
+  throw Object.assign(new Error(`${label} failed with HTTP ${res.status}: ${body}`), result.diagnostic);
 }
 
 function decodeHtml(text) {

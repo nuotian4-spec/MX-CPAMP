@@ -1,9 +1,6 @@
 import type { TFunction } from 'i18next';
-import {
-  normalizePlanProvider,
-  normalizeRawPlanType,
-  readRawPlanType,
-} from './normalize';
+import { resolveBpsPlanDescriptor } from './providers/bps';
+import { normalizePlanProvider, normalizeRawPlanType, readRawPlanType } from './normalize';
 import {
   resolveAntigravityPlanDescriptor,
   resolveClaudePlanDescriptor,
@@ -16,6 +13,8 @@ type PlanResolver = (planType: unknown) => PlanResolverDescriptor | null;
 
 const PLAN_RESOLVERS: Readonly<Record<string, PlanResolver>> = {
   codex: resolveCodexPlanDescriptor,
+  bps: resolveBpsPlanDescriptor,
+  'cpa-bps': resolveBpsPlanDescriptor,
   claude: resolveClaudePlanDescriptor,
   antigravity: resolveAntigravityPlanDescriptor,
 };
@@ -48,9 +47,7 @@ const parseScopedUnknownPlanIdentity = (
  * happened to produce the first matching row. Existing provider locale keys
  * are reused with one fixed key per canonical identity.
  */
-const CANONICAL_PLAN_FILTER_LABELS: Readonly<
-  Record<string, { key: string; fallback: string }>
-> = {
+const CANONICAL_PLAN_FILTER_LABELS: Readonly<Record<string, { key: string; fallback: string }>> = {
   free: { key: 'plans.codex.free', fallback: 'Free' },
   go: { key: 'plans.codex.go', fallback: 'Go' },
   plus: { key: 'plans.codex.plus', fallback: 'Plus' },

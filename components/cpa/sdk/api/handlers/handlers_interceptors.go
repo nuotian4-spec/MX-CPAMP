@@ -733,6 +733,11 @@ func (h *BaseAPIHandler) WriteModelListResponse(c *gin.Context, sourceFormat str
 		}
 	}
 
+	scopeCtx := context.Background()
+	if c.Request != nil {
+		scopeCtx = c.Request.Context()
+	}
+	body = filterChannelModels(scopeCtx, body, func(model string) bool { return h.modelChannelAllowed(scopeCtx, sourceFormat, model) })
 	if modelID, detail := c.Get(ModelDetailIDContextKey); detail {
 		c.Writer.Header().Del("Content-Length")
 		var catalog struct {

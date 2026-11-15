@@ -108,7 +108,11 @@ type Auth struct {
 	// NextRetryAfter is the earliest time a retry should retrigger.
 	NextRetryAfter time.Time `json:"next_retry_after"`
 	// ModelStates tracks per-model runtime availability data.
-	ModelStates map[string]*ModelState `json:"model_states,omitempty"`
+	ModelStates             map[string]*ModelState `json:"model_states,omitempty"`
+	PermissionSuspensions   []PermissionSuspension `json:"-"`
+	permissionStateRecorded bool
+	permissionStateUnknown  bool
+	permissionReleasedAt    time.Time
 
 	// Runtime carries non-serialisable data used during execution (in-memory only).
 	Runtime any `json:"-"`
@@ -479,6 +483,7 @@ func (a *Auth) Clone() *Auth {
 		return nil
 	}
 	copyAuth := *a
+	copyAuth.PermissionSuspensions = append([]PermissionSuspension(nil), a.PermissionSuspensions...)
 	copyAuth.Quota = a.Quota.Clone()
 	if a.LastError != nil {
 		copyErr := *a.LastError

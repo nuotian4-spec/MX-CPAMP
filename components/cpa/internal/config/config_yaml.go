@@ -383,7 +383,19 @@ func appendPath(path []string, key string) []string {
 // never carried it: pruning drops those zero-valued sub-keys. No management
 // endpoint mutates ProxyConnectionPool, so that path is reachable only from code.
 func isKnownDefaultValue(path []string, node *yaml.Node) bool {
-	// BPS开关的显式false与缺省开启不同，父节点也须保留。
+	if len(path) > 0 && path[0] == "bps" && node != nil {
+		if len(path) == 1 && node.Kind == yaml.MappingNode {
+			for i := 0; i+1 < len(node.Content); i += 2 {
+				if node.Content[i].Value == "web_search" || node.Content[i].Value == "auto_discover" || node.Content[i].Value == "omit_encrypted_history" {
+					return false
+				}
+			}
+		}
+		if len(path) == 2 && (path[1] == "web_search" || path[1] == "auto_discover" || path[1] == "omit_encrypted_history") && node.Tag == "!!bool" {
+			return false
+		}
+	}
+	// Explicit BPS false differs from the enabled default; preserve the parent too.
 	if len(path) > 0 && path[0] == "bps-protocol" && node != nil {
 		if len(path) == 2 && (path[1] == "enabled" || path[1] == "images-enabled") && node.Kind == yaml.ScalarNode && node.Tag == "!!bool" {
 			return false

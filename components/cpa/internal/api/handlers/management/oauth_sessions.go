@@ -57,6 +57,8 @@ type oauthSession struct {
 	Metadata        map[string]any
 	SIWC            *siwcBindSession
 	BPS             *bpsOAuthSession
+	Kilo            *kiloDeviceSession
+	BPSDiagnostic   *bpsOAuthDiagnostic
 	Target          *oauthRecoveryTarget
 	AuthID          string
 	SavedGrantHash  string
@@ -81,6 +83,7 @@ type oauthSessionStore struct {
 	ttl          time.Duration
 	completedTTL time.Duration
 	sessions     map[string]oauthSession
+	kiloClock    func() time.Time
 }
 
 func newOAuthSessionStore(ttl time.Duration) *oauthSessionStore {
@@ -100,6 +103,9 @@ func newOAuthSessionStore(ttl time.Duration) *oauthSessionStore {
 
 func (s *oauthSessionStore) purgeExpiredLocked(now time.Time) {
 	for state, session := range s.sessions {
+		if session.Kilo != nil {
+			continue
+		}
 		if (session.Completed || (!session.Committing && !session.SIWCCommitting)) && !session.ExpiresAt.IsZero() && now.After(session.ExpiresAt) {
 			if session.SIWC != nil {
 				session.SIWC.cancel()
@@ -303,7 +309,7 @@ func (s *oauthSessionStore) CompleteWithOutcome(state, authID, savedGrantHash st
 	session.Committing = false
 	session.SIWCCommitting = false
 	session.Completed = true
-	session.ExpiresAt = now.Add(s.completedTTL)
+	session.ExpiresAt = s.completedDeadline(session, now)
 	s.sessions[state] = session
 }
 
@@ -374,12 +380,19 @@ func (s *oauthSessionStore) CompleteProvider(provider string, source string) int
 			session.Committing = false
 			session.SIWCCommitting = false
 			session.Completed = true
-			session.ExpiresAt = now.Add(s.completedTTL)
+			session.ExpiresAt = s.completedDeadline(session, now)
 			s.sessions[state] = session
 			removed++
 		}
 	}
 	return removed
+}
+
+func (s *oauthSessionStore) completedDeadline(session oauthSession, now time.Time) time.Time {
+	if session.Provider == "bps" && session.Source == oauthSessionSourceBuiltin && !session.ExpiresAt.IsZero() {
+		return session.ExpiresAt
+	}
+	return now.Add(s.completedTTL)
 }
 
 func (s *oauthSessionStore) Get(state string) (oauthSession, bool) {
@@ -392,6 +405,9 @@ func (s *oauthSessionStore) Get(state string) (oauthSession, bool) {
 	s.purgeExpiredLocked(now)
 	session, ok := s.sessions[state]
 	session.Metadata = cloneOAuthSessionMetadata(session.Metadata)
+	if session.Kilo != nil {
+		return oauthSession{}, false
+	}
 	return session, ok
 }
 

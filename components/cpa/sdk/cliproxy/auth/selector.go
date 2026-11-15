@@ -809,6 +809,12 @@ func isAuthBlockedForModelForRequest(ctx context.Context, auth *Auth, model stri
 	if auth.Disabled || auth.Status == StatusDisabled {
 		return true, blockReasonDisabled, time.Time{}
 	}
+	if kiloAutoBlocked(auth) {
+		return true, blockReasonOther, time.Time{}
+	}
+	if permissionSuspended(auth, model) {
+		return true, blockReasonOther, time.Time{}
+	}
 	if codexRefreshMissingAccessForRequest(ctx, auth, clientHeaders...) {
 		return true, blockReasonOther, time.Time{}
 	}
@@ -970,6 +976,9 @@ func isAuthBlockedByQuotaOrAuthForModelForRequest(ctx context.Context, auth *Aut
 		return true
 	}
 	if auth.Disabled || auth.Status == StatusDisabled {
+		return true
+	}
+	if kiloAutoBlocked(auth) {
 		return true
 	}
 	if codexRefreshMissingAccessForRequest(ctx, auth, clientHeaders...) {

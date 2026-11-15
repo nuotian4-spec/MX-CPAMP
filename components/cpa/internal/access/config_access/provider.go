@@ -17,20 +17,25 @@ func Register(cfg *sdkconfig.SDKConfig) {
 	}
 
 	keys := normalizeKeys(cfg.APIKeys)
-	if len(keys) == 0 {
+	if len(keys) == 0 && len(cfg.ClientKeyScopes) == 0 {
 		sdkaccess.UnregisterProvider(sdkaccess.AccessProviderTypeConfigAPIKey)
 		return
 	}
 
-	sdkaccess.RegisterProvider(
-		sdkaccess.AccessProviderTypeConfigAPIKey,
-		newProvider(sdkaccess.DefaultAccessProviderName, keys),
-	)
+	p := newProvider(sdkaccess.DefaultAccessProviderName, keys)
+	p.scopes = make(map[string]string)
+	p.invalid = cfg.ValidateClientKeyScopes() != nil
+	for _, binding := range cfg.ClientKeyScopes {
+		p.scopes[strings.TrimSpace(binding.APIKey)] = strings.TrimSpace(binding.Channel)
+	}
+	sdkaccess.RegisterProvider(sdkaccess.AccessProviderTypeConfigAPIKey, p)
 }
 
 type provider struct {
-	name string
-	keys map[string]struct{}
+	name    string
+	keys    map[string]struct{}
+	scopes  map[string]string
+	invalid bool
 }
 
 func newProvider(name string, keys []string) *provider {
@@ -55,6 +60,9 @@ func (p *provider) Identifier() string {
 func (p *provider) Authenticate(_ context.Context, r *http.Request) (*sdkaccess.Result, *sdkaccess.AuthError) {
 	if p == nil {
 		return nil, sdkaccess.NewNotHandledError()
+	}
+	if p.invalid {
+		return nil, sdkaccess.NewInvalidCredentialError()
 	}
 	if len(p.keys) == 0 {
 		return nil, sdkaccess.NewNotHandledError()
@@ -94,7 +102,8 @@ func (p *provider) Authenticate(_ context.Context, r *http.Request) (*sdkaccess.
 				Provider:  p.Identifier(),
 				Principal: candidate.value,
 				Metadata: map[string]string{
-					"source": candidate.source,
+					"source":        candidate.source,
+					"channel_scope": p.scopes[candidate.value],
 				},
 			}, nil
 		}

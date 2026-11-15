@@ -3,6 +3,8 @@
  */
 
 import { create } from 'zustand';
+import type { BpsResetCreditsState } from '@/features/accounts/model/bpsResetCreditsState';
+import type { CpaBpsQuotaState } from '@/features/accounts/model/cpaBpsQuotaState';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   AntigravityQuotaState,
@@ -26,6 +28,10 @@ interface QuotaStoreState {
   claudeQuota: Record<string, ClaudeQuotaState>;
   codexQuota: Record<string, CodexQuotaState>;
   bpsQuota: Record<string, CodexQuotaState>;
+  bpsResetCredits: Record<string, BpsResetCreditsState>;
+  setBpsResetCredits: (updater: QuotaUpdater<Record<string, BpsResetCreditsState>>) => void;
+  cpaBpsQuota: Record<string, CpaBpsQuotaState>;
+  setCpaBpsQuota: (updater: QuotaUpdater<Record<string, CpaBpsQuotaState>>) => void;
   devinQuota: Record<string, DevinQuotaState>;
   kimiQuota: Record<string, KimiQuotaState>;
   metaQuota: Record<string, MetaQuotaState>;
@@ -54,6 +60,8 @@ const emptyQuotaState = {
   claudeQuota: {},
   codexQuota: {},
   bpsQuota: {},
+  bpsResetCredits: {},
+  cpaBpsQuota: {},
   devinQuota: {},
   kimiQuota: {},
   metaQuota: {},
@@ -156,6 +164,10 @@ export const useQuotaStore = create<QuotaStoreState>()(
         set((state) => ({
           claudeQuota: resolveUpdater(updater, state.claudeQuota),
         })),
+      setBpsResetCredits: (updater) =>
+        set((state) => ({ bpsResetCredits: resolveUpdater(updater, state.bpsResetCredits) })),
+      setCpaBpsQuota: (updater) =>
+        set((state) => ({ cpaBpsQuota: resolveUpdater(updater, state.cpaBpsQuota) })),
       setBpsQuota: (updater) =>
         set((state) => ({ bpsQuota: resolveUpdater(updater, state.bpsQuota) })),
       setCodexQuota: (updater) =>

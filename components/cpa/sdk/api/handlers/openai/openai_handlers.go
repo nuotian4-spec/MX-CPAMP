@@ -65,7 +65,7 @@ func (h *OpenAIAPIHandler) Models() []map[string]any {
 func (h *OpenAIAPIHandler) OpenAIModels(c *gin.Context) {
 	if _, ok := c.Request.URL.Query()["client_version"]; ok {
 		clientVersion := c.Query("client_version")
-		body, errMarshal := codexmodels.MarshalCompact(h.codexClientModelsResponse(clientVersion))
+		body, errMarshal := codexmodels.MarshalCompact(h.codexClientModelsResponseForContext(c.Request.Context(), clientVersion))
 		if errMarshal != nil {
 			c.JSON(http.StatusInternalServerError, handlers.ErrorResponse{
 				Error: handlers.ErrorDetail{
@@ -504,7 +504,7 @@ func (h *OpenAIAPIHandler) handleStreamingResponse(c *gin.Context, rawJSON []byt
 		flusher.Flush()
 		return true
 	}
-	keepAliveC, stopKeepAlive := handlers.NewPreFirstTokenKeepAliveTicker(h.CurrentConfig())
+	keepAliveC, stopKeepAlive := handlers.NewRequestPreFirstTokenKeepAliveTicker(cliCtx, h.CurrentConfig())
 	defer stopKeepAlive()
 
 	dataChan, resolvedHeaders, errChan, okBootstrap := h.ExecuteStreamWithPreFTKeepAlive(
@@ -671,7 +671,7 @@ func (h *OpenAIAPIHandler) handleCompletionsStreamingResponse(c *gin.Context, ra
 		flusher.Flush()
 		return true
 	}
-	keepAliveC, stopKeepAlive := handlers.NewPreFirstTokenKeepAliveTicker(h.CurrentConfig())
+	keepAliveC, stopKeepAlive := handlers.NewRequestPreFirstTokenKeepAliveTicker(cliCtx, h.CurrentConfig())
 	defer stopKeepAlive()
 
 	dataChan, resolvedHeaders, errChan, okBootstrap := h.ExecuteStreamWithPreFTKeepAlive(

@@ -76,7 +76,7 @@ func TestPrepareWireShapeAndDeterminism(t *testing.T) {
 		t.Fatal("default context compaction contract missing")
 	}
 	entry, _ := management[0].(object)
-	if entry["type"] != "compaction" || fmt.Sprint(entry["compact_threshold"]) != "920000" {
+	if entry["type"] != "compaction" || fmt.Sprint(entry["compact_threshold"]) != "200000" {
 		t.Fatalf("unexpected default compaction threshold: %+v", entry)
 	}
 	for _, field := range []string{"tools", "reasoning", "include", "service_tier", "instructions"} {

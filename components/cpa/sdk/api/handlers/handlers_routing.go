@@ -360,6 +360,11 @@ func modelRoutersEnabled(host PluginModelRouterHost, skipPluginID string) bool {
 }
 
 func (h *BaseAPIHandler) applyModelRouter(ctx context.Context, handlerType, modelName string, rawJSON []byte, stream bool, execOptions modelExecutionOptions) modelRouteDecision {
+	if ctx != nil {
+		if decision, ok := ctx.Value(kiloSearchRouteContextKey{}).(modelRouteDecision); ok {
+			return decision
+		}
+	}
 	var decision modelRouteDecision
 	host := h.modelRouterHost()
 	if host == nil || !modelRoutersEnabled(host, execOptions.SkipRouterPluginID) {

@@ -30,16 +30,36 @@ type Client struct {
 }
 
 type OAuthError struct {
-	Code   string
-	status int
+	Code           string
+	status         int
+	responseStatus int
+	responseReason string
 }
 
 func (e *OAuthError) Error() string   { return "BPS OAuth " + e.Code }
 func (e *OAuthError) StatusCode() int { return e.status }
 
+// HTTPStatus reports the upstream response independently of retry classification.
+func (e *OAuthError) HTTPStatus() int { return e.responseStatus }
+
+// ResponseReason reports a whitelisted upstream error independently of retry classification.
+func (e *OAuthError) ResponseReason() string { return e.responseReason }
+
+type responseError struct {
+	error
+	status int
+}
+
+func (e *responseError) Unwrap() error   { return e.error }
+func (e *responseError) HTTPStatus() int { return e.status }
+
 func NewClient(proxyURL string) *Client {
 	transport, _, err := proxyutil.BuildHTTPTransport(strings.TrimSpace(proxyURL))
-	return &Client{httpClient: &http.Client{Transport: transport, Timeout: 30 * time.Second}, initErr: err}
+	client := &http.Client{Timeout: 30 * time.Second}
+	if transport != nil {
+		client.Transport = transport
+	}
+	return &Client{httpClient: client, initErr: err}
 }
 
 func NewPKCE() (state, verifier, challenge string, err error) {
@@ -104,10 +124,17 @@ func (c *Client) request(ctx context.Context, values url.Values, previous map[st
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 	if err != nil {
-		return nil, errors.New("BPS OAuth response read failed")
+		return nil, &responseError{error: errors.New("BPS OAuth response read failed"), status: resp.StatusCode}
 	}
 	doc := ojson.NewDoc(body)
 	if resp.StatusCode != http.StatusOK {
+		responseReason := "upstream_error"
+		switch doc.Get("error").String() {
+		case "invalid_grant":
+			responseReason = "invalid_grant"
+		case "invalid_client":
+			responseReason = "invalid_client"
+		}
 		code := "upstream_error"
 		status := resp.StatusCode
 		if status == http.StatusUnauthorized || doc.Get("error").String() == "invalid_grant" {
@@ -116,15 +143,15 @@ func (c *Client) request(ctx context.Context, values url.Values, previous map[st
 		} else if doc.Get("error").String() == "invalid_client" {
 			code = "invalid_client"
 		}
-		return nil, &OAuthError{Code: code, status: status}
+		return nil, &OAuthError{Code: code, status: status, responseStatus: resp.StatusCode, responseReason: responseReason}
 	}
 	if !ojson.ValidBytes(body) || !ojson.ParseBytes(body).IsObject() {
-		return nil, errors.New("BPS OAuth response is invalid")
+		return nil, &responseError{error: errors.New("BPS OAuth response is invalid"), status: resp.StatusCode}
 	}
 	access := strings.TrimSpace(doc.Get("access_token").String())
 	expires := doc.Get("expires_in").Int()
 	if access == "" || expires <= 0 {
-		return nil, errors.New("BPS OAuth response has incomplete tokens")
+		return nil, &responseError{error: errors.New("BPS OAuth response has incomplete tokens"), status: resp.StatusCode}
 	}
 	result := make(map[string]any, len(previous)+7)
 	for key, value := range previous {
@@ -135,7 +162,7 @@ func (c *Client) request(ctx context.Context, values url.Values, previous map[st
 		result["refresh_token"] = refresh
 	}
 	if refresh, _ := result["refresh_token"].(string); strings.TrimSpace(refresh) == "" {
-		return nil, errors.New("BPS OAuth response has no refresh token")
+		return nil, &responseError{error: errors.New("BPS OAuth response has no refresh token"), status: resp.StatusCode}
 	}
 	result["type"] = "bps"
 	result["profile"] = "excel"
@@ -146,12 +173,12 @@ func (c *Client) request(ctx context.Context, values url.Values, previous map[st
 	if idToken := doc.Get("id_token").String(); idToken != "" {
 		claims, errClaims := Claims(idToken)
 		if errClaims != nil {
-			return nil, errClaims
+			return nil, &responseError{error: errClaims, status: resp.StatusCode}
 		}
 		for key, value := range claims {
 			if value != "" {
 				if old, _ := previous[key].(string); old != "" && old != value {
-					return nil, errors.New("BPS OAuth refreshed identity mismatch")
+					return nil, &responseError{error: errors.New("BPS OAuth refreshed identity mismatch"), status: resp.StatusCode}
 				}
 				result[key] = value
 			}
@@ -160,7 +187,7 @@ func (c *Client) request(ctx context.Context, values url.Values, previous map[st
 	if strings.Count(access, ".") == 2 {
 		claims, errClaims := accessClaims(access)
 		if errClaims != nil {
-			return nil, errClaims
+			return nil, &responseError{error: errClaims, status: resp.StatusCode}
 		}
 		for key, value := range claims {
 			if value == "" {
@@ -168,7 +195,7 @@ func (c *Client) request(ctx context.Context, values url.Values, previous map[st
 			}
 			if key != "expired" {
 				if old, _ := result[key].(string); old != "" && old != value {
-					return nil, errors.New("BPS OAuth refreshed identity mismatch")
+					return nil, &responseError{error: errors.New("BPS OAuth refreshed identity mismatch"), status: resp.StatusCode}
 				}
 			}
 			result[key] = value

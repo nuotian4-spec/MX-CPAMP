@@ -24,7 +24,7 @@ func TestDiagnosticWhitelistAndTerminalPropagation(t *testing.T) {
 				if invalid {
 					stage, reason = "PASSWORD_SECRET", "COOKIE_SECRET"
 				}
-				jsonReply(w, workerTask{Status: "needs_user_action", ErrorCode: "needs_user_action", Stage: stage, Reason: reason})
+				jsonReply(w, workerTask{rawHTTPDiagnostics: rawHTTPDiagnostics{HTTPStatus: float64(403), EndpointCategory: "chatgpt_home", SecurityCheckSubtype: "html_forbidden_unclassified", ChallengeHeaderPresent: false}, Status: "needs_user_action", ErrorCode: "needs_user_action", Stage: stage, Reason: reason})
 			case http.MethodDelete:
 				jsonReply(w, workerTask{Status: "cancelled"})
 			}
@@ -42,6 +42,9 @@ func TestDiagnosticWhitelistAndTerminalPropagation(t *testing.T) {
 			}
 		} else if done.Stage != "password" || done.Reason != "security_check" {
 			t.Fatal("诊断未透传")
+		}
+		if done.HTTPStatus == nil || *done.HTTPStatus != 403 || done.EndpointCategory != "chatgpt_home" || done.SecurityCheckSubtype != "html_forbidden_unclassified" || done.ChallengeHeaderPresent == nil || *done.ChallengeHeaderPresent {
+			t.Fatal("HTTP诊断未通过任务链路")
 		}
 		raw, _ := json.Marshal(done)
 		if strings.Contains(string(raw), "SECRET") {

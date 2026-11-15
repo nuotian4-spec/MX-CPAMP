@@ -19,6 +19,7 @@ type bpsSettingsInput struct {
 
 func bpsSettingsResponse(cfg *config.Config) gin.H {
 	return gin.H{"enabled": cfg.IsBPSProtocolEnabled(), "images_enabled": cfg.IsBPSImagesEnabled(), "image_transport": cfg.BPSProtocol.Transport(), "image_relay_base_url": cfg.BPSProtocol.ImageRelayBaseURL,
+		"web_search": cfg.BPS.SearchEnabled(), "auto_discover": cfg.BPS.DiscoverModels(), "model_suffix": cfg.BPS.ModelSuffix, "fast_mode": cfg.BPS.FastMode, "omit_encrypted_history": cfg.BPS.OmitHistory(), "compact_threshold": config.BPSCompactThreshold,
 		"limits": gin.H{"ttl_seconds": 1800, "max_image_bytes": 20 << 20, "max_request_images": 20, "max_request_bytes": 32 << 20, "max_pixels": 64 * 1024 * 1024, "max_storage_bytes": 1 << 30, "max_storage_entries": 512}}
 }
 
@@ -40,10 +41,24 @@ func (h *Handler) PutBPSSettings(c *gin.Context) {
 		return
 	}
 	for key := range root.Map() {
-		if key != "enabled" && key != "images_enabled" && key != "image_transport" && key != "image_relay_base_url" {
+		if key != "web_search" && key != "enabled" && key != "images_enabled" && key != "image_transport" && key != "image_relay_base_url" && key != "auto_discover" && key != "model_suffix" && key != "fast_mode" && key != "omit_encrypted_history" && key != "compact_threshold" {
 			c.JSON(400, gin.H{"error": "BPS设置包含未知字段"})
 			return
 		}
+	}
+	for _, key := range []string{"web_search", "auto_discover", "fast_mode", "omit_encrypted_history"} {
+		if v := root.Get(key); v.Exists() && !v.IsBool() {
+			c.JSON(400, gin.H{"error": "BPS设置开关需要布尔值"})
+			return
+		}
+	}
+	if v := root.Get("model_suffix"); v.Exists() && v.Type != ojson.String {
+		c.JSON(400, gin.H{"error": "BPS模型后缀需要字符串"})
+		return
+	}
+	if v := root.Get("compact_threshold"); v.Exists() && (v.Type != ojson.Number || v.Float() != config.BPSCompactThreshold) {
+		c.JSON(400, gin.H{"error": "BPS压缩阈值必须为200000"})
+		return
 	}
 	enabled, imagesEnabled := root.Get("enabled").Bool(), root.Get("images_enabled").Bool()
 	input := bpsSettingsInput{Enabled: &enabled, ImagesEnabled: &imagesEnabled, ImageTransport: root.Get("image_transport").String(), ImageRelayBaseURL: root.Get("image_relay_base_url").String()}
@@ -54,6 +69,25 @@ func (h *Handler) PutBPSSettings(c *gin.Context) {
 	next.BPSProtocol.ImagesEnabled = input.ImagesEnabled
 	next.BPSProtocol.ImageTransport = input.ImageTransport
 	next.BPSProtocol.ImageRelayBaseURL = strings.TrimRight(strings.TrimSpace(input.ImageRelayBaseURL), "/")
+	if v := root.Get("web_search"); v.Exists() {
+		value := v.Bool()
+		next.BPS.WebSearch = &value
+	}
+	if v := root.Get("auto_discover"); v.Exists() {
+		value := v.Bool()
+		next.BPS.AutoDiscover = &value
+	}
+	if v := root.Get("fast_mode"); v.Exists() {
+		next.BPS.FastMode = v.Bool()
+	}
+	if v := root.Get("omit_encrypted_history"); v.Exists() {
+		value := v.Bool()
+		next.BPS.OmitEncryptedHistory = &value
+	}
+	if v := root.Get("model_suffix"); v.Exists() {
+		next.BPS.ModelSuffix = v.String()
+	}
+	next.BPS.CompactThreshold = config.BPSCompactThreshold
 	if err := next.ValidateBPSProtocol(); err != nil {
 		h.mu.Unlock()
 		c.JSON(400, gin.H{"error": err.Error()})

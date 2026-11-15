@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Button } from '@/components/ui/Button';
 import { OAuthPage } from './OAuthPage';
 
+vi.mock('./InternalLoginCards', () => ({ InternalLoginCards: () => null }));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const { mocks } = vi.hoisted(() => ({

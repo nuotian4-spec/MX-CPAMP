@@ -22,7 +22,7 @@ export const CODEX_INSPECTION_AUTO_ACTION_MODES: readonly CodexInspectionAutoAct
   'delete',
 ];
 
-export const CODEX_INSPECTION_TARGET_TYPES = ['codex', 'xai', 'bps'] as const;
+export const CODEX_INSPECTION_TARGET_TYPES = ['codex', 'xai', 'bps', 'cpa-bps'] as const;
 export type CodexInspectionTargetType = (typeof CODEX_INSPECTION_TARGET_TYPES)[number];
 
 export const normalizeCodexInspectionTargetTypes = (
@@ -39,7 +39,12 @@ export const normalizeCodexInspectionTargetTypes = (
   const selected = new Set<CodexInspectionTargetType>();
   values.forEach((entry) => {
     const normalized = readString(entry).toLowerCase();
-    if (normalized === 'codex' || normalized === 'xai' || normalized === 'bps') {
+    if (
+      normalized === 'codex' ||
+      normalized === 'xai' ||
+      normalized === 'bps' ||
+      normalized === 'cpa-bps'
+    ) {
       selected.add(normalized);
     }
   });

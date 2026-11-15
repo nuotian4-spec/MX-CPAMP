@@ -475,7 +475,7 @@ func (b *Bridge) translateHistory(input []any) ([]any, error) {
 			}
 			seenCalls[id] = true
 		case "function_call_output", "custom_tool_call_output":
-			if isCodexThreadDelegation(item) {
+			if IsCodexThreadDelegation(item) {
 				// Validate the original item before lowering so extra content cannot
 				// hide unsupported/encrypted parts behind the handoff exception.
 				if err := b.validateHistoryContent(item["content"], index, "content"); err != nil {
@@ -602,17 +602,10 @@ func (b *Bridge) translateCall(native object) (object, error) {
 // client tool's own name instead of through the run_officejs transport. Some turns
 // skip the wrapper and call the catalog tool directly; the reference plugins accept
 // this rather than failing the whole response. It relays the client's declared tool
-// call to the client unchanged and never executes any code. Only exact catalog names
-// (optionally carrying a host "functions." display prefix) are accepted; any other
-// native tool remains an unsupported-native-tool error.
+// call to the client unchanged and never executes any code. Namespaces must agree
+// with catalog metadata; they are not inferred by splitting dotted tool names.
 func (b *Bridge) translateDirectCatalogCall(native object) (object, error) {
-	name := text(native["name"])
-	info, ok := b.tools[name]
-	if !ok {
-		if trimmed := strings.TrimPrefix(name, "functions."); trimmed != name {
-			info, ok = b.tools[trimmed]
-		}
-	}
+	info, ok := b.resolveDirectCatalogTool(native)
 	if !ok {
 		return nil, fmt.Errorf("basispoints returned an unsupported native tool; no tool was executed")
 	}
@@ -656,6 +649,42 @@ func (b *Bridge) translateDirectCatalogCall(native object) (object, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func (b *Bridge) resolveDirectCatalogTool(native object) (tool, bool) {
+	name, valid := native["name"].(string)
+	if !valid || name == "" || strings.TrimSpace(name) != name {
+		return tool{}, false
+	}
+	namespace := ""
+	if raw, exists := native["namespace"]; exists {
+		namespace, valid = raw.(string)
+		if !valid || strings.TrimSpace(namespace) != namespace {
+			return tool{}, false
+		}
+	}
+	if namespace == "" {
+		if info, ok := b.tools[name]; ok {
+			return info, true
+		}
+		if trimmed := strings.TrimPrefix(name, "functions."); trimmed != name {
+			info, ok := b.tools[trimmed]
+			return info, ok
+		}
+		return tool{}, false
+	}
+	short, shortOK := b.tools[namespace+"."+name]
+	shortOK = shortOK && short.Namespace == namespace && short.Name == name
+	full, fullOK := b.tools[name]
+	fullOK = fullOK && full.Namespace == namespace
+	if shortOK && fullOK {
+		// Both spellings refer to distinct declared tools, so neither is safe.
+		return tool{}, false
+	}
+	if shortOK {
+		return short, true
+	}
+	return full, fullOK
 }
 
 // finishClientToolCall builds the client-facing tool item from a resolved catalog
@@ -710,13 +739,15 @@ func (b *Bridge) finishClientToolCall(native object, info tool, envelope object,
 		}
 		if info.Schema != nil {
 			if err := validateToolNumberBudget(args); err != nil {
-				return nil, toolArgumentsSchemaError{}
+				return nil, argumentSchemaFailure(info, err)
 			}
 		}
 		// FUNCTION_CMD preserves client-validated metadata verbatim. Ordinary
 		// function envelopes still enforce their complete declared schema.
-		if validateSchema && info.Schema != nil && info.Schema.Validate(args) != nil {
-			return nil, toolArgumentsSchemaError{}
+		if validateSchema && info.Schema != nil {
+			if validation := info.Schema.Validate(args); validation != nil {
+				return nil, argumentSchemaFailure(info, validation)
+			}
 		}
 		encoded, _ := json.Marshal(args)
 		result["arguments"] = string(encoded)

@@ -295,6 +295,12 @@ func (s *Service) registerExecutorForAuth(a *coreauth.Auth, forceReplace bool) {
 		return
 	}
 	switch strings.ToLower(a.Provider) {
+	case "kilo":
+		current := s.coreManager.EnsureKiloExecutor(func() coreauth.ProviderExecutor { return executor.NewKiloExecutor(cfg) })
+		if native, ok := current.(*executor.KiloExecutor); ok {
+			native.UpdateConfig(cfg)
+		}
+
 	case "bps":
 		s.coreManager.RegisterExecutor(executor.NewBPSExecutor(cfg))
 	case constant.Gemini:

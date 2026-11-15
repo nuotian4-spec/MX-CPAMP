@@ -437,6 +437,11 @@ func resolveUpstreamModelFromAliasTable(m *Manager, auth *Auth, requestedModel, 
 	if m == nil || auth == nil {
 		return OAuthModelAliasResult{}
 	}
+	table, _ := m.oauthModelAlias.Load().(*oauthModelAliasTable)
+	return resolveUpstreamModelFromCompiledAliasTable(table, requestedModel, channel)
+}
+
+func resolveUpstreamModelFromCompiledAliasTable(table *oauthModelAliasTable, requestedModel, channel string) OAuthModelAliasResult {
 	if channel == "" {
 		return OAuthModelAliasResult{}
 	}
@@ -444,8 +449,6 @@ func resolveUpstreamModelFromAliasTable(m *Manager, auth *Auth, requestedModel, 
 	requestResult, candidates := modelAliasLookupCandidates(requestedModel)
 	baseModel := requestResult.ModelName
 
-	raw := m.oauthModelAlias.Load()
-	table, _ := raw.(*oauthModelAliasTable)
 	if table == nil || table.reverse == nil {
 		return OAuthModelAliasResult{}
 	}

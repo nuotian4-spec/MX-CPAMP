@@ -13,6 +13,7 @@ import (
 	concurrencycontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/credentialconcurrency"
 	dashboardcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/dashboard"
 	healthcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/health"
+	kilocontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/kilo"
 	managerconfigcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/managerconfig"
 	modelpricecontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/modelprice"
 	monitoringcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/monitoring"
@@ -26,7 +27,6 @@ import (
 	updatecheckcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/updatecheck"
 	usagecontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/usage"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/middleware"
-	concurrencysvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/credentialconcurrency"
 	proxysvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/proxy"
 )
 
@@ -49,14 +49,24 @@ func New(appCtx *app.Context) http.Handler {
 	panelHandler := &panelcontroller.Handler{App: appCtx}
 
 	mux := http.NewServeMux()
-	connectionService := concurrencysvc.New(appCtx.ManagerConfigService, appCtx.AuthFileMutationCoordinator)
+	connectionService := appCtx.CredentialConcurrencyService
 	concurrencyHandler := &concurrencycontroller.Handler{Service: connectionService, Auth: appCtx.AdminAuthService}
 	bpsSettingsHandler := &bpssettingscontroller.Handler{Service: connectionService, Auth: appCtx.AdminAuthService}
 	mux.HandleFunc("/api/bps/settings", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.Handle))
 	mux.HandleFunc("/api/bps/access", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.Access))
 	mux.HandleFunc("/api/bps/usage", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.Usage))
+	mux.HandleFunc("/api/bps/reset-credits", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.ResetCredits))
+	mux.HandleFunc("/api/cpa-bps/quota", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.PluginQuota))
 	mux.HandleFunc("/api/bps/models", middleware.WithCORS(appCtx.Config, bpsSettingsHandler.Models))
 	mux.HandleFunc("/api/credential-concurrency", middleware.WithCORS(appCtx.Config, concurrencyHandler.Handle))
+	kiloHandler := &kilocontroller.Handler{Service: appCtx.KiloService, Auth: appCtx.AdminAuthService}
+	for _, path := range []string{"/api/kilo/proxies", "/api/kilo/proxies/", "/api/kilo/proxy-pool", "/api/kilo/proxy-recycle", "/api/kilo/proxy-recycle/", "/api/kilo/device-auth", "/api/kilo/device-auth/"} {
+		mux.HandleFunc(path, middleware.WithCORS(appCtx.Config, kiloHandler.Handle))
+	}
+	for _, path := range []string{"/api/kilo/accounts", "/api/kilo/status", "/api/kilo/capabilities", "/api/kilo/quota-sources", "/api/kilo/test-models"} {
+		mux.HandleFunc(path, middleware.WithCORS(appCtx.Config, kiloHandler.Handle))
+	}
+	mux.HandleFunc("/api/kilo/accounts/", middleware.WithCORS(appCtx.Config, kiloHandler.Handle))
 	loginHandler := &logincontroller.Handler{Service: appCtx.OAuthLoginService, Auth: appCtx.AdminAuthService}
 	mux.HandleFunc("/api/oauth-login/", middleware.WithCORS(appCtx.Config, loginHandler.Handle))
 	updates := &updatecheckcontroller.Handler{App: appCtx}

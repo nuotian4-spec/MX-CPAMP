@@ -301,8 +301,11 @@ export const pluginsApi = {
     return normalizePluginDeleteResult(data);
   },
 
-  async getConfig(id: string): Promise<PluginConfigObject> {
-    const data = await apiClient.get(`/plugins/${encodeURIComponent(id)}/config`);
+  async getConfig(id: string, requestScope?: ApiClientRequestScope): Promise<PluginConfigObject> {
+    const endpoint = `/plugins/${encodeURIComponent(id)}/config`;
+    const data = requestScope
+      ? await apiClient.get(endpoint, createScopedApiRequestConfig(requestScope))
+      : await apiClient.get(endpoint);
     return normalizePluginConfig(data);
   },
 

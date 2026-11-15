@@ -36,7 +36,8 @@ import {
   useUsageServiceStore,
 } from '@/stores';
 import { configFileApi } from '@/services/api/configFile';
-import { apiKeysApi } from '@/services/api/apiKeys';
+import { mutateClientKeyYaml, readClientKeyYaml } from '@/hooks/clientKeyConfig';
+import type { ApiClientRequestScope } from '@/services/api/client';
 import {
   getUsageServiceErrorCode,
   isUsageServiceId,
@@ -349,6 +350,9 @@ export function ConfigPage() {
   const showConfirmation = useNotificationStore((state) => state.showConfirmation);
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const managementKey = useAuthStore((state) => state.managementKey);
+  const apiBase = useAuthStore((state) => state.apiBase);
+  const connectionRef = useRef({ apiBase, managementKey, connectionStatus });
+  connectionRef.current = { apiBase, managementKey, connectionStatus };
   const serverVersion = useAuthStore((state) => state.serverVersion);
   const serverCommit = useAuthStore((state) => state.serverCommit);
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -423,6 +427,38 @@ export function ConfigPage() {
   const managerSavingRef = useRef(false);
   const apiKeyMutationInFlightRef = useRef(false);
   const sourceSnapshotStaleRef = useRef(false);
+  const pageSnapshotRef = useRef<{ yaml: string; etag: string; connectionRef: string } | null>(
+    null
+  );
+  const pageGenerationRef = useRef(0);
+  const keyControllerRef = useRef<AbortController | null>(null);
+  const pendingKeySave = useRef<{
+    scope: ApiClientRequestScope;
+    connectionRef: string;
+    controller: AbortController;
+    before: string;
+    after: string;
+    resolve: (keys: string[]) => void;
+    reject: (error: Error) => void;
+  } | null>(null);
+  const cancelKeySave = useCallback((message = '配置保存已取消') => {
+    keyControllerRef.current?.abort();
+    const pending = pendingKeySave.current;
+    pendingKeySave.current = null;
+    if (pending) {
+      pending.controller.abort();
+      pending.reject(new Error(message));
+    }
+    setDiffModalOpen(false);
+  }, []);
+  useEffect(
+    () => () => {
+      pageGenerationRef.current++;
+      pageSnapshotRef.current = null;
+      cancelKeySave('管理连接已变化或页面已关闭');
+    },
+    [apiBase, managementKey, connectionStatus, cancelKeySave]
+  );
 
   const updateSourceSnapshotStale = useCallback((stale: boolean) => {
     sourceSnapshotStaleRef.current = stale;
@@ -481,11 +517,63 @@ export function ConfigPage() {
     managerConfig?.cpaConnection?.cpaBaseUrl || ''
   );
 
+  const fetchPageYaml = useCallback(async () => {
+    const scope = { apiBase, managementKey };
+    const generation = pageGenerationRef.current;
+    const expectedRef = pageSnapshotRef.current?.connectionRef;
+    const snapshot = await configFileApi.fetchSnapshot({ scope, connectionRef: expectedRef });
+    const current = connectionRef.current;
+    if (
+      generation !== pageGenerationRef.current ||
+      current.apiBase !== apiBase ||
+      current.managementKey !== managementKey ||
+      current.connectionStatus !== 'connected'
+    )
+      throw new Error('管理连接已变化，请刷新');
+    if (
+      !snapshot.etag ||
+      !snapshot.connectionRef ||
+      (expectedRef && expectedRef !== snapshot.connectionRef)
+    )
+      throw new Error('配置版本或连接引用待核，请刷新管理连接');
+    pageSnapshotRef.current = snapshot;
+    return snapshot.yaml;
+  }, [apiBase, managementKey]);
+
+  const syncGlobalConfigAfterSave = useCallback(
+    async ({ previousYaml, nextYaml }: { previousYaml: string; nextYaml: string }) => {
+      // Keep the global config store in sync so sidebar / other pages reflect YAML changes immediately.
+      try {
+        useConfigStore.getState().clearCache();
+        await useConfigStore.getState().fetchConfig(undefined, true);
+      } catch (refreshError: unknown) {
+        const message =
+          refreshError instanceof Error
+            ? refreshError.message
+            : typeof refreshError === 'string'
+              ? refreshError
+              : '';
+        showNotification(
+          `${t('notification.refresh_failed')}${message ? `: ${message}` : ''}`,
+          'error'
+        );
+      }
+
+      if (
+        readCommercialModeFromYaml(previousYaml) !== readCommercialModeFromYaml(nextYaml)
+      ) {
+        showNotification(t('notification.commercial_mode_restart_required'), 'warning');
+      }
+    },
+    [showNotification, t]
+  );
+
   const loadConfig = useCallback(async () => {
+    pageSnapshotRef.current = null;
     setLoading(true);
     setError('');
     try {
-      const data = await configFileApi.fetchConfigYaml();
+      const data = await fetchPageYaml();
       setContent(data);
       setDirty(false);
       setDiffModalOpen(false);
@@ -501,7 +589,7 @@ export function ConfigPage() {
     } finally {
       setLoading(false);
     }
-  }, [loadVisualValuesFromYaml, t, updateSourceSnapshotStale]);
+  }, [fetchPageYaml, loadVisualValuesFromYaml, t, updateSourceSnapshotStale]);
 
   useEffect(() => {
     if (activeTab === 'manager') {
@@ -606,136 +694,65 @@ export function ConfigPage() {
     setApiKeyMutationInFlight(false);
   }, []);
 
-  const refreshCleanSourceSnapshot = useCallback(async () => {
-    // A clean source buffer is a server snapshot, so refresh it after CPA updates.
-    // Never rewrite a source draft that the user has already changed.
-    if (dirty) {
-      updateSourceSnapshotStale(true);
-      return false;
-    }
-    try {
-      const latestYaml = await configFileApi.fetchConfigYaml();
-      if (dirty) {
-        updateSourceSnapshotStale(true);
-        return false;
-      }
-      setContent(latestYaml);
-      setServerYaml(latestYaml);
-      setMergedYaml(latestYaml);
-      setPreviewServerYaml(latestYaml);
-      updateSourceSnapshotStale(false);
-      return true;
-    } catch {
-      // The canonical API-key list has already been obtained. Keep the successful
-      // API-key mutation, but prevent a stale source buffer from being saved later.
-      updateSourceSnapshotStale(true);
-      return false;
-    }
-  }, [dirty, updateSourceSnapshotStale]);
-
   const persistApiKeyMutation = useCallback(
     async (mutation: ApiKeyMutation): Promise<string[]> => {
-      if (!apiKeyMutationInFlightRef.current) {
-        const error = new Error(t('config_management.visual.api_keys.operation_busy')) as Error & {
-          code?: string;
+      if (!apiKeyMutationInFlightRef.current || dirty)
+        throw new Error('配置操作忙或原始配置有未保存修改');
+      const scope = { apiBase, managementKey };
+      const controller = new AbortController();
+      keyControllerRef.current = controller;
+      const initial = readClientKeyYaml(content);
+      const expectedRef = pageSnapshotRef.current?.connectionRef;
+      if (!expectedRef) throw new Error('配置连接引用待核，请刷新');
+      const snapshot = await configFileApi.fetchSnapshot({
+        scope,
+        signal: controller.signal,
+        connectionRef: expectedRef,
+      });
+      if (!snapshot.etag || snapshot.connectionRef !== expectedRef)
+        throw new Error('配置版本或连接引用待核，请刷新');
+      const current = connectionRef.current;
+      if (
+        controller.signal.aborted ||
+        current.apiBase !== scope.apiBase ||
+        current.managementKey !== scope.managementKey ||
+        current.connectionStatus !== 'connected'
+      ) {
+        controller.abort();
+        throw new Error('管理连接已变化，请刷新');
+      }
+      const latest = readClientKeyYaml(snapshot.yaml);
+      if (
+        JSON.stringify([initial.keys, initial.scopes]) !==
+        JSON.stringify([latest.keys, latest.scopes])
+      ) {
+        throw new Error('客户端Key或归属已变化，请刷新后重试');
+      }
+      const after = mutateClientKeyYaml(applyVisualChangesToYaml(snapshot.yaml), mutation);
+      setServerYaml(snapshot.yaml);
+      setMergedYaml(after);
+      setPreviewServerYaml(snapshot.yaml);
+      setPreviewTab('visual');
+      setDiffModalOpen(true);
+      return new Promise<string[]>((resolve, reject) => {
+        pendingKeySave.current = {
+          scope,
+          connectionRef: snapshot.connectionRef,
+          controller,
+          before: snapshot.yaml,
+          after,
+          resolve,
+          reject,
         };
-        error.code = 'api_key_operation_busy';
-        throw error;
-      }
-      if (dirty) {
-        const error = new Error(
-          t('config_management.visual.api_keys.source_dirty_guard')
-        ) as Error & { code?: string };
-        error.code = 'source_config_dirty';
-        throw error;
-      }
-
-      if (mutation.type === 'create') {
-        const normalizedApiKey = mutation.apiKey.trim();
-        const currentKeys = await apiKeysApi.list();
-        if (currentKeys.some((key) => key.trim() === normalizedApiKey)) {
-          commitApiKeysText(currentKeys.join('\n'));
-          await refreshCleanSourceSnapshot();
-          const error = new Error(
-            t('config_management.visual.api_keys.error_duplicate')
-          ) as Error & { code?: string };
-          error.code = 'api_key_duplicate';
-          throw error;
-        }
-        updateSourceSnapshotStale(true);
-        try {
-          await apiKeysApi.replace([...currentKeys, normalizedApiKey]);
-        } catch (cause) {
-          const error = new Error(
-            t('config_management.visual.api_keys.mutation_outcome_unknown')
-          ) as Error & { cause?: unknown; code?: string };
-          error.code = 'api_key_mutation_outcome_unknown';
-          error.cause = cause;
-          throw error;
-        }
-      } else if (mutation.type === 'replace') {
-        const normalizedOldApiKey = mutation.oldApiKey.trim();
-        const normalizedNewApiKey = mutation.newApiKey.trim();
-        const currentKeys = await apiKeysApi.list();
-        const preflightError = resolveApiKeyReplacePreflight({
-          currentKeys,
-          oldApiKey: normalizedOldApiKey,
-          newApiKey: normalizedNewApiKey,
-        });
-        if (!preflightError.ok) {
-          commitApiKeysText(currentKeys.join('\n'));
-          await refreshCleanSourceSnapshot();
-          const messageKey =
-            preflightError.reason === 'api_key_stale'
-              ? 'config_management.visual.api_keys.stale_key_refreshed'
-              : preflightError.reason === 'api_key_duplicate'
-                ? 'config_management.visual.api_keys.error_duplicate'
-                : 'config_management.visual.api_keys.state_refresh_failed';
-          const error = new Error(t(messageKey)) as Error & { code?: string };
-          error.code = preflightError.reason;
-          throw error;
-        }
-        updateSourceSnapshotStale(true);
-        try {
-          await apiKeysApi.replaceValue(preflightError.canonicalOldApiKey, normalizedNewApiKey);
-        } catch (cause) {
-          const error = new Error(
-            t('config_management.visual.api_keys.mutation_outcome_unknown')
-          ) as Error & { cause?: unknown; code?: string };
-          error.code = 'api_key_mutation_outcome_unknown';
-          error.cause = cause;
-          throw error;
-        }
-      } else {
-        updateSourceSnapshotStale(true);
-        try {
-          await apiKeysApi.deleteValue(mutation.apiKey.trim());
-        } catch (cause) {
-          const error = new Error(
-            t('config_management.visual.api_keys.mutation_outcome_unknown')
-          ) as Error & { cause?: unknown; code?: string };
-          error.code = 'api_key_mutation_outcome_unknown';
-          error.cause = cause;
-          throw error;
-        }
-      }
-
-      let canonicalKeys: string[];
-      try {
-        canonicalKeys = await apiKeysApi.list();
-      } catch (error) {
-        const refreshError = new Error(
-          t('config_management.visual.api_keys.state_refresh_failed')
-        ) as Error & { cause?: unknown; code?: string };
-        refreshError.code = 'api_key_state_refresh_failed';
-        refreshError.cause = error;
-        throw refreshError;
-      }
-      commitApiKeysText(canonicalKeys.join('\n'));
-      await refreshCleanSourceSnapshot();
-      return canonicalKeys;
+      });
     },
-    [commitApiKeysText, dirty, refreshCleanSourceSnapshot, t, updateSourceSnapshotStale]
+    [
+      apiBase,
+      managementKey,
+      dirty,
+      content,
+      applyVisualChangesToYaml,
+    ]
   );
 
   const refreshApiKeys = useCallback(async (): Promise<string[]> => {
@@ -753,11 +770,31 @@ export function ConfigPage() {
       error.code = 'source_config_dirty';
       throw error;
     }
-    const canonicalKeys = await apiKeysApi.list();
-    commitApiKeysText(canonicalKeys.join('\n'));
-    await refreshCleanSourceSnapshot();
-    return canonicalKeys;
-  }, [commitApiKeysText, dirty, refreshCleanSourceSnapshot, t]);
+    const scope = { apiBase, managementKey };
+    const snapshot = await configFileApi.fetchSnapshot({
+      scope,
+      connectionRef: pageSnapshotRef.current?.connectionRef,
+    });
+    if (
+      !snapshot.etag ||
+      !snapshot.connectionRef ||
+      snapshot.connectionRef !== pageSnapshotRef.current?.connectionRef
+    )
+      throw new Error('配置连接引用待核');
+    const current = connectionRef.current;
+    if (
+      current.apiBase !== apiBase ||
+      current.managementKey !== managementKey ||
+      current.connectionStatus !== 'connected'
+    )
+      throw new Error('管理连接已变化');
+    const canonical = readClientKeyYaml(snapshot.yaml);
+    commitApiKeysText(canonical.keys.join('\n'), canonical.scopes);
+    setContent(snapshot.yaml);
+    setServerYaml(snapshot.yaml);
+    updateSourceSnapshotStale(false);
+    return canonical.keys;
+  }, [apiBase, managementKey, commitApiKeysText, dirty, t, updateSourceSnapshotStale]);
 
   const syncEmbeddedManagerBootstrap = useCallback(
     (serviceBase: string) => {
@@ -886,6 +923,75 @@ export function ConfigPage() {
   }, [activeTab, loadManagerConfig]);
 
   const handleConfirmSave = async () => {
+    const pending = pendingKeySave.current;
+    if (pending) {
+      if (savingRef.current) return;
+      savingRef.current = true;
+      setSaving(true);
+      let committed = false;
+      try {
+        const options = {
+          scope: pending.scope,
+          signal: pending.controller.signal,
+          connectionRef: pending.connectionRef,
+        };
+        const assertCurrent = () => {
+          const current = connectionRef.current;
+          if (
+            pendingKeySave.current !== pending ||
+            options.signal.aborted ||
+            current.apiBase !== pending.scope.apiBase ||
+            current.managementKey !== pending.scope.managementKey ||
+            current.connectionStatus !== 'connected'
+          )
+            throw new Error('管理连接已变化或操作已取消');
+        };
+        assertCurrent();
+        const snapshot = await configFileApi.fetchSnapshot(options);
+        assertCurrent();
+        if (snapshot.connectionRef !== pending.connectionRef || snapshot.yaml !== pending.before)
+          throw new Error('配置已变化，请刷新后重新确认差异');
+        if (!snapshot.etag) throw new Error('配置版本缺失，请刷新管理连接');
+        await configFileApi.saveConfigYaml(pending.after, { ...options, etag: snapshot.etag });
+        committed = true;
+        assertCurrent();
+        const saved = await configFileApi.fetchSnapshot(options);
+        assertCurrent();
+        if (saved.connectionRef !== pending.connectionRef)
+          throw new Error('配置回读连接已变化，原目标状态待核');
+        const canonical = readClientKeyYaml(saved.yaml);
+        const expected = readClientKeyYaml(pending.after);
+        if (
+          JSON.stringify([canonical.keys, canonical.scopes]) !==
+          JSON.stringify([expected.keys, expected.scopes])
+        )
+          throw new Error('配置回读与本次保存不一致');
+        pageSnapshotRef.current = saved;
+        setContent(saved.yaml);
+        setServerYaml(saved.yaml);
+        setMergedYaml(saved.yaml);
+        setPreviewServerYaml(saved.yaml);
+        setDirty(false);
+        updateSourceSnapshotStale(false);
+        loadVisualValuesFromYaml(saved.yaml);
+        await syncGlobalConfigAfterSave({ previousYaml: pending.before, nextYaml: saved.yaml });
+        pendingKeySave.current = null;
+        setDiffModalOpen(false);
+        pending.resolve(canonical.keys);
+      } catch (cause) {
+        if (pendingKeySave.current === pending) {
+          pendingKeySave.current = null;
+          setDiffModalOpen(false);
+          updateSourceSnapshotStale(true);
+          const message = cause instanceof Error ? cause.message : '配置保存失败';
+          pending.reject(new Error(committed ? '配置已保存，回读待确认：' + message : message));
+        }
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
+      }
+      return;
+    }
     if (
       shouldBlockStaleSourceSave({
         activeTab,
@@ -901,7 +1007,7 @@ export function ConfigPage() {
     savingRef.current = true;
     setSaving(true);
     try {
-      const latestServerYaml = await configFileApi.fetchConfigYaml();
+      const latestServerYaml = await fetchPageYaml();
       if (latestServerYaml !== previewServerYaml) {
         const nextMergedYaml =
           previewTab === 'visual' ? applyVisualChangesToYaml(latestServerYaml) : mergedYaml;
@@ -922,12 +1028,14 @@ export function ConfigPage() {
         return;
       }
 
-      const previousCommercialMode = readCommercialModeFromYaml(latestServerYaml);
-      const nextCommercialMode = readCommercialModeFromYaml(mergedYaml);
-      const commercialModeChanged = previousCommercialMode !== nextCommercialMode;
-
-      await configFileApi.saveConfigYaml(mergedYaml);
-      const latestContent = await configFileApi.fetchConfigYaml();
+      const snapshot = pageSnapshotRef.current;
+      if (!snapshot?.connectionRef || !snapshot.etag) throw new Error('配置版本或连接引用待核');
+      await configFileApi.saveConfigYaml(mergedYaml, {
+        scope: { apiBase, managementKey },
+        etag: snapshot.etag,
+        connectionRef: snapshot.connectionRef,
+      });
+      const latestContent = await fetchPageYaml();
       setDirty(false);
       setDiffModalOpen(false);
       setContent(latestContent);
@@ -937,27 +1045,8 @@ export function ConfigPage() {
       updateSourceSnapshotStale(false);
       loadVisualValuesFromYaml(latestContent);
 
-      // Keep the global config store in sync so sidebar / other pages reflect YAML changes immediately.
-      try {
-        useConfigStore.getState().clearCache();
-        await useConfigStore.getState().fetchConfig(undefined, true);
-      } catch (refreshError: unknown) {
-        const message =
-          refreshError instanceof Error
-            ? refreshError.message
-            : typeof refreshError === 'string'
-              ? refreshError
-              : '';
-        showNotification(
-          `${t('notification.refresh_failed')}${message ? `: ${message}` : ''}`,
-          'error'
-        );
-      }
-
+      await syncGlobalConfigAfterSave({ previousYaml: latestServerYaml, nextYaml: latestContent });
       showNotification(t('config_management.save_success'), 'success');
-      if (commercialModeChanged) {
-        showNotification(t('notification.commercial_mode_restart_required'), 'warning');
-      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '';
       showNotification(`${t('notification.save_failed')}: ${message}`, 'error');
@@ -1160,7 +1249,7 @@ export function ConfigPage() {
     savingRef.current = true;
     setSaving(true);
     try {
-      const latestServerYaml = await configFileApi.fetchConfigYaml();
+      const latestServerYaml = await fetchPageYaml();
       const visualBaseYaml = dirty ? content : latestServerYaml;
 
       if (activeTab !== 'source') {
@@ -1197,6 +1286,7 @@ export function ConfigPage() {
       // unsaved source edits as the visual patch base so backend-only fields survive.
       const nextMergedYaml =
         activeTab === 'source' ? content : applyVisualChangesToYaml(visualBaseYaml);
+      readClientKeyYaml(nextMergedYaml);
 
       // In visual mode, applyVisualChangesToYaml re-serializes YAML via parseDocument → toString,
       // which may reformat comments/whitespace. Normalize the server YAML through the same pipeline
@@ -1257,7 +1347,7 @@ export function ConfigPage() {
       if (tab === 'source') {
         if (sourceSnapshotStaleRef.current) {
           try {
-            const latestYaml = await configFileApi.fetchConfigYaml();
+            const latestYaml = await fetchPageYaml();
             if (dirty) {
               updateSourceSnapshotStale(true);
               showNotification(t('notification.refresh_failed'), 'error');
@@ -1311,6 +1401,7 @@ export function ConfigPage() {
       loadVisualValuesFromYaml,
       showNotification,
       sourceConfigLoaded,
+      fetchPageYaml,
       t,
       updateSourceSnapshotStale,
       visualDirty,
@@ -1823,7 +1914,7 @@ export function ConfigPage() {
         original={serverYaml}
         modified={mergedYaml}
         onConfirm={handleConfirmSave}
-        onCancel={() => setDiffModalOpen(false)}
+        onCancel={() => cancelKeySave()}
         loading={saving}
       />
     </div>

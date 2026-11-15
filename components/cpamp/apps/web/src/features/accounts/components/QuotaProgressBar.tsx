@@ -11,22 +11,38 @@ export function QuotaProgressBar({
   highThreshold,
   mediumThreshold,
 }: QuotaProgressBarProps) {
-  const normalized = percent === null ? null : Math.min(100, Math.max(0, percent));
-  const fillClass =
+  const normalized =
+    typeof percent === 'number' && Number.isFinite(percent)
+      ? Math.min(100, Math.max(0, percent))
+      : null;
+  const tone =
     normalized === null
-      ? styles.fillMedium
-      : normalized >= highThreshold
-        ? styles.fillHigh
+      ? 'unknown'
+      : normalized > highThreshold
+        ? 'high'
         : normalized >= mediumThreshold
-          ? styles.fillMedium
-          : styles.fillLow;
-
+          ? 'medium'
+          : 'low';
+  const fillClass =
+    tone === 'high'
+      ? styles.fillHigh
+      : tone === 'medium'
+        ? styles.fillMedium
+        : tone === 'low'
+          ? styles.fillLow
+          : styles.fillUnknown;
   return (
-    <div className={styles.track}>
-      <div
-        className={`${styles.fill} ${fillClass}`}
-        style={{ width: `${Math.round(normalized ?? 0)}%` }}
-      />
-    </div>
+    <span
+      className={`${styles.track} ${normalized === 0 ? styles.empty : ''} ${normalized === null ? styles.unknown : ''}`}
+      data-quota-tone={tone}
+      role="img"
+      aria-label={
+        normalized === null ? '额度未知' : normalized === 0 ? '已用尽 / 0%' : `剩余 ${normalized}%`
+      }
+    >
+      {normalized !== null && (
+        <span className={`${styles.fill} ${fillClass}`} style={{ width: `${normalized}%` }} />
+      )}
+    </span>
   );
 }

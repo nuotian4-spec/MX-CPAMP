@@ -45,19 +45,19 @@ func validateToolNumberBudget(value any) error {
 	var visit func(any, int) error
 	visit = func(value any, depth int) error {
 		if depth > 128 {
-			return fmt.Errorf("basispoints tool schema or arguments exceed the nesting limit")
+			return toolValidationResourceError{reason: "nesting_limit"}
 		}
 		switch v := value.(type) {
 		case json.Number:
 			raw := v.String()
 			if len(raw) > 4096 {
-				return fmt.Errorf("basispoints tool number exceeds the precision limit")
+				return toolValidationResourceError{reason: "number_precision_limit"}
 			}
 			digits := len(raw)
 			if at := strings.IndexAny(raw, "eE"); at >= 0 {
 				exponent, err := strconv.Atoi(raw[at+1:])
 				if err != nil || exponent > 4096 || exponent < -4096 {
-					return fmt.Errorf("basispoints tool number exceeds the exponent limit")
+					return toolValidationResourceError{reason: "number_exponent_limit"}
 				}
 				if exponent < 0 {
 					exponent = -exponent
@@ -66,7 +66,7 @@ func validateToolNumberBudget(value any) error {
 			}
 			budget -= digits
 			if budget < 0 {
-				return fmt.Errorf("basispoints tool numbers exceed the validation budget")
+				return toolValidationResourceError{reason: "number_budget_limit"}
 			}
 		case object:
 			for _, child := range v {
@@ -86,7 +86,23 @@ func validateToolNumberBudget(value any) error {
 	return visit(value, 0)
 }
 
-type toolArgumentsSchemaError struct{}
+type toolValidationResourceError struct{ reason string }
+
+func (e toolValidationResourceError) Error() string {
+	return "basispoints tool validation resource limit: " + e.reason
+}
+
+// BoundedToolValidationReason accepts only locally defined validation classes.
+func BoundedToolValidationReason(reason string) string {
+	switch reason {
+	case "schema_mismatch", "nesting_limit", "number_precision_limit", "number_exponent_limit", "number_budget_limit":
+		return reason
+	default:
+		return ""
+	}
+}
+
+type toolArgumentsSchemaError struct{ tool, path, rule, reason string }
 
 func (toolArgumentsSchemaError) Error() string {
 	return "basispoints function arguments do not satisfy the declared tool schema or validation resource limits"

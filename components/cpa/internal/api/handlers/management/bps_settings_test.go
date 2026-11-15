@@ -70,3 +70,31 @@ func TestBPSSettingsConcurrentReadsKeepSnapshots(t *testing.T) {
 	close(stop)
 	wg.Wait()
 }
+
+func TestBPSParitySettingsPersistence(t *testing.T) {
+	h, path, _ := newIssue6631Handler(t, "auth-dir: auths\n")
+	router := gin.New()
+	router.PUT("/settings", h.PutBPSSettings)
+	router.GET("/settings", h.GetBPSSettings)
+	putIssue6631Value(t, router, "/settings", `{"enabled":true,"images_enabled":true,"image_transport":"native","image_relay_base_url":"","auto_discover":false,"model_suffix":"-excel","fast_mode":true,"omit_encrypted_history":false,"compact_threshold":200000}`)
+	disk := readIssue6631Disk(t, path)
+	if disk.BPS.DiscoverModels() || disk.BPS.OmitHistory() || !disk.BPS.FastMode || disk.BPS.ModelSuffix != "-excel" || disk.BPS.CompactThreshold != 200000 {
+		t.Fatalf("settings lost: %+v", disk.BPS)
+	}
+	putIssue6631Value(t, router, "/settings", `{"enabled":true,"images_enabled":true,"image_transport":"native","image_relay_base_url":""}`)
+	if h.configSnapshot().BPS.OmitHistory() || !h.configSnapshot().BPS.FastMode {
+		t.Fatal("legacy PUT erased settings")
+	}
+	putIssue6631Value(t, router, "/settings", `{"enabled":true,"images_enabled":true,"image_transport":"native","image_relay_base_url":"","auto_discover":true,"model_suffix":"","fast_mode":false,"omit_encrypted_history":true}`)
+	disk = readIssue6631Disk(t, path)
+	if disk.BPS.FastMode || disk.BPS.ModelSuffix != "" || !disk.BPS.DiscoverModels() || !disk.BPS.OmitHistory() {
+		t.Fatalf("settings clear lost: %+v", disk.BPS)
+	}
+	for _, field := range []string{`"compact_threshold":920000`, `"auto_discover":"false"`, `"model_suffix":"other"`} {
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(http.MethodPut, "/settings", strings.NewReader(`{"enabled":true,"images_enabled":true,"image_transport":"native","image_relay_base_url":"",`+field+`}`)))
+		if w.Code != 400 {
+			t.Fatalf("bad config accepted: %s", field)
+		}
+	}
+}

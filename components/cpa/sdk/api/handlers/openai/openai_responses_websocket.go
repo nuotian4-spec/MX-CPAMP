@@ -15,6 +15,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/channelscope"
+
 	"github.com/MoeForge/moego/ojson"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -337,6 +339,9 @@ func (h *OpenAIResponsesAPIHandler) authenticateResponsesWebsocketTurn(c *gin.Co
 	if result == nil {
 		return "", nil
 	}
+	if result.Metadata["channel_scope"] == "kilo" {
+		return "", &interfaces.ErrorMessage{StatusCode: http.StatusNotImplemented, Error: errors.New("Kilo does not support WebSocket")}
+	}
 	if c != nil && updateRequestContext {
 		c.Set("userApiKey", result.Principal)
 		c.Set("accessProvider", result.Provider)
@@ -346,7 +351,8 @@ func (h *OpenAIResponsesAPIHandler) authenticateResponsesWebsocketTurn(c *gin.Co
 			c.Set("accessMetadata", nil)
 		}
 		if c.Request != nil {
-			reqCtx := usage.WithAPIKey(c.Request.Context(), result.Principal)
+			reqCtx := channelscope.With(c.Request.Context(), result.Metadata["channel_scope"])
+			reqCtx = usage.WithAPIKey(reqCtx, result.Principal)
 			reqCtx = usage.WithAccessProvider(reqCtx, result.Provider)
 			reqCtx = usage.WithIsNativeKey(reqCtx, usage.IsNativeAccessProvider(result.Provider))
 			c.Request = c.Request.WithContext(reqCtx)
@@ -360,6 +366,10 @@ func (h *OpenAIResponsesAPIHandler) authenticateResponsesWebsocketTurn(c *gin.Co
 // response events back as JSON websocket text messages. `response.interrupt`
 // is forwarded to the current Codex upstream socket without starting a new turn.
 func (h *OpenAIResponsesAPIHandler) ResponsesWebsocket(c *gin.Context) {
+	if channelscope.From(c.Request.Context()) == "kilo" {
+		c.AbortWithStatusJSON(http.StatusNotImplemented, gin.H{"error": "Kilo does not support WebSocket"})
+		return
+	}
 	upgrader := responsesWebsocketUpgrader
 	upgrader.EnableCompression = responsesWebsocketCompressionEnabled.Load()
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, websocketUpgradeHeaders(c.Request))

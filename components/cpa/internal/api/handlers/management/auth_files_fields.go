@@ -69,6 +69,13 @@ func (h *Handler) PatchAuthFileStatus(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "auth file not found"})
 		return
 	}
+	if isKiloAccount(targetAuth) {
+		rejectKiloLegacy(c)
+		return
+	}
+	if !*req.Disabled && h.rejectBuiltinBPS(c, targetAuth.Provider) {
+		return
+	}
 	if coreauth.IsPluginVirtualAuth(targetAuth) {
 		// Allow status changes only when targeting the source auth file name, matching delete semantics.
 		// Expanded virtual project auths still cannot be modified independently.
@@ -327,6 +334,10 @@ func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 		}
 	}
 
+	if isKiloAccount(targetAuth) {
+		rejectKiloLegacy(c)
+		return
+	}
 	// Config-sourced credentials are managed through config endpoints, not as auth files.
 	if targetAuth == nil || targetAuth.AuthSourceKind() == coreauth.AuthSourceConfig {
 		c.JSON(http.StatusNotFound, gin.H{"error": "auth file not found"})
@@ -342,9 +353,36 @@ func (h *Handler) PatchAuthFileFields(c *gin.Context) {
 	}
 
 	updatedAuth, committed, errModify := h.authManager.Modify(ctx, targetAuth.ID, targetAuth.RegistrationEpoch, func(current *coreauth.Auth) error {
-		return applyAuthFileFieldsPatch(current, req, requestRetryPatch)
+		if err := applyAuthFileFieldsPatch(current, req, requestRetryPatch); err != nil {
+			return err
+		}
+		if kind, _ := current.Metadata["type"].(string); isKiloAccount(current) || strings.EqualFold(strings.TrimSpace(kind), "kilo") {
+			return errKiloDedicated
+		}
+		if h.builtinBPSReplaced(current.Provider) {
+			for key := range req {
+				if rootAuthFileField(key) != "disabled" {
+					continue
+				}
+				disabled, valid := authFileBoolValue(current.Metadata["disabled"])
+				if !valid || !disabled {
+					return errBPSBuiltinReplaced
+				}
+				applyAuthDisabledState(current, true)
+				break
+			}
+		}
+		return nil
 	})
 	if errModify != nil {
+		if errors.Is(errModify, errKiloDedicated) {
+			rejectKiloLegacy(c)
+			return
+		}
+		if errors.Is(errModify, errBPSBuiltinReplaced) {
+			c.JSON(http.StatusConflict, gin.H{"error": errBPSBuiltinReplaced.Error()})
+			return
+		}
 		var patchErr *authFileFieldPatchError
 		if errors.As(errModify, &patchErr) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": patchErr.message})

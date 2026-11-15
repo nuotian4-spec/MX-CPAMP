@@ -1,3 +1,4 @@
+import { inspectSingleCpaBpsAccount } from './model/cpaBpsInspectionProbe';
 import { authFilesApi, type AuthFilesApiRequestScope } from '@/services/api/authFiles';
 import { createScopedApiRequestConfig } from '@/services/api/client';
 import type { TFunction } from 'i18next';
@@ -89,9 +90,11 @@ const identityT = ((key: string) => key) as TFunction;
 
 const formatInspectionTargetTypes = (targetTypes: string[], t: TFunction) => {
   const providers = new Set(targetTypes.map((item) => item.trim().toLowerCase()));
-  if (providers.has('bps'))
+  if (providers.has('bps') || providers.has('cpa-bps'))
     return [...providers]
-      .map((p) => (p === 'bps' ? 'BPS' : p === 'xai' ? 'xAI' : 'Codex'))
+      .map((p) =>
+        p === 'cpa-bps' ? 'BPS 插件' : p === 'bps' ? 'BPS' : p === 'xai' ? 'xAI' : 'Codex'
+      )
       .join(' + ');
   if (providers.has('codex') && providers.has('xai')) {
     return t('monitoring.codex_inspection_target_codex_xai');
@@ -544,23 +547,25 @@ export const createCodexInspectionSession = ({
       emitProgress();
 
       void (
-        account.provider === 'bps'
-          ? inspectSingleBpsAccount(account, requestScope, onLog)
-          : account.provider === 'xai'
-            ? inspectSingleXaiAccount(account, resolvedSettings, onLog, translate, requestConfig)
-            : account.provider === 'codex'
-              ? inspectSingleAccount(account, resolvedSettings, onLog, translate, requestConfig)
-              : Promise.resolve<CodexInspectionResultItem>({
-                  ...account,
-                  state: 'inspection_unknown',
-                  action: 'keep',
-                  actionReason: '未支持的巡检通道，保留账号',
-                  statusCode: null,
-                  usedPercent: null,
-                  isQuota: false,
-                  autoRecoverEligible: false,
-                  error: '',
-                })
+        account.provider === 'cpa-bps'
+          ? inspectSingleCpaBpsAccount(account, requestScope)
+          : account.provider === 'bps'
+            ? inspectSingleBpsAccount(account, requestScope, onLog)
+            : account.provider === 'xai'
+              ? inspectSingleXaiAccount(account, resolvedSettings, onLog, translate, requestConfig)
+              : account.provider === 'codex'
+                ? inspectSingleAccount(account, resolvedSettings, onLog, translate, requestConfig)
+                : Promise.resolve<CodexInspectionResultItem>({
+                    ...account,
+                    state: 'inspection_unknown',
+                    action: 'keep',
+                    actionReason: '未支持的巡检通道，保留账号',
+                    statusCode: null,
+                    usedPercent: null,
+                    isQuota: false,
+                    autoRecoverEligible: false,
+                    error: '',
+                  })
       )
         .then((inspectionResult) => {
           resultMap.set(inspectionResult.key, inspectionResult);

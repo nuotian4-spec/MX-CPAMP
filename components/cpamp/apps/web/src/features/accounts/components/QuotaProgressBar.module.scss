@@ -1,23 +1,32 @@
 .track {
-  height: 8px;
+  display: block;
+  height: 5px;
   overflow: hidden;
   border-radius: 999px;
   background-color: var(--data-track-bg);
 }
-
 .fill {
+  display: block;
   height: 100%;
   transition: width 0.2s ease;
+  border-radius: inherit;
 }
-
 .fillHigh {
-  background-color: var(--data-green-base);
+  background-color: var(--primary-color, #2563eb);
 }
-
 .fillMedium {
   background-color: var(--data-amber-base);
 }
-
 .fillLow {
   background-color: var(--data-red-base);
+}
+.fillUnknown {
+  background-color: var(--text-tertiary);
+}
+.empty {
+  background-color: color-mix(in srgb, var(--data-red-base) 28%, var(--data-track-bg));
+  box-shadow: inset 3px 0 var(--data-red-base);
+}
+.unknown {
+  box-shadow: inset 3px 0 var(--text-tertiary, #94a3b8);
 }

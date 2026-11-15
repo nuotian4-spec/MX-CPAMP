@@ -270,6 +270,10 @@ func (h *Handler) PutPluginConfig(c *gin.Context) {
 	if !okBody {
 		return
 	}
+	if errConfig := validateCPABPSModels(id, body, false); errConfig != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_config", "message": errConfig.Error()})
+		return
+	}
 	node, errNode := yamlNodeFromJSONObject(body)
 	if errNode != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_body", "message": errNode.Error()})
@@ -296,6 +300,10 @@ func (h *Handler) PatchPluginConfig(c *gin.Context) {
 	}
 	body, okBody := readPluginConfigObject(c)
 	if !okBody {
+		return
+	}
+	if errConfig := validateCPABPSModels(id, body, true); errConfig != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_config", "message": errConfig.Error()})
 		return
 	}
 
@@ -328,6 +336,29 @@ func (h *Handler) PatchPluginConfig(c *gin.Context) {
 	}
 	h.cfg.Plugins.Configs[id] = updated
 	h.persistLocked(c)
+}
+
+func validateCPABPSModels(id string, body map[string]any, allowDelete bool) error {
+	if id != "cpa-bps" {
+		return nil
+	}
+	value, present := body["models"]
+	if !present || (allowDelete && value == nil) {
+		return nil
+	}
+	models, ok := value.([]any)
+	if ok {
+		for _, model := range models {
+			if _, isString := model.(string); !isString {
+				ok = false
+				break
+			}
+		}
+	}
+	if !ok {
+		return errors.New(`cpa-bps 的 models 必须是字符串数组，例如 ["gpt-6-luna"]；清空请使用 []`)
+	}
+	return nil
 }
 
 // DeletePlugin removes the selected local plugin file and its saved config.

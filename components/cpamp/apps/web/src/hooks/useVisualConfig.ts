@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useReducer } from 'react';
 import { isAlias, isMap, isScalar, parse as parseYaml, parseDocument } from 'yaml';
 import type {
+  ClientKeyScope,
   DisableImageGenerationMode,
   PluginStoreAuthApplyTo,
   PluginStoreAuthRule,
@@ -10,6 +11,7 @@ import type {
 } from '@/types/visualConfig';
 import { DEFAULT_VISUAL_VALUES } from '@/types/visualConfig';
 import { normalizeRoutingStrategy } from '@/utils/routingStrategy';
+import { readClientKeyConfig } from './clientKeyConfig';
 import {
   arePayloadFilterRulesEqual,
   arePayloadRulesEqual,
@@ -169,10 +171,8 @@ type VisualConfigRuntime = {
 const CODEX_IDENTITY_CONFUSE_REMOVAL_COMMIT = '48686ccc';
 const CODEX_IDENTITY_CONFUSE_LAST_SUPPORTED_VERSION = [8, 0, 3] as const;
 const CODEX_IDENTITY_CONFUSE_REMOVED_VERSION = [8, 0, 4] as const;
-const CPA_RELEASE_VERSION_PATTERN =
-  /^v?(\d+)\.(\d+)\.(\d+)(?:-(?:alpha|beta|rc)(?:[.-]?\d+)?)?$/i;
-const CPA_GIT_DESCRIBE_VERSION_PATTERN =
-  /^v?(\d+)\.(\d+)\.(\d+)-(\d+)-g([0-9a-f]+)(?:-dirty)?$/i;
+const CPA_RELEASE_VERSION_PATTERN = /^v?(\d+)\.(\d+)\.(\d+)(?:-(?:alpha|beta|rc)(?:[.-]?\d+)?)?$/i;
+const CPA_GIT_DESCRIBE_VERSION_PATTERN = /^v?(\d+)\.(\d+)\.(\d+)-(\d+)-g([0-9a-f]+)(?:-dirty)?$/i;
 
 function compareCpaVersion(current: readonly number[], baseline: readonly number[]): number {
   for (let index = 0; index < baseline.length; index += 1) {
@@ -414,8 +414,7 @@ function pathUsesYamlInheritance(
   if (!sourceDoc.hasIn(path)) return true;
 
   for (let length = 0; length < path.length; length += 1) {
-    const node =
-      length === 0 ? sourceDoc.contents : sourceDoc.getIn(path.slice(0, length), true);
+    const node = length === 0 ? sourceDoc.contents : sourceDoc.getIn(path.slice(0, length), true);
     if (isAlias(node) || yamlMapHasMergeKey(node)) return true;
   }
   return false;
@@ -428,13 +427,7 @@ function getHistoricalV8Aliases(path: YamlPath): YamlPath[] {
   const claudeHeaders = ['claude-header-defaults'];
   if (pathStartsWith(path, claudeHeaders)) {
     return [
-      [
-        'oauth',
-        'providers',
-        'claude',
-        'header-defaults',
-        ...path.slice(claudeHeaders.length),
-      ],
+      ['oauth', 'providers', 'claude', 'header-defaults', ...path.slice(claudeHeaders.length)],
     ];
   }
   return [];
@@ -484,20 +477,14 @@ function isV8VisualConfigLayout(parsed: Record<string, unknown>): boolean {
   if (asRecord(parsed['api-keys'])) return true;
 
   const clientCodex = asRecord(asRecord(parsed.client)?.codex);
-  if (
-    clientCodex &&
-    Object.prototype.hasOwnProperty.call(clientCodex, 'optimize-multi-agent-v2')
-  ) {
+  if (clientCodex && Object.prototype.hasOwnProperty.call(clientCodex, 'optimize-multi-agent-v2')) {
     return true;
   }
 
   const historicalProviderCodex = asRecord(asRecord(parsed.providers)?.codex);
   if (
     historicalProviderCodex &&
-    Object.prototype.hasOwnProperty.call(
-      historicalProviderCodex,
-      'optimize-multi-agent-v2'
-    )
+    Object.prototype.hasOwnProperty.call(historicalProviderCodex, 'optimize-multi-agent-v2')
   ) {
     return true;
   }
@@ -505,9 +492,9 @@ function isV8VisualConfigLayout(parsed: Record<string, unknown>): boolean {
   const routing = asRecord(parsed.routing);
   return Boolean(
     routing &&
-      ['force-model-prefix', 'retry', 'cooldown'].some((key) =>
-        Object.prototype.hasOwnProperty.call(routing, key)
-      )
+    ['force-model-prefix', 'retry', 'cooldown'].some((key) =>
+      Object.prototype.hasOwnProperty.call(routing, key)
+    )
   );
 }
 
@@ -749,6 +736,7 @@ type VisualConfigAction =
   | {
       type: 'commit_api_keys';
       apiKeysText: string;
+      scopes?: ClientKeyScope[];
     };
 
 function createInitialVisualConfigState(): VisualConfigState {
@@ -1071,10 +1059,12 @@ function visualConfigReducer(
         visualValues: {
           ...state.visualValues,
           apiKeysText: action.apiKeysText,
+          ...(action.scopes ? { clientKeyScopes: action.scopes } : {}),
         },
         baselineValues: {
           ...state.baselineValues,
           apiKeysText: action.apiKeysText,
+          ...(action.scopes ? { clientKeyScopes: action.scopes } : {}),
         },
         dirtyFields,
       };
@@ -1090,11 +1080,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
     undefined,
     createInitialVisualConfigState
   );
-  const {
-    visualValues: storedVisualValues,
-    visualParseError,
-    dirtyFields,
-  } = state;
+  const { visualValues: storedVisualValues, visualParseError, dirtyFields } = state;
   const codexIdentityConfuseCompatibility = getCodexIdentityConfuseCompatibility(
     runtime.serverVersion,
     runtime.serverCommit
@@ -1166,9 +1152,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         rmSecretKeyConfigured:
           typeof readCompat(['remote-management', 'secret-key']) === 'string' &&
           (readCompat(['remote-management', 'secret-key']) as string).length > 0,
-        rmDisableControlPanel: Boolean(
-          readCompat(['remote-management', 'disable-control-panel'])
-        ),
+        rmDisableControlPanel: Boolean(readCompat(['remote-management', 'disable-control-panel'])),
         rmDisableAutoUpdatePanel: Boolean(
           readCompat(['remote-management', 'disable-auto-update-panel'])
         ),
@@ -1186,6 +1170,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         authDir:
           typeof readCompat(['auth-dir']) === 'string' ? (readCompat(['auth-dir']) as string) : '',
         apiKeysText: resolveApiKeysText(parsed),
+        clientKeyScopes: readClientKeyConfig(parsed).scopes,
         pluginsEnabled: Boolean(plugins?.enabled),
         pluginsDir: typeof plugins?.dir === 'string' ? plugins.dir : '',
         pluginStoreSourcesText: parseStringArrayText(
@@ -1319,9 +1304,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         streaming: {
           keepaliveSeconds: String(readCompat(['streaming', 'keepalive-seconds']) ?? ''),
           bootstrapRetries: String(readCompat(['streaming', 'bootstrap-retries']) ?? ''),
-          nonstreamKeepaliveInterval: String(
-            readCompat(['nonstream-keepalive-interval']) ?? ''
-          ),
+          nonstreamKeepaliveInterval: String(readCompat(['nonstream-keepalive-interval']) ?? ''),
         },
       };
 
@@ -1345,12 +1328,10 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         }
         const values = visualValues;
         const isDirty = (key: string) => dirtyFields.has(key);
-        const parsedCurrent =
-          asRecord(parseYaml(currentYaml, YAML_EFFECTIVE_PARSE_OPTIONS)) ?? {};
+        const parsedCurrent = asRecord(parseYaml(currentYaml, YAML_EFFECTIVE_PARSE_OPTIONS)) ?? {};
         const useV8Layout = isV8VisualConfigLayout(parsedCurrent);
         const materializedPaths = new Set<string>();
-        const mappedPath = (path: YamlPath) =>
-          useV8Layout ? mapVisualConfigV8Path(path) : path;
+        const mappedPath = (path: YamlPath) => (useV8Layout ? mapVisualConfigV8Path(path) : path);
         const pruneEmptyParents = (path: YamlPath) => {
           for (let length = path.length - 1; length >= 1; length -= 1) {
             deleteIfMapEmpty(doc, path.slice(0, length));
@@ -1440,13 +1421,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         const ensureCompatMap = (path: YamlPath) => {
           const target = mappedPath(path);
           ensureParents(target);
-          materializeEffectiveMapAtPath(
-            doc,
-            sourceDoc,
-            target,
-            parsedCurrent,
-            materializedPaths
-          );
+          materializeEffectiveMapAtPath(doc, sourceDoc, target, parsedCurrent, materializedPaths);
           ensureMapInDoc(doc, target);
         };
         const deleteCompatIfMapEmpty = (path: YamlPath) => {
@@ -1521,10 +1496,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
             return;
           }
           const safe = typeof value === 'string' ? value : '';
-          if (
-            safe.trim() === '' &&
-            pathUsesYamlInheritance(sourceDoc, target, parsedCurrent)
-          ) {
+          if (safe.trim() === '' && pathUsesYamlInheritance(sourceDoc, target, parsedCurrent)) {
             ensureParents(target);
             doc.setIn(target, null);
             return;
@@ -1540,11 +1512,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
             ensureParents(target);
             doc.setIn(
               target,
-              value === 'chat' || value === 'passthrough'
-                ? value
-                : value === 'true'
-                  ? true
-                  : false
+              value === 'chat' || value === 'passthrough' ? value : value === 'true' ? true : false
             );
             dropCompatibilityAlternatives(path, target);
             return;
@@ -1606,10 +1574,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
             );
           }
           if (isDirty('rmPanelRepo')) {
-            setCompatString(
-              ['remote-management', 'panel-github-repository'],
-              values.rmPanelRepo
-            );
+            setCompatString(['remote-management', 'panel-github-repository'], values.rmPanelRepo);
             if (hasCompat(['remote-management', 'panel-repo'])) {
               deleteCompat(['remote-management', 'panel-repo']);
             }
@@ -1736,10 +1701,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
           setCompatBoolean(['save-cooldown-status'], values.saveCooldownStatus);
         }
         if (isDirty('transientErrorCooldownSeconds')) {
-          setCompatInt(
-            ['transient-error-cooldown-seconds'],
-            values.transientErrorCooldownSeconds
-          );
+          setCompatInt(['transient-error-cooldown-seconds'], values.transientErrorCooldownSeconds);
         }
         if (isDirty('disableClaudeCloakMode')) {
           setCompatBoolean(['disable-claude-cloak-mode'], values.disableClaudeCloakMode);
@@ -1786,10 +1748,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         if (claudeHeadersDirty) {
           ensureCompatMap(['claude-header-defaults']);
           if (isDirty('claudeHeaderUserAgent')) {
-            setCompatString(
-              ['claude-header-defaults', 'user-agent'],
-              values.claudeHeaderUserAgent
-            );
+            setCompatString(['claude-header-defaults', 'user-agent'], values.claudeHeaderUserAgent);
           }
           if (isDirty('claudeHeaderPackageVersion')) {
             setCompatString(
@@ -1826,10 +1785,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         if (codexHeadersDirty) {
           ensureCompatMap(['codex-header-defaults']);
           if (isDirty('codexHeaderUserAgent')) {
-            setCompatString(
-              ['codex-header-defaults', 'user-agent'],
-              values.codexHeaderUserAgent
-            );
+            setCompatString(['codex-header-defaults', 'user-agent'], values.codexHeaderUserAgent);
           }
           if (isDirty('codexHeaderBetaFeatures')) {
             setCompatString(
@@ -1865,7 +1821,11 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
         const writeQuotaSwitchProject = isDirty('quotaSwitchProject');
         const writeQuotaSwitchPreviewModel = isDirty('quotaSwitchPreviewModel');
         const writeQuotaAntigravityCredits = isDirty('quotaAntigravityCredits');
-        if (writeQuotaSwitchProject || writeQuotaSwitchPreviewModel || writeQuotaAntigravityCredits) {
+        if (
+          writeQuotaSwitchProject ||
+          writeQuotaSwitchPreviewModel ||
+          writeQuotaAntigravityCredits
+        ) {
           ensureCompatMap(['quota-exceeded']);
           if (writeQuotaSwitchProject) {
             setCompatValue(['quota-exceeded', 'switch-project'], values.quotaSwitchProject);
@@ -1877,7 +1837,10 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
             );
           }
           if (writeQuotaAntigravityCredits) {
-            setCompatValue(['quota-exceeded', 'antigravity-credits'], values.quotaAntigravityCredits);
+            setCompatValue(
+              ['quota-exceeded', 'antigravity-credits'],
+              values.quotaAntigravityCredits
+            );
           }
           deleteCompatIfMapEmpty(['quota-exceeded']);
         }
@@ -1895,10 +1858,7 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
             setCompatBoolean(['routing', 'session-affinity'], values.routingSessionAffinity);
           }
           if (isDirty('routingSessionAffinityTTL')) {
-            setCompatString(
-              ['routing', 'session-affinity-ttl'],
-              values.routingSessionAffinityTTL
-            );
+            setCompatString(['routing', 'session-affinity-ttl'], values.routingSessionAffinityTTL);
           }
           deleteCompatIfMapEmpty(['routing']);
         }
@@ -2006,8 +1966,8 @@ export function useVisualConfig(runtime: VisualConfigRuntime = {}) {
     dispatch({ type: 'set_values', values: newValues });
   }, []);
 
-  const commitApiKeysText = useCallback((apiKeysText: string) => {
-    dispatch({ type: 'commit_api_keys', apiKeysText });
+  const commitApiKeysText = useCallback((apiKeysText: string, scopes?: ClientKeyScope[]) => {
+    dispatch({ type: 'commit_api_keys', apiKeysText, scopes });
   }, []);
 
   return {

@@ -70,6 +70,7 @@ vi.mock('@/stores', () => ({
 }));
 
 type Confirmation = {
+  title?: string;
   onConfirm: () => void | Promise<void>;
 };
 
@@ -114,6 +115,8 @@ const input = (renderer: ReactTestRenderer, placeholder: string) =>
 const setInput = (renderer: ReactTestRenderer, placeholder: string, value: string) => {
   act(() => {
     input(renderer, placeholder).props.onChange({ target: { value } });
+    if (placeholder === API_KEY_PLACEHOLDER)
+      renderer.root.findByType('select').props.onChange({ target: { value: 'bps' } });
   });
 };
 
@@ -180,6 +183,10 @@ beforeEach(() => {
   mocks.featureAvailability.managerServiceAvailable = true;
   mocks.featureAvailability.managerServiceBase = 'http://manager.local';
   mocks.showConfirmation.mockImplementation((options: Confirmation) => {
+    if (options.title === '确认更改Key通道') {
+      options.onConfirm();
+      return;
+    }
     pendingConfirmation = options;
   });
 });
@@ -205,7 +212,7 @@ describe('ApiKeysCardEditor immediate CPA persistence', () => {
     setInput(editor.renderer, API_KEY_PLACEHOLDER, 'sk-new');
     await clickButton(editor.renderer, 'config_management.visual.common.add');
 
-    expect(persisted).toEqual([{ type: 'create', apiKey: 'sk-new' }]);
+    expect(persisted).toEqual([{ type: 'create', apiKey: 'sk-new', channel: 'bps' }]);
     expect(mocks.saveApiKeyAliases).not.toHaveBeenCalled();
     expect(editor.getValue()).toBe('sk-new');
     expect(editor.renderer.root.findAllByProps({ className: 'item-row' })).toHaveLength(1);
@@ -232,7 +239,11 @@ describe('ApiKeysCardEditor immediate CPA persistence', () => {
     await clickButton(editor.renderer, 'config_management.visual.common.add');
 
     expect(events).toEqual(['cpa', 'alias']);
-    expect(onPersistApiKeyMutation).toHaveBeenCalledWith({ type: 'create', apiKey: 'sk-new' });
+    expect(onPersistApiKeyMutation).toHaveBeenCalledWith({
+      type: 'create',
+      apiKey: 'sk-new',
+      channel: 'bps',
+    });
   });
 
   it('keeps the modal open and skips alias persistence when CPA create fails', async () => {
@@ -519,6 +530,7 @@ describe('ApiKeysCardEditor immediate CPA persistence', () => {
 
     expect(onPersistApiKeyMutation).toHaveBeenCalledWith({
       type: 'replace',
+      channel: 'bps',
       oldApiKey: 'sk-old',
       newApiKey: 'sk-new',
     });
@@ -580,7 +592,11 @@ describe('ApiKeysCardEditor immediate CPA persistence', () => {
     setInput(editor.renderer, API_KEY_PLACEHOLDER, 'sk-new');
     await clickButton(editor.renderer, 'config_management.visual.common.add');
 
-    expect(onPersistApiKeyMutation).toHaveBeenCalledWith({ type: 'create', apiKey: 'sk-new' });
+    expect(onPersistApiKeyMutation).toHaveBeenCalledWith({
+      type: 'create',
+      apiKey: 'sk-new',
+      channel: 'bps',
+    });
   });
 
   it('allows creating a key without an alias while the panel host is unconfirmed', async () => {
@@ -597,7 +613,11 @@ describe('ApiKeysCardEditor immediate CPA persistence', () => {
     setInput(editor.renderer, API_KEY_PLACEHOLDER, 'sk-new');
     await clickButton(editor.renderer, 'config_management.visual.common.add');
 
-    expect(onPersistApiKeyMutation).toHaveBeenCalledWith({ type: 'create', apiKey: 'sk-new' });
+    expect(onPersistApiKeyMutation).toHaveBeenCalledWith({
+      type: 'create',
+      apiKey: 'sk-new',
+      channel: 'bps',
+    });
   });
 
   it('migrates a same-value alias without redundantly deleting the old hash', async () => {
@@ -881,4 +901,23 @@ describe('ApiKeysCardEditor immediate CPA persistence', () => {
       editor.renderer.root.findByProps({ className: 'error-box' }).children.join('')
     ).toContain('source is dirty');
   });
+});
+
+it('新Key未选通道不提交，选择器只提供三个受支持通道', async () => {
+  const persist = vi.fn();
+  const editor = mountEditor('', { onPersistApiKeyMutation: persist });
+  await flush();
+  await clickButton(editor.renderer, 'config_management.visual.api_keys.add');
+  act(() =>
+    input(editor.renderer, API_KEY_PLACEHOLDER).props.onChange({ target: { value: 'sk-new' } })
+  );
+  expect(
+    editor.renderer.root
+      .findByType('select')
+      .findAllByType('option')
+      .map((x) => x.props.value)
+  ).toEqual(['', 'codex', 'bps', 'kilo']);
+  await clickButton(editor.renderer, 'config_management.visual.common.add');
+  expect(persist).not.toHaveBeenCalled();
+  expect(JSON.stringify(editor.renderer.toJSON())).toContain('新增或轮换Key必须选择');
 });

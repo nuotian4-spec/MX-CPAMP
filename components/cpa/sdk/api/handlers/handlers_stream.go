@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/channelscope"
+
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/interfaces"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
+	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 	coreexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
 	coreusage "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/usage"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
@@ -26,6 +29,9 @@ func (h *BaseAPIHandler) ExecuteStreamWithAuthManager(ctx context.Context, handl
 // HasAlternativeExecutionTarget reports whether an alternative credential other
 // than excludedAuthID can serve a replayed request for modelName.
 func (h *BaseAPIHandler) HasAlternativeExecutionTarget(ctx context.Context, handlerType, modelName string, rawJSON []byte, excludedAuthID string) bool {
+	if channelscope.From(ctx) == "kilo" {
+		return false
+	}
 	if h == nil || h.AuthManager == nil {
 		return false
 	}
@@ -44,7 +50,7 @@ func (h *BaseAPIHandler) HasAlternativeExecutionTarget(ctx context.Context, hand
 	if errMsg != nil {
 		return false
 	}
-	providers = adjustExecutionProvidersForEntryProtocol(handlerType, providers)
+	providers = h.AuthManager.FilterChannelProviders(ctx, adjustExecutionProvidersForEntryProtocol(handlerType, providers))
 	reqMeta := requestExecutionMetadata(ctx)
 	delete(reqMeta, coreexecutor.PinnedAuthMetadataKey)
 	delete(reqMeta, coreexecutor.ExecutionSessionMetadataKey)
@@ -79,6 +85,12 @@ func (h *BaseAPIHandler) ExecuteImageStreamWithAuthManager(ctx context.Context, 
 }
 
 func (h *BaseAPIHandler) streamWithPluginExecutor(ctx context.Context, entryProtocol, responseProtocol, modelName, originalRequestedModel string, rawJSON []byte, alt, executorPluginID string, execOptions modelExecutionOptions) (<-chan []byte, http.Header, <-chan *interfaces.ErrorMessage) {
+	if !h.pluginChannelAllowed(ctx, executorPluginID) {
+		ch := make(chan *interfaces.ErrorMessage, 1)
+		ch <- &interfaces.ErrorMessage{StatusCode: 403, Error: fmt.Errorf("plugin execution is outside client channel")}
+		close(ch)
+		return nil, nil, ch
+	}
 	if h.AuthManager != nil && h.AuthManager.HomeEnabled() {
 		errChan := make(chan *interfaces.ErrorMessage, 1)
 		errChan <- &interfaces.ErrorMessage{StatusCode: http.StatusServiceUnavailable, Error: fmt.Errorf("plugin executor routing is unavailable while Home is enabled")}
@@ -409,10 +421,14 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 		return nil, nil, errChan
 	}
 	ctx = enrichContextWithSessionHierarchy(ctx, opts.Headers, req.Payload, opts.Metadata)
+	ctx = h.withBPSWebSearch(ctx, opts.Metadata)
+	ctx = coreauth.WithBPSRequestState(ctx, h.AuthManager.FilterChannelProviders(ctx, providers), req, opts)
 	streamResult, err := h.AuthManager.ExecuteStream(ctx, providers, req, opts)
 	if err != nil {
 		err = enrichAuthSelectionError(err, providers, normalizedModel)
 		errMsg := executionErrorMessage(err)
+		errMsg.Addon = coreauth.BPSFailoverResponseHeaders(ctx, errMsg.Addon)
+		errMsg.Headers = coreauth.BPSFailoverResponseHeaders(ctx, errMsg.Headers)
 		lifecycle.completeError(ctx, errMsg)
 		errChan := make(chan *interfaces.ErrorMessage, 1)
 		errChan <- errMsg
@@ -577,6 +593,12 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 	}
 
 	bootstrapEligible := func(err error) bool {
+		if channelscope.NoReplay(err) || channelscope.From(ctx) == "kilo" {
+			return false
+		}
+		if coreauth.BPSAutomaticRetryBlocked(ctx) {
+			return false
+		}
 		status := statusFromError(err)
 		if status == 0 {
 			return true
@@ -638,6 +660,7 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 	}
 
 	upstreamHeaders := downstreamHeadersAfterInterceptors(baseStreamHeaders, rawStreamHeaders, passthroughHeadersEnabled)
+	upstreamHeaders = coreauth.BPSFailoverResponseHeaders(ctx, upstreamHeaders)
 	if upstreamHeaders == nil && (passthroughHeadersEnabled || streamInterceptorsActive) {
 		upstreamHeaders = make(http.Header)
 	}
@@ -677,6 +700,7 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 		}
 
 		sendData := func(chunk []byte) bool {
+			coreauth.MarkBPSClientEvent(ctx)
 			if ctx == nil {
 				dataChan <- chunk
 				return true

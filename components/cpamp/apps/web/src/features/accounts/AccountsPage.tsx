@@ -1,3 +1,31 @@
+import { Fragment } from 'react';
+import { QuotaProgressBar } from './components/QuotaProgressBar';
+import { KiloAccountEgress } from '@/features/kilo/KiloAccountEgress';
+import { KiloAddAccount } from '@/features/kilo/KiloAddAccount';
+import { QuotaEstimateSummary } from '@/features/kilo/QuotaEstimateSummary';
+import {
+  includeQuotaSourceRows,
+  buildKiloQuotaEstimateWindows,
+  resolveKiloQuotaSourceRow,
+} from '@/features/kilo/kiloQuotaEstimate';
+import { kiloProxiesApi, type KiloProxyState } from '@/services/api/kiloProxies';
+import { KiloEgressSummary } from '@/features/kilo/KiloEgressSummary';
+import { KiloRecoveryStatus } from '@/features/kilo/KiloRecoveryStatus';
+import { KiloAccountsPanel } from '@/features/kilo/KiloAccountsPage';
+import { KiloQuotaSummary } from '@/features/kilo/KiloQuotaSummary';
+import { KiloQuotaPanel } from '@/features/kilo/KiloQuotaPanel';
+import { kiloApi, type KiloAccountsSnapshot } from '@/services/api/kilo';
+import { useCredentialConcurrencySnapshot } from './hooks/useCredentialConcurrencySnapshot';
+import { CredentialConcurrencyBadge } from './components/CredentialConcurrencyBadge';
+import { AccountConcurrencySection } from './components/accountDetail/AccountConcurrencySection';
+import type { ConcurrencyEditorState } from './components/CredentialConcurrencyEditor';
+import { useQuotaStore as usePluginQuotaStore } from '@/stores/useQuotaStore';
+import { getCpaBpsQuotaKey, getCpaBpsQuotaState, getCpaBpsQuotaScope } from './model/cpaBpsQuotaState';
+import { refreshCpaBpsQuota } from './model/refreshCpaBpsQuota';
+import { CpaBpsQuotaCard } from './components/CpaBpsQuotaCard';
+import { getBpsResetCreditsKey, refreshBpsResetCredits } from './model/bpsResetCreditsState';
+import { cpaBpsResetCount } from './model/cpaBpsQuotaPresentation';
+import { BpsResetCreditsCard } from './components/BpsResetCreditsCard';
 import { getBpsQuotaState, getBpsQuotaStoreKey } from '@/utils/quota/bpsIdentity';
 import { buildBpsInspectionQuotaState } from './model/bpsQuota';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -66,9 +94,7 @@ import {
   type QuotaRefreshResult,
   type QuotaSetter,
 } from '@/components/quota';
-import {
-  getScopedQuotaState,
-} from '@/components/quota/quotaConfigs';
+import { getScopedQuotaState } from '@/components/quota/quotaConfigs';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { useInterval } from '@/hooks/useInterval';
 import { usePanelFeatureAvailability } from '@/hooks/usePanelFeatureAvailability';
@@ -303,7 +329,6 @@ import {
   AccountConfigurationTab,
   AccountDiagnosticsTab,
   AccountLatestRequest,
-  AccountMetricsGrid,
   AccountModelsTab,
   AccountOverviewTab,
   AccountProviderTabs,
@@ -446,10 +471,7 @@ type AccountQuotaRefreshMode = 'summary' | 'detail';
 const getAccountQuotaRefreshKey = (row: AccountRow): string =>
   `${row.provider}:${getQuotaCredentialStoreKey(row.raw)}`;
 
-const getMainListQuotaWindowLimit = (
-  layoutMode: AccountsLayoutMode,
-  row: AccountRow
-): number => {
+const getMainListQuotaWindowLimit = (layoutMode: AccountsLayoutMode, row: AccountRow): number => {
   if (row.provider === ANTIGRAVITY_CONFIG.type) {
     if (layoutMode === 'table') return ANTIGRAVITY_MAIN_LIST_QUOTA_WINDOW_LIMIT;
     return ANTIGRAVITY_MULTI_WINDOW_PLAN_TYPES.has(row.canonicalPlanType ?? '')
@@ -505,9 +527,10 @@ const toAccountQuotaRefreshOutcome = <TState, TData>(
 ): AccountQuotaRefreshOutcome => {
   if (!result) return { status: 'ignored' };
   if (result.status === 'success') {
-    const rawData = typeof result.data === 'object' && result.data !== null
-      ? (result.data as Record<string, unknown>)
-      : null;
+    const rawData =
+      typeof result.data === 'object' && result.data !== null
+        ? (result.data as Record<string, unknown>)
+        : null;
     const isRateLimited =
       Boolean(rawData?.rateLimited) ||
       Boolean((rawData?.billingSummary as Record<string, unknown> | undefined)?.rateLimited);
@@ -1235,22 +1258,6 @@ const getHealthStatusClass = (status: AccountListHealthStatusKey) => {
   }
 };
 
-const getWindowRemainingBarClass = (remainingPercent: number | null) => {
-  if (remainingPercent === null) return styles.quotaBarNeutral;
-  if (remainingPercent <= 0) return styles.quotaBarBad;
-  if (remainingPercent < 20) return styles.quotaBarWarn;
-  return styles.quotaBarGood;
-};
-
-const getFallbackWindowBarClass = (
-  lifecycleBarOverride: AccountQuotaLifecycleBarOverride,
-  remainingPercent: number | null
-) => {
-  if (lifecycleBarOverride === 'bad') return styles.quotaBarBad;
-  if (lifecycleBarOverride === 'neutral') return styles.quotaBarNeutral;
-  return getWindowRemainingBarClass(remainingPercent);
-};
-
 const resolveAccountQuotaSnapshotLabel = (
   snapshot: AccountQuotaSnapshotWindow,
   provider: string | undefined,
@@ -1303,6 +1310,7 @@ export function AccountsPage() {
     () => ({ apiBase, managementKey }),
     [apiBase, managementKey]
   );
+  const concurrency = useCredentialConcurrencySnapshot(authFilesRequestScope);
   const managerStorageAvailable =
     !featureAvailability.checking &&
     Boolean(featureAvailability.managerServiceBase) &&
@@ -1361,6 +1369,69 @@ export function AccountsPage() {
     onCredentialMutation: handleCredentialMutation,
   });
 
+  const [kiloProjection, setKiloProjection] = useState<{
+    scope: typeof authFilesRequestScope;
+    value: KiloAccountsSnapshot;
+  }>();
+  const [kiloProxyProjection, setKiloProxyProjection] = useState<{
+    scope: typeof authFilesRequestScope;
+    value: KiloProxyState;
+    readAt: number;
+    stale?: boolean;
+  }>();
+  const concurrencyRef =
+    concurrency.snapshot?.mode === 'local' ? concurrency.snapshot.connection_ref : '';
+  const currentKiloContext = useRef({ scope: authFilesRequestScope, ref: concurrencyRef });
+  currentKiloContext.current = { scope: authFilesRequestScope, ref: concurrencyRef };
+  const kiloBatchWriting = useRef(false);
+  useEffect(() => {
+    let active = true;
+    setKiloProjection(undefined);
+    setKiloProxyProjection(undefined);
+    if (concurrencyRef)
+      void kiloApi
+        .list(authFilesRequestScope)
+        .then((value) => {
+          if (active && value.connection_ref === concurrencyRef)
+            setKiloProjection({ scope: authFilesRequestScope, value });
+        })
+        .catch(() => {
+          if (active) setKiloProjection(undefined);
+        });
+    return () => {
+      active = false;
+    };
+  }, [authFilesRequestScope, concurrencyRef, files]);
+  useEffect(() => {
+    let active = true;
+    if (concurrencyRef)
+      void kiloProxiesApi
+        .list(authFilesRequestScope)
+        .then((value) => {
+          if (active && value.connection_ref === concurrencyRef)
+            setKiloProxyProjection({
+              scope: authFilesRequestScope,
+              value,
+              readAt: Date.now(),
+              stale: false,
+            });
+        })
+        .catch(() => {
+          if (active)
+            setKiloProxyProjection((previous) =>
+              previous ? { ...previous, stale: true } : undefined
+            );
+        });
+    return () => {
+      active = false;
+    };
+  }, [authFilesRequestScope, concurrencyRef, concurrency.snapshot, files]);
+  const kiloSnapshot =
+    kiloProjection?.scope === authFilesRequestScope &&
+    kiloProjection.value.connection_ref === concurrencyRef
+      ? kiloProjection.value
+      : undefined;
+
   const [oauthViewMode, setOauthViewMode] = useState<'diagram' | 'list'>('list');
   const oauthState = useAuthFilesOauth({
     viewMode: oauthViewMode,
@@ -1390,6 +1461,10 @@ export function AccountsPage() {
   const claudeQuota = useQuotaStore((state) => state.claudeQuota);
   const codexQuota = useQuotaStore((state) => state.codexQuota);
   const bpsQuota = useQuotaStore((state) => state.bpsQuota);
+  const bpsResetCredits = useQuotaStore((state) => state.bpsResetCredits);
+  const cpaBpsQuota = usePluginQuotaStore((state) => state.cpaBpsQuota);
+  const pluginQuotaContext = useRef({ files, connectionFingerprint });
+  pluginQuotaContext.current = { files, connectionFingerprint };
   const devinQuota = useQuotaStore((state) => state.devinQuota);
   const kimiQuota = useQuotaStore((state) => state.kimiQuota);
   const metaQuota = useQuotaStore((state) => state.metaQuota);
@@ -1400,12 +1475,23 @@ export function AccountsPage() {
       claudeQuota,
       codexQuota,
       bpsQuota,
+      cpaBpsQuota,
       devinQuota,
       kimiQuota,
       metaQuota,
       xaiQuota,
     }),
-    [antigravityQuota, claudeQuota, codexQuota, bpsQuota, devinQuota, kimiQuota, metaQuota, xaiQuota]
+    [
+      antigravityQuota,
+      claudeQuota,
+      codexQuota,
+      bpsQuota,
+      cpaBpsQuota,
+      devinQuota,
+      kimiQuota,
+      metaQuota,
+      xaiQuota,
+    ]
   );
   const setAntigravityQuota = useQuotaStore((state) => state.setAntigravityQuota);
   const setClaudeQuota = useQuotaStore((state) => state.setClaudeQuota);
@@ -1486,6 +1572,7 @@ export function AccountsPage() {
     () => initialWorkspaceUrlState.current.accountSort
   );
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [isAccountSortDropdownOpen, setIsAccountSortDropdownOpen] = useState(false);
   const [highlightedAccountSortIndex, setHighlightedAccountSortIndex] = useState(-1);
   const [batchPriorityOpen, setBatchPriorityOpen] = useState(false);
@@ -1781,9 +1868,9 @@ export function AccountsPage() {
   const pendingExternalHashNavigationRef = useRef('');
   const quotaRequestVersionsRef = useRef<Map<string, number>>(new Map());
   const resettingQuotaKeysRef = useRef<Set<string>>(new Set());
-  const codexResetCreditDetailRequestsRef = useRef<
-    Map<string, CodexResetCreditRequestEntry>
-  >(new Map());
+  const codexResetCreditDetailRequestsRef = useRef<Map<string, CodexResetCreditRequestEntry>>(
+    new Map()
+  );
   const codexResetCreditAutoFetchAttemptedSignaturesRef = useRef<Set<string>>(new Set());
   const identityCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accountSortDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -3695,10 +3782,13 @@ export function AccountsPage() {
   );
 
   const accountHistoryIdentityByRowKey = useMemo(
-    () => new Map(files.map((file) => [
-      getAuthFileSelectionKey(file),
-      JSON.stringify(resolveCredentialIdentity(file)),
-    ])),
+    () =>
+      new Map(
+        files.map((file) => [
+          getAuthFileSelectionKey(file),
+          JSON.stringify(resolveCredentialIdentity(file)),
+        ])
+      ),
     [files]
   );
   const verifiedAccountHistoryByRowKey = useMemo(() => {
@@ -3970,6 +4060,8 @@ export function AccountsPage() {
       let source: AccountQuotaSnapshotObservationInput['source'] = 'api_query';
       let inventoryMode: AccountQuotaSnapshotObservationInput['inventory_mode'] = 'complete';
       switch (row.provider) {
+        case 'cpa-bps':
+          return undefined;
         case 'bps': {
           const state = getDisplayBpsQuota(row.raw);
           if (state?.status === 'success') {
@@ -4458,6 +4550,27 @@ export function AccountsPage() {
       statusFilter,
     ]
   );
+  const credentialGroup = useCallback(
+    (row: AccountRow) => {
+      const account =
+        row.provider === 'kilo'
+          ? kiloSnapshot?.accounts.find((item) => item.id === row.raw.id)
+          : undefined;
+      if (
+        row.disabled ||
+        account?.source_policy?.paused ||
+        (account?.auto_restriction?.reason && account.auto_restriction.reason !== 'none')
+      )
+        return 1;
+      const status = buildAccountMetrics([row], {
+        pendingActionsByRowKey: actionCandidatesByRowKey,
+        quotaCooldownsByRowKey,
+        requestEvidenceBySelectionKey,
+      });
+      return status.available > 0 ? 2 : 0;
+    },
+    [kiloSnapshot, actionCandidatesByRowKey, quotaCooldownsByRowKey, requestEvidenceBySelectionKey]
+  );
   const filteredRows = useMemo(() => {
     const operationalRows = baseFilteredRows.filter((row) => {
       if (effectiveOperationalFilter === 'all') return true;
@@ -4494,12 +4607,13 @@ export function AccountsPage() {
         'accounts.recommend_reason_recovered'
       );
     });
-    return applyAccountPinnedOrder(
-      sortAccountRows(operationalRows, accountSort, requestEvidenceBySelectionKey),
-      pinnedKeys
-    );
+    const sorted = sortAccountRows(operationalRows, accountSort, requestEvidenceBySelectionKey);
+    if (accountSort.key === 'default')
+      sorted.sort((a, b) => credentialGroup(a) - credentialGroup(b));
+    return applyAccountPinnedOrder(sorted, pinnedKeys);
   }, [
     accountSort,
+    credentialGroup,
     actionCandidatesByRowKey,
     baseFilteredRows,
     codexStatusBySelectionKey,
@@ -4551,7 +4665,7 @@ export function AccountsPage() {
   );
   const accountHistoryTargets = useMemo(() => buildAccountHistoryTargetEntries(rows), [rows]);
   const selectedRowIdentitySignature = selectedRow
-    ? accountHistoryIdentityByRowKey.get(selectedRow.selectionKey) ?? ''
+    ? (accountHistoryIdentityByRowKey.get(selectedRow.selectionKey) ?? '')
     : '';
   const accountHistoryAutoContextKey = useMemo(
     () =>
@@ -4627,11 +4741,15 @@ export function AccountsPage() {
     }
   }, [detailTab, invalidateModels, refreshModels, selectedRow]);
   const configurationEditor = useAuthFileConfigurationEditor({
-    file: selectedRow && !selectedRow.runtimeOnly ? selectedRow.raw : null,
+    file:
+      selectedRow && !selectedRow.runtimeOnly && selectedRow.provider !== 'kilo'
+        ? selectedRow.raw
+        : null,
     enabled:
       activeView === 'accounts' &&
       (detailTab === 'config' || detailTab === 'models') &&
-      Boolean(selectedRow),
+      Boolean(selectedRow) &&
+      selectedRow?.provider !== 'kilo',
     disableControls,
     sourceMemberCount: selectedSourceMemberCount,
     connectionKey: connectionFingerprint,
@@ -4639,6 +4757,21 @@ export function AccountsPage() {
     reconcileSource: reconcileAuthFileSource,
     onSaved: handleConfigurationSaved,
   });
+  const concurrencyOwner = JSON.stringify([connectionFingerprint, selectedRowKey]);
+  const [concurrencyState, setConcurrencyState] = useState<
+    ConcurrencyEditorState & { owner: string }
+  >({ owner: '', dirty: false, saving: false });
+  const [concurrencyResetVersion, setConcurrencyResetVersion] = useState(0);
+  const handleConcurrencyStateChange = useCallback(
+    (state: ConcurrencyEditorState) => {
+      setConcurrencyState({ ...state, owner: concurrencyOwner });
+    },
+    [concurrencyOwner]
+  );
+  const concurrencyDirty = concurrencyState.owner === concurrencyOwner && concurrencyState.dirty;
+  const concurrencySaving = concurrencyState.owner === concurrencyOwner && concurrencyState.saving;
+  const detailDirty = configurationEditor.dirty || concurrencyDirty;
+  const detailSaving = configurationEditor.state?.saving === true || concurrencySaving;
   const configurationDirty = configurationEditor.dirty;
   const configurationReload = configurationEditor.reload;
   const configurationSaving = configurationEditor.state?.saving === true;
@@ -4661,9 +4794,11 @@ export function AccountsPage() {
     refreshModels,
     selectedRow,
   ]);
+  const preserveConfigurationOnNavigationRef = useRef(false);
   const shouldBlockConfigurationNavigation = useCallback<BlockerFunction>(
     ({ currentLocation, nextLocation }) => {
-      if (!configurationEditor.dirty && !configurationSaving) return false;
+      preserveConfigurationOnNavigationRef.current = false;
+      if (!detailDirty && !detailSaving) return false;
       if (currentLocation.pathname !== nextLocation.pathname) return true;
 
       const current = readAccountsWorkspaceUrlState(
@@ -4674,25 +4809,28 @@ export function AccountsPage() {
         nextLocation.search,
         DEFAULT_ACCOUNTS_WORKSPACE_UI_STATE
       );
-      return !(
+      const preservesConfiguration =
         current.view === 'accounts' &&
         next.view === 'accounts' &&
         Boolean(current.account) &&
         current.account === next.account &&
         isConfigurationDetailTab(current.detailTab) &&
-        isConfigurationDetailTab(next.detailTab)
-      );
+        isConfigurationDetailTab(next.detailTab);
+      preserveConfigurationOnNavigationRef.current = preservesConfiguration;
+      if ((concurrencyDirty || concurrencySaving) && next.detailTab !== 'config') return true;
+      return !preservesConfiguration;
     },
-    [configurationEditor.dirty, configurationSaving]
+    [detailDirty, detailSaving, concurrencyDirty, concurrencySaving]
   );
   const handleRouterNavigationConfirm = useCallback((): boolean => {
-    if (configurationSaving) {
+    if (detailSaving) {
       showNotification(t('accounts.config_save_in_progress'), 'info');
       return false;
     }
-    configurationEditor.reset();
+    if (!preserveConfigurationOnNavigationRef.current) configurationEditor.reset();
+    setConcurrencyResetVersion((version) => version + 1);
     return true;
-  }, [configurationEditor, configurationSaving, showNotification, t]);
+  }, [configurationEditor, detailSaving, showNotification, t]);
   const { allowNextNavigation, allowNavigationTo } = useUnsavedChangesGuard({
     enabled: activeView === 'accounts' && (detailTab === 'config' || detailTab === 'models'),
     shouldBlock: shouldBlockConfigurationNavigation,
@@ -4707,12 +4845,12 @@ export function AccountsPage() {
   });
   const discardConfigurationRequestRef = useRef<Promise<boolean> | null>(null);
   const confirmConfigurationDiscard = useCallback(
-    (resetDraftOnConfirm = true): Promise<boolean> => {
-      if (configurationEditor.state?.saving) {
+    (resetDraftOnConfirm = true, concurrencyOnly = false): Promise<boolean> => {
+      if (detailSaving) {
         showNotification(t('accounts.config_save_in_progress'), 'info');
         return Promise.resolve(false);
       }
-      if (!configurationEditor.dirty) return Promise.resolve(true);
+      if (!(concurrencyOnly ? concurrencyDirty : detailDirty)) return Promise.resolve(true);
       if (discardConfigurationRequestRef.current) {
         return Promise.resolve(false);
       }
@@ -4725,7 +4863,10 @@ export function AccountsPage() {
           cancelText: t('common.stay'),
           variant: 'danger',
           onConfirm: () => {
-            if (resetDraftOnConfirm) configurationEditor.reset();
+            if (resetDraftOnConfirm) {
+              if (!concurrencyOnly) configurationEditor.reset();
+              setConcurrencyResetVersion((version) => version + 1);
+            }
             resolve(true);
           },
           onCancel: () => resolve(false),
@@ -4739,15 +4880,27 @@ export function AccountsPage() {
       });
       return request;
     },
-    [configurationEditor, showConfirmation, showNotification, t]
+    [
+      configurationEditor,
+      concurrencyDirty,
+      detailDirty,
+      detailSaving,
+      showConfirmation,
+      showNotification,
+      t,
+    ]
   );
   const handleAccountDelete = useCallback(
     async (item: AuthFileItem) => {
       const deletesOpenCredential = getAuthFileSelectionKey(item) === selectedRowKey;
       if (deletesOpenCredential && !(await confirmConfigurationDiscard(false))) return;
+      if (String(item.provider || item.type || '').toLowerCase() === 'kilo') {
+        showNotification('Kilo删除请在专用详情的更多操作中确认。', 'info');
+        return;
+      }
       handleDelete(item);
     },
-    [confirmConfigurationDiscard, handleDelete, selectedRowKey]
+    [confirmConfigurationDiscard, handleDelete, selectedRowKey, showNotification]
   );
   const hasSelectedAccountDetail = activeView === 'accounts' && Boolean(selectedRowKey);
   const needsInspectionSummary = canLoadInspectionSummary;
@@ -4795,7 +4948,12 @@ export function AccountsPage() {
   }, [loadInspectionSummaryAndSynchronize, needsInspectionSummary]);
 
   useEffect(() => {
-    if (activeView !== 'accounts' || detailTab !== 'models' || !selectedRow) {
+    if (
+      activeView !== 'accounts' ||
+      detailTab !== 'models' ||
+      !selectedRow ||
+      selectedRow.provider === 'kilo'
+    ) {
       modelsLoadKeyRef.current = '';
       return;
     }
@@ -4807,7 +4965,12 @@ export function AccountsPage() {
   }, [activeView, connectionFingerprint, detailTab, selectedRow, showModels]);
 
   useEffect(() => {
-    if (activeView !== 'accounts' || detailTab !== 'models' || !selectedRow) {
+    if (
+      activeView !== 'accounts' ||
+      detailTab !== 'models' ||
+      !selectedRow ||
+      selectedRow.provider === 'kilo'
+    ) {
       modelRulesLoadKeyRef.current = '';
       return;
     }
@@ -4990,12 +5153,22 @@ export function AccountsPage() {
       selectedRowKey,
     ]
   );
+  const quotaUsageRows = useMemo(
+    () =>
+      includeQuotaSourceRows(
+        selectedRow && !pageRows.some((row) => row.selectionKey === selectedRow.selectionKey)
+          ? [...pageRows, selectedRow]
+          : pageRows,
+        kiloSnapshot?.accounts ?? [],
+        rows
+      ),
+    [pageRows, selectedRow, kiloSnapshot, rows]
+  );
   const listQuotaWindowsByRowKey = useMemo(() => {
     const result = new Map<string, AccountQuotaWindowDefinition[]>();
-    for (const row of pageRows) {
+    for (const row of quotaUsageRows) {
       const quotaWindows =
-        quotaDisplayWindowsByRowKey.get(row.selectionKey) ??
-        buildQuotaDisplayWindows(row);
+        quotaDisplayWindowsByRowKey.get(row.selectionKey) ?? buildQuotaDisplayWindows(row);
       const mainListWindows = selectAccountQuotaMainListWindows(
         row,
         quotaWindows,
@@ -5013,10 +5186,19 @@ export function AccountsPage() {
       }
       result.set(row.selectionKey, definitions);
     }
+    for (const account of kiloSnapshot?.accounts ?? []) {
+      const source = resolveKiloQuotaSourceRow(account, quotaUsageRows);
+      if (!source) continue;
+      const definitions = buildAccountQuotaWindowDefinitions(
+        buildKiloQuotaEstimateWindows(account, source)
+      );
+      result.set(source.selectionKey, [...(result.get(source.selectionKey) ?? []), ...definitions]);
+    }
     return result;
   }, [
+    kiloSnapshot,
     buildQuotaDisplayWindows,
-    pageRows,
+    quotaUsageRows,
     quotaDisplayWindowsByRowKey,
     quotaWindowDefinitionsByRowKey,
     effectiveLayoutMode,
@@ -5024,35 +5206,42 @@ export function AccountsPage() {
   // The auth index can stay unchanged while the credential account changes.
   // Only reuse a window-usage snapshot for the exact identity it queried.
   const listWindowUsageIdentityByRowKey = useMemo(
-    () => new Map(buildAccountHistoryTargetEntries(pageRows).map((entry) => [
-      entry.rowKey,
-      JSON.stringify(entry.target),
-    ])),
-    [pageRows]
+    () =>
+      new Map(
+        buildAccountHistoryTargetEntries(quotaUsageRows).map((entry) => [
+          entry.rowKey,
+          JSON.stringify(entry.target),
+        ])
+      ),
+    [quotaUsageRows]
   );
   const listWindowUsageIdentitySignature = JSON.stringify(
     Array.from(listWindowUsageIdentityByRowKey)
   );
   const isListQueryContextMatching = useMemo(() => {
     if (!listWindowUsageQueryContext) return false;
-    if (listWindowUsageQueryContext.pageKeys.length !== pageRows.length) return false;
-    return pageRows.every(
+    if (listWindowUsageQueryContext.pageKeys.length !== quotaUsageRows.length) return false;
+    return quotaUsageRows.every(
       (row, idx) => listWindowUsageQueryContext.pageKeys[idx] === row.selectionKey
     );
-  }, [listWindowUsageQueryContext, pageRows]);
+  }, [listWindowUsageQueryContext, quotaUsageRows]);
   const listWindowUsageTargets = useMemo(() => {
-    if (pageRows.length === 0) return [];
-    const asOfMs = isListQueryContextMatching
-      ? listWindowUsageQueryContext!.asOfMs
-      : undefined;
-    return buildAccountWindowUsageTargetEntries(pageRows, listQuotaWindowsByRowKey, asOfMs);
-  }, [isListQueryContextMatching, listQuotaWindowsByRowKey, listWindowUsageQueryContext, pageRows]);
+    if (quotaUsageRows.length === 0) return [];
+    const asOfMs = isListQueryContextMatching ? listWindowUsageQueryContext!.asOfMs : undefined;
+    return buildAccountWindowUsageTargetEntries(quotaUsageRows, listQuotaWindowsByRowKey, asOfMs);
+  }, [
+    isListQueryContextMatching,
+    listQuotaWindowsByRowKey,
+    listWindowUsageQueryContext,
+    quotaUsageRows,
+  ]);
   const matchingListWindowUsageByKey = useMemo(
     () =>
       isListQueryContextMatching
         ? filterAccountWindowUsageByTargetRanges(
             listWindowUsageTargets.filter(
-              (entry) => listWindowUsageQueryContext!.identityByRowKey.get(entry.rowKey) ===
+              (entry) =>
+                listWindowUsageQueryContext!.identityByRowKey.get(entry.rowKey) ===
                 listWindowUsageIdentityByRowKey.get(entry.rowKey)
             ),
             listWindowUsageByKey
@@ -5067,13 +5256,14 @@ export function AccountsPage() {
     ]
   );
   const listWindowUsageDefinitionsSignature = useMemo(() => {
-    const payload = pageRows.map((row) => {
+    const payload = quotaUsageRows.map((row) => {
       const definitions = listQuotaWindowsByRowKey.get(row.selectionKey) ?? [];
       return {
         rowKey: row.selectionKey,
         definitions: definitions.map((def) => ({
           key: def.key,
           providerWindowId: def.providerWindowId,
+          observedAtMs: def.observedAtMs,
           windowMode: def.windowMode,
           modelScope: def.modelScope,
           boundaryAccuracy: def.boundaryAccuracy,
@@ -5110,14 +5300,14 @@ export function AccountsPage() {
       };
     });
     return JSON.stringify(payload);
-  }, [listQuotaWindowsByRowKey, pageRows]);
+  }, [listQuotaWindowsByRowKey, quotaUsageRows]);
   const listWindowUsageAutoContextKey = useMemo(
     () =>
       JSON.stringify({
         checking: featureAvailability.checking,
         managerConnectionFingerprint,
         requestMonitoringAvailable: featureAvailability.requestMonitoringAvailable,
-        pageKeys: pageRows.map((r) => r.selectionKey),
+        pageKeys: quotaUsageRows.map((r) => r.selectionKey),
         identitySignature: listWindowUsageIdentitySignature,
         definitionsSignature: listWindowUsageDefinitionsSignature,
       }),
@@ -5127,7 +5317,7 @@ export function AccountsPage() {
       listWindowUsageDefinitionsSignature,
       listWindowUsageIdentitySignature,
       managerConnectionFingerprint,
-      pageRows,
+      quotaUsageRows,
     ]
   );
   const listWindowUsageAutoLoadKey = `${listWindowUsageAutoContextKey}\u0000${accountHistoryAutoRefreshRevision}\u0000${listWindowUsageRefreshRevision}`;
@@ -5259,8 +5449,12 @@ export function AccountsPage() {
         row.selectionKey === selectedRowKey &&
         (detailTab === 'config' || detailTab === 'models') &&
         (tab === 'config' || tab === 'models');
-      const hadDirtyConfiguration = configurationEditor.dirty;
-      if (!preservesConfigurationDraft && !(await confirmConfigurationDiscard())) return;
+      const hadDirtyConfiguration = detailDirty;
+      const leavesConcurrency =
+        detailTab === 'config' && (tab !== 'config' || row.selectionKey !== selectedRowKey);
+      if (!preservesConfigurationDraft) {
+        if (!(await confirmConfigurationDiscard())) return;
+      } else if (leavesConcurrency && !(await confirmConfigurationDiscard(true, true))) return;
       if (
         hadDirtyConfiguration &&
         (!preservesConfigurationDraft || row.selectionKey !== selectedRowKey || tab !== detailTab)
@@ -5296,7 +5490,7 @@ export function AccountsPage() {
     },
     [
       allowNextNavigation,
-      configurationEditor.dirty,
+      detailDirty,
       confirmConfigurationDiscard,
       detailTab,
       location.pathname,
@@ -5372,6 +5566,19 @@ export function AccountsPage() {
   }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
+    const legacyParams = new URLSearchParams(location.search);
+    const legacyKiloID = legacyParams.get('kiloAccount');
+    if (legacyKiloID) {
+      const matches = rows.filter((row) => row.provider === 'kilo' && row.raw.id === legacyKiloID);
+      if (matches.length !== 1) return;
+      legacyParams.delete('kiloAccount');
+      legacyParams.set('account', matches[0].selectionKey);
+      navigate(
+        { pathname: location.pathname, search: `?${legacyParams.toString()}` },
+        { replace: true }
+      );
+      return;
+    }
     if (syncingWorkspaceLocationRef.current) {
       syncingWorkspaceLocationRef.current = false;
       return;
@@ -5389,12 +5596,12 @@ export function AccountsPage() {
     lastWorkspaceNavigationRef.current = nextSearch;
     pendingWorkspaceSearchesRef.current.push(nextSearch);
     navigate({ pathname: location.pathname, search: nextSearch }, { replace: true });
-  }, [location.pathname, location.search, navigate, workspaceUrlState]);
+  }, [location.pathname, location.search, navigate, workspaceUrlState, rows]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const syncWorkspaceFromHash = () => {
-      if (configurationEditor.dirty || configurationEditor.state?.saving) return;
+      if (detailDirty || detailSaving) return;
       applyWorkspaceUrlState(
         readAccountsSearchFromHash(window.location.hash),
         DEFAULT_ACCOUNTS_WORKSPACE_UI_STATE
@@ -5402,7 +5609,7 @@ export function AccountsPage() {
     };
     window.addEventListener('hashchange', syncWorkspaceFromHash);
     return () => window.removeEventListener('hashchange', syncWorkspaceFromHash);
-  }, [applyWorkspaceUrlState, configurationEditor.dirty, configurationEditor.state?.saving]);
+  }, [applyWorkspaceUrlState, detailDirty, detailSaving]);
 
   useEffect(() => {
     if (
@@ -5437,7 +5644,7 @@ export function AccountsPage() {
         navigate(target, { replace: true });
       };
 
-      if (!configurationEditor.dirty && !configurationSaving) {
+      if (!detailDirty && !detailSaving) {
         navigateToTarget();
         finish();
         return;
@@ -5458,8 +5665,8 @@ export function AccountsPage() {
     };
   }, [
     allowNavigationTo,
-    configurationEditor.dirty,
-    configurationSaving,
+    detailDirty,
+    detailSaving,
     confirmConfigurationDiscard,
     location.hash,
     location.pathname,
@@ -5469,7 +5676,7 @@ export function AccountsPage() {
 
   const changeActiveView = useCallback(
     async (view: AccountsView) => {
-      const hadDirtyConfiguration = configurationEditor.dirty;
+      const hadDirtyConfiguration = detailDirty;
       if (!(await confirmConfigurationDiscard())) return;
       setActiveView(view);
       const searchValue = writeAccountsWorkspaceUrlSearch(
@@ -5490,7 +5697,7 @@ export function AccountsPage() {
     },
     [
       allowNextNavigation,
-      configurationEditor.dirty,
+      detailDirty,
       confirmConfigurationDiscard,
       location.pathname,
       location.search,
@@ -5647,7 +5854,7 @@ export function AccountsPage() {
         showNotification(t('accounts.inspection_credential_not_found'), 'warning');
         return;
       }
-      const hadDirtyConfiguration = configurationEditor.dirty;
+      const hadDirtyConfiguration = detailDirty;
       if (!(await confirmConfigurationDiscard())) return;
 
       setActiveView('accounts');
@@ -5670,7 +5877,7 @@ export function AccountsPage() {
     },
     [
       allowNextNavigation,
-      configurationEditor.dirty,
+      detailDirty,
       confirmConfigurationDiscard,
       location.pathname,
       location.search,
@@ -5715,9 +5922,8 @@ export function AccountsPage() {
       }
 
       const cacheGeneration = captureQuotaCacheGeneration();
-      const quotaGenerationAtStart = quotaRequestVersionsRef.current.get(
-        `${CODEX_CONFIG.type}:${storeKey}`
-      ) ?? 0;
+      const quotaGenerationAtStart =
+        quotaRequestVersionsRef.current.get(`${CODEX_CONFIG.type}:${storeKey}`) ?? 0;
       const requestGate = beginAccountQuotaRequest(
         quotaRequestVersionsRef.current,
         CODEX_CONFIG.type + ':reset-credits:' + storeKey
@@ -5747,12 +5953,11 @@ export function AccountsPage() {
                   },
                 };
               }
-              const base: CodexQuotaState =
-                active ?? {
-                  status: 'success',
-                  windows: [],
-                  ...buildQuotaCredentialIdentity(row.raw),
-                };
+              const base: CodexQuotaState = active ?? {
+                status: 'success',
+                windows: [],
+                ...buildQuotaCredentialIdentity(row.raw),
+              };
               const resolvedCount = resolveCodexResetCreditsObservationCount(
                 data.availableCount,
                 data.credits,
@@ -5778,15 +5983,12 @@ export function AccountsPage() {
                 const resultingCount = merged.rateLimitResetCreditsAvailableCount;
                 const resultingEvidence =
                   merged.resetCreditsCountEvidenceAtMs ?? data.observedAtMs ?? Date.now();
-                const resultingSig = buildCodexResetCreditAutoFetchSignature(
-                  row.selectionKey,
-                  {
-                    rateLimitResetCreditsAvailableCount: resultingCount,
-                    resetCreditsCountEvidenceAtMs: resultingEvidence,
-                    resetCreditsDetailEvidenceAtMs: merged.resetCreditsDetailEvidenceAtMs,
-                    resetCreditsDetailStale: merged.resetCreditsDetailStale,
-                  }
-                );
+                const resultingSig = buildCodexResetCreditAutoFetchSignature(row.selectionKey, {
+                  rateLimitResetCreditsAvailableCount: resultingCount,
+                  resetCreditsCountEvidenceAtMs: resultingEvidence,
+                  resetCreditsDetailEvidenceAtMs: merged.resetCreditsDetailEvidenceAtMs,
+                  resetCreditsDetailStale: merged.resetCreditsDetailStale,
+                });
                 codexResetCreditAutoFetchAttemptedSignaturesRef.current.add(resultingSig);
               }
 
@@ -5825,7 +6027,9 @@ export function AccountsPage() {
               };
             });
           });
-          return committed ? { availableCount: null, credits: [], creditsObserved: false, error: message } : null;
+          return committed
+            ? { availableCount: null, credits: [], creditsObserved: false, error: message }
+            : null;
         }
       })();
 
@@ -5880,16 +6084,12 @@ export function AccountsPage() {
           result.resetCreditsCountEvidenceAtMs ??
           result.observedAtMs ??
           resolveCodexResetCreditsCountEvidenceAtMs(displayQuota);
-        const resultingSig = buildCodexResetCreditAutoFetchSignature(
-          selectedRow.selectionKey,
-          {
-            rateLimitResetCreditsAvailableCount: resultingCount,
-            resetCreditsCountEvidenceAtMs: resultingEvidence,
-            resetCreditsDetailEvidenceAtMs:
-              resolveCodexResetCreditsDetailEvidenceAtMs(displayQuota),
-            resetCreditsDetailStale: displayQuota?.resetCreditsDetailStale,
-          }
-        );
+        const resultingSig = buildCodexResetCreditAutoFetchSignature(selectedRow.selectionKey, {
+          rateLimitResetCreditsAvailableCount: resultingCount,
+          resetCreditsCountEvidenceAtMs: resultingEvidence,
+          resetCreditsDetailEvidenceAtMs: resolveCodexResetCreditsDetailEvidenceAtMs(displayQuota),
+          resetCreditsDetailStale: displayQuota?.resetCreditsDetailStale,
+        });
         codexResetCreditAutoFetchAttemptedSignaturesRef.current.add(resultingSig);
       }
     });
@@ -6258,9 +6458,7 @@ export function AccountsPage() {
         // A temporary monitoring capability check must not blank already loaded
         // history. Connection changes are cleared by the connection-scope effect.
         if (!mergeResult && entries.length === 0) {
-          setAccountHistoryByRowKey((current) =>
-            current.size === 0 ? current : new Map()
-          );
+          setAccountHistoryByRowKey((current) => (current.size === 0 ? current : new Map()));
         }
         setAccountHistoryLoading(accountHistoryPendingRequestsRef.current.size > 0);
         setAccountHistoryErrorsByRowKey((current) => {
@@ -6331,9 +6529,7 @@ export function AccountsPage() {
           );
         });
         setAccountHistoryByRowKey((current) => {
-          const merged = mergeResult
-            ? new Map(current)
-            : new Map<string, ScopedAccountHistory>();
+          const merged = mergeResult ? new Map(current) : new Map<string, ScopedAccountHistory>();
           entries.forEach((entry) => {
             const requestVersion = requestVersions.get(entry.rowKey);
             if (accountHistoryRequestVersionsRef.current.get(entry.rowKey) !== requestVersion) {
@@ -6568,7 +6764,6 @@ export function AccountsPage() {
     void loadDetailEvents(selectedRow);
   }, [detailEventsAutoLoadKey, detailTab, loadDetailEvents, selectedRow]);
 
-
   const refreshQuotaForRow = useCallback(
     async (
       row: AccountRow,
@@ -6597,6 +6792,16 @@ export function AccountsPage() {
         });
       };
       switch (row.provider) {
+        case 'cpa-bps': {
+          const key = getCpaBpsQuotaKey(row.raw);
+          return refreshCpaBpsQuota(
+            row.raw,
+            authFilesRequestScope,
+            () =>
+              pluginQuotaContext.current.connectionFingerprint === connectionFingerprint &&
+              pluginQuotaContext.current.files.some((file) => getCpaBpsQuotaKey(file) === key)
+          );
+        }
         case 'bps':
           return toAccountQuotaRefreshOutcome(
             await refreshWithConfig(BPS_CONFIG, setBpsQuota, getBpsQuotaState(bpsQuota, row.raw))
@@ -6706,6 +6911,7 @@ export function AccountsPage() {
       t,
       authFilesRequestScope,
       baseQuotaStores,
+      connectionFingerprint,
     ]
   );
 
@@ -6735,7 +6941,10 @@ export function AccountsPage() {
         const blockedProviders = new Set<string>();
         let selectedDetailSucceeded = false;
         try {
-          const results = await runProviderCredentialTaskPlan<AccountRow, AccountQuotaRefreshOutcome>(
+          const results = await runProviderCredentialTaskPlan<
+            AccountRow,
+            AccountQuotaRefreshOutcome
+          >(
             taskPlan,
             {
               perProviderConcurrency: MAX_CONCURRENT_QUOTA_REFRESHES_PER_PROVIDER,
@@ -6843,10 +7052,7 @@ export function AccountsPage() {
               'warning'
             );
           } else if (rateLimitedSuccessCount > 0) {
-            showNotification(
-              t('accounts.quota_refresh_partial_rate_limited'),
-              'warning'
-            );
+            showNotification(t('accounts.quota_refresh_partial_rate_limited'), 'warning');
           }
         } finally {
           if (
@@ -7038,7 +7244,7 @@ export function AccountsPage() {
       featureAvailability.checking ||
       !managerStorageAvailable ||
       !featureAvailability.requestMonitoringAvailable ||
-      pageRows.length === 0
+      quotaUsageRows.length === 0
     ) {
       setListWindowUsageByKey((current) => (current.size === 0 ? current : new Map()));
       setListWindowUsageQueryContext(null);
@@ -7046,9 +7252,9 @@ export function AccountsPage() {
     }
 
     const queryAsOfMs = Date.now();
-    const currentPageKeys = pageRows.map((r) => r.selectionKey);
+    const currentPageKeys = quotaUsageRows.map((r) => r.selectionKey);
     const queryTargets = buildAccountWindowUsageTargetEntries(
-      pageRows,
+      quotaUsageRows,
       listQuotaWindowsByRowKey,
       queryAsOfMs
     );
@@ -7083,9 +7289,7 @@ export function AccountsPage() {
         identityByRowKey: new Map(listWindowUsageIdentityByRowKey),
         asOfMs: queryAsOfMs,
       });
-      setListWindowUsageByKey(
-        buildAccountWindowUsageByKey(queryTargets, response.items ?? [])
-      );
+      setListWindowUsageByKey(buildAccountWindowUsageByKey(queryTargets, response.items ?? []));
     } catch {
       // Keep the last successful usage while this refresh fails. The existing
       // target-range filter still rejects changed credentials or quota cycles.
@@ -7105,7 +7309,7 @@ export function AccountsPage() {
     listWindowUsageIdentityByRowKey,
     managementKey,
     managerStorageAvailable,
-    pageRows,
+    quotaUsageRows,
   ]);
 
   useEffect(() => {
@@ -7289,7 +7493,11 @@ export function AccountsPage() {
             confirmed = true;
             let resetResult: unknown;
             try {
-              resetResult = await consumeCodexRateLimitResetCredit(row.raw, t, authFilesRequestScope);
+              resetResult = await consumeCodexRateLimitResetCredit(
+                row.raw,
+                t,
+                authFilesRequestScope
+              );
             } catch (err: unknown) {
               endResetTransaction();
               const message = err instanceof Error ? err.message : t('common.unknown_error');
@@ -7303,7 +7511,11 @@ export function AccountsPage() {
             const parseCodexResetCreditOutcome = (result: unknown): string | undefined => {
               if (!result || typeof result !== 'object') return undefined;
               const typedResult = result as { body?: unknown; bodyText?: string };
-              if (typedResult.body && typeof typedResult.body === 'object' && 'code' in typedResult.body) {
+              if (
+                typedResult.body &&
+                typeof typedResult.body === 'object' &&
+                'code' in typedResult.body
+              ) {
                 const rawCode = (typedResult.body as { code?: unknown }).code;
                 if (typeof rawCode === 'string') {
                   return rawCode.trim().toLowerCase();
@@ -7403,21 +7615,21 @@ export function AccountsPage() {
                   windows: [],
                   ...buildQuotaCredentialIdentity(row.raw),
                 };
-                    const nowMs = Date.now();
-                    return {
-                      ...prev,
-                      [storeKey]: {
-                        ...baseState,
-                        rateLimitResetCreditsAvailableCount: null,
-                        resetCreditsCountSource: 'summary',
-                        rateLimitResetCredits: [],
-                        rateLimitResetCreditsError: null,
-                        resetCreditsEvidenceAtMs: nowMs,
-                        resetCreditsCountEvidenceAtMs: null,
-                        resetCreditsDetailEvidenceAtMs: null,
-                        resetCreditsDetailStale: true,
-                      },
-                    };
+                const nowMs = Date.now();
+                return {
+                  ...prev,
+                  [storeKey]: {
+                    ...baseState,
+                    rateLimitResetCreditsAvailableCount: null,
+                    resetCreditsCountSource: 'summary',
+                    rateLimitResetCredits: [],
+                    rateLimitResetCreditsError: null,
+                    resetCreditsEvidenceAtMs: nowMs,
+                    resetCreditsCountEvidenceAtMs: null,
+                    resetCreditsDetailEvidenceAtMs: null,
+                    resetCreditsDetailStale: true,
+                  },
+                };
               });
             });
             // A consumed credit invalidates any pre-mutation dedicated reads.
@@ -7594,24 +7806,71 @@ export function AccountsPage() {
 
   const handleBatchStatus = useCallback(
     async (enabled: boolean, targets = selectedRows) => {
-      const patchTargets = targets
-        .filter((row) => !row.runtimeOnly)
-        .map((row) => getAuthFilePatchTarget(row.raw));
-      if (patchTargets.length === 0) return;
+      if (kiloBatchWriting.current) return;
+      const reference = concurrencyRef;
+      const current = () =>
+        currentKiloContext.current.scope === authFilesRequestScope &&
+        currentKiloContext.current.ref === reference;
+      const kiloTargets = targets.filter((row) => row.provider === 'kilo');
+      if (kiloTargets.length && !kiloSnapshot) {
+        showNotification('Kilo列表未确认，请刷新后再操作。', 'error');
+        return;
+      }
+      kiloBatchWriting.current = true;
       setStatusUpdating(true);
       try {
-        await batchSetStatus(patchTargets, enabled);
-        if (patchTargets.length > 1) await loadFiles();
-        deselectAll();
+        for (const row of kiloTargets) {
+          if (!current()) return;
+          try {
+            const saved = await kiloApi.update(
+              String(row.raw.id),
+              { enabled },
+              reference,
+              authFilesRequestScope
+            );
+            if (!current()) return;
+            if (saved.connection_ref !== reference) throw new Error();
+            showNotification(`${row.accountLabel}：状态已保存`, 'success');
+          } catch {
+            if (!current()) return;
+            showNotification(`${row.accountLabel}：状态待核，请刷新后显式操作`, 'error');
+          }
+        }
+        if (!current()) return;
+        const patchTargets = targets
+          .filter((row) => !row.runtimeOnly && row.provider !== 'kilo')
+          .map((row) => getAuthFilePatchTarget(row.raw));
+        if (patchTargets.length) await batchSetStatus(patchTargets, enabled);
+        if (current()) {
+          if (kiloTargets.length > 0 || patchTargets.length > 1) await loadFiles();
+          deselectAll();
+        }
       } finally {
+        kiloBatchWriting.current = false;
         setStatusUpdating(false);
       }
     },
-    [batchSetStatus, deselectAll, loadFiles, selectedRows]
+    [
+      batchSetStatus,
+      deselectAll,
+      loadFiles,
+      selectedRows,
+      kiloSnapshot,
+      authFilesRequestScope,
+      showNotification,
+      concurrencyRef,
+    ]
   );
 
   const patchPriorityRows = useCallback(
     async (targets: AccountRow[], priority: number) => {
+      if (targets.some((row) => row.provider === 'kilo')) {
+        showNotification(
+          '所选包含Kilo，本次字段批量操作未执行；请通过Kilo详情编辑支持的字段。',
+          'info'
+        );
+        return;
+      }
       const patchTargets = targets
         .filter((row) => !row.runtimeOnly)
         .map((row) => getAuthFilePatchTarget(row.raw));
@@ -7690,6 +7949,13 @@ export function AccountsPage() {
 
   const patchNoteRows = useCallback(
     async (targets: AccountRow[], note: string) => {
+      if (targets.some((row) => row.provider === 'kilo')) {
+        showNotification(
+          '所选包含Kilo，本次字段批量操作未执行；请通过Kilo详情编辑支持的字段。',
+          'info'
+        );
+        return;
+      }
       const patchTargets = targets
         .filter((row) => !row.runtimeOnly)
         .map((row) => getAuthFilePatchTarget(row.raw));
@@ -7773,6 +8039,13 @@ export function AccountsPage() {
 
   const patchWebsocketsRows = useCallback(
     async (targets: AccountRow[], websockets: boolean) => {
+      if (targets.some((row) => row.provider === 'kilo')) {
+        showNotification(
+          '所选包含Kilo，本次字段批量操作未执行；请通过Kilo详情编辑支持的字段。',
+          'info'
+        );
+        return;
+      }
       const patchTargets = targets
         .filter((row) => !row.runtimeOnly && row.provider === CODEX_CONFIG.type)
         .map((row) => getAuthFilePatchTarget(row.raw));
@@ -8304,49 +8577,85 @@ export function AccountsPage() {
 
   const renderToolbar = () => (
     <>
-      <AccountProviderTabs
-        rows={rows}
-        value={providerFilter}
-        onChange={setProviderFilter}
-        resolvedTheme={resolvedTheme}
-      />
-      <section className={styles.toolbar}>
-        <div className={styles.searchField}>
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('accounts.search_placeholder')}
-            rightElement={<IconSearch size={16} />}
-            aria-label={t('accounts.search_label')}
-            className={styles.toolbarSearchInput}
-          />
-        </div>
-        <div className={styles.mobileToolbarActions}>
+      <div className={styles.credentialToolbarRow}>
+        <AccountProviderTabs
+          rows={rows}
+          value={providerFilter}
+          onChange={setProviderFilter}
+          resolvedTheme={resolvedTheme}
+        />
+        <div className={styles.credentialSearchActions}>
+          <div className={styles.searchField}>
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('accounts.search_placeholder')}
+              rightElement={<IconSearch size={16} />}
+              aria-label={t('accounts.search_label')}
+              className={styles.toolbarSearchInput}
+            />
+          </div>
           <Button
             variant="secondary"
             size="sm"
             className={styles.mobileFilterButton}
             onClick={() => {
-              setIsMobileFiltersOpen(true);
+              if (isCompactScreen) setIsMobileFiltersOpen(true);
+              else setDesktopFiltersOpen((open) => !open);
               setIsAccountSortDropdownOpen(false);
             }}
             aria-label={t('accounts.mobile_filters_button')}
+            aria-expanded={isCompactScreen ? isMobileFiltersOpen : desktopFiltersOpen}
           >
             <IconSlidersHorizontal size={15} />
             {t('accounts.mobile_filters_button')}
-            {activeMobileFilterCount > 0 ? (
+            {activeMobileFilterCount > 0 && (
               <span className={styles.mobileFilterCount}>{activeMobileFilterCount}</span>
-            ) : null}
+            )}
           </Button>
-          <span className={styles.mobileFilterSummary} title={mobileFilterSummary}>
-            {mobileFilterSummary}
-          </span>
+          {renderViewModeSwitcher()}
         </div>
-        {renderAccountFilterFields()}
-        <div className={styles.toolbarRightActions}>
-          {renderAccountSortControls()}
+      </div>
+      {!isCompactScreen && (
+        <section
+          className={styles.credentialExpandedFilters}
+          hidden={!desktopFiltersOpen}
+          aria-label="细分筛选"
+        >
+          {renderAccountFilterFields()}
+          <div className={styles.toolbarRightActions}>{renderAccountSortControls()}</div>
+          <Button variant="secondary" size="sm" onClick={resetAccountFilters}>
+            {t('common.reset')}
+          </Button>
+        </section>
+      )}
+      <div className={styles.credentialStatusToolbar}>
+        <div className={styles.credentialMetrics} aria-label={t('accounts.metrics_label')}>
+          {hasLoaded &&
+            [
+              ['total', metrics.total],
+              ['available', metrics.available],
+              ['attention', metrics.needsAttention],
+              ['quota_risk', metrics.quotaRisk],
+              ['disabled', metrics.disabled],
+              ['unconfirmed', metrics.unconfirmed],
+            ].map(([key, count]) => (
+              <span key={key} title={t('accounts.metric_' + key + '_meta')}>
+                {t('accounts.metric_' + key)} <strong>{count}</strong>
+              </span>
+            ))}
+          {concurrency.snapshot?.mode === 'local' && (
+            <span role="status" className={styles.credentialPoolStatus}>
+              共享池等待 {concurrency.snapshot.pool_waiting}
+              {concurrency.error ? ' · 状态陈旧' : ''}
+            </span>
+          )}
+          {activeMobileFilterCount > 0 && (
+            <span className={styles.credentialFilterSummary}>{mobileFilterSummary}</span>
+          )}
         </div>
-      </section>
+        {renderBatchBar()}
+      </div>
     </>
   );
 
@@ -8444,18 +8753,20 @@ export function AccountsPage() {
           .filter(Boolean)
           .join(' ')}
       >
-        <div className={styles.batchSummary}>
-          <span>
-            {t('accounts.selected_count', {
-              count: selectionCount,
-            })}
-          </span>
-          <small>
-            {isSelectionMode || hasSelection
-              ? t('accounts.selection_mode_hint')
-              : t('accounts.batch_hint')}
-          </small>
-        </div>
+        {showSelectionControls && (
+          <div className={styles.batchSummary}>
+            <span>
+              {t('accounts.selected_count', {
+                count: selectionCount,
+              })}
+            </span>
+            <small>
+              {isSelectionMode || hasSelection
+                ? t('accounts.selection_mode_hint')
+                : t('accounts.batch_hint')}
+            </small>
+          </div>
+        )}
         <div className={styles.batchActions}>
           {!isSelectionMode && !hasSelection ? (
             <Button
@@ -8484,7 +8795,6 @@ export function AccountsPage() {
               {t('accounts.refresh_quota')}
             </Button>
           ) : null}
-          {renderViewModeSwitcher()}
         </div>
       </section>
     );
@@ -8507,7 +8817,16 @@ export function AccountsPage() {
         key: 'download',
         label: t('auth_files.batch_download'),
         icon: <IconDownload size={15} />,
-        onClick: () => void batchDownload(selectedFileNames),
+        onClick: () => {
+          if (selectedRows.some((row) => row.provider === 'kilo')) {
+            showNotification(
+              '所选包含Kilo秘密凭据，本次批量导出未执行；请取消选择Kilo后再导出。',
+              'info'
+            );
+            return;
+          }
+          void batchDownload(selectedFileNames);
+        },
         disabled: disableControls || selectedFileNames.length === 0,
       },
       {
@@ -8540,6 +8859,13 @@ export function AccountsPage() {
         label: t('common.delete'),
         icon: <IconTrash2 size={15} />,
         onClick: () => {
+          if (selectedRows.some((row) => row.provider === 'kilo')) {
+            showNotification(
+              '所选包含Kilo，本次批量删除未执行；请在Kilo详情单独确认删除。',
+              'info'
+            );
+            return;
+          }
           if (selectedHasPartialSharedAuthFile) return;
           batchDelete(selectedTargetFiles, {
             title: t('auth_files.batch_delete_title'),
@@ -8672,9 +8998,7 @@ export function AccountsPage() {
       </Button>
     ) : null;
 
-    const getAccountManualQuotaRefreshMode = (
-      targetRow: AccountRow
-    ): AccountQuotaRefreshMode =>
+    const getAccountManualQuotaRefreshMode = (targetRow: AccountRow): AccountQuotaRefreshMode =>
       targetRow.provider === CODEX_CONFIG.type ? 'detail' : 'summary';
 
     const refreshButton =
@@ -8732,7 +9056,11 @@ export function AccountsPage() {
         size="sm"
         iconOnly
         className={`${styles.accountIconButton} ${styles.accountIconButtonDownload}`}
-        onClick={() => void handleDownload(row.fileName)}
+        onClick={() =>
+          row.provider === 'kilo'
+            ? showNotification('Kilo凭据不支持秘密导出，请在详情管理。', 'info')
+            : void handleDownload(row.fileName)
+        }
         disabled={row.runtimeOnly}
         title={t('auth_files.download_button')}
         aria-label={t('auth_files.download_button')}
@@ -8768,6 +9096,58 @@ export function AccountsPage() {
         {t('accounts.open_detail_short')}
       </Button>
     );
+
+    if (row.provider === 'kilo')
+      return (
+        <div className={styles.kiloRowActions} onClick={(event) => event.stopPropagation()}>
+          {detailButton}
+          <Button variant="ghost" size="xs" onClick={() => void openAccountDetail(row, 'config')}>
+            配置出口
+          </Button>
+          <DropdownMenu
+            ariaLabel={`Kilo账号操作:${row.selectionKey}`}
+            triggerLabel="更多"
+            disabled={disableControls || row.runtimeOnly}
+            items={[
+              {
+                key: 'config',
+                label: '账号配置',
+                onClick: () => {
+                  void openAccountDetail(row, 'config');
+                },
+              },
+              {
+                key: 'quota',
+                label: '关联额度',
+                onClick: () => {
+                  void openAccountDetail(row, 'quota');
+                },
+              },
+              {
+                key: 'delete',
+                label: '管理与删除',
+                onClick: () => {
+                  void openAccountDetail(row, 'config');
+                },
+              },
+              {
+                key: 'download',
+                label: '凭据导出不可用',
+                disabled: true,
+                onClick: () => showNotification('Kilo凭据不支持秘密导出，请在详情管理。', 'info'),
+              },
+            ]}
+          />
+          {!hideSideActions && (
+            <ToggleSwitch
+              checked={!row.disabled}
+              onChange={(enabled) => void handleBatchStatus(enabled, [row])}
+              disabled={disableControls || statusUpdating || row.runtimeOnly}
+              ariaLabel={t('auth_files.status_toggle_label')}
+            />
+          )}
+        </div>
+      );
 
     if (isGridCard) {
       return (
@@ -8855,16 +9235,14 @@ export function AccountsPage() {
     windowIndex: number,
     codexResetCreditsCount: number | null,
     hasCodexResetCredits: boolean,
-    quotaLifecycleBarOverride: AccountQuotaLifecycleBarOverride,
+    _quotaLifecycleBarOverride: AccountQuotaLifecycleBarOverride,
     extraMeta?: React.ReactNode
   ) => {
     const windowRemaining = window.remainingPercent;
-    const windowWidth = Math.max(0, Math.min(100, windowRemaining ?? 0));
     const resetLabel = window.resetLabel && window.resetLabel !== '-' ? window.resetLabel : '';
     const resetDisplayLabel = formatQuotaResetDisplay(window.resetAtMs, resetLabel, i18n.language);
     const relativeReset = formatQuotaResetRelative(window.resetAtMs, resetLabel, i18n.language);
     const readableLabel = getQuotaWindowReadableLabel(window, t);
-    const barClass = getFallbackWindowBarClass(quotaLifecycleBarOverride, windowRemaining);
     const windowUsageData = resolveAccountQuotaWindowUsageAndForecast(
       row,
       window,
@@ -8875,10 +9253,17 @@ export function AccountsPage() {
       windowUsageData.currentCost !== null &&
       windowUsageData.currentTokens !== null;
     const hasForecast =
-      windowUsageData.forecastCost !== null &&
-      windowUsageData.forecastTokens !== null;
-    const percentText = windowRemaining !== null ? formatPercent(windowRemaining) : '-';
-    const remainingParts = formatQuotaRemainingPercentParts(percentText, i18n.language);
+      windowUsageData.forecastCost !== null && windowUsageData.forecastTokens !== null;
+    const percentText =
+      window.amountLabel ??
+      (typeof windowRemaining === 'number' && Number.isFinite(windowRemaining)
+        ? windowRemaining === 0
+          ? '已用尽 / 0%'
+          : formatPercent(windowRemaining)
+        : '未知');
+    const remainingParts = window.amountLabel
+      ? null
+      : formatQuotaRemainingPercentParts(percentText, i18n.language);
     const remainingText = formatQuotaRemainingPercentDisplay(percentText, i18n.language);
     const cardTitle = [
       `${readableLabel}: ${remainingText}${relativeReset ? ` | ${relativeReset}` : ''}`,
@@ -8917,10 +9302,7 @@ export function AccountsPage() {
                   className={styles.quotaWindowResetCredits}
                   data-account-reset-credits={row.selectionKey}
                 >
-                  <span
-                    className={styles.quotaWindowResetCreditsIcon}
-                    aria-hidden="true"
-                  >
+                  <span className={styles.quotaWindowResetCreditsIcon} aria-hidden="true">
                     <IconRotateCcw size={11} strokeWidth={2.4} />
                   </span>
                   <strong className={styles.quotaWindowResetCreditsCount}>
@@ -8933,12 +9315,8 @@ export function AccountsPage() {
             <strong className={styles.quotaWindowPercent}>
               {remainingParts ? (
                 <>
-                  <span className={styles.quotaWindowPercentPrefix}>
-                    {remainingParts.prefix}
-                  </span>
-                  <span className={styles.quotaWindowPercentValue}>
-                    {remainingParts.percent}
-                  </span>
+                  <span className={styles.quotaWindowPercentPrefix}>{remainingParts.prefix}</span>
+                  <span className={styles.quotaWindowPercentValue}>{remainingParts.percent}</span>
                 </>
               ) : (
                 percentText
@@ -8947,12 +9325,7 @@ export function AccountsPage() {
             {extraMeta}
           </span>
         </span>
-        <span className={styles.quotaTrack} aria-hidden="true">
-          <span
-            className={`${styles.quotaBar} ${barClass}`}
-            style={{ width: `${windowWidth}%` }}
-          />
-        </span>
+        <QuotaProgressBar percent={windowRemaining} highThreshold={50} mediumThreshold={20} />
         <span className={styles.quotaWindowUsageLine}>
           {hasActual ? (
             <span
@@ -8961,10 +9334,7 @@ export function AccountsPage() {
                 windowUsageData.currentCost!
               )} (${formatCompactNumber(windowUsageData.currentTokens!)} tokens)`}
             >
-              <span
-                className={styles.quotaUsageIcon}
-                aria-label={t('accounts.quota_used_short')}
-              >
+              <span className={styles.quotaUsageIcon} aria-label={t('accounts.quota_used_short')}>
                 <IconChartLine size={10} />
               </span>
               <span className={styles.quotaWindowCost}>
@@ -9054,9 +9424,7 @@ export function AccountsPage() {
       }),
     });
     const codexQuotaState =
-      row.provider === CODEX_CONFIG.type
-        ? getDisplayCodexResetEvidenceQuota(row)
-        : undefined;
+      row.provider === CODEX_CONFIG.type ? getDisplayCodexResetEvidenceQuota(row) : undefined;
     const codexResetCreditsCount =
       codexQuotaState?.rateLimitResetCreditsAvailableCount ??
       codexQuotaState?.rateLimitResetCredits?.length ??
@@ -9066,10 +9434,14 @@ export function AccountsPage() {
       codexResetCreditsCount !== null &&
       codexResetCreditsCount > 0;
     const providerIcon = getAuthFileIcon(row.provider, resolvedTheme);
+    const pluginQuota =
+      row.provider === 'cpa-bps' ? getCpaBpsQuotaState(cpaBpsQuota, row.raw) : undefined;
     const quotaEmptyLabel =
-      quotaWindows.length > 0
-        ? t('accounts.quota_details_only')
-        : t('accounts.quota_source_none');
+      row.provider === 'cpa-bps' && quotaWindows.length === 0
+        ? `额度未知${pluginQuota?.lastQueriedAt ? `；上次查询：${pluginQuota.lastQueriedAt}` : ''}`
+        : quotaWindows.length > 0
+          ? t('accounts.quota_details_only')
+          : t('accounts.quota_source_none');
     const quotaWindowTitle =
       mainListWindows
         .map((window) => {
@@ -9090,11 +9462,7 @@ export function AccountsPage() {
     const requestEvidence = resolveAccountRequestHealthEvidence(
       requestEvidenceBySelectionKey.get(row.selectionKey)
     );
-    const overviewRecentStatus = buildOverviewRecentStatus(
-      row,
-      null,
-      requestEvidence
-    );
+    const overviewRecentStatus = buildOverviewRecentStatus(row, null, requestEvidence);
     const recentStatusData = statusBarDataFromRecentRequests(overviewRecentStatus.recentRequests);
     const hasRecentRequests = recentStatusData.totalSuccess + recentStatusData.totalFailure > 0;
 
@@ -9120,6 +9488,153 @@ export function AccountsPage() {
       recentStatusData,
       hasRecentRequests,
     };
+  };
+
+  const renderQuotaEstimateSummary = (
+    row: AccountRow,
+    compact = false,
+    queryQuota?: () => Promise<void>,
+    queryDisabled = false
+  ) => {
+    const kiloAccount =
+      row.provider === 'kilo'
+        ? kiloSnapshot?.accounts.find((account) => account.id === row.raw.id)
+        : undefined;
+    const matchedSource =
+      row.provider === 'kilo' ? resolveKiloQuotaSourceRow(kiloAccount, rows) : row;
+    const currentBindingObserved =
+      row.provider !== 'kilo' ||
+      (kiloAccount?.quota_snapshot?.query.observed_at &&
+        kiloAccount.quota_snapshot.binding_revision ===
+          kiloAccount.quota_source_summary?.binding_revision);
+    const source = matchedSource;
+    const ctx = source ? resolveAccountRowContext(source) : undefined;
+    const isCodex = source?.provider === CODEX_CONFIG.type;
+    const sourceName = source ? source.accountLabel || source.fileName : '';
+    const estimateWindows =
+      row.provider === 'kilo'
+        ? buildKiloQuotaEstimateWindows(kiloAccount, source)
+        : (ctx?.mainListWindows ?? []);
+    const windows =
+      currentBindingObserved && source && ctx
+        ? estimateWindows.map((window) => {
+            const estimate = resolveAccountQuotaWindowUsageAndForecast(
+              source,
+              window,
+              matchingListWindowUsageByKey
+            );
+            return {
+              key: window.key,
+              label: getQuotaWindowReadableLabel(window, t),
+              cost: estimate.forecastCost,
+              previous: estimate.forecast?.basis === 'previous',
+            };
+          })
+        : [];
+    const querySupported = source && isQuotaRefreshSupportedProvider(source.provider);
+    const resetScope = getCpaBpsQuotaScope(authFilesRequestScope);
+    const nativeStored = source?.provider === 'bps' ? bpsResetCredits[getBpsResetCreditsKey(source.raw)] : undefined;
+    const nativeReset = nativeStored?.connectionScope === resetScope && nativeStored.connectionRef === concurrencyRef ? nativeStored : undefined;
+    const pluginStored = source?.provider === 'cpa-bps' ? getCpaBpsQuotaState(cpaBpsQuota, source.raw) : undefined;
+    const pluginReset = pluginStored?.connectionScope === resetScope ? pluginStored : undefined;
+    const bpsCount = source?.provider === 'bps'
+      ? nativeReset?.status === 'known' ? nativeReset.result?.count ?? null : null
+      : source?.provider === 'cpa-bps'
+        ? pluginReset?.status === 'success' && pluginReset.result ? cpaBpsResetCount(pluginReset.result.quota) : null
+        : undefined;
+    return (
+      <QuotaEstimateSummary
+        key={`${connectionFingerprint}:${row.selectionKey}:${source?.selectionKey ?? ''}:${kiloAccount?.quota_source_summary?.binding_revision ?? ''}`}
+        compact={compact}
+        onOpen={() => void openAccountDetail(row, 'quota')}
+        windows={windows}
+        sourceLabel={
+          row.provider === 'kilo' && source
+            ? accountDisplayMode === 'full'
+              ? sourceName
+              : maskQuotaAccountText(sourceName)
+            : undefined
+        }
+        waitingReason={
+          row.provider === 'kilo' && !source ? '待估算：尚无精确关联的 Codex 用量身份。' : undefined
+        }
+        resetCount={
+          isCodex
+            ? currentBindingObserved
+              ? (ctx?.codexResetCreditsCount ?? null)
+              : null
+            : row.provider === 'kilo'
+              ? null
+              : bpsCount
+        }
+        quotaObservedAtMs={
+          row.provider === 'kilo'
+            ? currentBindingObserved && kiloAccount?.quota_snapshot?.query.observed_at
+              ? Date.parse(kiloAccount.quota_snapshot.query.observed_at)
+              : undefined
+            : (source?.quota.observedQuotaAtMs ??
+              source?.quota.fetchedAtMs ??
+              source?.quota.observedAtMs)
+        }
+        resetObservedAtMs={
+          source?.provider === 'bps'
+            ? nativeReset?.result ? Date.parse(nativeReset.result.queried_at) : undefined
+            : source?.provider === 'cpa-bps'
+              ? pluginReset?.lastQueriedAt ? Date.parse(pluginReset.lastQueriedAt) : undefined
+              : ctx?.codexQuotaState?.resetCreditsCountEvidenceAtMs ??
+          ctx?.codexQuotaState?.resetCreditsEvidenceAtMs ??
+          ctx?.codexQuotaState?.resetCreditsDetailEvidenceAtMs
+        }
+        quotaError={source?.quota.error}
+        resetError={ctx?.codexQuotaState?.rateLimitResetCreditsError}
+        disabled={isSelectionMode || configurationSaving || queryDisabled}
+        onQueryQuota={
+          queryQuota ??
+          (row.provider !== 'kilo' && querySupported
+            ? () => refreshAccountQuota(source, 'detail')
+            : undefined)
+        }
+        onQueryReset={
+          isCodex
+            ? async () => {
+                const result = await loadCodexResetCreditDetails(source);
+                if (result?.error) throw new Error(result.error);
+              }
+            : source?.provider === 'bps' && concurrencyRef && source.raw.id
+              ? () => refreshBpsResetCredits(source.raw, authFilesRequestScope, concurrencyRef, () => currentKiloContext.current.scope === authFilesRequestScope && currentKiloContext.current.ref === concurrencyRef)
+              : source?.provider === 'cpa-bps'
+                ? async () => { await refreshCpaBpsQuota(source.raw, authFilesRequestScope, () => currentKiloContext.current.scope === authFilesRequestScope); }
+                : undefined
+        }
+        onUseReset={
+          isCodex
+            ? async () => {
+                if (row.provider === 'kilo') await openAccountDetail(source, 'quota');
+                await resetCodexQuotaForRow(source);
+              }
+            : undefined
+        }
+      />
+    );
+  };
+
+  const renderKiloQuotaSummary = (row: AccountRow) => {
+    const account = kiloSnapshot?.accounts.find((item) => item.id === row.raw.id);
+    if (!account) return <span>关联额度暂未读取</span>;
+    return (
+      <KiloQuotaSummary
+        account={account}
+        sharedSource={
+          account.quota_source_summary?.kind === 'cpa_codex' &&
+          (kiloSnapshot?.accounts.filter(
+            (item) =>
+              item.quota_source_summary?.kind === 'cpa_codex' &&
+              item.quota_source_summary.credential_id ===
+                account.quota_source_summary?.credential_id
+          ).length ?? 0) > 1
+        }
+      />
+    );
   };
 
   const renderAccountHistory = (
@@ -9175,7 +9690,9 @@ export function AccountsPage() {
             ? formatCompactUsd(accountHistory.total_cost)
             : '-',
         exact:
-          matched && accountHistory.total_cost !== null ? formatUsd(accountHistory.total_cost) : '-',
+          matched && accountHistory.total_cost !== null
+            ? formatUsd(accountHistory.total_cost)
+            : '-',
       },
       {
         key: 'success',
@@ -9214,7 +9731,9 @@ export function AccountsPage() {
                 className={`${styles.accountHistoryMetric} ${metric.className}`}
                 aria-label={`${t(`accounts.history_${metric.key}`)}: ${metric.exact}`}
               >
-                <span className={styles.accountHistoryIcon} aria-hidden="true">{metric.icon}</span>
+                <span className={styles.accountHistoryIcon} aria-hidden="true">
+                  {metric.icon}
+                </span>
                 {card ? (
                   <span className={styles.accountHistoryMetricLabel}>
                     {t(`accounts.history_${metric.key}`)}
@@ -9230,480 +9749,580 @@ export function AccountsPage() {
     });
   };
 
-  const renderAccountCards = (rowsToRender = pageRows, paged = true) => (
-    <section className={styles.tablePanel}>
-      {paged ? renderBatchBar() : null}
-      {rowsToRender.length > 0 ? (
-        effectiveLayoutMode === 'grid' ? (
-          <div className={styles.accountGridList}>
-            {rowsToRender.map((row) => {
-              const ctx = resolveAccountRowContext(row);
-              const quotaWindowGroups = getCardQuotaWindowGroups(row, ctx.mainListWindows);
-              return (
-                <article
-                  key={row.selectionKey}
-                  data-account-card={row.selectionKey}
-                  aria-selected={selectedFiles.has(row.selectionKey)}
-                  className={[
-                    styles.accountGridCard,
-                    row.disabled ? styles.accountGridCardDisabled : '',
-                    selectedRowKey === row.selectionKey ? styles.accountCardSelected : '',
-                    selectedFiles.has(row.selectionKey) ? styles.accountCardBulkSelected : '',
-                    isSelectionMode ? styles.accountCardSelectionMode : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={
-                    isSelectionMode
-                      ? () => handleAccountCardClick(row)
-                      : () => void openAccountDetail(row, 'overview')
-                  }
-                >
-                  <div className={styles.accountGridCardHeader}>
-                    <div className={styles.accountGridCardIdentity}>
-                      {isSelectionMode ? (
-                        <div
-                          className={styles.accountGridCardCheckbox}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedFiles.has(row.selectionKey)}
-                            disabled={row.runtimeOnly}
-                            onChange={() => toggleSelect(row.selectionKey)}
-                            aria-label={t('accounts.select_account', { name: row.accountLabel })}
-                          />
-                        </div>
-                      ) : null}
-                      <div className={styles.accountProviderLogo} aria-hidden="true">
-                        {ctx.providerIcon ? (
-                          <img src={ctx.providerIcon} alt="" />
-                        ) : (
-                          <IconKey size={20} className={styles.accountProviderFallback} />
-                        )}
-                      </div>
-                      <div className={styles.accountIdentityText}>
-                        <div className={styles.accountIdentityCopyLine}>
-                          <button
-                            type="button"
-                            className={styles.accountIdentityCopyTarget}
-                            title={row.accountLabel}
-                            aria-label={`${t('common.copy')} ${row.accountLabel}`}
-                            onClick={(event) =>
-                              void handleCopyIdentityText(
-                                event,
-                                row.accountLabel,
-                                `${row.selectionKey}:account`
-                              )
-                            }
-                          >
-                            <strong className={styles.accountIdentityTitle}>
-                              {getDisplayAccount(row)}
-                            </strong>
-                          </button>
-                          {renderPinButton(row)}
-                          {copiedIdentityKey === `${row.selectionKey}:account` ? (
-                            <span className={styles.accountIdentityCopyHint}>
-                              {t('accounts.copy_feedback_copied')}
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className={styles.accountIdentityCopyLine}>
-                          <button
-                            type="button"
-                            className={styles.accountIdentityCopyTarget}
-                            title={row.fileName}
-                            aria-label={`${t('common.copy')} ${row.fileName}`}
-                            onClick={(event) =>
-                              void handleCopyIdentityText(
-                                event,
-                                row.fileName,
-                                `${row.selectionKey}:file`
-                              )
-                            }
-                          >
-                            <span className={styles.accountCardFile}>
-                              {getDisplayFileName(row.fileName)}
-                            </span>
-                          </button>
-                          {copiedIdentityKey === `${row.selectionKey}:file` ? (
-                            <span className={styles.accountIdentityCopyHint}>
-                              {t('accounts.copy_feedback_copied')}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
+  const renderCredentialEgress = (row: AccountRow) => {
+    if (row.provider !== 'kilo') return null;
+    const account = kiloSnapshot?.accounts.find((item) => item.id === row.raw.id);
+    if (!account) return null;
+    return (
+      <div className={styles.credentialEgress} onClick={(event) => event.stopPropagation()}>
+        <KiloEgressSummary
+          accountID={account.id}
+          identity={account.client_identity}
+          readAt={kiloProxyProjection?.readAt}
+          stale={kiloProxyProjection?.stale}
+          snapshot={
+            kiloProxyProjection?.scope === authFilesRequestScope &&
+            kiloProxyProjection.value.connection_ref === concurrencyRef
+              ? kiloProxyProjection.value
+              : undefined
+          }
+        />
+      </div>
+    );
+  };
+  const renderCredentialRelations = (row: AccountRow, includeEgress = true) => {
+    const account =
+      row.provider === 'kilo'
+        ? kiloSnapshot?.accounts.find((item) => item.id === row.raw.id)
+        : undefined;
+    const source = account?.quota_source_summary;
+    const label =
+      source?.kind === 'cpa_codex'
+        ? `${source.display_label || source.credential_id} · Codex`
+        : source?.kind === 'imported'
+          ? '独立材料 · 独立来源'
+          : '待关联 Codex';
+    return (
+      <div className={styles.credentialRelations} onClick={(event) => event.stopPropagation()}>
+        <CredentialConcurrencyBadge row={row} state={concurrency} />
+        {account && (
+          <>
+            <button
+              type="button"
+              className={styles.credentialSourceLink}
+              disabled={isSelectionMode}
+              onClick={() => void openAccountDetail(row, 'quota')}
+            >
+              来源：{accountDisplayMode === 'full' ? label : maskQuotaAccountText(label)} ›
+            </button>
+            {includeEgress && renderCredentialEgress(row)}
+          </>
+        )}
+      </div>
+    );
+  };
+  const renderKiloState = (row: AccountRow) => {
+    if (row.provider !== 'kilo') return null;
+    const account = kiloSnapshot?.accounts.find((item) => item.id === row.raw.id);
+    if (!account) return null;
+    const restricted =
+      account.auto_restriction?.reason && account.auto_restriction.reason !== 'none';
+    return (
+      <details
+        className={styles.credentialStateDetails}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <summary>
+          {account.source_policy?.paused
+            ? '来源暂停 · 待核'
+            : restricted
+              ? '自动限制 · 查看原因'
+              : '状态详情'}
+        </summary>
+        <KiloRecoveryStatus account={account} />
+      </details>
+    );
+  };
 
-                    <div
-                      className={styles.accountGridCardHeaderRight}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span
-                        className={`${styles.badge} ${getHealthStatusClass(ctx.item.health.status)}`}
-                        title={ctx.healthTitle}
-                      >
-                        {t(ctx.item.health.labelKey)}
-                      </span>
-                      <ToggleSwitch
-                        checked={!row.disabled}
-                        onChange={(enabled) => void handleBatchStatus(enabled, [row])}
-                        disabled={disableControls || statusUpdating || row.runtimeOnly}
-                        ariaLabel={t('auth_files.status_toggle_label')}
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.accountGridCardMetaSection}>
-                    <div className={styles.accountGridCardMetaRow}>
-                      <div className={styles.accountGridCardMetaBadges}>
-                      {(() => {
-                        const remainingDays = ctx.subscriptionPresentation.remainingDays;
-                        const remainingDaysClass =
-                          remainingDays !== null
-                            ? remainingDays <= 3
-                              ? styles.accountPlanBadgeDaysDanger
-                              : remainingDays <= 7
-                                ? styles.accountPlanBadgeDaysWarning
-                                : styles.accountPlanBadgeDaysNormal
-                            : '';
-                        return ctx.subscriptionPresentation.planPresentation?.shortLabel &&
-                          ctx.subscriptionPresentation.planPresentation.shortLabel !== '-' ? (
-                          <span
-                            className={styles.accountPlanBadge}
-                            title={ctx.subscriptionPresentation.planPresentation?.fullLabel}
+  const renderAccountCards = (rowsToRender = pageRows, paged = true) => {
+    const orderedRows = rowsToRender;
+    return (
+      <section className={styles.tablePanel}>
+        {rowsToRender.length > 0 ? (
+          effectiveLayoutMode === 'grid' ? (
+            <div className={styles.accountGridList}>
+              {orderedRows.map((row) => {
+                const ctx = resolveAccountRowContext(row);
+                const quotaWindowGroups = getCardQuotaWindowGroups(row, ctx.mainListWindows);
+                return (
+                  <article
+                    key={row.selectionKey}
+                    data-account-card={row.selectionKey}
+                    aria-selected={selectedFiles.has(row.selectionKey)}
+                    className={[
+                      styles.accountGridCard,
+                      row.disabled ? styles.accountGridCardDisabled : '',
+                      selectedRowKey === row.selectionKey ? styles.accountCardSelected : '',
+                      selectedFiles.has(row.selectionKey) ? styles.accountCardBulkSelected : '',
+                      isSelectionMode ? styles.accountCardSelectionMode : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={
+                      isSelectionMode
+                        ? () => handleAccountCardClick(row)
+                        : () => void openAccountDetail(row, 'overview')
+                    }
+                  >
+                    <div className={styles.accountGridCardHeader}>
+                      <div className={styles.accountGridCardIdentity}>
+                        {isSelectionMode ? (
+                          <div
+                            className={styles.accountGridCardCheckbox}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {ctx.subscriptionPresentation.planPresentation.shortLabel}
-                            {remainingDays !== null ? (
-                              <span className={styles.accountPlanBadgeSep}>
-                                ·{' '}
-                                <span className={remainingDaysClass}>
-                                  {t('accounts.list_plan_remaining_days', {
-                                    days: remainingDays,
-                                    defaultValue: `${remainingDays} 天`,
-                                  })}
+                            <input
+                              type="checkbox"
+                              checked={selectedFiles.has(row.selectionKey)}
+                              disabled={row.runtimeOnly}
+                              onChange={() => toggleSelect(row.selectionKey)}
+                              aria-label={t('accounts.select_account', { name: row.accountLabel })}
+                            />
+                          </div>
+                        ) : null}
+                        <div className={styles.accountProviderLogo} aria-hidden="true">
+                          {ctx.providerIcon ? (
+                            <img src={ctx.providerIcon} alt="" />
+                          ) : (
+                            <IconKey size={20} className={styles.accountProviderFallback} />
+                          )}
+                        </div>
+                        <div className={styles.accountIdentityText}>
+                          <div className={styles.accountIdentityCopyLine}>
+                            <button
+                              type="button"
+                              className={styles.accountIdentityCopyTarget}
+                              title={row.accountLabel}
+                              aria-label={`${t('common.copy')} ${row.accountLabel}`}
+                              onClick={(event) =>
+                                void handleCopyIdentityText(
+                                  event,
+                                  row.accountLabel,
+                                  `${row.selectionKey}:account`
+                                )
+                              }
+                            >
+                              <strong className={styles.accountIdentityTitle}>
+                                {getDisplayAccount(row)}
+                              </strong>
+                            </button>
+                            <span className={styles.credentialIdentityTools}>
+                              <button
+                                type="button"
+                                className={styles.accountIdentityCopyTarget}
+                                title={row.fileName}
+                                aria-label={`${t('common.copy')} ${row.fileName}`}
+                                onClick={(event) =>
+                                  void handleCopyIdentityText(
+                                    event,
+                                    row.fileName,
+                                    `${row.selectionKey}:file`
+                                  )
+                                }
+                              >
+                                <IconCopy size={12} />
+                              </button>
+                              {copiedIdentityKey === `${row.selectionKey}:file` ? (
+                                <span className={styles.accountIdentityCopyHint}>
+                                  {t('accounts.copy_feedback_copied')}
                                 </span>
+                              ) : null}
+                            </span>
+                            {renderPinButton(row)}
+                            {copiedIdentityKey === `${row.selectionKey}:account` ? (
+                              <span className={styles.accountIdentityCopyHint}>
+                                {t('accounts.copy_feedback_copied')}
                               </span>
                             ) : null}
-                          </span>
-                        ) : remainingDays !== null ? (
-                          <span
-                            className={`${styles.accountPlanBadge} ${remainingDaysClass}`}
-                            title={t('accounts.list_plan_remaining_days_tooltip', {
-                              days: remainingDays,
-                              defaultValue: `剩余 ${remainingDays} 天`,
-                            })}
-                          >
-                            {t('accounts.list_plan_remaining_days', {
-                              days: remainingDays,
-                              defaultValue: `${remainingDays} 天`,
-                            })}
-                          </span>
-                        ) : null;
-                      })()}
-                      {ctx.hasCodexResetCredits && ctx.codexResetCreditsCount !== null ? (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          className={styles.accountResetCreditsButton}
-                          data-account-reset-credits={row.selectionKey}
-                          data-detail-anchor="reset-records"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            void openAccountDetail(row, 'quota', 'reset-records');
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              void openAccountDetail(row, 'quota', 'reset-records');
-                            }
-                          }}
-                          aria-label={`${t('accounts.detail_quota_reset_records', {
-                            defaultValue: '重置记录',
-                          })}: ${ctx.codexResetCreditsCount}`}
-                        >
-                          <span
-                            className={styles.accountResetCreditsIcon}
-                            aria-hidden="true"
-                          >
-                            <IconRotateCcw size={11} strokeWidth={2.4} />
-                          </span>
-                          <strong className={styles.accountResetCreditsCount}>
-                            {ctx.codexResetCreditsCount}
-                          </strong>
-                          <span className={styles.accountResetCreditsLabel}>
-                            {t('accounts.quota_reset_credits_unit', {
-                              defaultValue: '次重置',
-                            })}
-                          </span>
-                        </span>
-                      ) : null}
-                      {editingPriorityState?.rowKey === row.selectionKey ? (
-                        <input
-                          ref={inlinePriorityInputRef}
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9\-]*"
-                          data-account-priority-input={row.selectionKey}
-                          className={styles.accountPriorityInput}
-                          value={editingPriorityState.value}
-                          aria-label={t('accounts.priority_edit', { defaultValue: '编辑优先级' })}
-                          disabled={inlinePrioritySaving}
+                          </div>
+                          {renderCredentialRelations(row, false)}
+                        </div>
+                      </div>
+                      <div className={styles.accountGridCardHeaderRight}>
+                        {(() => {
+                          const remainingDays = ctx.subscriptionPresentation.remainingDays;
+                          const remainingDaysClass =
+                            remainingDays !== null
+                              ? remainingDays <= 3
+                                ? styles.accountPlanBadgeDaysDanger
+                                : remainingDays <= 7
+                                  ? styles.accountPlanBadgeDaysWarning
+                                  : styles.accountPlanBadgeDaysNormal
+                              : '';
+                          return ctx.subscriptionPresentation.planPresentation?.shortLabel &&
+                            ctx.subscriptionPresentation.planPresentation.shortLabel !== '-' ? (
+                            <span
+                              className={styles.accountPlanBadge}
+                              title={ctx.subscriptionPresentation.planPresentation?.fullLabel}
+                            >
+                              {ctx.subscriptionPresentation.planPresentation.shortLabel}
+                              {remainingDays !== null ? (
+                                <span className={styles.accountPlanBadgeSep}>
+                                  ·{' '}
+                                  <span className={remainingDaysClass}>
+                                    {t('accounts.list_plan_remaining_days', {
+                                      days: remainingDays,
+                                      defaultValue: `${remainingDays} 天`,
+                                    })}
+                                  </span>
+                                </span>
+                              ) : null}
+                            </span>
+                          ) : remainingDays !== null ? (
+                            <span
+                              className={`${styles.accountPlanBadge} ${remainingDaysClass}`}
+                              title={t('accounts.list_plan_remaining_days_tooltip', {
+                                days: remainingDays,
+                                defaultValue: `剩余 ${remainingDays} 天`,
+                              })}
+                            >
+                              {t('accounts.list_plan_remaining_days', {
+                                days: remainingDays,
+                                defaultValue: `${remainingDays} 天`,
+                              })}
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className={styles.accountGridCardMetaSection}>
+                      <div className={styles.accountGridCardMetaRow}>
+                        <div className={styles.accountGridCardMetaBadges}>
+                          {ctx.hasCodexResetCredits && ctx.codexResetCreditsCount !== null ? (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              className={styles.accountResetCreditsButton}
+                              data-account-reset-credits={row.selectionKey}
+                              data-detail-anchor="reset-records"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                void openAccountDetail(row, 'quota', 'reset-records');
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  void openAccountDetail(row, 'quota', 'reset-records');
+                                }
+                              }}
+                              aria-label={`${t('accounts.detail_quota_reset_records', {
+                                defaultValue: '重置记录',
+                              })}: ${ctx.codexResetCreditsCount}`}
+                            >
+                              <span className={styles.accountResetCreditsIcon} aria-hidden="true">
+                                <IconRotateCcw size={11} strokeWidth={2.4} />
+                              </span>
+                              <strong className={styles.accountResetCreditsCount}>
+                                {ctx.codexResetCreditsCount}
+                              </strong>
+                              <span className={styles.accountResetCreditsLabel}>
+                                {t('accounts.quota_reset_credits_unit', {
+                                  defaultValue: '次重置',
+                                })}
+                              </span>
+                            </span>
+                          ) : null}
+                          {editingPriorityState?.rowKey === row.selectionKey ? (
+                            <input
+                              ref={inlinePriorityInputRef}
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9\-]*"
+                              data-account-priority-input={row.selectionKey}
+                              className={styles.accountPriorityInput}
+                              value={editingPriorityState.value}
+                              aria-label={t('accounts.priority_edit', {
+                                defaultValue: '编辑优先级',
+                              })}
+                              disabled={inlinePrioritySaving}
+                              onClick={(e) => e.stopPropagation()}
+                              onDoubleClick={(e) => e.stopPropagation()}
+                              onChange={(e) =>
+                                setEditingPriorityState((prev) =>
+                                  prev ? { ...prev, value: e.target.value } : null
+                                )
+                              }
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  e.currentTarget.blur();
+                                } else if (e.key === 'Escape') {
+                                  e.preventDefault();
+                                  cancelInlinePriorityEdit();
+                                }
+                              }}
+                              onBlur={(e) => {
+                                void handleInlinePriorityBlur(row, e.currentTarget.value);
+                              }}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              data-account-priority-trigger={row.selectionKey}
+                              className={`${styles.accountPriorityButton} ${
+                                ctx.item.identity.priorityIsNegative
+                                  ? styles.accountPriorityMetaDanger
+                                  : styles.accountPriorityMeta
+                              }`}
+                              title={
+                                row.runtimeOnly
+                                  ? t('accounts.col_priority')
+                                  : `${t('accounts.col_priority')} ${ctx.item.identity.priority} (${t('accounts.priority_edit', { defaultValue: '编辑优先级' })})`
+                              }
+                              aria-label={`${t('accounts.col_priority')} ${ctx.item.identity.priority}`}
+                              disabled={row.runtimeOnly}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!row.runtimeOnly) {
+                                  startInlinePriorityEdit(row);
+                                }
+                              }}
+                            >
+                              {t('accounts.col_priority')} {ctx.item.identity.priority}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {editingNoteState?.rowKey === row.selectionKey ? (
+                        <div
+                          className={styles.accountGridCardNoteEditRow}
                           onClick={(e) => e.stopPropagation()}
-                          onDoubleClick={(e) => e.stopPropagation()}
-                          onChange={(e) =>
-                            setEditingPriorityState((prev) =>
-                              prev ? { ...prev, value: e.target.value } : null
-                            )
-                          }
-                          onKeyDown={(e) => {
-                            e.stopPropagation();
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              e.currentTarget.blur();
-                            } else if (e.key === 'Escape') {
-                              e.preventDefault();
-                              cancelInlinePriorityEdit();
+                        >
+                          <IconFileText size={12} className={styles.accountGridCardNoteIcon} />
+                          <input
+                            ref={inlineNoteInputRef}
+                            type="text"
+                            data-account-note-input={row.selectionKey}
+                            className={styles.accountGridCardNoteInput}
+                            value={editingNoteState.value}
+                            placeholder={t('accounts.note_placeholder_empty', {
+                              defaultValue: '备注',
+                            })}
+                            aria-label={t('accounts.note_edit', { defaultValue: '编辑备注' })}
+                            disabled={inlineNoteSaving}
+                            onClick={(e) => e.stopPropagation()}
+                            onDoubleClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              setEditingNoteState((prev) =>
+                                prev ? { ...prev, value: e.target.value } : null
+                              )
                             }
-                          }}
-                          onBlur={(e) => {
-                            void handleInlinePriorityBlur(row, e.currentTarget.value);
-                          }}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          data-account-priority-trigger={row.selectionKey}
-                          className={`${styles.accountPriorityButton} ${
-                            ctx.item.identity.priorityIsNegative
-                              ? styles.accountPriorityMetaDanger
-                              : styles.accountPriorityMeta
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                e.currentTarget.blur();
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelInlineNoteEdit();
+                              }
+                            }}
+                            onBlur={(e) => {
+                              void handleInlineNoteBlur(row, e.currentTarget.value);
+                            }}
+                          />
+                        </div>
+                      ) : row.runtimeOnly ? (
+                        <div
+                          className={`${styles.accountGridCardNoteRow} ${styles.accountGridCardNoteReadOnly} ${
+                            !row.note?.trim() ? styles.accountGridCardNoteRowEmpty : ''
                           }`}
                           title={
-                            row.runtimeOnly
-                              ? t('accounts.col_priority')
-                              : `${t('accounts.col_priority')} ${ctx.item.identity.priority} (${t('accounts.priority_edit', { defaultValue: '编辑优先级' })})`
+                            row.note?.trim()
+                              ? `${t('auth_files.note_label')}: ${row.note.trim()}`
+                              : undefined
                           }
-                          aria-label={`${t('accounts.col_priority')} ${ctx.item.identity.priority}`}
-                          disabled={row.runtimeOnly}
+                        >
+                          <IconFileText size={12} className={styles.accountGridCardNoteIcon} />
+                          <span
+                            className={`${styles.accountGridCardNoteText} ${
+                              !row.note?.trim() ? styles.accountGridCardNotePlaceholder : ''
+                            }`}
+                          >
+                            {row.note?.trim() ||
+                              t('accounts.note_placeholder_empty', { defaultValue: '备注' })}
+                          </span>
+                        </div>
+                      ) : (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          data-account-note-trigger={row.selectionKey}
+                          className={`${styles.accountGridCardNoteRow} ${
+                            !row.note?.trim() ? styles.accountGridCardNoteRowEmpty : ''
+                          }`}
+                          title={
+                            row.note?.trim()
+                              ? `${t('auth_files.note_label')}: ${row.note.trim()} (${t('accounts.note_edit', { defaultValue: '编辑备注' })})`
+                              : `${t('accounts.note_edit', { defaultValue: '编辑备注' })}`
+                          }
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (!row.runtimeOnly) {
-                              startInlinePriorityEdit(row);
+                            startInlineNoteEdit(row);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              startInlineNoteEdit(row);
                             }
                           }}
                         >
-                          {t('accounts.col_priority')} {ctx.item.identity.priority}
-                        </button>
+                          <IconFileText size={12} className={styles.accountGridCardNoteIcon} />
+                          <span
+                            className={`${styles.accountGridCardNoteText} ${
+                              !row.note?.trim() ? styles.accountGridCardNotePlaceholder : ''
+                            }`}
+                          >
+                            {row.note?.trim() ||
+                              t('accounts.note_placeholder_empty', { defaultValue: '备注' })}
+                          </span>
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  {editingNoteState?.rowKey === row.selectionKey ? (
-                    <div
-                      className={styles.accountGridCardNoteEditRow}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <IconFileText size={12} className={styles.accountGridCardNoteIcon} />
-                      <input
-                        ref={inlineNoteInputRef}
-                        type="text"
-                        data-account-note-input={row.selectionKey}
-                        className={styles.accountGridCardNoteInput}
-                        value={editingNoteState.value}
-                        placeholder={t('accounts.note_placeholder_empty', { defaultValue: '备注' })}
-                        aria-label={t('accounts.note_edit', { defaultValue: '编辑备注' })}
-                        disabled={inlineNoteSaving}
-                        onClick={(e) => e.stopPropagation()}
-                        onDoubleClick={(e) => e.stopPropagation()}
-                        onChange={(e) =>
-                          setEditingNoteState((prev) =>
-                            prev ? { ...prev, value: e.target.value } : null
-                          )
-                        }
-                        onKeyDown={(e) => {
-                          e.stopPropagation();
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            e.currentTarget.blur();
-                          } else if (e.key === 'Escape') {
-                            e.preventDefault();
-                            cancelInlineNoteEdit();
-                          }
-                        }}
-                        onBlur={(e) => {
-                          void handleInlineNoteBlur(row, e.currentTarget.value);
-                        }}
-                      />
-                    </div>
-                  ) : row.runtimeOnly ? (
-                    <div
-                      className={`${styles.accountGridCardNoteRow} ${styles.accountGridCardNoteReadOnly} ${
-                        !row.note?.trim() ? styles.accountGridCardNoteRowEmpty : ''
-                      }`}
-                      title={
-                        row.note?.trim()
-                          ? `${t('auth_files.note_label')}: ${row.note.trim()}`
-                          : undefined
-                      }
-                    >
-                      <IconFileText size={12} className={styles.accountGridCardNoteIcon} />
-                      <span
-                        className={`${styles.accountGridCardNoteText} ${
-                          !row.note?.trim() ? styles.accountGridCardNotePlaceholder : ''
-                        }`}
+                    <div className={styles.credentialCardStatusRow}>
+                      <section
+                        className={styles.credentialCardHealth}
+                        onClick={(event) => event.stopPropagation()}
                       >
-                        {row.note?.trim() || t('accounts.note_placeholder_empty', { defaultValue: '备注' })}
-                      </span>
-                    </div>
-                  ) : (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      data-account-note-trigger={row.selectionKey}
-                      className={`${styles.accountGridCardNoteRow} ${
-                        !row.note?.trim() ? styles.accountGridCardNoteRowEmpty : ''
-                      }`}
-                      title={
-                        row.note?.trim()
-                          ? `${t('auth_files.note_label')}: ${row.note.trim()} (${t('accounts.note_edit', { defaultValue: '编辑备注' })})`
-                          : `${t('accounts.note_edit', { defaultValue: '编辑备注' })}`
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startInlineNoteEdit(row);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          startInlineNoteEdit(row);
-                        }
-                      }}
-                    >
-                      <IconFileText size={12} className={styles.accountGridCardNoteIcon} />
-                      <span
-                        className={`${styles.accountGridCardNoteText} ${
-                          !row.note?.trim() ? styles.accountGridCardNotePlaceholder : ''
-                        }`}
-                      >
-                        {row.note?.trim() || t('accounts.note_placeholder_empty', { defaultValue: '备注' })}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                  {renderAccountHistory(row, ctx, true)}
-
-                  <div
-                    className={styles.accountGridCardRecentStatus}
-                    data-account-grid-recent-status={row.selectionKey}
-                    title={`${t('accounts.detail_overview_recent_status_title')} (${t('accounts.open_detail', { name: row.fileName })}: ${t('accounts.detail_overview_recent_status_title')})`}
-                    role={isSelectionMode ? undefined : 'button'}
-                    tabIndex={isSelectionMode ? undefined : 0}
-                    onClick={
-                      isSelectionMode
-                        ? undefined
-                        : (e) => {
-                            e.stopPropagation();
-                            void openAccountDetail(row, 'overview');
-                          }
-                    }
-                    onKeyDown={
-                      isSelectionMode
-                        ? undefined
-                        : (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              void openAccountDetail(row, 'overview');
-                            }
-                          }
-                    }
-                  >
-                    <div className={styles.accountGridCardRecentStatusHeader}>
-                      <div className={styles.accountGridCardRecentStatusTitleGroup}>
-                        <span className={styles.accountGridCardRecentStatusTitle}>
-                          {t('accounts.detail_overview_recent_status_title')}
-                        </span>
-                      </div>
-                      <div className={styles.accountGridCardRecentStatusMetrics}>
+                        <small>可用状态</small>
                         <span
-                          className={styles.accountGridCardRecentStatusPillSuccess}
-                          title={`${t('accounts.detail_overview_recent_status_success')}: ${ctx.overviewRecentStatus.success}`}
+                          className={`${styles.badge} ${getHealthStatusClass(ctx.item.health.status)}`}
+                          title={ctx.healthTitle}
                         >
-                          <span className={styles.metricDot} />
-                          <strong>{ctx.overviewRecentStatus.success}</strong>
+                          {t(ctx.item.health.labelKey)}
                         </span>
-                        <span
-                          className={`${styles.accountGridCardRecentStatusPillFailure} ${
-                            ctx.overviewRecentStatus.failure > 0 ? styles.hasFailure : ''
-                          }`}
-                          title={`${t('accounts.detail_overview_recent_status_failure')}: ${ctx.overviewRecentStatus.failure}`}
-                        >
-                          <span className={styles.metricDot} />
-                          <strong>{ctx.overviewRecentStatus.failure}</strong>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={styles.accountGridCardRecentStatusBar}>
-                      <ProviderStatusBar statusData={ctx.recentStatusData} styles={styles} />
-                    </div>
-
-                    {ctx.overviewRecentStatus.statusMessage ? (
+                        {renderKiloState(row)}
+                      </section>
                       <div
-                        className={styles.accountGridCardRecentStatusMessage}
-                        data-overview-recent-status-message="true"
-                        title={ctx.overviewRecentStatus.statusMessage}
+                        className={styles.accountGridCardRecentStatus}
+                        data-account-grid-recent-status={row.selectionKey}
+                        title={`${t('accounts.detail_overview_recent_status_title')} (${t('accounts.open_detail', { name: row.fileName })}: ${t('accounts.detail_overview_recent_status_title')})`}
+                        role={isSelectionMode ? undefined : 'button'}
+                        tabIndex={isSelectionMode ? undefined : 0}
+                        onClick={
+                          isSelectionMode
+                            ? undefined
+                            : (e) => {
+                                e.stopPropagation();
+                                void openAccountDetail(row, 'overview');
+                              }
+                        }
+                        onKeyDown={
+                          isSelectionMode
+                            ? undefined
+                            : (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  void openAccountDetail(row, 'overview');
+                                }
+                              }
+                        }
                       >
-                        <span className={styles.accountGridCardRecentStatusMessageLabel}>
-                          {t('accounts.detail_overview_recent_status_message')}
-                        </span>
-                        <p className={styles.accountGridCardRecentStatusMessageText}>
-                          {ctx.overviewRecentStatus.statusMessage}
-                        </p>
-                      </div>
-                    ) : null}
-                  </div>
+                        <div className={styles.accountGridCardRecentStatusHeader}>
+                          <div className={styles.accountGridCardRecentStatusTitleGroup}>
+                            <span className={styles.accountGridCardRecentStatusTitle}>
+                              最近请求
+                            </span>
+                          </div>
+                          <div className={styles.accountGridCardRecentStatusMetrics}>
+                            <span
+                              className={styles.accountGridCardRecentStatusPillSuccess}
+                              title={`${t('accounts.detail_overview_recent_status_success')}: ${ctx.overviewRecentStatus.success}`}
+                            >
+                              <span className={styles.metricDot} />
+                              <strong>{ctx.overviewRecentStatus.success}</strong>
+                            </span>
+                            <span
+                              className={`${styles.accountGridCardRecentStatusPillFailure} ${
+                                ctx.overviewRecentStatus.failure > 0 ? styles.hasFailure : ''
+                              }`}
+                              title={`${t('accounts.detail_overview_recent_status_failure')}: ${ctx.overviewRecentStatus.failure}`}
+                            >
+                              <span className={styles.metricDot} />
+                              <strong>{ctx.overviewRecentStatus.failure}</strong>
+                            </span>
+                          </div>
+                        </div>
 
-                  <div
-                    className={styles.accountGridCardQuota}
-                    title={ctx.quotaWindowTitle}
-                    role={isSelectionMode ? undefined : 'button'}
-                    tabIndex={isSelectionMode ? undefined : 0}
-                    onClick={
-                      isSelectionMode
-                        ? undefined
-                        : (e) => {
-                            e.stopPropagation();
-                            void openAccountDetail(row, 'quota');
-                          }
-                    }
-                    onKeyDown={
-                      isSelectionMode
-                        ? undefined
-                        : (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              void openAccountDetail(row, 'quota');
-                            }
-                          }
-                    }
-                  >
-                    {ctx.mainListWindows.length > 0 ? (
-                      <div className={styles.accountGridCardQuotaList}>
-                        {row.provider === ANTIGRAVITY_CONFIG.type
-                          ? quotaWindowGroups.map((group) => (
-                              <div
-                                key={group.key}
-                                className={styles.accountGridCardQuotaGroup}
-                                data-account-quota-group={group.key}
-                              >
-                                {group.windows.map((window, idx) =>
+                        <div className={styles.accountGridCardRecentStatusBar}>
+                          <ProviderStatusBar statusData={ctx.recentStatusData} styles={styles} />
+                        </div>
+                        <AccountLatestRequest
+                          latestRequest={ctx.accountHistory?.latest_request}
+                          recentRequests={ctx.accountHistory?.recent_requests}
+                          loading={accountHistoryLoading && !ctx.accountHistory}
+                          unavailable={Boolean(ctx.accountHistoryError) && !ctx.accountHistory}
+                          locale={i18n.language}
+                          onCopy={copyTextWithNotification}
+                        />
+
+                        {ctx.overviewRecentStatus.statusMessage ? (
+                          <div
+                            className={styles.accountGridCardRecentStatusMessage}
+                            data-overview-recent-status-message="true"
+                            title={ctx.overviewRecentStatus.statusMessage}
+                          >
+                            <span className={styles.accountGridCardRecentStatusMessageLabel}>
+                              {t('accounts.detail_overview_recent_status_message')}
+                            </span>
+                            <p className={styles.accountGridCardRecentStatusMessageText}>
+                              {ctx.overviewRecentStatus.statusMessage}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    {renderAccountHistory(row, ctx, true)}
+
+                    <div className={styles.accountGridQuotaSection}>
+                      <div
+                        className={styles.accountGridCardQuota}
+                        title={row.provider === 'kilo' ? 'Codex订阅额度' : ctx.quotaWindowTitle}
+                        data-account-detail-region="quota"
+                        role={isSelectionMode ? undefined : 'button'}
+                        tabIndex={isSelectionMode ? undefined : 0}
+                        onClick={
+                          isSelectionMode
+                            ? undefined
+                            : (e) => {
+                                e.stopPropagation();
+                                void openAccountDetail(row, 'quota');
+                              }
+                        }
+                        onKeyDown={
+                          isSelectionMode
+                            ? undefined
+                            : (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  void openAccountDetail(row, 'quota');
+                                }
+                              }
+                        }
+                      >
+                        {row.provider === 'kilo' ? (
+                          renderKiloQuotaSummary(row)
+                        ) : ctx.mainListWindows.length > 0 ? (
+                          <div className={styles.accountGridCardQuotaList}>
+                            {row.provider === ANTIGRAVITY_CONFIG.type
+                              ? quotaWindowGroups.map((group) => (
+                                  <div
+                                    key={group.key}
+                                    className={styles.accountGridCardQuotaGroup}
+                                    data-account-quota-group={group.key}
+                                  >
+                                    {group.windows.map((window, idx) =>
+                                      renderSingleQuotaWindowCard(
+                                        row,
+                                        window,
+                                        idx,
+                                        null,
+                                        false,
+                                        ctx.quotaLifecycleBarOverride
+                                      )
+                                    )}
+                                  </div>
+                                ))
+                              : ctx.mainListWindows.map((window, idx) =>
                                   renderSingleQuotaWindowCard(
                                     row,
                                     window,
@@ -9713,286 +10332,338 @@ export function AccountsPage() {
                                     ctx.quotaLifecycleBarOverride
                                   )
                                 )}
-                              </div>
-                            ))
-                          : ctx.mainListWindows.map((window, idx) =>
-                              renderSingleQuotaWindowCard(
-                                row,
-                                window,
-                                idx,
-                                null,
-                                false,
-                                ctx.quotaLifecycleBarOverride
-                              )
-                            )}
-                      </div>
-                    ) : (
-                      <span className={styles.quotaEmptyState} data-account-quota-empty="true">
-                        {ctx.quotaEmptyLabel}
-                      </span>
-                    )}
-                  </div>
-
-                  <div
-                    className={styles.accountGridCardFooter}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {renderRowActions(row, ctx.item.health.status === 'reauth', true, true)}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className={styles.tableScroller}>
-            <div className={styles.accountCardList}>
-              <div className={styles.accountCardHeader} data-account-list-header="true">
-                <span>{t('accounts.list_header_credential')}</span>
-                <span>{t('accounts.list_header_plan')}</span>
-                <span>{t('accounts.list_header_availability')}</span>
-                <span>{t('accounts.list_header_recent_requests')}</span>
-                <span>{t('accounts.list_header_historical_usage')}</span>
-                <span>{t('accounts.list_header_quota')}</span>
-                <span>{t('accounts.list_header_actions')}</span>
-              </div>
-            {rowsToRender.map((row) => {
-              const ctx = resolveAccountRowContext(row);
-              return (
-                <article
-                  key={row.selectionKey}
-                  data-account-card={row.selectionKey}
-                  aria-selected={selectedFiles.has(row.selectionKey)}
-                  className={[
-                    styles.accountCard,
-                    selectedRowKey === row.selectionKey ? styles.accountCardSelected : '',
-                    selectedFiles.has(row.selectionKey) ? styles.accountCardBulkSelected : '',
-                    isSelectionMode ? styles.accountCardSelectionMode : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={isSelectionMode ? () => handleAccountCardClick(row) : undefined}
-                >
-                  <div className={styles.accountCardIdentity}>
-                    <div className={styles.accountProviderLogo} aria-hidden="true">
-                      {ctx.providerIcon ? (
-                        <img src={ctx.providerIcon} alt="" />
-                      ) : (
-                        <IconKey size={20} className={styles.accountProviderFallback} />
-                      )}
-                    </div>
-                    <div className={styles.accountIdentityText}>
-                      <div className={styles.accountIdentityCopyLine}>
-                        <button
-                          type="button"
-                          className={styles.accountIdentityCopyTarget}
-                          title={row.accountLabel}
-                          aria-label={`${t('common.copy')} ${row.accountLabel}`}
-                          onClick={(event) =>
-                            void handleCopyIdentityText(
-                              event,
-                              row.accountLabel,
-                              `${row.selectionKey}:account`
-                            )
-                          }
-                        >
-                          <strong className={styles.accountIdentityTitle}>
-                            {getDisplayAccount(row)}
-                          </strong>
-                        </button>
-                        {renderPinButton(row)}
-                        {copiedIdentityKey === `${row.selectionKey}:account` ? (
-                          <span className={styles.accountIdentityCopyHint}>
-                            {t('accounts.copy_feedback_copied')}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className={styles.accountIdentityCopyLine}>
-                        <button
-                          type="button"
-                          className={styles.accountIdentityCopyTarget}
-                          title={row.fileName}
-                          aria-label={`${t('common.copy')} ${row.fileName}`}
-                          onClick={(event) =>
-                            void handleCopyIdentityText(
-                              event,
-                              row.fileName,
-                              `${row.selectionKey}:file`
-                            )
-                          }
-                        >
-                          <span className={styles.accountCardFile}>
-                            {getDisplayFileName(row.fileName)}
-                          </span>
-                        </button>
-                        {copiedIdentityKey === `${row.selectionKey}:file` ? (
-                          <span className={styles.accountIdentityCopyHint}>
-                            {t('accounts.copy_feedback_copied')}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.accountCardPlan}>
-                    <span
-                      className={styles.accountPlanName}
-                      title={ctx.subscriptionPresentation.planPresentation?.fullLabel}
-                    >
-                      {ctx.subscriptionPresentation.planPresentation?.shortLabel ?? '-'}
-                    </span>
-                    {ctx.subscriptionPresentation.remainingDays !== null ? (
-                      <span
-                        className={styles.accountPlanRemaining}
-                        title={t('accounts.list_plan_remaining_days_tooltip', {
-                          days: ctx.subscriptionPresentation.remainingDays,
-                          defaultValue: `剩余 ${ctx.subscriptionPresentation.remainingDays} 天`,
-                        })}
-                      >
-                        {t('accounts.list_plan_remaining_days', {
-                          days: ctx.subscriptionPresentation.remainingDays,
-                          defaultValue: `${ctx.subscriptionPresentation.remainingDays} 天`,
-                        })}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className={styles.accountCardHealth}>
-                    <div className={styles.accountCardLine}>
-                      <span
-                        className={`${styles.badge} ${getHealthStatusClass(ctx.item.health.status)}`}
-                        title={ctx.healthTitle}
-                      >
-                        {t(ctx.item.health.labelKey)}
-                      </span>
-                    </div>
-                    <div className={styles.accountHealthMetaRow}>
-                      {editingPriorityState?.rowKey === row.selectionKey ? (
-                        <input
-                          ref={inlinePriorityInputRef}
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9\-]*"
-                          data-account-priority-input={row.selectionKey}
-                          className={styles.accountPriorityInput}
-                          value={editingPriorityState.value}
-                          aria-label={t('accounts.priority_edit', { defaultValue: '编辑优先级' })}
-                          disabled={inlinePrioritySaving}
-                          onClick={(e) => e.stopPropagation()}
-                          onDoubleClick={(e) => e.stopPropagation()}
-                          onChange={(e) =>
-                            setEditingPriorityState((prev) =>
-                              prev ? { ...prev, value: e.target.value } : null
-                            )
-                          }
-                          onKeyDown={(e) => {
-                            e.stopPropagation();
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              e.currentTarget.blur();
-                            } else if (e.key === 'Escape') {
-                              e.preventDefault();
-                              cancelInlinePriorityEdit();
-                            }
-                          }}
-                          onBlur={(e) => {
-                            void handleInlinePriorityBlur(row, e.currentTarget.value);
-                          }}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          data-account-priority-trigger={row.selectionKey}
-                          className={`${styles.accountPriorityButton} ${
-                            ctx.item.identity.priorityIsNegative
-                              ? styles.accountPriorityMetaDanger
-                              : styles.accountPriorityMeta
-                          }`}
-                          title={
-                            row.runtimeOnly
-                              ? t('accounts.col_priority')
-                              : `${t('accounts.col_priority')} ${ctx.item.identity.priority} (${t('accounts.priority_edit', { defaultValue: '编辑优先级' })})`
-                          }
-                          aria-label={`${t('accounts.col_priority')} ${ctx.item.identity.priority}`}
-                          disabled={row.runtimeOnly}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!row.runtimeOnly) {
-                              startInlinePriorityEdit(row);
-                            }
-                          }}
-                        >
-                          {t('accounts.col_priority')} {ctx.item.identity.priority}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={styles.accountCardLatestRequest}>
-                    <AccountLatestRequest
-                      latestRequest={ctx.accountHistory?.latest_request}
-                      recentRequests={ctx.accountHistory?.recent_requests}
-                      loading={accountHistoryLoading && !ctx.accountHistory}
-                      unavailable={Boolean(ctx.accountHistoryError) && !ctx.accountHistory}
-                      locale={i18n.language}
-                      onCopy={copyTextWithNotification}
-                    />
-                  </div>
-
-                  {renderAccountHistory(row, ctx)}
-
-                  {(() => {
-                    const resetCreditsAriaSuffix =
-                      ctx.hasCodexResetCredits && ctx.codexResetCreditsCount !== null
-                        ? `. ${t('accounts.detail_quota_reset_records', { defaultValue: '重置记录' })}: ${ctx.codexResetCreditsCount}`
-                        : '';
-                    return renderAccountDetailTrigger({
-                      isSelectionMode,
-                      className: styles.accountCardBusiness,
-                      title: ctx.quotaWindowTitle,
-                      ariaLabel: `${t('accounts.list_header_quota')}: ${ctx.quotaWindowTitle}${resetCreditsAriaSuffix}. ${t(
-                        'accounts.open_detail',
-                        { name: row.fileName }
-                      )}: ${t('accounts.detail_tab_quota')}`,
-                      kind: 'quota',
-                      onOpen: () => void openAccountDetail(row, 'quota'),
-                      children: (
-                        <span className={styles.quotaWindowGrid} title={ctx.quotaWindowTitle}>
-                        {ctx.mainListWindows.length > 0 ? (
-                          ctx.mainListWindows.map((window, windowIndex) =>
-                            renderSingleQuotaWindowCard(
-                              row,
-                              window,
-                              windowIndex,
-                              ctx.codexResetCreditsCount,
-                              ctx.hasCodexResetCredits,
-                              ctx.quotaLifecycleBarOverride
-                            )
-                          )
+                          </div>
                         ) : (
                           <span className={styles.quotaEmptyState} data-account-quota-empty="true">
                             {ctx.quotaEmptyLabel}
                           </span>
                         )}
-                      </span>
-                      ),
-                    });
-                  })()}
+                      </div>
+                      {renderQuotaEstimateSummary(row, true)}
+                    </div>
 
-                  <div className={styles.accountCardRecommendation}>
-                    {renderRowActions(row, ctx.item.health.status === 'reauth')}
-                  </div>
-                </article>
-              );
-            })}
+                    {renderCredentialEgress(row)}
+                    <div
+                      className={styles.accountGridCardFooter}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {renderRowActions(row, ctx.item.health.status === 'reauth', true, true)}
+                      <ToggleSwitch
+                        checked={!row.disabled}
+                        onChange={(enabled) => void handleBatchStatus(enabled, [row])}
+                        disabled={disableControls || statusUpdating || row.runtimeOnly}
+                        ariaLabel={t('auth_files.status_toggle_label')}
+                      />
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </div>
-        )
-      ) : (
-        renderAccountEmptyState()
-      )}
-      {paged ? renderPagination() : null}
-    </section>
-  );
+          ) : (
+            <div className={styles.tableScroller}>
+              <div className={styles.accountCardList}>
+                <div className={styles.accountCardHeader} data-account-list-header="true">
+                  <span>{t('accounts.list_header_credential')}</span>
+                  <span>{t('accounts.list_header_plan')}</span>
+                  <span>{t('accounts.list_header_availability')}</span>
+                  <span>{t('accounts.list_header_recent_requests')}</span>
+                  <span>{t('accounts.list_header_historical_usage')}</span>
+                  <span>{t('accounts.list_header_quota')}</span>
+                  <span>{t('accounts.list_header_actions')}</span>
+                </div>
+                {orderedRows.map((row, index) => {
+                  const ctx = resolveAccountRowContext(row);
+                  return (
+                    <Fragment key={row.selectionKey}>
+                      {accountSort.key === 'default' &&
+                        (index === 0 ||
+                          credentialGroup(orderedRows[index - 1]) !== credentialGroup(row)) && (
+                          <div className={styles.credentialGroupHeading}>
+                            {['待处理', '已暂停', '可用'][credentialGroup(row)]}
+                          </div>
+                        )}
+                      <article
+                        key={row.selectionKey}
+                        data-account-card={row.selectionKey}
+                        aria-selected={selectedFiles.has(row.selectionKey)}
+                        className={[
+                          styles.accountCard,
+                          selectedRowKey === row.selectionKey ? styles.accountCardSelected : '',
+                          selectedFiles.has(row.selectionKey) ? styles.accountCardBulkSelected : '',
+                          isSelectionMode ? styles.accountCardSelectionMode : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        onClick={isSelectionMode ? () => handleAccountCardClick(row) : undefined}
+                      >
+                        <div className={styles.accountCardIdentity}>
+                          <div className={styles.accountProviderLogo} aria-hidden="true">
+                            {ctx.providerIcon ? (
+                              <img src={ctx.providerIcon} alt="" />
+                            ) : (
+                              <IconKey size={20} className={styles.accountProviderFallback} />
+                            )}
+                          </div>
+                          <div className={styles.accountIdentityText}>
+                            <div className={styles.accountIdentityCopyLine}>
+                              <button
+                                type="button"
+                                className={styles.accountIdentityCopyTarget}
+                                title={row.accountLabel}
+                                aria-label={`${t('common.copy')} ${row.accountLabel}`}
+                                onClick={(event) =>
+                                  void handleCopyIdentityText(
+                                    event,
+                                    row.accountLabel,
+                                    `${row.selectionKey}:account`
+                                  )
+                                }
+                              >
+                                <strong className={styles.accountIdentityTitle}>
+                                  {getDisplayAccount(row)}
+                                </strong>
+                              </button>
+                              {renderPinButton(row)}
+                              {copiedIdentityKey === `${row.selectionKey}:account` ? (
+                                <span className={styles.accountIdentityCopyHint}>
+                                  {t('accounts.copy_feedback_copied')}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className={styles.accountIdentityCopyLine}>
+                              <button
+                                type="button"
+                                className={styles.accountIdentityCopyTarget}
+                                title={row.fileName}
+                                aria-label={`${t('common.copy')} ${row.fileName}`}
+                                onClick={(event) =>
+                                  void handleCopyIdentityText(
+                                    event,
+                                    row.fileName,
+                                    `${row.selectionKey}:file`
+                                  )
+                                }
+                              >
+                                <span className={styles.accountCardFile}>
+                                  {getDisplayFileName(row.fileName)}
+                                </span>
+                              </button>
+                              {copiedIdentityKey === `${row.selectionKey}:file` ? (
+                                <span className={styles.accountIdentityCopyHint}>
+                                  {t('accounts.copy_feedback_copied')}
+                                </span>
+                              ) : null}
+                            </div>
+                            {renderCredentialRelations(row)}
+                          </div>
+                        </div>
+
+                        <div className={styles.accountCardPlan}>
+                          <span
+                            className={styles.accountPlanName}
+                            title={ctx.subscriptionPresentation.planPresentation?.fullLabel}
+                          >
+                            {ctx.subscriptionPresentation.planPresentation?.shortLabel ?? '-'}
+                          </span>
+                          {ctx.subscriptionPresentation.remainingDays !== null ? (
+                            <span
+                              className={styles.accountPlanRemaining}
+                              title={t('accounts.list_plan_remaining_days_tooltip', {
+                                days: ctx.subscriptionPresentation.remainingDays,
+                                defaultValue: `剩余 ${ctx.subscriptionPresentation.remainingDays} 天`,
+                              })}
+                            >
+                              {t('accounts.list_plan_remaining_days', {
+                                days: ctx.subscriptionPresentation.remainingDays,
+                                defaultValue: `${ctx.subscriptionPresentation.remainingDays} 天`,
+                              })}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className={styles.accountCardHealth}>
+                          <div className={styles.accountCardLine}>
+                            <span
+                              className={`${styles.badge} ${getHealthStatusClass(ctx.item.health.status)}`}
+                              title={ctx.healthTitle}
+                            >
+                              {t(ctx.item.health.labelKey)}
+                            </span>
+                          </div>
+                          {renderKiloState(row)}
+                          <div className={styles.accountHealthMetaRow}>
+                            {editingPriorityState?.rowKey === row.selectionKey ? (
+                              <input
+                                ref={inlinePriorityInputRef}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9\-]*"
+                                data-account-priority-input={row.selectionKey}
+                                className={styles.accountPriorityInput}
+                                value={editingPriorityState.value}
+                                aria-label={t('accounts.priority_edit', {
+                                  defaultValue: '编辑优先级',
+                                })}
+                                disabled={inlinePrioritySaving}
+                                onClick={(e) => e.stopPropagation()}
+                                onDoubleClick={(e) => e.stopPropagation()}
+                                onChange={(e) =>
+                                  setEditingPriorityState((prev) =>
+                                    prev ? { ...prev, value: e.target.value } : null
+                                  )
+                                }
+                                onKeyDown={(e) => {
+                                  e.stopPropagation();
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    e.currentTarget.blur();
+                                  } else if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    cancelInlinePriorityEdit();
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  void handleInlinePriorityBlur(row, e.currentTarget.value);
+                                }}
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                data-account-priority-trigger={row.selectionKey}
+                                className={`${styles.accountPriorityButton} ${
+                                  ctx.item.identity.priorityIsNegative
+                                    ? styles.accountPriorityMetaDanger
+                                    : styles.accountPriorityMeta
+                                }`}
+                                title={
+                                  row.runtimeOnly
+                                    ? t('accounts.col_priority')
+                                    : `${t('accounts.col_priority')} ${ctx.item.identity.priority} (${t('accounts.priority_edit', { defaultValue: '编辑优先级' })})`
+                                }
+                                aria-label={`${t('accounts.col_priority')} ${ctx.item.identity.priority}`}
+                                disabled={row.runtimeOnly}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!row.runtimeOnly) {
+                                    startInlinePriorityEdit(row);
+                                  }
+                                }}
+                              >
+                                {t('accounts.col_priority')} {ctx.item.identity.priority}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={styles.accountCardLatestRequest}>
+                          <AccountLatestRequest
+                            latestRequest={ctx.accountHistory?.latest_request}
+                            recentRequests={ctx.accountHistory?.recent_requests}
+                            loading={accountHistoryLoading && !ctx.accountHistory}
+                            unavailable={Boolean(ctx.accountHistoryError) && !ctx.accountHistory}
+                            locale={i18n.language}
+                            onCopy={copyTextWithNotification}
+                          />
+                        </div>
+
+                        {renderAccountHistory(row, ctx)}
+
+                        <div className={styles.accountQuotaCell}>
+                          {(() => {
+                            if (row.provider === 'kilo') {
+                              return (
+                                <div
+                                  className={styles.accountCardBusiness}
+                                  title="Codex订阅额度"
+                                  data-account-detail-region="quota"
+                                  role={isSelectionMode ? undefined : 'button'}
+                                  tabIndex={isSelectionMode ? undefined : 0}
+                                  onClick={
+                                    isSelectionMode
+                                      ? undefined
+                                      : (event) => {
+                                          event.stopPropagation();
+                                          void openAccountDetail(row, 'quota');
+                                        }
+                                  }
+                                  onKeyDown={
+                                    isSelectionMode
+                                      ? undefined
+                                      : (event) => {
+                                          if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            void openAccountDetail(row, 'quota');
+                                          }
+                                        }
+                                  }
+                                >
+                                  {renderKiloQuotaSummary(row)}
+                                </div>
+                              );
+                            }
+                            const resetCreditsAriaSuffix =
+                              ctx.hasCodexResetCredits && ctx.codexResetCreditsCount !== null
+                                ? `. ${t('accounts.detail_quota_reset_records', { defaultValue: '重置记录' })}: ${ctx.codexResetCreditsCount}`
+                                : '';
+                            return renderAccountDetailTrigger({
+                              isSelectionMode,
+                              className: styles.accountCardBusiness,
+                              title: ctx.quotaWindowTitle,
+                              ariaLabel: `${t('accounts.list_header_quota')}: ${ctx.quotaWindowTitle}${resetCreditsAriaSuffix}. ${t(
+                                'accounts.open_detail',
+                                { name: row.fileName }
+                              )}: ${t('accounts.detail_tab_quota')}`,
+                              kind: 'quota',
+                              onOpen: () => void openAccountDetail(row, 'quota'),
+                              children: (
+                                <span
+                                  className={styles.quotaWindowGrid}
+                                  title={ctx.quotaWindowTitle}
+                                >
+                                  {ctx.mainListWindows.length > 0 ? (
+                                    ctx.mainListWindows.map((window, windowIndex) =>
+                                      renderSingleQuotaWindowCard(
+                                        row,
+                                        window,
+                                        windowIndex,
+                                        ctx.codexResetCreditsCount,
+                                        ctx.hasCodexResetCredits,
+                                        ctx.quotaLifecycleBarOverride
+                                      )
+                                    )
+                                  ) : (
+                                    <span
+                                      className={styles.quotaEmptyState}
+                                      data-account-quota-empty="true"
+                                    >
+                                      {ctx.quotaEmptyLabel}
+                                    </span>
+                                  )}
+                                </span>
+                              ),
+                            });
+                          })()}
+
+                          {renderQuotaEstimateSummary(row, true)}
+                        </div>
+                        <div className={styles.accountCardRecommendation}>
+                          {renderRowActions(row, ctx.item.health.status === 'reauth')}
+                        </div>
+                      </article>
+                    </Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          )
+        ) : (
+          renderAccountEmptyState()
+        )}
+        {paged ? renderPagination() : null}
+      </section>
+    );
+  };
 
   const renderDetailDrawer = () => {
     if (!selectedRow) {
@@ -10008,13 +10679,24 @@ export function AccountsPage() {
 
     const providerIcon = getAuthFileIcon(selectedRow.provider, resolvedTheme);
 
-    const detailTabs: Array<{ id: DetailTab; label: string }> = [
-      { id: 'overview', label: t('accounts.detail_tab_overview') },
-      { id: 'quota', label: t('accounts.detail_tab_quota') },
-      { id: 'config', label: t('accounts.detail_tab_config') },
-      { id: 'models', label: t('accounts.detail_tab_models') },
-      { id: 'diagnostics', label: t('accounts.detail_tab_diagnostics') },
-    ];
+    const activeDetailTab =
+      selectedRow.provider === 'kilo' && !['quota', 'config'].includes(detailTab)
+        ? 'overview'
+        : detailTab;
+    const detailTabs: Array<{ id: DetailTab; label: string }> =
+      selectedRow.provider === 'kilo'
+        ? [
+            { id: 'overview', label: '账号管理' },
+            { id: 'config', label: '出口配置' },
+            { id: 'quota', label: 'Codex订阅额度' },
+          ]
+        : [
+            { id: 'overview', label: t('accounts.detail_tab_overview') },
+            { id: 'quota', label: t('accounts.detail_tab_quota') },
+            { id: 'config', label: t('accounts.detail_tab_config') },
+            { id: 'models', label: t('accounts.detail_tab_models') },
+            { id: 'diagnostics', label: t('accounts.detail_tab_diagnostics') },
+          ];
     const valueRow =
       usageRows.find((row) => row.row?.selectionKey === selectedRow.selectionKey) ??
       usageRows.find((row) => !row.row && row.fileName === selectedRow.fileName);
@@ -10098,10 +10780,64 @@ export function AccountsPage() {
     const modelsTargetMatches = modelsSelectionKey === selectedRow.selectionKey;
 
     const renderActiveDetail = () => {
+      if (selectedRow.provider === 'kilo' && detailTab === 'config') {
+        const account = kiloSnapshot?.accounts.find((item) => item.id === selectedRow.raw.id);
+        return account && concurrencyRef ? (
+          <KiloAccountEgress
+            key={`${account.id}:${concurrencyRef}`}
+            account={account}
+            scope={authFilesRequestScope}
+            connectionRef={concurrencyRef}
+          />
+        ) : (
+          <p>正在读取账号出口配置…</p>
+        );
+      }
+      if (selectedRow.provider === 'kilo' && detailTab === 'quota') {
+        if (!concurrencyRef) return <p>关联额度暂未读取</p>;
+        return (
+          <KiloQuotaPanel
+            key={`${selectedRow.selectionKey}:${concurrencyRef}`}
+            accountID={String(selectedRow.raw.id || '')}
+            scope={authFilesRequestScope}
+            connectionRef={concurrencyRef}
+            renderEstimate={(query, disabled) =>
+              renderQuotaEstimateSummary(selectedRow, false, query, disabled)
+            }
+            onClose={() => void openAccountDetail(selectedRow, 'overview')}
+            onChanged={async () => {
+              const value = await kiloApi.list(authFilesRequestScope);
+              if (
+                currentKiloContext.current.scope === authFilesRequestScope &&
+                currentKiloContext.current.ref === concurrencyRef &&
+                value.connection_ref === concurrencyRef
+              )
+                setKiloProjection({ scope: authFilesRequestScope, value });
+            }}
+          />
+        );
+      }
+      if (selectedRow.provider === 'kilo')
+        return (
+          <KiloAccountsPanel
+            scope={authFilesRequestScope}
+            accountID={String(selectedRow.raw.id || '')}
+            onConfigureEgress={() => void openAccountDetail(selectedRow, 'config')}
+            concurrency={concurrency}
+            onSnapshot={(value) => {
+              if (value.connection_ref === concurrencyRef)
+                setKiloProjection({ scope: authFilesRequestScope, value });
+            }}
+          />
+        );
+
       if (detailTab === 'quota') {
+        if (selectedRow.provider === 'cpa-bps')
+          return <CpaBpsQuotaCard file={selectedRow.raw} scope={authFilesRequestScope} />;
         return (
           <AccountQuotaTab
             detailView={detailView}
+            resetCreditsSection={selectedRow.provider === 'bps' ? <BpsResetCreditsCard file={selectedRow.raw} scope={authFilesRequestScope} connectionRef={concurrencyRef} /> : undefined}
             windowUsageError={accountWindowUsageError}
             historyAvailable={requestHistoryAvailable}
             historyRefreshing={historyRefreshing}
@@ -10120,37 +10856,57 @@ export function AccountsPage() {
             disableControls={disableControls}
             editor={configurationEditor}
             onCopyText={copyTextWithNotification}
+            concurrencySection={
+              <AccountConcurrencySection
+                key={concurrencyOwner}
+                row={selectedRow}
+                scope={authFilesRequestScope}
+                concurrency={concurrency}
+                disabled={disableControls}
+                onStateChange={handleConcurrencyStateChange}
+                resetVersion={concurrencyResetVersion}
+              />
+            }
           />
         );
       }
       if (detailTab === 'models') {
         return (
-          <AccountModelsTab
-            key={`${selectedRow.selectionKey}:models`}
-            row={selectedRow}
-            disableControls={disableControls}
-            fileName={getDisplayFileName(
-              modelsTargetMatches ? modelsFileName || selectedRow.fileName : selectedRow.fileName
+          <>
+            {selectedRow.provider === 'cpa-bps' && (
+              <p>
+                BPS 插件默认使用原生自动发现：models=[] 且 auto_discover=true 时，OAuth
+                保存注册后自动发现并发布账号可用模型。手动 models 列表优先生效；请在{' '}
+                <a href="#/plugins">插件配置</a> 中调整，旧 BPS 设置不适用于此通道。
+              </p>
             )}
-            fileType={
-              modelsTargetMatches ? modelsFileType || selectedRow.provider : selectedRow.provider
-            }
-            loading={modelsTargetMatches ? modelsLoading : true}
-            refreshing={modelsTargetMatches ? modelsRefreshing : false}
-            error={modelsTargetMatches ? modelsError : null}
-            models={modelsTargetMatches ? modelsList : []}
-            modelDefinitions={modelsTargetMatches ? modelDefinitions : []}
-            modelDefinitionsLoading={modelsTargetMatches ? modelDefinitionsLoading : true}
-            modelDefinitionsError={modelsTargetMatches ? modelDefinitionsError : null}
-            globalExcluded={oauthState.excluded}
-            globalExcludedState={oauthState.excludedError}
-            aliases={oauthState.modelAlias}
-            editor={configurationEditor}
-            onRefresh={() => void handleAccountModelsRefresh()}
-            onManageGlobalRules={() => void changeActiveView('oauth')}
-            onOpenAdvancedRules={() => void openAccountDetail(selectedRow, 'config')}
-            onCopyText={copyTextWithNotification}
-          />
+            <AccountModelsTab
+              key={`${selectedRow.selectionKey}:models`}
+              row={selectedRow}
+              disableControls={disableControls}
+              fileName={getDisplayFileName(
+                modelsTargetMatches ? modelsFileName || selectedRow.fileName : selectedRow.fileName
+              )}
+              fileType={
+                modelsTargetMatches ? modelsFileType || selectedRow.provider : selectedRow.provider
+              }
+              loading={modelsTargetMatches ? modelsLoading : true}
+              refreshing={modelsTargetMatches ? modelsRefreshing : false}
+              error={modelsTargetMatches ? modelsError : null}
+              models={modelsTargetMatches ? modelsList : []}
+              modelDefinitions={modelsTargetMatches ? modelDefinitions : []}
+              modelDefinitionsLoading={modelsTargetMatches ? modelDefinitionsLoading : true}
+              modelDefinitionsError={modelsTargetMatches ? modelDefinitionsError : null}
+              globalExcluded={oauthState.excluded}
+              globalExcludedState={oauthState.excludedError}
+              aliases={oauthState.modelAlias}
+              editor={configurationEditor}
+              onRefresh={() => void handleAccountModelsRefresh()}
+              onManageGlobalRules={() => void changeActiveView('oauth')}
+              onOpenAdvancedRules={() => void openAccountDetail(selectedRow, 'config')}
+              onCopyText={copyTextWithNotification}
+            />
+          </>
         );
       }
       if (detailTab === 'diagnostics') {
@@ -10220,7 +10976,10 @@ export function AccountsPage() {
         key: 'download',
         label: t('auth_files.download_button'),
         icon: <IconDownload size={15} />,
-        onClick: () => void handleDownload(selectedRow.fileName),
+        onClick: () =>
+          selectedRow.provider === 'kilo'
+            ? showNotification('Kilo凭据不支持秘密导出，请在详情管理。', 'info')
+            : void handleDownload(selectedRow.fileName),
         disabled: selectedRow.runtimeOnly,
       },
       ...(canResetCodexQuota(selectedRow)
@@ -10334,7 +11093,7 @@ export function AccountsPage() {
           </div>
         }
       >
-        <div className={styles.drawerBodyShell} data-detail-tab={detailTab}>
+        <div className={styles.drawerBodyShell} data-detail-tab={activeDetailTab}>
           {selectedRow.disabled ? (
             <div className={styles.drawerDisabledNotice} role="status">
               <span>
@@ -10359,9 +11118,9 @@ export function AccountsPage() {
                 type="button"
                 role="tab"
                 id={`accounts-detail-tab-${tab.id}`}
-                aria-selected={detailTab === tab.id}
+                aria-selected={activeDetailTab === tab.id}
                 aria-controls="accounts-detail-tab-panel"
-                className={detailTab === tab.id ? styles.drawerTabActive : ''}
+                className={activeDetailTab === tab.id ? styles.drawerTabActive : ''}
                 onClick={() => void openAccountDetail(selectedRow, tab.id)}
               >
                 {tab.label}
@@ -10372,8 +11131,11 @@ export function AccountsPage() {
             id="accounts-detail-tab-panel"
             className={styles.drawerTabPanel}
             role="tabpanel"
-            aria-labelledby={`accounts-detail-tab-${detailTab}`}
+            aria-labelledby={`accounts-detail-tab-${activeDetailTab}`}
           >
+            {detailTab === 'quota' &&
+              selectedRow.provider !== 'kilo' &&
+              renderQuotaEstimateSummary(selectedRow)}
             {renderActiveDetail()}
           </div>
         </div>
@@ -10383,7 +11145,6 @@ export function AccountsPage() {
 
   const renderAccountsOverview = () => (
     <>
-      {hasLoaded ? <AccountMetricsGrid metrics={metrics} /> : null}
       {error ? <div className={styles.errorBox}>{error}</div> : null}
       {initialLoading ? (
         <div className={styles.loadingPanel}>
@@ -10566,6 +11327,16 @@ export function AccountsPage() {
 
   const renderPageActions = () => (
     <div className={styles.headerActions}>
+      {activeView === 'accounts' && (
+        <KiloAddAccount
+          scope={authFilesRequestScope}
+          connectionRef={concurrencyRef}
+          onSaved={async () => {
+            await loadFiles();
+            await concurrency.refresh();
+          }}
+        />
+      )}
       <Button
         variant="secondary"
         size="sm"
@@ -10613,10 +11384,16 @@ export function AccountsPage() {
   };
 
   return (
-    <div className={styles.container} lang={i18n.language}>
+    <div
+      className={`${styles.container} ${activeView === 'accounts' ? styles.credentialWorkspace : ''}`}
+      lang={i18n.language}
+    >
       <section className={styles.controlsPanel}>
         <div className={styles.controlsTabsRow}>
-          {renderViewTabs()}
+          <div className={styles.credentialHeading}>
+            <h1>{t('accounts.title')}</h1>
+            {renderViewTabs()}
+          </div>
           {renderPageActions()}
         </div>
       </section>

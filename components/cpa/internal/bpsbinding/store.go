@@ -28,10 +28,13 @@ type Identity struct {
 
 type Record struct {
 	Identity
-	CallID   string    `json:"call_id"`
-	NativeID string    `json:"native_id"`
-	Caller   string    `json:"caller"`
-	Expires  time.Time `json:"expires"`
+	CallID      string    `json:"call_id"`
+	NativeID    string    `json:"native_id"`
+	Caller      string    `json:"caller"`
+	Expires     time.Time `json:"expires"`
+	Kind        string    `json:"kind,omitempty"`
+	Model       string    `json:"model,omitempty"`
+	StateDigest string    `json:"state_digest,omitempty"`
 }
 
 type Store struct {
@@ -59,6 +62,17 @@ func validCallID(id string) bool {
 }
 
 func (s Store) Save(caller, nativeID string, identity Identity) (Record, error) {
+	return s.save(caller, nativeID, identity, "", "", "")
+}
+
+func (s Store) SaveState(caller, nativeID string, identity Identity, model, digest string) (Record, error) {
+	if model == "" || digest == "" {
+		return Record{}, ErrConflict
+	}
+	return s.save(caller, nativeID, identity, "compaction", model, digest)
+}
+
+func (s Store) save(caller, nativeID string, identity Identity, kind, model, digest string) (Record, error) {
 	if identity.AuthID == "" || identity.AccountID == "" || identity.Subject == "" || nativeID == "" {
 		return Record{}, ErrConflict
 	}
@@ -81,9 +95,9 @@ func (s Store) Save(caller, nativeID string, identity Identity) (Record, error) 
 			_ = os.Remove(filepath.Join(s.Dir, entry.Name()))
 		}
 	}
-	record := Record{Identity: identity, CallID: Prefix + uuid.NewString(), NativeID: nativeID, Caller: caller, Expires: s.now().Add(Lifetime).UTC()}
+	record := Record{Identity: identity, CallID: Prefix + uuid.NewString(), NativeID: nativeID, Caller: caller, Expires: s.now().Add(Lifetime).UTC(), Kind: kind, Model: model, StateDigest: digest}
 	doc := ojson.NewDocString(`{}`)
-	for field, value := range map[string]any{"auth_id": record.AuthID, "account_id": record.AccountID, "subject": record.Subject, "call_id": record.CallID, "native_id": record.NativeID, "caller": record.Caller, "expires": record.Expires.Format(time.RFC3339Nano)} {
+	for field, value := range map[string]any{"auth_id": record.AuthID, "account_id": record.AccountID, "subject": record.Subject, "call_id": record.CallID, "native_id": record.NativeID, "caller": record.Caller, "expires": record.Expires.Format(time.RFC3339Nano), "kind": kind, "model": model, "state_digest": digest} {
 		if err := doc.Set(field, value); err != nil {
 			return Record{}, ErrStorage
 		}
@@ -127,6 +141,7 @@ func (s Store) Load(caller, callID string) (Record, error) {
 	root := ojson.ParseBytes(raw)
 	expires, err := time.Parse(time.RFC3339Nano, root.Get("expires").String())
 	record := Record{Identity: Identity{AuthID: root.Get("auth_id").String(), AccountID: root.Get("account_id").String(), Subject: root.Get("subject").String()}, CallID: root.Get("call_id").String(), NativeID: root.Get("native_id").String(), Caller: root.Get("caller").String(), Expires: expires}
+	record.Kind, record.Model, record.StateDigest = root.Get("kind").String(), root.Get("model").String(), root.Get("state_digest").String()
 	if !ojson.ValidBytes(raw) || err != nil || record.CallID != callID || record.AuthID == "" || record.AccountID == "" || record.Subject == "" || record.NativeID == "" {
 		return Record{}, ErrStorage
 	}
@@ -153,6 +168,8 @@ func CallIDs(raw []byte) []string {
 	}
 	for _, item := range root.Get("input").Array() {
 		switch item.Get("type").String() {
+		case "compaction":
+			add(item.Get("id").String())
 		case "function_call", "function_call_output", "custom_tool_call", "custom_tool_call_output":
 			add(item.Get("call_id").String())
 		}

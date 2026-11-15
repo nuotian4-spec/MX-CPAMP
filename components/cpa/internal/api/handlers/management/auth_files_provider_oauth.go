@@ -1417,7 +1417,7 @@ func (h *Handler) GetAuthStatus(c *gin.Context) {
 					c.JSON(http.StatusOK, gin.H{"status": "error", "error": "Failed to save authentication tokens"})
 					return
 				}
-				if isTargeted && len(records) == 1 && records[0] != nil {
+				if len(records) == 1 && records[0] != nil {
 					record := records[0]
 					savedGrantHash := authGrantFingerprint(record)
 					var adopted bool
@@ -1438,7 +1438,7 @@ func (h *Handler) GetAuthStatus(c *gin.Context) {
 						}
 					}
 					var verifyErr string
-					if adopted && target.VerifyAfterLogin && h != nil && h.authManager != nil {
+					if isTargeted && adopted && target.VerifyAfterLogin && h != nil && h.authManager != nil {
 						if _, errVerify := h.authManager.VerifyInference(ctx, record.ID, target.VerifyModel); errVerify != nil {
 							verifyErr = coreauth.SanitizeRenewalMessage(errVerify.Error())
 						}

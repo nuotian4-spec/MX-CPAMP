@@ -120,6 +120,18 @@ func (s *Service) checkConnectionRef(reference string, current store.Setup) erro
 	}
 	return nil
 }
+
+// CheckConnection复用现有引用，供同一管理连接上的写请求核验，不生成新引用。
+func (s *Service) CheckConnection(ctx context.Context, reference string, expected store.Setup) error {
+	current, err := s.setup(ctx)
+	if err != nil {
+		return err
+	}
+	if !sameConnection(current, expected) {
+		return failure(409, "cpa_target_changed", "CPA连接已变更")
+	}
+	return s.checkConnectionRef(reference, current)
+}
 func (s *Service) listBound(ctx context.Context, setup store.Setup) (Snapshot, error) {
 	var result Snapshot
 	_, err := s.request(ctx, setup, http.MethodGet, "/credentials/concurrency", "", "", nil, &result)

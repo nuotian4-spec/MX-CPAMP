@@ -1747,6 +1747,9 @@ func (s *Service) inspectSingleAccount(
 	if item.Provider == "bps" {
 		return s.inspectSingleBPSAccount(ctx, setup, item, logger)
 	}
+	if item.Provider == "cpa-bps" {
+		return s.inspectSingleCPABPSAccount(ctx, setup, item, logger)
+	}
 	base := resultFromAccount(item)
 	if item.Provider != "codex" {
 		base.Action = "keep"
@@ -3226,7 +3229,7 @@ func hasInspectionActionIdentity(result model.CodexInspectionResult) bool {
 }
 
 func allowAutoAction(mode string, autoRecoverEnabled bool, result model.CodexInspectionResult) bool {
-	if result.Provider == "bps" {
+	if result.Provider == "bps" || result.Provider == "cpa-bps" {
 		return false
 	}
 	if result.Action == "enable" {

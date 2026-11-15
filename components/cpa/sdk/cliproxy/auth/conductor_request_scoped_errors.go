@@ -188,6 +188,9 @@ func matchRequestScopedErrorAction(auth *Auth, err error, cfg *internalconfig.Co
 	if err == nil || cliproxyexecutor.IsUpstreamWebsocketTurnError(err) {
 		return "", false
 	}
+	if auth != nil && auth.Provider == "bps" && permissionDenialFromError(err) != nil {
+		return RequestScopedActionStop, true
+	}
 	rules := extractRequestScopedErrorRules(auth, cfg)
 	if len(rules) == 0 {
 		return "", false

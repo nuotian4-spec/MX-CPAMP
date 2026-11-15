@@ -1,6 +1,7 @@
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CredentialConcurrencyPanel } from './CredentialConcurrencyPage';
+import { Button } from '@/components/ui/Button';
 const mocks = vi.hoisted(() => ({ list: vi.fn(), update: vi.fn() }));
 vi.mock('@/services/api/credentialConcurrency', () => ({ credentialConcurrencyApi: mocks }));
 vi.mock('@/stores', () => ({ useAuthStore: vi.fn() }));
@@ -53,7 +54,7 @@ describe('凭证并发页面', () => {
     expect(text).toContain('定向等待');
     expect(text).toContain('统一默认');
     expect(text).toContain('同一凭证的全部模型共用额度');
-    expect(mocks.list).toHaveBeenCalledWith(scope);
+    expect(mocks.list).toHaveBeenCalledWith(scope, expect.any(AbortSignal));
   });
   it('只提交凭证编号与整数上限，留空恢复默认', async () => {
     await render();
@@ -133,5 +134,102 @@ describe('凭证并发页面', () => {
     });
     expect(renderer.root.findAllByType('form')).toHaveLength(0);
     expect(JSON.stringify(renderer.toJSON())).toContain('无独立Key的兼容组');
+  });
+  it('轮询更新确认值但保留未保存草稿，重置采用最新确认值', async () => {
+    await render();
+    await act(async () => {
+      renderer.root.findByType('input').props.onChange({ target: { value: '8' } });
+    });
+    mocks.list.mockResolvedValue({
+      ...snapshot,
+      credentials: [
+        {
+          ...credential,
+          concurrency_limit: 6,
+          effective_limit: 6,
+          active: 4,
+          limit_source: 'override',
+        },
+      ],
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5100);
+    });
+    expect(renderer.root.findByType('input').props.value).toBe('8');
+    const reset = renderer.root
+      .findAllByType(Button)
+      .find((button) => button.props.children === '重置并发');
+    await act(async () => {
+      reset!.props.onClick();
+    });
+    expect(renderer.root.findByType('input').props.value).toBe('6');
+  });
+  it('旧凭证保存回执不触发新实例刷新或覆盖新草稿', async () => {
+    let resolveSave!: (value: { status: string }) => void;
+    mocks.update.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        })
+    );
+    await render();
+    await act(async () => {
+      renderer.root.findByType('input').props.onChange({ target: { value: '8' } });
+    });
+    let saving!: Promise<void>;
+    await act(async () => {
+      saving = renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
+    });
+    mocks.list.mockResolvedValue({ ...snapshot, connection_ref: 'new-ref' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5100);
+    });
+    await act(async () => {
+      renderer.root.findByType('input').props.onChange({ target: { value: '9' } });
+    });
+    const reads = mocks.list.mock.calls.length;
+    await act(async () => {
+      resolveSave({ status: 'saved' });
+      await saving;
+    });
+    expect(renderer.root.findByType('input').props.value).toBe('9');
+    expect(mocks.list).toHaveBeenCalledTimes(reads);
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('并发设置已保存');
+  });
+  it.each([
+    ['有效覆盖', 8, 'override', true],
+    ['有效值未更新', 20, 'override', false],
+    ['来源未更新', 8, 'default', false],
+  ])('保存后核对三字段：%s', async (_label, effective, source, success) => {
+    await render();
+    await act(async () =>
+      renderer.root.findByType('input').props.onChange({ target: { value: '8' } })
+    );
+    mocks.list.mockResolvedValue({
+      ...snapshot,
+      credentials: [
+        { ...credential, concurrency_limit: 8, effective_limit: effective, limit_source: source },
+      ],
+    });
+    await act(async () => {
+      await renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
+    });
+    const text = JSON.stringify(renderer.toJSON());
+    expect(text.includes('并发设置已保存并确认生效')).toBe(success);
+    if (!success) expect(text).toContain('生效回读未确认');
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    expect(mocks.list).toHaveBeenCalledTimes(2);
+  });
+  it('零与超范围整数均不提交', async () => {
+    await render();
+    for (const value of ['0', '2147483648']) {
+      await act(async () => {
+        renderer.root.findByType('input').props.onChange({ target: { value } });
+      });
+      await act(async () => {
+        await renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
+      });
+    }
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });

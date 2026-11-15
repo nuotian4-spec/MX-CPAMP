@@ -88,6 +88,9 @@ func (cfg *Config) ValidateBPSProtocol() error {
 	if err := cfg.BPSProtocol.Validate(); err != nil {
 		return err
 	}
+	if err := cfg.BPS.Validate(); err != nil {
+		return err
+	}
 	authPath := bpsAuthDirectory(cfg)
 	statePath := BPSStateDirectory(cfg)
 	rel, err := filepath.Rel(authPath, statePath)

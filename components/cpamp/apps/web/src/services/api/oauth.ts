@@ -26,6 +26,13 @@ export interface OAuthCallbackResponse {
   status: 'ok';
 }
 
+export interface OAuthStatusResponse {
+  status: 'ok' | 'wait' | 'error';
+  error?: string;
+  saved?: boolean;
+  adopted?: boolean;
+}
+
 export interface OAuthCancelResponse {
   status: 'ok';
   cancelled: boolean;
@@ -46,7 +53,7 @@ export const oauthApi = {
   },
 
   getAuthStatus: (state: string, requestScope?: ApiClientRequestScope) =>
-    apiClient.get<{ status: 'ok' | 'wait' | 'error'; error?: string }>(`/get-auth-status`, {
+    apiClient.get<OAuthStatusResponse>(`/get-auth-status`, {
       ...(requestScope ? createScopedApiRequestConfig(requestScope) : {}),
       params: { state },
     }),

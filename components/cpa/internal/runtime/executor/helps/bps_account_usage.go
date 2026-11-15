@@ -132,7 +132,7 @@ func parseBPSAccountUsage(raw []byte) (*string, *BPSAccountRateLimit, string) {
 	}
 	if plan != nil {
 		switch *plan {
-		case "free", "go", "plus", "prolite", "pro", "team", "business", "self_serve_business", "enterprise", "edu", "education":
+		case "free", "go", "plus", "prolite", "pro", "team", "business", "self_serve_business", "self_serve_business_prolite", "enterprise", "edu", "education":
 		default:
 			plan = nil
 		}

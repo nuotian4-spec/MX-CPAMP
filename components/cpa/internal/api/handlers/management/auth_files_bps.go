@@ -168,6 +168,9 @@ func setImportedStorage(record *coreauth.Auth) {
 
 // saveImportedOAuth makes storage failure fatal and publishes under the manager's mutation gate.
 func (h *Handler) saveImportedOAuth(ctx context.Context, provider string, meta map[string]any) (*coreauth.Auth, error) {
+	if h.builtinBPSReplaced(provider) {
+		return nil, errBPSBuiltinReplaced
+	}
 	if h == nil || h.authManager == nil || h.configSnapshot() == nil {
 		return nil, errors.New("auth_manager_unavailable")
 	}
@@ -186,6 +189,9 @@ func (h *Handler) saveImportedOAuth(ctx context.Context, provider string, meta m
 	}
 	ctx = coreauth.WithAuthCreationIntent(ctx)
 	save := func(current *coreauth.Auth) error {
+		if h.builtinBPSReplaced(provider) {
+			return errBPSBuiltinReplaced
+		}
 		merged := make(map[string]any, len(current.Metadata)+len(meta))
 		for key, value := range current.Metadata {
 			merged[key] = value
@@ -246,6 +252,9 @@ func (h *Handler) saveImportedOAuth(ctx context.Context, provider string, meta m
 }
 
 func (h *Handler) importOpenAIOAuthV8(c *gin.Context, provider string) {
+	if h.rejectBuiltinBPS(c, provider) {
+		return
+	}
 	meta, err := readImportMetadata(c, provider)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": err.Error()})
@@ -253,6 +262,10 @@ func (h *Handler) importOpenAIOAuthV8(c *gin.Context, provider string) {
 	}
 	record, err := h.saveImportedOAuth(c.Request.Context(), provider, meta)
 	if err != nil {
+		if errors.Is(err, errBPSBuiltinReplaced) {
+			c.JSON(http.StatusConflict, gin.H{"status": "error", "error": err.Error()})
+			return
+		}
 		code, status := "credential_commit_failed", http.StatusBadGateway
 		if h.authManager == nil {
 			code, status = "auth_manager_unavailable", http.StatusServiceUnavailable
@@ -276,6 +289,9 @@ type bpsOAuthSession struct {
 }
 
 func (h *Handler) requestBPSToken(c *gin.Context) {
+	if h.rejectBuiltinBPS(c, "bps") {
+		return
+	}
 	if h == nil || h.authManager == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "auth_manager_unavailable"})
 		return
@@ -309,6 +325,9 @@ func (h *Handler) requestBPSToken(c *gin.Context) {
 }
 
 func (h *Handler) handleBPSOAuthCallback(c *gin.Context, req siwcCallbackRequest, state string, session oauthSession) {
+	if h.rejectBuiltinBPS(c, "bps") {
+		return
+	}
 	flow := session.BPS
 	if flow == nil || flow.owner != h {
 		c.JSON(http.StatusNotFound, gin.H{"error": "oauth_state_not_found"})
@@ -357,7 +376,7 @@ func (h *Handler) handleBPSOAuthCallback(c *gin.Context, req siwcCallbackRequest
 		return
 	}
 	if query.Get("error") != "" {
-		SetOAuthSessionError(state, "oauth_authorization_failed")
+		oauthSessions.setBPSError(state, newBPSOAuthDiagnostic("oauth_authorization_failed", query.Get("error"), 0))
 		flow.cancel()
 		flow.verifier = ""
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -383,18 +402,18 @@ func (flow *bpsOAuthSession) exchange(state, code string) {
 		return
 	}
 	if err != nil {
-		SetOAuthSessionError(state, "oauth_exchange_failed")
+		oauthSessions.setBPSError(state, bpsExchangeDiagnostic(err))
 		return
 	}
 	meta["login_method"] = "oauth"
 	if err = validateImportMetadata(meta, "bps"); err != nil {
-		SetOAuthSessionError(state, "oauth_identity_invalid")
+		oauthSessions.setBPSError(state, newBPSOAuthDiagnostic("oauth_identity_invalid", "protocol_error", 0))
 		return
 	}
 	if flow.target != nil {
 		target, exists := flow.owner.authManager.GetByID(flow.target.AuthID)
 		if !exists || !sameImportedIdentity(target, "bps", meta) {
-			SetOAuthSessionError(state, "oauth_target_identity_mismatch")
+			oauthSessions.setBPSError(state, newBPSOAuthDiagnostic("oauth_target_identity_mismatch", "protocol_error", 0))
 			return
 		}
 	}
@@ -403,7 +422,7 @@ func (flow *bpsOAuthSession) exchange(state, code string) {
 	}
 	record, err := flow.owner.saveImportedOAuth(context.WithoutCancel(flow.ctx), "bps", meta)
 	if err != nil {
-		FailOAuthSessionCommit(state, "credential_commit_failed")
+		oauthSessions.setBPSError(state, newBPSOAuthDiagnostic("credential_commit_failed", "unknown", 0))
 		return
 	}
 	CompleteOAuthSessionWithOutcome(state, record.ID, authGrantFingerprint(record), true, true, false, 0, 0, record.CredentialVersion, record.RegistrationEpoch, "", "")

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAuthStore } from '@/stores';
 import { BPSModelsPanel } from './BPSModelsPanel';
+import { CpaBpsModelsPanel } from './CpaBpsModelsPanel';
+import { loginTasksApi, type BPSLoginMode } from '@/services/api/loginTasks';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -70,8 +72,11 @@ export function BPSSettingsPanel({ scope }: { scope: ApiClientRequestScope }) {
     }
   };
   return (
-    <Card title="BPS 协议与图片输入">
-      <p>设置作用于当前 CPA 的 BPS 通道。保存影响后续新请求，正在生成的请求继续使用原设置。</p>
+    <Card title="旧版 BPS 协议与图片输入">
+      <p>
+        仅作用于旧版 bps 通道，不控制 cpa-bps
+        插件。保存影响后续新请求，正在生成的请求继续使用原设置。
+      </p>
       {settings && (
         <form onSubmit={save} style={{ display: 'grid', gap: 16 }}>
           <ToggleSwitch
@@ -129,8 +134,53 @@ export function BPSSettingsCard() {
   const apiBase = useAuthStore((state) => state.apiBase);
   const managementKey = useAuthStore((state) => state.managementKey);
   const scope = useMemo(() => ({ apiBase, managementKey }), [apiBase, managementKey]);
+  return <BPSSettingsContent key={JSON.stringify([apiBase, managementKey])} scope={scope} />;
+}
+
+function BPSSettingsContent({ scope }: { scope: ApiClientRequestScope }) {
+  const [mode, setMode] = useState<BPSLoginMode | 'loading'>('loading');
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    let disposed = false;
+    loginTasksApi
+      .capabilities(scope)
+      .then((result) => {
+        if (!disposed)
+          setMode(
+            result.bps_login_mode === 'plugin' || result.bps_login_mode === 'builtin'
+              ? result.bps_login_mode
+              : 'unavailable'
+          );
+      })
+      .catch(() => {
+        if (!disposed) setMode('unavailable');
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [scope, revision]);
+  if (mode === 'plugin') return <CpaBpsModelsPanel scope={scope} />;
+  if (mode !== 'builtin')
+    return (
+      <Card title="BPS 模型设置">
+        <p role="status">
+          {mode === 'loading'
+            ? '正在确认当前 BPS 通道'
+            : 'BPS 通道未确认，请重试；旧版设置未启用。'}
+        </p>
+        <Button
+          disabled={mode === 'loading'}
+          onClick={() => {
+            setMode('loading');
+            setRevision((value) => value + 1);
+          }}
+        >
+          重新读取通道
+        </Button>
+      </Card>
+    );
   return (
-    <div key={`${apiBase}:${managementKey}`} style={{ display: 'grid', gap: 20 }}>
+    <div style={{ display: 'grid', gap: 20 }}>
       <BPSSettingsPanel scope={scope} />
       <BPSModelsPanel scope={scope} />
     </div>

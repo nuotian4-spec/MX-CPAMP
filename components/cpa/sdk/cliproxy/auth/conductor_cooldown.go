@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -173,6 +174,9 @@ func (m *Manager) setConfigSnapshotLocked(cfg *internalconfig.Config) bool {
 		m.homeSessionAliases.clear()
 	}
 	m.runtimeConfig.Store(cfg)
+	if previousCfg != nil && (!reflect.DeepEqual(previousCfg.Kilo, cfg.Kilo) || previousCfg.ProxyURL != cfg.ProxyURL || previousCfg.Home.Enabled != cfg.Home.Enabled) {
+		m.invalidateKiloProbeEgress("")
+	}
 	clearedCooldowns := m.clearDisabledCooldownStates(cfg)
 	if clearedCooldowns && oldCooldownStore != nil {
 		m.mu.Lock()
@@ -322,6 +326,17 @@ func (m *Manager) RestoreCooldownStates(ctx context.Context) error {
 		return nil
 	}
 	records, errLoad := store.Load(ctx)
+	if errLoad == nil {
+		errLoad = validatePermissionRecords(records)
+	}
+	m.mu.Lock()
+	m.permissionLoadFailed = errLoad != nil
+	for _, auth := range m.auths {
+		if auth != nil && auth.Provider == "bps" {
+			auth.permissionStateUnknown = errLoad != nil
+		}
+	}
+	m.mu.Unlock()
 	if errLoad != nil {
 		return errLoad
 	}
@@ -335,6 +350,12 @@ func (m *Manager) RestoreCooldownStates(ctx context.Context) error {
 
 	m.mu.Lock()
 	for _, record := range records {
+		if record.PermissionEpoch > 0 {
+			if m.restorePermissionRecordLocked(record) {
+				snapshotsByID[record.AuthID] = m.auths[record.AuthID].Clone()
+			}
+			continue
+		}
 		if strings.TrimSpace(record.Model) == "" {
 			authLevelRecords = append(authLevelRecords, record)
 			continue
@@ -671,6 +692,12 @@ func (m *Manager) persistCooldownStatesToLocked(ctx context.Context, store Coold
 	if m == nil || store == nil {
 		return true
 	}
+	m.mu.RLock()
+	unknown := m.permissionLoadFailed
+	m.mu.RUnlock()
+	if unknown {
+		return false
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -679,9 +706,15 @@ func (m *Manager) persistCooldownStatesToLocked(ctx context.Context, store Coold
 	}
 	records := m.cooldownStateRecordsSnapshot()
 	if errSave := store.Save(ctx, records); errSave != nil {
+		m.mu.Lock()
+		m.permissionSaveFailed = true
+		m.mu.Unlock()
 		logEntryWithRequestID(ctx).Warnf("failed to persist cooldown state: %v", errSave)
 		return false
 	}
+	m.mu.Lock()
+	m.permissionSaveFailed = false
+	m.mu.Unlock()
 	return ctx.Err() == nil
 }
 
@@ -708,10 +741,16 @@ func (m *Manager) cooldownStateRecordsSnapshot() []CooldownStateRecord {
 }
 
 func (m *Manager) cooldownStateRecordsForAuthLocked(auth *Auth, now time.Time) []CooldownStateRecord {
-	if auth == nil || auth.ID == "" || auth.Disabled || auth.Status == StatusDisabled || m.cooldownDisabledForAuth(auth) {
+	if auth == nil || auth.ID == "" {
 		return nil
 	}
 	records := make([]CooldownStateRecord, 0, 1+len(auth.ModelStates))
+	if record, ok := permissionStateRecord(auth); ok {
+		records = append(records, record)
+	}
+	if auth.Disabled || auth.Status == StatusDisabled || m.cooldownDisabledForAuth(auth) {
+		return records
+	}
 	if record, ok := authCooldownStateRecord(auth, now); ok {
 		records = append(records, record)
 	}
@@ -739,6 +778,9 @@ func cooldownStateRecordsEqual(a, b []CooldownStateRecord) bool {
 }
 
 func cooldownStateRecordEqual(a, b CooldownStateRecord) bool {
+	if !permissionRecordEqual(a, b) {
+		return false
+	}
 	if a.CredentialQuotaPropagated != b.CredentialQuotaPropagated {
 		return false
 	}
@@ -893,6 +935,9 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if !result.Success && result.Provider == "bps" && result.PermissionDenial != nil {
+		ctx = context.WithoutCancel(ctx)
+	}
 	if m != nil {
 		if policy := m.ResultPolicy(); policy != nil {
 			result = policy.ApplyResultPolicy(ctx, result)
@@ -901,6 +946,17 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 			}
 		}
 	}
+	if kiloPayloadRequestResult(result) {
+		m.recordAvailabilityNeutralResult(ctx, result)
+		return
+	}
+	if KiloDiagnostic(ctx) && result.Success {
+		m.recordAvailabilityNeutralResult(ctx, result)
+		return
+	}
+	if m.recordKiloRestriction(ctx, result) {
+		return
+	}
 	modelKey := canonicalModelKey(result.Model)
 
 	var authSnapshot *Auth
@@ -908,15 +964,15 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 	scheduleUnauthorizedRefresh := false
 	now := time.Now()
 	// A 401 condemns the access token, except one a -and-cooldown rule matched: that only cools the credential.
-	rejectsToken := !result.Success && (result.Error == nil || result.Error.Code != ErrorCodeForceCooldown) && !shouldSkipCredentialCooldown(result.Error) && (statusCodeFromResult(result.Error) == http.StatusUnauthorized || isUnauthorizedError(result.Error))
+	rejectsToken := !result.Success && (result.Error == nil || result.Error.Code != ErrorCodeForceCooldown) && !(result.PermissionDenial != nil && result.Provider == "bps") && !shouldSkipCredentialCooldown(result.Error) && (statusCodeFromResult(result.Error) == http.StatusUnauthorized || isUnauthorizedError(result.Error))
 
 	releaseMutation := m.lockAuthMutation(result.AuthID)
 	defer releaseMutation()
 	m.mu.Lock()
 	if auth, ok := m.auths[result.AuthID]; ok && auth != nil {
-		if isStaleExecutionResult(result, auth) {
+		if isStaleExecutionResult(result, auth) || staleKiloDiagnostic(ctx, auth) {
 			staleEpoch := result.RegistrationEpoch > 0 && result.RegistrationEpoch < auth.RegistrationEpoch
-			if !staleEpoch && rejectsToken && result.AccessToken != "" {
+			if !staleEpoch && !staleKiloDiagnostic(ctx, auth) && rejectsToken && result.AccessToken != "" {
 				if recordRejectedTokenOnAuth(auth, result.AccessToken) {
 					auth.Generation++
 					auth.UpdatedAt = now
@@ -950,6 +1006,7 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 			}
 		}
 		modelState := existingModelState(auth, modelKey)
+		recordPermissionDenial(auth, modelKey, result, now)
 		auth.recordRecentRequest(now, result.Success)
 		if result.Success {
 			auth.Success++
@@ -1004,7 +1061,7 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 			}
 		} else {
 			if modelKey != "" {
-				if !shouldSkipCredentialCooldown(result.Error) {
+				if !(result.PermissionDenial != nil && result.Provider == "bps") && !shouldSkipCredentialCooldown(result.Error) {
 					disableCooling := m.cooldownDisabledForAuth(auth)
 					if result.Error != nil && result.Error.Code == ErrorCodeForceCooldown {
 						disableCooling = false
@@ -1386,7 +1443,7 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 	m.mu.Unlock()
 	releaseMutation()
 	if m.scheduler != nil && authSnapshot != nil {
-		credentialScopedResult := result.CredentialScope || scheduleUnauthorizedRefresh
+		credentialScopedResult := result.CredentialScope || scheduleUnauthorizedRefresh || (result.PermissionDenial != nil && result.PermissionDenial.CredentialScope)
 		var targetModels []string
 		if !credentialScopedResult && modelKey != "" {
 			targetModels = append(targetModels, modelKey)
@@ -1482,7 +1539,7 @@ func (m *Manager) recordAvailabilityNeutralResult(ctx context.Context, result Re
 	defer releaseMutation()
 	m.mu.Lock()
 	if auth, ok := m.auths[result.AuthID]; ok && auth != nil {
-		if isStaleExecutionResult(result, auth) {
+		if isStaleExecutionResult(result, auth) || staleKiloDiagnostic(ctx, auth) {
 			m.mu.Unlock()
 			releaseMutation()
 			m.hook.OnResult(ctx, result)

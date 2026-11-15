@@ -33,7 +33,10 @@ type CooldownStateRecord struct {
 	IndependentState *ModelState `json:"independent_state,omitempty"`
 	// CredentialQuotaPropagated preserves wrap provenance for models that
 	// carry no independent layer (e.g. the reporting model itself).
-	CredentialQuotaPropagated bool `json:"credential_quota_propagated,omitempty"`
+	CredentialQuotaPropagated bool                   `json:"credential_quota_propagated,omitempty"`
+	PermissionEpoch           uint64                 `json:"permission_epoch,omitempty"`
+	PermissionSuspensions     []PermissionSuspension `json:"permission_suspensions,omitempty"`
+	PermissionReleasedAt      time.Time              `json:"permission_released_at,omitempty"`
 }
 
 // CooldownStateStore persists runtime cooldown state independently from auth tokens.
