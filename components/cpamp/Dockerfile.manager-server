@@ -3,6 +3,7 @@ ARG VERSION=dev
 WORKDIR /app
 COPY package*.json ./
 COPY apps/web/package.json ./apps/web/package.json
+COPY apps/docs/package.json ./apps/docs/package.json
 RUN npm ci
 COPY apps/web ./apps/web
 WORKDIR /app/apps/web

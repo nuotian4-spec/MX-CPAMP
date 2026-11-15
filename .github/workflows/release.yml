@@ -1,0 +1,140 @@
+name: 固定版本三镜像发布
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 固定版本，例如 v1.0.0 或 v1.0.0-rc.1
+        required: true
+        type: string
+      commit:
+        description: 已进入 main 的完整 40 位小写提交 SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fixed-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: 检查固定版本与 main 提交
+        env:
+          VERSION: ${{ inputs.version }}
+          COMMIT: ${{ inputs.commit }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 deploy/package-release.py --validate-only --version "$VERSION" --commit "$COMMIT"
+          git cat-file -e "$COMMIT:deploy/package-release.py"
+          python3 - <<'PY'
+          import json, os, urllib.error, urllib.request
+          base = os.environ['GITHUB_API_URL'] + '/repos/' + os.environ['GITHUB_REPOSITORY']
+          for suffix in ('/git/ref/tags/', '/releases/tags/'):
+              request = urllib.request.Request(base + suffix + os.environ['VERSION'], headers={
+                  'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                  'Accept': 'application/vnd.github+json'})
+              try:
+                  with urllib.request.urlopen(request) as response:
+                      json.load(response)
+              except urllib.error.HTTPError as error:
+                  if error.code == 404:
+                      continue
+                  raise
+              raise SystemExit('版本标签或 Release 已存在，禁止覆盖')
+          PY
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: 验证发布包与既有消费契约
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -B deploy/test_package_release.py
+      - name: 从固定提交构建三镜像并封装
+        env:
+          VERSION: ${{ inputs.version }}
+          COMMIT: ${{ inputs.commit }}
+          DOCKER_BUILDKIT: '1'
+        run: >-
+          python3 -B deploy/package-release.py
+          --version "$VERSION" --commit "$COMMIT"
+          --output-root "$RUNNER_TEMP/releases"
+      - name: 创建固定标签并发布完整资产
+        env:
+          VERSION: ${{ inputs.version }}
+          COMMIT: ${{ inputs.commit }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, urllib.error, urllib.request
+          version, commit = os.environ['VERSION'], os.environ['COMMIT']
+          directory = pathlib.Path(os.environ['RUNNER_TEMP']) / 'releases' / version
+          release = json.loads((directory / 'release.json').read_text())
+          expected = {'mx-cpamp-images-linux-amd64.tar.gz', 'mx-cpamp-images.manifest.json',
+                      'kilo-release.py', 'kilo-release.sh', 'phase2-release.py'}
+          if release['version'] != version or release['commit'] != commit or set(release['assets']) != expected:
+              raise SystemExit('发布包身份或资产集合不匹配')
+          for name, record in release['assets'].items():
+              path = directory / name
+              with path.open('rb') as stream:
+                  actual = hashlib.file_digest(stream, 'sha256').hexdigest()
+              if path.stat().st_size != record['size'] or actual != record['sha256']:
+                  raise SystemExit('发布前资产校验失败：' + name)
+          expected.add('release.json')
+          if {path.name for path in directory.iterdir()} != expected:
+              raise SystemExit('版本目录存在缺失或额外资产')
+          base = os.environ['GITHUB_API_URL'] + '/repos/' + os.environ['GITHUB_REPOSITORY']
+          def api(method, suffix, body=None):
+              request = urllib.request.Request(base + suffix, method=method,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request) as response:
+                  return json.load(response)
+          # 创建 refs 而非更新 refs；同名标签存在时由服务端拒绝。
+          api('POST', '/git/refs', {'ref': 'refs/tags/' + version, 'sha': commit})
+          draft = api('POST', '/releases', {'tag_name': version, 'target_commitish': commit,
+              'name': version, 'draft': True, 'prerelease': '-' in version,
+              'body': '固定源码提交：`' + commit + '`\n\n平台：`linux/amd64`。三镜像与发布脚本见资产；本 Release 不执行服务器部署。'})
+          subprocess.run(['gh', 'release', 'upload', version] +
+              [str(directory / name) for name in sorted(expected)] +
+              ['--repo', os.environ['GITHUB_REPOSITORY']], check=True)
+          remote = api('GET', '/releases/' + str(draft['id']))
+          assets = remote['assets']
+          if len(assets) != len(expected) or {item['name'] for item in assets} != expected:
+              raise SystemExit('远端资产集合不完整，保留草稿')
+          if any(item['state'] != 'uploaded' or item['size'] != (directory / item['name']).stat().st_size for item in assets):
+              raise SystemExit('远端资产上传未完成，保留草稿')
+          tag = api('GET', '/git/ref/tags/' + version)
+          if tag['object']['sha'] != commit:
+              raise SystemExit('远端标签提交不匹配，保留草稿')
+          published = api('PATCH', '/releases/' + str(draft['id']), {'draft': False, 'make_latest': 'false'})
+          if published['draft']:
+              raise SystemExit('Release 尚未正式发布')
+          print('已发布固定版本：' + published['html_url'])
+          PY
