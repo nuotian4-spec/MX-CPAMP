@@ -53,7 +53,9 @@ class PackageTests(unittest.TestCase):
         self.repo = self.home / 'repo'
         self.output = self.home / 'releases'
         (self.repo / 'deploy').mkdir(parents=True)
-        for name in ('kilo-release.py', 'phase2-release.py'):
+        for name in package.SCRIPTS:
+            if name == 'kilo-release.sh':
+                continue
             (self.repo / 'deploy' / name).write_bytes((DEPLOY / name).read_bytes())
         # 已发布入口的同等 fixture；测试不依赖当前工作树是否已落位 shell 文件。
         (self.repo / 'deploy' / 'kilo-release.sh').write_text(
@@ -66,6 +68,20 @@ class PackageTests(unittest.TestCase):
         self.archive_arch = 'amd64'
         self.archive_commit = COMMIT
         self.config_style = 'oci'
+        self.wiring_failure = False
+        self.probe_failure = False
+
+    def fake_wiring(self, root, commit, staging):
+        self.calls.append(['wiring', commit])
+        if self.wiring_failure:
+            raise package.Failure('synthetic-wiring-rejected')
+        package.write_json(staging / 'production-wiring.json', {'fixture': True, 'commit': commit})
+
+    def fake_probe(self, root, image, commit, staging):
+        self.calls.append(['image-probe', image, commit])
+        if self.probe_failure:
+            raise package.Failure('synthetic-image-probe-rejected')
+        package.write_json(staging / 'capability-image-evidence.json', {'fixture': True, 'image': image, 'commit': commit})
 
     def fake_run(self, args, root, capture=False):
         self.calls.append(list(args))
@@ -113,17 +129,19 @@ class PackageTests(unittest.TestCase):
     def build(self, version=VERSION):
         with mock.patch.object(package, 'run', side_effect=self.fake_run), \
                 mock.patch.object(package, 'archive_images', side_effect=self.fake_archive), \
+                mock.patch.object(package, 'prepare_wiring', side_effect=self.fake_wiring), \
+                mock.patch.object(package, 'verify_probe_image', side_effect=self.fake_probe), \
                 contextlib.redirect_stdout(io.StringIO()):
             return package.package_release(self.repo, version, COMMIT, self.output)
 
     def test_complete_package_and_script_identity(self):
         directory = self.build()
         self.assertEqual({path.name for path in directory.iterdir()},
-                         {package.ARCHIVE, package.MANIFEST, 'release.json', *package.SCRIPTS})
+                         {package.ARCHIVE, package.MANIFEST, 'release.json', *package.SCRIPTS, *package.GENERATED})
         release = json.loads((directory / 'release.json').read_text(encoding='utf-8'))
         self.assertEqual((release['version'], release['commit'], release['platform']), (VERSION, COMMIT, 'linux/amd64'))
         self.assertEqual(set(release['candidates']), {'cli-proxy-api', 'cpa-manager-plus', 'oauth-login'})
-        self.assertEqual(set(release['assets']), {package.ARCHIVE, package.MANIFEST, *package.SCRIPTS})
+        self.assertEqual(set(release['assets']), {package.ARCHIVE, package.MANIFEST, *package.SCRIPTS, *package.GENERATED})
         for name, record in release['assets'].items():
             self.assertEqual(record['sha256'], package.digest(directory / name))
             self.assertEqual(record['size'], (directory / name).stat().st_size)
@@ -341,6 +359,48 @@ class PackageTests(unittest.TestCase):
             stream.write('# changed\n')
         calls = self.publish(directory, 'local_asset_changed')
         self.assertEqual(calls, [])
+
+
+class UpdatePackagingTests(unittest.TestCase):
+    setUp = PackageTests.setUp
+    fake_run = PackageTests.fake_run
+    labels = staticmethod(PackageTests.labels)
+    fake_archive = PackageTests.fake_archive
+    fake_wiring = PackageTests.fake_wiring
+    fake_probe = PackageTests.fake_probe
+    build = PackageTests.build
+
+    def test_all_new_assets_match_updater_contract(self):
+        specification = importlib.util.spec_from_file_location('mx_package_updater', DEPLOY / 'mx-update.py')
+        updater = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(updater)
+        directory = self.build()
+        release = json.loads((directory / 'release.json').read_text())
+        self.assertEqual(set(release['assets']), updater.ASSETS)
+        self.assertEqual(len(list(directory.iterdir())), 16)
+
+    def test_wiring_rejection_precedes_any_build(self):
+        self.wiring_failure = True
+        with self.assertRaisesRegex(package.Failure, 'synthetic-wiring-rejected'):
+            self.build()
+        self.assertFalse(any(call[:2] == ['docker', 'build'] for call in self.calls))
+        self.assertFalse((self.output / VERSION).exists())
+
+    def test_image_probe_rejection_prevents_package_completion(self):
+        self.probe_failure = True
+        with self.assertRaisesRegex(package.Failure, 'synthetic-image-probe-rejected'):
+            self.build()
+        self.assertFalse((self.output / VERSION).exists())
+        self.assertFalse((self.output / ('.' + VERSION + '.building') / package.ARCHIVE).exists())
+
+    def test_wiring_and_real_image_hook_order(self):
+        self.build()
+        wiring = next(i for i, call in enumerate(self.calls) if call[0] == 'wiring')
+        builds = [i for i, call in enumerate(self.calls) if call[:2] == ['docker', 'build']]
+        image = next(i for i, call in enumerate(self.calls) if call[0] == 'image-probe')
+        self.assertLess(wiring, min(builds))
+        self.assertGreater(image, max(builds))
+        self.assertEqual(self.calls[image][1], 'sha256:' + hashlib.sha256(b'cpa').hexdigest())
 
 
 class SourceContractTests(unittest.TestCase):

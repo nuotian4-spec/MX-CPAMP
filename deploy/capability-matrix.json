@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "validator": "mx-authz-policy-v1",
+  "channels": ["kilo", "codex", "bps"],
+  "legacy_channels": ["codex", "bps"],
+  "evidence": ["config_policy", "production_wiring"]
+}

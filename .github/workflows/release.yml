@@ -72,7 +72,9 @@ jobs:
       - name: 验证发布包与既有消费契约
         env:
           PYTHONDONTWRITEBYTECODE: '1'
-        run: python3 -B deploy/test_package_release.py
+        run: |
+          python3 -B deploy/test_mx_update.py
+          python3 -B deploy/test_package_release.py PackageTests.test_complete_package_and_script_identity PackageTests.test_publish_only_after_all_remote_assets_match UpdatePackagingTests
       - name: 从固定提交构建三镜像并封装
         env:
           VERSION: ${{ inputs.version }}
@@ -96,7 +98,10 @@ jobs:
           directory = pathlib.Path(os.environ['RUNNER_TEMP']) / 'releases' / version
           release = json.loads((directory / 'release.json').read_text())
           expected = {'mx-cpamp-images-linux-amd64.tar.gz', 'mx-cpamp-images.manifest.json',
-                      'kilo-release.py', 'kilo-release.sh', 'phase2-release.py'}
+                      'kilo-release.py', 'kilo-release.sh', 'phase2-release.py',
+                      'mx-update.py', 'mx-update.sh', 'capability_probe.py', 'capability-matrix.json',
+                      'production-wiring.json', 'production-wiring.contract.json', 'production-wiring.evidence.json',
+                      'capability-image-evidence.json', 'mx-update.site.example.json', 'README.update.zh-CN.md'}
           if release['version'] != version or release['commit'] != commit or set(release['assets']) != expected:
               raise SystemExit('发布包身份或资产集合不匹配')
           for name, record in release['assets'].items():

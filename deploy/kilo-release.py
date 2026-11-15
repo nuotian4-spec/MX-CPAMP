@@ -444,13 +444,17 @@ class Release:
         evidence = pathlib.Path(receipt.get('runtime_evidence', ''))
         require(evidence.is_absolute() and evidence.is_file() and evidence.stat().st_size > 0, 'scope实际能力证据缺失')
         require(digest(evidence) == receipt.get('runtime_evidence_sha256'), 'scope实际能力证据漂移')
+        if receipt.get('review_type') == 'automated':
+            module_spec = importlib.util.spec_from_file_location('mx_capability_consumer', pathlib.Path(__file__).with_name('capability_probe.py'))
+            module = importlib.util.module_from_spec(module_spec); module_spec.loader.exec_module(module)
+            module.validate_combined_receipt(receipt, read(evidence), cfg, images, digest(cfg_path), pathlib.Path(__file__).parent)
         bound = dict(receipt, client_ingress='blocked')
         rollback_scope_gate(bound, cfg, scoped)
         return {'receipt': str(pathlib.Path(path).resolve()), 'receipt_sha256': digest(path), 'evidence': str(evidence), 'evidence_sha256': digest(evidence)}
 
-    def runtime(self, plan, rendered, images, compose_files):
+    def runtime(self, plan, rendered, images, compose_files, ingress_stopped=True):
         live = self.b.snapshot()
-        self.topology(plan, rendered, live)
+        self.topology(plan, rendered, live, ingress_stopped=ingress_stopped)
         self.b.compose_matches_live(rendered, live)
         for service in APPS:
             require(live[service]['State']['Running'] and live[service]['Config']['Image'] == images[service] and live[service]['Image'] == images[service], '运行镜像或服务状态不符')
@@ -485,7 +489,7 @@ class Release:
                 time.sleep(2)
         raise Failure('内网只读鉴权健康失败')
 
-    def checked_health(self, plan, active):
+    def checked_health(self, plan, active, ingress_stopped=True):
         require(digest(self.spec['cpa_config']) == active['config_sha256'], '运行配置漂移')
         for name, value in active['material_digests'].items():
             require(digest(self.state / name) == value, '运行override漂移')
@@ -493,9 +497,27 @@ class Release:
         cfg = self.b.yaml_document(self.spec['cpa_config'])
         proof = self.capability(active['capability']['receipt'], self.spec['cpa_config'], cfg, active['images'], active['scoped_keys'], active['mode'], active['source_config_sha256'])
         require(proof == active['capability'], '已审scope回执或证据漂移')
-        live = self.runtime(plan, active['rendered'], active['images'], active['compose_files'])
+        live = self.runtime(plan, active['rendered'], active['images'], active['compose_files'], ingress_stopped=ingress_stopped)
         self.authenticated_health(live)
         return live
+
+    def complete_update(self, ingress_check):
+        require((self.state / 'stage').read_text().strip() == 'candidate_healthy_blocked', '仅健康候选允许完成更新')
+        plan = self.lifecycle_plan()
+        active = read(self.state / 'active.json')
+        live = self.checked_health(plan, active)
+        original = plan['facts']['caddy']
+        stopped_facts = self.b.facts(live)['caddy']
+        # Ports 是运行态投影；停态仍核 ID、镜像及 HostConfig.PortBindings 等稳定配置。
+        stable = lambda facts: {name: value for name, value in facts.items() if name != 'ports'}
+        require(stable(stopped_facts) == stable(original), '原 Caddy 稳定配置漂移')
+        self.mark('ingress_restoring')
+        self.b.command(['docker', 'start', original['id']])
+        live = self.checked_health(plan, active, ingress_stopped=False)
+        require(live['caddy']['State']['Running'] and self.b.facts(live)['caddy'] == original, '原 Caddy 恢复状态不符')
+        ingress_check()
+        self.mark('ingress_healthy')
+        return active
 
     def verify_current_storage(self, plan, live):
         cfg = self.b.yaml_document(self.spec['cpa_config'])

@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "root": "/opt/cpa-stack",
+  "project": "cpa-stack",
+  "base_compose_files": [
+    "/opt/cpa-stack/compose.yaml",
+    "/opt/cpa-stack/compose.mx-cpamp.yaml"
+  ],
+  "active_release_pointer": "/opt/cpa-stack/.mx-active-release.json",
+  "cpa_config": "/opt/cpa-stack/cpa/config.yaml",
+  "kilo_state": {
+    "container": "/root/kilo-state",
+    "host": "/opt/cpa-stack/kilo-state"
+  },
+  "lifecycle": {
+    "network": "cpa-stack_default"
+  },
+  "protected_files": [],
+  "release_source": "https://github.com/nuotian4-spec/MX-CPAMP/releases/download",
+  "ingress": {
+    "service": "caddy",
+    "restore_ingress": true,
+    "health_url": "https://SITE_HOST/",
+    "expected_status": 200
+  }
+}

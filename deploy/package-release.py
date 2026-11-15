@@ -5,6 +5,7 @@ import argparse
 import datetime
 import gzip
 import hashlib
+import importlib.util
 import json
 import pathlib
 import re
@@ -17,7 +18,11 @@ import tarfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ARCHIVE = 'mx-cpamp-images-linux-amd64.tar.gz'
 MANIFEST = 'mx-cpamp-images.manifest.json'
-SCRIPTS = ('kilo-release.py', 'kilo-release.sh', 'phase2-release.py')
+SCRIPTS = ('kilo-release.py', 'kilo-release.sh', 'phase2-release.py',
+           'mx-update.py', 'mx-update.sh', 'capability_probe.py', 'capability-matrix.json',
+           'production-wiring.contract.json', 'production-wiring.evidence.json',
+           'mx-update.site.example.json', 'README.update.zh-CN.md')
+GENERATED = ('production-wiring.json', 'capability-image-evidence.json')
 COMPONENTS = {
     'cpa': ('mx-cpa', 'components/cpa', 'Dockerfile', 'cli-proxy-api'),
     'manager': ('mx-cpamp', 'components/cpamp', 'Dockerfile.manager-server', 'cpa-manager-plus'),
@@ -51,6 +56,24 @@ def digest(path):
 
 def write_json(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+def load_module(name, path):
+    specification = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(module)
+    return module
+
+
+def prepare_wiring(root, commit, staging):
+    probe = load_module('release_capability', root / 'deploy' / 'capability_probe.py')
+    probe.create_wiring_binding(root, commit, staging / 'production-wiring.json',
+                               lambda args: run(args, root, True))
+
+
+def verify_probe_image(root, image, commit, staging):
+    smoke = load_module('release_image_smoke', root / 'deploy' / 'test_capability_image.py')
+    smoke.verify_image(image, commit, staging / 'capability-image-evidence.json')
 
 
 def validate_source(root, version, commit, exact=True):
@@ -165,10 +188,12 @@ def package_release(root, version, commit, output_root):
     staging = output_root / ('.' + version + '.building')
     require(not destination.exists() and not staging.exists(), '该版本目录或未完成构建已存在，不覆盖')
     staging.mkdir(parents=True)
+    prepare_wiring(root, commit, staging)
     for role, command in build_commands(root, version, commit, build_date).items():
         print('构建组件：' + role, flush=True)
         run(command, root)
     images = inspect_images(root, version, commit)
+    verify_probe_image(root, images['cpa']['accepted_ids'][0], commit, staging)
     archive_images(root, images, staging / ARCHIVE)
     verify_archive(staging / ARCHIVE, images, version, commit)
     write_json(staging / MANIFEST, {'schema': 1,
@@ -176,7 +201,7 @@ def package_release(root, version, commit, output_root):
     for name in SCRIPTS:
         shutil.copyfile(root / 'deploy' / name, staging / name)
     assets = {}
-    for name in (ARCHIVE, MANIFEST) + SCRIPTS:
+    for name in (ARCHIVE, MANIFEST) + SCRIPTS + GENERATED:
         path = staging / name
         assets[name] = {'size': path.stat().st_size, 'sha256': digest(path)}
     candidates = {COMPONENTS[role][3]: {'role': role, 'ref': item['ref'],
