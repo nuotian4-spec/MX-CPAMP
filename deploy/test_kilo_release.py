@@ -302,7 +302,7 @@ class LifecycleDocker(FakeDocker):
         self.base = self.render_live()
 
     def render_live(self):
-        return {'services': {s: {'image': c['Config']['Image'], 'volumes': sorted([{'type': m['Type'], 'source': m['Source'], 'target': m['Destination'], **({'read_only': True} if not m['RW'] else {})} for m in c['Mounts']], key=lambda m: m['target'])} for s, c in self.live.items()}}
+        return {'services': {s: {'image': c['Config']['Image'], 'volumes': [{'type': m['Type'], 'source': m['Source'], 'target': m['Destination'], **({'read_only': True} if not m['RW'] else {})} for m in c['Mounts']]} for s, c in self.live.items()}}
 
     def yaml_document(self, path):
         if str(path) == self.spec['cpa_config']:
@@ -339,7 +339,6 @@ class LifecycleDocker(FakeDocker):
                     volumes = changes.pop('volumes', [])
                     rendered['services'][service].update(changes)
                     rendered['services'][service]['volumes'] += volumes
-            for value in rendered['services'].values(): value['volumes'].sort(key=lambda m: m['target'])
             if 'config' in args: return json.dumps(rendered)
             for service in k.APPS:
                 value = rendered['services'][service]
@@ -389,6 +388,73 @@ class KiloLifecycleTests(unittest.TestCase):
     def assert_stopped(self):
         self.assertTrue(all(not c['State']['Running'] for c in self.b.live.values()))
         self.assertFalse(any('up' in c and 'caddy' in c for c in self.b.calls))
+
+    def assert_unsorted_mounts_allowed(self, action):
+        targets = [v['target'] for v in self.b.base['services']['cli-proxy-api']['volumes']]
+        self.assertNotEqual(targets, sorted(targets))
+        try:
+            self.release.lifecycle(action, self.proof(rollback=action == 'rollback'), confirm=lambda: None)
+        except k.Failure as error:
+            self.assert_stopped()
+            self.assertFalse(any('up' in call for call in self.b.calls))
+            print(json.dumps({'action': action, 'error': str(error), 'up_called': False, 'stage': (self.release.state / 'stage').read_text().strip()}, ensure_ascii=False))
+            raise
+        self.assertTrue(any('up' in call for call in self.b.calls))
+        self.assertFalse(self.b.live['caddy']['State']['Running'])
+        self.assertEqual((self.release.state / 'stage').read_text().strip(), 'candidate_healthy_blocked' if action == 'start' else 'rollback_healthy_blocked')
+
+    def test_start_accepts_unsorted_mounts(self):
+        self.assert_unsorted_mounts_allowed('start')
+
+    def test_rollback_accepts_unsorted_mounts(self):
+        self.assert_unsorted_mounts_allowed('rollback')
+
+    def test_lifecycle_accepts_omitted_empty_volumes(self):
+        for action in ['start', 'rollback']:
+            with self.subTest(action=action):
+                self.setUp()
+                self.assertEqual(k.read(self.release.state / 'plan.json')['rendered']['services']['caddy']['volumes'], [])
+                original = self.b.command
+                def omitted(args, data=None):
+                    raw = original(args, data)
+                    if len(args) > 1 and args[1] == 'compose' and 'config' in args:
+                        document = json.loads(raw)
+                        document['services']['caddy'].pop('volumes')
+                        return json.dumps(document)
+                    return raw
+                with mock.patch.object(self.b, 'command', side_effect=omitted):
+                    self.release.lifecycle(action, self.proof(rollback=action == 'rollback'), confirm=lambda: None)
+                self.assertTrue(any('up' in call for call in self.b.calls))
+                self.assertFalse(self.b.live['caddy']['State']['Running'])
+                self.assertEqual((self.release.state / 'stage').read_text().strip(), 'candidate_healthy_blocked' if action == 'start' else 'rollback_healthy_blocked')
+
+    def test_compose_value_drift_rejected_before_up(self):
+        for action in ['start', 'rollback']:
+            for field in ['source', 'target', 'type', 'read_only', 'bind', 'image', 'environment', 'command']:
+                with self.subTest(action=action, field=field):
+                    self.setUp()
+                    self.b.base['services']['cli-proxy-api']['command'] = ['alpha', 'beta']
+                    plan = k.read(self.release.state / 'plan.json')
+                    plan['base']['services']['cli-proxy-api']['command'] = ['alpha', 'beta']
+                    plan['rendered']['services']['cli-proxy-api']['command'] = ['alpha', 'beta']
+                    k.write(self.release.state / 'plan.json', plan)
+                    original = self.b.command
+                    def changed(args, data=None):
+                        raw = original(args, data)
+                        if len(args) > 1 and args[1] == 'compose' and 'config' in args:
+                            document = json.loads(raw)
+                            service = document['services']['cli-proxy-api']
+                            if field in ['source', 'target', 'type', 'read_only', 'bind']:
+                                service['volumes'][0][field] = {'source': '/different-source', 'target': '/different-target', 'type': 'volume', 'read_only': True, 'bind': {'create_host_path': True}}[field]
+                            else:
+                                service[field] = {'image': 'different-image', 'environment': {'CHANGED': 'true'}, 'command': ['beta', 'alpha']}[field]
+                            return json.dumps(document)
+                        return raw
+                    with mock.patch.object(self.b, 'command', side_effect=changed):
+                        with self.assertRaisesRegex(k.Failure, '启动Compose渲染漂移|回退改变了镜像之外的Compose字段'):
+                            self.release.lifecycle(action, self.proof(rollback=action == 'rollback'), confirm=lambda: None)
+                    self.assert_stopped()
+                    self.assertFalse(any('up' in call for call in self.b.calls))
 
     def test_cli_start_and_health_keep_caddy_stopped(self):
         self.cli('start', self.proof())

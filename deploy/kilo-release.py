@@ -103,6 +103,13 @@ def validate_spec(spec):
     require(spec.get('baseline'), '现场基线未填写')
 
 
+def normalize_compose_volumes(document):
+    document = copy.deepcopy(document)
+    for service in document['services'].values():
+        service['volumes'] = sorted(service.get('volumes', []), key=lambda mount: mount['target'])
+    return document
+
+
 def compose(spec, extra=None):
     args = ['docker', 'compose', '--project-directory', spec['root'], '-p', spec['project']]
     for name in spec['compose_files'] + ([str(extra)] if extra else []):
@@ -307,8 +314,7 @@ class Release:
         expected = copy.deepcopy(base)
         for service, image in images.items(): expected['services'][service].update(image=image, pull_policy='never')
         if existing is None: expected['services']['cli-proxy-api'].setdefault('volumes', []).append(mount)
-        for document in [expected, rendered]:
-            for service in document['services'].values(): service['volumes'] = sorted(service.get('volumes', []), key=lambda m: m['target'])
+        expected, rendered = normalize_compose_volumes(expected), normalize_compose_volumes(rendered)
         require(expected == rendered, '候选Compose改变了未授权字段')
         protected = [p for p in sources['paths'] if pathlib.Path(p).is_file()]
         protected += [str(pathlib.Path(__file__).resolve()), str(pathlib.Path(__file__).with_suffix('.sh').resolve()), str(pathlib.Path(__file__).with_name('phase2-release.py').resolve())]
@@ -538,7 +544,7 @@ class Release:
                 images, rendered, mode = plan['images'], plan['rendered'], 'scope-enforced'
                 override = self.state / 'compose.kilo.yaml'
                 command = compose(self.spec, override)
-                require(json.loads(self.b.command(command + ['config', '--format', 'json'])) == rendered, '启动Compose渲染漂移')
+                require(normalize_compose_volumes(json.loads(self.b.command(command + ['config', '--format', 'json']))) == normalize_compose_volumes(rendered), '启动Compose渲染漂移')
                 cfg_path = pathlib.Path(self.spec['cpa_config'])
                 materials = {'compose.kilo.yaml': digest(override)}
             else:
@@ -557,10 +563,10 @@ class Release:
                 override = self.state / 'compose.rollback.yaml'
                 write(override, {'services': {s: {'image': image, 'pull_policy': 'never'} for s, image in images.items()}})
                 command = compose(self.spec, self.state / 'compose.kilo.yaml') + ['-f', str(override)]
-                rendered = json.loads(self.b.command(command + ['config', '--format', 'json']))
+                rendered = normalize_compose_volumes(json.loads(self.b.command(command + ['config', '--format', 'json'])))
                 expected = copy.deepcopy(plan['rendered'])
                 for service, image in images.items(): expected['services'][service]['image'] = image
-                require(rendered == expected, '回退改变了镜像之外的Compose字段')
+                require(rendered == normalize_compose_volumes(expected), '回退改变了镜像之外的Compose字段')
                 materials = {name: digest(self.state / name) for name in ['compose.kilo.yaml', 'compose.rollback.yaml']}
                 print('回退撤销scope专用Key数量=' + str(removed))
             self.image_identities(images)
