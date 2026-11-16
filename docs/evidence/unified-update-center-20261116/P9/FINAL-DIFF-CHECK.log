@@ -1,0 +1,17 @@
+warning: in the working copy of 'components/cpa/internal/api/handlers/management/handler.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/api/handlers/management/plugin_store.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/api/handlers/management/plugin_store_release_test.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/api/handlers/management/plugin_store_test.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/api/server_management_v8.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/pluginhost/snapshot.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/pluginstore/install.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/pluginstore/install_test.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpa/internal/pluginstore/manifest.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpamp/apps/manager-server/internal/http/controller/proxy/handler.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpamp/apps/manager-server/internal/http/middleware/cors.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpamp/apps/manager-server/internal/http/router/router.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpamp/apps/manager-server/internal/service/credentialconcurrency/service.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpamp/apps/manager-server/internal/service/proxy/service.go', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpamp/apps/web/src/features/plugins/PluginsPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/cpamp/apps/web/src/features/system/SystemPage.tsx', LF will be replaced by CRLF the next time Git touches it
+DIFF_CHECK_RC=0

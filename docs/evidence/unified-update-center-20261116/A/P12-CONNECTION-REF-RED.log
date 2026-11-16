@@ -1,0 +1,8 @@
+=== RUN   TestServerV8UpdateProxyPinsConnectionAcrossConcurrentReadsAndTargetChange
+2026/11/15 22:30:18 http GET /v8/management/updates/operations/latest status=200 duration=915.396µs remote=192.0.2.1:1234
+2026/11/15 22:30:18 http GET /v8/management/updates/operations/latest status=200 duration=1.511542ms remote=192.0.2.1:1234
+    update_proxy_test.go:161: concurrent reference = "", first = ""
+--- FAIL: TestServerV8UpdateProxyPinsConnectionAcrossConcurrentReadsAndTargetChange (0.44s)
+FAIL
+FAIL	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/httpapi	0.446s
+FAIL

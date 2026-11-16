@@ -1362,13 +1362,17 @@
       "mode": "100644",
       "blob": "aefc654c4f2f537bb59d0259ca63c3c011eca9bd"
     },
+    "components/cpa/internal/api/handlers/management/core_updates.go": {
+      "mode": "100644",
+      "blob": "9ac1d726a0708f2b44415f91423a5854d93b3402"
+    },
     "components/cpa/internal/api/handlers/management/credential_concurrency_test.go": {
       "mode": "100644",
       "blob": "6a03f1b67a60c20c48407ecd8baa1f7e2b28d7a6"
     },
     "components/cpa/internal/api/handlers/management/handler.go": {
       "mode": "100644",
-      "blob": "7e8db2f76e6f536790e2af999dae3a7363c7e5b9"
+      "blob": "afaea6798899074759e6b5c3a0906cc06e3c0d8b"
     },
     "components/cpa/internal/api/handlers/management/handler_test.go": {
       "mode": "100644",
@@ -1510,6 +1514,14 @@
       "mode": "100644",
       "blob": "d4cb8232cba5d4a0a7da07d5ddb39f419b6f464e"
     },
+    "components/cpa/internal/api/handlers/management/plugin_imports.go": {
+      "mode": "100644",
+      "blob": "ff794340f0761f968bf1a692e2ef709e9d08353b"
+    },
+    "components/cpa/internal/api/handlers/management/plugin_imports_test.go": {
+      "mode": "100644",
+      "blob": "02c394dd7af8159c2a9c5be449b0cbdf8c12b23a"
+    },
     "components/cpa/internal/api/handlers/management/plugin_quota.go": {
       "mode": "100644",
       "blob": "e3ee737dc65292c50565e328e792a0ed86460b65"
@@ -1520,7 +1532,7 @@
     },
     "components/cpa/internal/api/handlers/management/plugin_store.go": {
       "mode": "100644",
-      "blob": "c9295f0c51ff000f82b66a0419f6a51621e15ad0"
+      "blob": "8402e15b638fabb00340cde6dd63141f10c1ff4a"
     },
     "components/cpa/internal/api/handlers/management/plugin_store_release.go": {
       "mode": "100644",
@@ -1528,11 +1540,15 @@
     },
     "components/cpa/internal/api/handlers/management/plugin_store_release_test.go": {
       "mode": "100644",
-      "blob": "d0ea54ea840091ac7442d5744518ee10c054163d"
+      "blob": "cec950f4da694f8aa0ca836490aab98aaa73ec1d"
     },
     "components/cpa/internal/api/handlers/management/plugin_store_test.go": {
       "mode": "100644",
-      "blob": "18b7a613ca0704782679681efeda6a2df3fb69db"
+      "blob": "54f79cda5c5f5ba754d9797306c130aed3202a0a"
+    },
+    "components/cpa/internal/api/handlers/management/plugin_update_backup.go": {
+      "mode": "100644",
+      "blob": "1d08ec244b07e0557b8c385907d2d203a9206075"
     },
     "components/cpa/internal/api/handlers/management/plugins.go": {
       "mode": "100644",
@@ -1561,6 +1577,10 @@
     "components/cpa/internal/api/handlers/management/test_store_test.go": {
       "mode": "100644",
       "blob": "2343d1fd2b143b54a22df2cd694423510b7ebe43"
+    },
+    "components/cpa/internal/api/handlers/management/update_operations.go": {
+      "mode": "100644",
+      "blob": "b90a1a8c459ba5be093ad60e22dbcfa7d43893d6"
     },
     "components/cpa/internal/api/handlers/management/usage.go": {
       "mode": "100644",
@@ -1716,7 +1736,7 @@
     },
     "components/cpa/internal/api/server_management_v8.go": {
       "mode": "100644",
-      "blob": "f91fe088714de1a0f42fedda1b4de54f4d87a187"
+      "blob": "49ea7d65f52829ed876ca39460c27e64e76987ef"
     },
     "components/cpa/internal/api/server_management_v8_test.go": {
       "mode": "100644",
@@ -1765,6 +1785,10 @@
     "components/cpa/internal/api/server_test.go": {
       "mode": "100644",
       "blob": "a6e8d6afb30a567c22da1d4411f73afb83804bd1"
+    },
+    "components/cpa/internal/api/server_update_integration_test.go": {
+      "mode": "100644",
+      "blob": "5bb89441fa8cfbfbfcc66f7cc694cf074c58443b"
     },
     "components/cpa/internal/api/server_websocket_route_test.go": {
       "mode": "100644",
@@ -4124,7 +4148,7 @@
     },
     "components/cpa/internal/pluginhost/snapshot.go": {
       "mode": "100644",
-      "blob": "85ae6d60862f83ae7638ff66421876459a17494c"
+      "blob": "2b38a235c520005a8d9261fb4525671dcb7fbb4f"
     },
     "components/cpa/internal/pluginhost/stream_bridge.go": {
       "mode": "100644",
@@ -4206,17 +4230,25 @@
       "mode": "100644",
       "blob": "752ba6adc70dd9ad2a1006217d8de6a2e3a7a666"
     },
+    "components/cpa/internal/pluginstore/import.go": {
+      "mode": "100644",
+      "blob": "6513fd3b702d1f45724210e12359a0b9e119a3aa"
+    },
+    "components/cpa/internal/pluginstore/import_test.go": {
+      "mode": "100644",
+      "blob": "3289e0a8acfea139641c1dafa87e996ac90c3dcc"
+    },
     "components/cpa/internal/pluginstore/install.go": {
       "mode": "100644",
-      "blob": "2b17ecdc46c2e7c05a68fb8b4c7a237f714b6491"
+      "blob": "bbd69d54b45fb8f460f7ebfa5a356bf1272ad1ab"
     },
     "components/cpa/internal/pluginstore/install_test.go": {
       "mode": "100644",
-      "blob": "282f231b9d5089efbbb3d2d636c8b870fde032b1"
+      "blob": "dd2d027a0910d8ecb6387088bbe14150f501ff77"
     },
     "components/cpa/internal/pluginstore/manifest.go": {
       "mode": "100644",
-      "blob": "bf778bb3464a5eb255009ad3b5125d5ba71c486c"
+      "blob": "a980125ae23bacdbea6ec30d862977a28641de51"
     },
     "components/cpa/internal/pluginstore/registry.go": {
       "mode": "100644",
@@ -8122,6 +8154,22 @@
       "mode": "100644",
       "blob": "f09e4322c970b93534cc3286ec0f26c12d18349a"
     },
+    "components/cpa/internal/updatestate/lock_unix.go": {
+      "mode": "100644",
+      "blob": "9dd590462bed55d5a643c87ff8d7d94786c62574"
+    },
+    "components/cpa/internal/updatestate/lock_windows.go": {
+      "mode": "100644",
+      "blob": "dc8609abd055da0880e045fbdbfc141d257bad82"
+    },
+    "components/cpa/internal/updatestate/store.go": {
+      "mode": "100644",
+      "blob": "faf6d0d70eb1d510d1ee00274647bf1e3cad0845"
+    },
+    "components/cpa/internal/updatestate/store_test.go": {
+      "mode": "100644",
+      "blob": "1b5db91a423852b9f10cf30e7c8a37b33799527d"
+    },
     "components/cpa/internal/util/claude_attribution.go": {
       "mode": "100644",
       "blob": "3d78099fa7be1590e1fac6fd9bb6f7a99671f2af"
@@ -11736,7 +11784,7 @@
     },
     "components/cpamp/apps/manager-server/internal/http/controller/proxy/handler.go": {
       "mode": "100644",
-      "blob": "33aba486ada7a8ac111c43a1f47e7a7cddc851fe"
+      "blob": "ff30ef376d1634c4f6661735c36573d184fe3782"
     },
     "components/cpamp/apps/manager-server/internal/http/controller/quotacooldown/handler.go": {
       "mode": "100644",
@@ -11784,7 +11832,7 @@
     },
     "components/cpamp/apps/manager-server/internal/http/middleware/cors.go": {
       "mode": "100644",
-      "blob": "d405e243cd9bdf43cdf9df1d9a9b9fc30a20e334"
+      "blob": "76441ab27b372c8cd0f12af63452c86817785fef"
     },
     "components/cpamp/apps/manager-server/internal/http/middleware/cors_test.go": {
       "mode": "100644",
@@ -11936,7 +11984,7 @@
     },
     "components/cpamp/apps/manager-server/internal/http/router/router.go": {
       "mode": "100644",
-      "blob": "3645e324e393da14381d2265f3db2edd80faa76c"
+      "blob": "79f1a09a3966e033948b412689dc9ece600d3823"
     },
     "components/cpamp/apps/manager-server/internal/httpapi/codex_inspection_test.go": {
       "mode": "100644",
@@ -11961,6 +12009,10 @@
     "components/cpamp/apps/manager-server/internal/httpapi/update_check_test.go": {
       "mode": "100644",
       "blob": "30e36410bdc08ae4de4a9ab3a660e05ddb09d82c"
+    },
+    "components/cpamp/apps/manager-server/internal/httpapi/update_proxy_test.go": {
+      "mode": "100644",
+      "blob": "790f4693370d924dc30de5239a29a925327f2cc5"
     },
     "components/cpamp/apps/manager-server/internal/httpapi/web/apple-touch-icon.png": {
       "mode": "100644",
@@ -12788,7 +12840,7 @@
     },
     "components/cpamp/apps/manager-server/internal/service/credentialconcurrency/service.go": {
       "mode": "100644",
-      "blob": "c6d961aa14913cad0c09c20511ee6276c78b6f5c"
+      "blob": "58d85e704615623a6a5abe9f05d262163053dd00"
     },
     "components/cpamp/apps/manager-server/internal/service/credentialconcurrency/service_test.go": {
       "mode": "100644",
@@ -12996,11 +13048,15 @@
     },
     "components/cpamp/apps/manager-server/internal/service/proxy/service.go": {
       "mode": "100644",
-      "blob": "a302d87da0a8f044f7ef7e58f207eeed23826e2d"
+      "blob": "b3f116f6d064821b2be41ca54eb5448760c652af"
     },
     "components/cpamp/apps/manager-server/internal/service/proxy/service_test.go": {
       "mode": "100644",
       "blob": "8e1e45ac6c3a7f4963b13b5c4b9743472b62f245"
+    },
+    "components/cpamp/apps/manager-server/internal/service/proxy/v8_updates.go": {
+      "mode": "100644",
+      "blob": "6215ad4b75adbe0771dffba6c81decfbde376f34"
     },
     "components/cpamp/apps/manager-server/internal/service/quotasnapshot/bps_usage_test.go": {
       "mode": "100644",
@@ -16088,7 +16144,7 @@
     },
     "components/cpamp/apps/web/src/features/pageRefresh.test.tsx": {
       "mode": "100644",
-      "blob": "30aa3dfd7db703354b5f7a5d2ca12dc1f0523a2c"
+      "blob": "d1fc0f881e8258849c05af4c3dbdd48dd562d4a7"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.module.scss": {
       "mode": "100644",
@@ -16110,13 +16166,25 @@
       "mode": "100644",
       "blob": "c12a0a6d241960ca5c3318116b22199810e8e1c9"
     },
+    "components/cpamp/apps/web/src/features/plugins/PluginZipImportModal.module.scss": {
+      "mode": "100644",
+      "blob": "eb16d0a2e366fe10bd65a161ceb715f05bd7b43e"
+    },
+    "components/cpamp/apps/web/src/features/plugins/PluginZipImportModal.test.tsx": {
+      "mode": "100644",
+      "blob": "bf9b22a42574f094ea0e8c0433756de8b7151fc2"
+    },
+    "components/cpamp/apps/web/src/features/plugins/PluginZipImportModal.tsx": {
+      "mode": "100644",
+      "blob": "4030b4bcda4abb44afbade4e5cd6f2496780afe7"
+    },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.module.scss": {
       "mode": "100644",
       "blob": "2fc6b992d52d2b67dce6dda456c57d19ac468dbf"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.tsx": {
       "mode": "100644",
-      "blob": "046c57e97de4460e375e90291af65758bd64868b"
+      "blob": "53f6cf35ccd562e1d2024d117fd18b635861e460"
     },
     "components/cpamp/apps/web/src/features/plugins/components/PluginInstallGateModal.module.scss": {
       "mode": "100644",
@@ -16174,6 +16242,18 @@
       "mode": "100644",
       "blob": "dc3c3b6ffe47c410e0f7462b12e81e0bfbb19445"
     },
+    "components/cpamp/apps/web/src/features/settings/SystemUpdateSection.module.scss": {
+      "mode": "100644",
+      "blob": "445555da2d08fa61af684967ecb1d0ef259c2b0d"
+    },
+    "components/cpamp/apps/web/src/features/settings/SystemUpdateSection.test.tsx": {
+      "mode": "100644",
+      "blob": "4e763fece68c5c25ac354f813c640f9b54cc053f"
+    },
+    "components/cpamp/apps/web/src/features/settings/SystemUpdateSection.tsx": {
+      "mode": "100644",
+      "blob": "65c7591b13f51a9558ffb6bfbce0f1c2425ca2b4"
+    },
     "components/cpamp/apps/web/src/features/system/ManagerUpdatePage.module.scss": {
       "mode": "100644",
       "blob": "1e8ed8f6610fcb0b2ba206ecb42608caac653bed"
@@ -16204,7 +16284,7 @@
     },
     "components/cpamp/apps/web/src/features/system/SystemPage.tsx": {
       "mode": "100644",
-      "blob": "22ce0be27335b2e0fd16554e31fe72742d0069ed"
+      "blob": "93df5693891e8a734b05acef865f00c2e0a60554"
     },
     "components/cpamp/apps/web/src/features/system/components/BPSModelsPanel.test.tsx": {
       "mode": "100644",
@@ -16253,6 +16333,10 @@
     "components/cpamp/apps/web/src/features/system/versionChecks.ts": {
       "mode": "100644",
       "blob": "9ce4d6c0c453b7a9119ae9b481e40538a93f5dbc"
+    },
+    "components/cpamp/apps/web/src/features/updatePages.integration.test.tsx": {
+      "mode": "100644",
+      "blob": "af48571c11d50d96059cf05650f31ea76b51c5b1"
     },
     "components/cpamp/apps/web/src/features/usage-analytics/UsageAnalyticsPage.module.scss": {
       "mode": "100644",
@@ -16822,6 +16906,14 @@
       "mode": "100644",
       "blob": "6abc939e2ec8deff0a379a149b7ae17c7e27b706"
     },
+    "components/cpamp/apps/web/src/services/api/pluginImports.test.ts": {
+      "mode": "100644",
+      "blob": "8928e36224ed0195a2a8d23705b9ddbdeafa87bb"
+    },
+    "components/cpamp/apps/web/src/services/api/pluginImports.ts": {
+      "mode": "100644",
+      "blob": "090c2d6d3ebdccc0b8f8bdc35c6ed17687ce4af1"
+    },
     "components/cpamp/apps/web/src/services/api/plugins.scope.test.ts": {
       "mode": "100644",
       "blob": "2e7843ab826e7c57c9fb7966251af10f9693d3b1"
@@ -17021,6 +17113,10 @@
     "components/cpamp/apps/web/src/types/plugin.ts": {
       "mode": "100644",
       "blob": "3c68d95153fea509162cdd1e604f906f0bcb7b15"
+    },
+    "components/cpamp/apps/web/src/types/pluginImport.ts": {
+      "mode": "100644",
+      "blob": "c821d51721e9dc0051520bd2d8efaea7e78835c4"
     },
     "components/cpamp/apps/web/src/types/provider.ts": {
       "mode": "100644",
@@ -18664,14 +18760,14 @@
   ],
   "incremental_review": {
     "status": "PASS",
-    "reviewer": "S / kilo_diagnostic_readonly_astra",
-    "receipt": "D:/MX-CPAMP/docs/evidence/kilo-bps-combined-20261115/daily-update-20261116/S/UPDATE-REVIEW.zh-CN.md",
+    "reviewer": "S",
+    "receipt": "docs/evidence/unified-update-center-20261116/S/MANAGER-CONNECTION-REVIEW.json",
     "normal_startup_preserved": true,
-    "source_mapping_reviewed": true,
-    "changed_paths": [
-      "components/cpa/cmd/server/main.go",
-      "components/cpa/internal/capabilityprobe/probe.go",
-      "components/cpa/internal/capabilityprobe/probe_test.go"
-    ]
+    "source_mapping_reviewed": true
+  },
+  "working_tree_candidate": {
+    "base_commit": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+    "input_record": "docs/evidence/unified-update-center-20261116/A/P12-BUILD-INPUT.json",
+    "publication": "local uncommitted candidate; not a release commit"
   }
 }

@@ -41,6 +41,9 @@ import iconMeta from '@/assets/icons/meta.svg';
 import { DatabaseStatusCard } from './components/DatabaseStatusCard';
 import { BPSSettingsCard } from './components/BPSSettingsCard';
 import { useManagerUpdates } from './ManagerUpdates';
+import { SystemUpdateSection } from '@/features/settings/SystemUpdateSection';
+import { createCoreUpdateApi } from '@/services/api/pluginImports';
+import { isDemoMode } from '@/features/demo/demoMode';
 import styles from './SystemPage.module.scss';
 
 const MODEL_CATEGORY_ICONS: Record<string, string | { light: string; dark: string }> = {
@@ -73,6 +76,15 @@ function SystemPageContent() {
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const auth = useAuthStore();
   const featureAvailability = usePanelFeatureAvailability();
+  const coreUpdateApi = useMemo(
+    () => createCoreUpdateApi(auth.apiBase, auth.managementKey),
+    [auth.apiBase, auth.managementKey]
+  );
+  const coreUpdateScope = JSON.stringify([
+    auth.apiBase,
+    featureAvailability.managerServiceBase,
+    auth.managementKey,
+  ]);
   const updates = useManagerUpdates();
   const config = useConfigStore((state) => state.config);
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
@@ -432,6 +444,11 @@ function SystemPageContent() {
           )}
         </Card>
 
+        <SystemUpdateSection
+          connectionScope={coreUpdateScope}
+          api={coreUpdateApi}
+          disabled={auth.connectionStatus !== 'connected' || isDemoMode()}
+        />
         {featureAvailability.managerServiceAvailable && <BPSSettingsCard />}
         <Card title={t('system_info.clear_login_title')}>
           <p className={styles.sectionDescription}>{t('system_info.clear_login_desc')}</p>

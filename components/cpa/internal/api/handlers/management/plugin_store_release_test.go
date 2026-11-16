@@ -397,6 +397,7 @@ func TestPluginStoreListingCooldownAlsoBlocksInstallation(t *testing.T) {
 		c, _ := gin.CreateTestContext(rec)
 		c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 		c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install"+query, nil)
+		registerTestUpdateSite(t, h)
 		h.InstallPluginFromStore(c)
 		if rec.Code != http.StatusTooManyRequests || !strings.Contains(rec.Body.String(), "plugin_store_rate_limited") || !strings.Contains(rec.Body.String(), "retry_at") {
 			t.Fatalf("install status=%d body=%s", rec.Code, rec.Body.String())
@@ -428,6 +429,7 @@ func TestPluginStoreInstallationPropagatesRegistryRateLimit(t *testing.T) {
 		c, _ := gin.CreateTestContext(rec)
 		c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 		c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install"+query, nil)
+		registerTestUpdateSite(t, h)
 		h.InstallPluginFromStore(c)
 		if rec.Code != http.StatusTooManyRequests || rec.Header().Get("Retry-After") == "" {
 			t.Fatalf("install status=%d body=%s", rec.Code, rec.Body.String())

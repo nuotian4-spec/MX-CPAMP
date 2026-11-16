@@ -96,7 +96,7 @@ func TestInstallArchivePreparesLoadedWindowsPluginBeforeWrite(t *testing.T) {
 		GOOS:         "windows",
 		GOARCH:       "amd64",
 		PluginLoaded: func() bool { return loaded },
-		BeforeWrite: func() error {
+		BeforeWrite: func(string) error {
 			prepared = true
 			loaded = false
 			return nil
@@ -141,7 +141,7 @@ func TestInstallArchiveSkipsIdenticalLoadedWindowsPlugin(t *testing.T) {
 		GOOS:         "windows",
 		GOARCH:       "amd64",
 		PluginLoaded: func() bool { return true },
-		BeforeWrite: func() error {
+		BeforeWrite: func(string) error {
 			beforeWriteCalled = true
 			return errors.New("before write should not run")
 		},

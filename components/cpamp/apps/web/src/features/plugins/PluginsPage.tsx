@@ -30,14 +30,14 @@ import {
   IconTrash2,
 } from '@/components/ui/icons';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
+import { usePanelFeatureAvailability } from '@/hooks/usePanelFeatureAvailability';
+import { isDemoMode } from '@/features/demo/demoMode';
+import { createPluginImportApi } from '@/services/api/pluginImports';
+import type { UpdateOperation } from '@/types/pluginImport';
 import { pluginsApi, pluginStoreApi } from '@/services/api';
 import { useAuthStore, useConfigStore, useNotificationStore } from '@/stores';
 import { getErrorMessage, isRecord } from '@/utils/helpers';
-import type {
-  PluginConfigField,
-  PluginListEntry,
-  PluginListResponse,
-} from '@/types';
+import type { PluginConfigField, PluginListEntry, PluginListResponse } from '@/types';
 import {
   buildRepositoryURL,
   getPluginTitle,
@@ -47,6 +47,7 @@ import {
 import { waitForPluginState } from './pluginPolling';
 import { buildPluginDisplay, type PluginStatusTone } from './pluginDisplay';
 import { PluginStorePage } from './PluginStorePage';
+import { PluginZipImportModal } from './PluginZipImportModal';
 import {
   buildPluginConfigPatch,
   createPluginConfigDraft,
@@ -58,6 +59,25 @@ type PluginPageTab = 'installed' | 'store';
 type PluginConfigDraft = PluginConfigDraftState;
 
 const PLUGIN_ENABLE_REFRESH_DELAY_MS = 1600;
+const PLUGIN_UPDATE_TERMINAL = new Set<UpdateOperation['status']>([
+  'completed',
+  'completed_disabled',
+  'failed',
+  'license_unverified',
+  'license_error',
+]);
+const PLUGIN_UPDATE_LABELS: Record<UpdateOperation['status'], string> = {
+  queued: '等待安装',
+  installing: '正在安装',
+  reloading: '正在重新加载插件',
+  completed: '安装完成',
+  completed_disabled: '安装完成，插件保持停用',
+  failed: '安装失败',
+  license_unverified: '许可尚未验证',
+  license_error: '许可验证失败',
+  awaiting_restart: '等待重启，安装尚未完成',
+  recovery_required: '需要恢复，安装尚未完成',
+};
 
 const resolvePluginPageTab = (value: string | null): PluginPageTab =>
   value === 'store' ? 'store' : 'installed';
@@ -103,8 +123,9 @@ const openExternalURL = (url: string) => {
 };
 
 export function PluginsPage() {
+  const { managerServiceBase } = usePanelFeatureAvailability();
   const connectionScope = useAuthStore((state) =>
-    JSON.stringify([state.apiBase, state.managementKey])
+    JSON.stringify([state.apiBase, managerServiceBase, state.managementKey])
   );
   return <PluginsPageContent key={connectionScope} />;
 }
@@ -185,7 +206,33 @@ function InstalledPluginsView({
   const navigate = useNavigate();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const apiBase = useAuthStore((state) => state.apiBase);
+  const managementKey = useAuthStore((state) => state.managementKey);
   const supportsPlugin = useAuthStore((state) => state.supportsPlugin);
+  const { managerServiceBase } = usePanelFeatureAvailability();
+  const connectionScope = JSON.stringify([apiBase, managerServiceBase, managementKey]);
+  const demoMode = isDemoMode();
+  const [importOpen, setImportOpen] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<UpdateOperation | null>(null);
+  const [lastUpdateConfirmed, setLastUpdateConfirmed] = useState(false);
+  const [lastUpdateError, setLastUpdateError] = useState('');
+  const [submittedOperation, setSubmittedOperation] = useState('');
+  const importEpoch = useRef(0);
+  const importActive = useRef(false);
+  importActive.current = connectionStatus === 'connected' && supportsPlugin && !demoMode;
+  const importApi = useMemo(() => {
+    const scoped = createPluginImportApi(apiBase, managementKey);
+    return {
+      ...scoped,
+      install: async (...args: Parameters<typeof scoped.install>) => {
+        const requestEpoch = importEpoch.current;
+        const operation = await scoped.install(...args);
+        if (importActive.current && importEpoch.current === requestEpoch) {
+          setSubmittedOperation(operation.id);
+        }
+        return operation;
+      },
+    };
+  }, [apiBase, managementKey]);
   const clearConfigCache = useConfigStore((state) => state.clearCache);
   const showNotification = useNotificationStore((state) => state.showNotification);
   const showConfirmation = useNotificationStore((state) => state.showConfirmation);
@@ -201,6 +248,52 @@ function InstalledPluginsView({
   const configRequestSeq = useRef(0);
 
   const connected = connectionStatus === 'connected';
+  useEffect(() => {
+    if (!connected || !supportsPlugin || demoMode) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let operationId = submittedOperation;
+    setLastUpdate(null);
+    setLastUpdateConfirmed(false);
+    setLastUpdateError('');
+    const refresh = async () => {
+      try {
+        if (!operationId) {
+          const latest = (await importApi.getLatestOperation()).operation;
+          if (disposed) return;
+          if (!latest) {
+            setLastUpdate(null);
+            setLastUpdateError('');
+            return;
+          }
+          if (!latest.id) throw new Error('后台维护任务未返回任务编号');
+          operationId = latest.id;
+          setLastUpdate(latest);
+          setLastUpdateConfirmed(false);
+        }
+        const operation = await importApi.getOperation(operationId);
+        if (disposed) return;
+        if (operation.id !== operationId) throw new Error('返回的后台维护任务编号不一致');
+        setLastUpdate(operation);
+        setLastUpdateConfirmed(true);
+        setLastUpdateError('');
+        if (!PLUGIN_UPDATE_TERMINAL.has(operation.status)) {
+          timer = setTimeout(() => void refresh(), 2000);
+        }
+      } catch (cause) {
+        if (!disposed) {
+          setLastUpdateConfirmed(false);
+          setLastUpdateError(getErrorMessage(cause, '后台维护状态查询失败'));
+          timer = setTimeout(() => void refresh(), 4000);
+        }
+      }
+    };
+    void refresh();
+    return () => {
+      disposed = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [connected, supportsPlugin, demoMode, importApi, submittedOperation]);
   const canOperate = connected && supportsPlugin && Boolean(data);
   const canOperateRef = useRef(canOperate);
   canOperateRef.current = canOperate;
@@ -216,12 +309,18 @@ function InstalledPluginsView({
   const clearPluginData = useCallback(() => {
     canOperateRef.current = false;
     operationEpochRef.current += 1;
+    importEpoch.current += 1;
     listRequestIdRef.current += 1;
     configRequestSeq.current += 1;
     setData(null);
     setEditingPlugin(null);
     setDraft(null);
     setOpeningConfigID('');
+    setImportOpen(false);
+    setSubmittedOperation('');
+    setLastUpdate(null);
+    setLastUpdateConfirmed(false);
+    setLastUpdateError('');
     setLoading(false);
   }, []);
   useLayoutEffect(() => {
@@ -231,6 +330,8 @@ function InstalledPluginsView({
     () => () => {
       canOperateRef.current = false;
       operationEpochRef.current += 1;
+      importActive.current = false;
+      importEpoch.current += 1;
       listRequestIdRef.current += 1;
     },
     []
@@ -253,7 +354,7 @@ function InstalledPluginsView({
     setLoading(true);
     setError('');
     try {
-      const plugins = await pluginsApi.list();
+      const plugins = await pluginsApi.list({ apiBase, managementKey });
       if (requestId !== listRequestIdRef.current) return;
       setData(plugins);
     } catch (err: unknown) {
@@ -267,7 +368,7 @@ function InstalledPluginsView({
     } finally {
       if (requestId === listRequestIdRef.current) setLoading(false);
     }
-  }, [connected, supportsPlugin, clearPluginData, t]);
+  }, [connected, supportsPlugin, clearPluginData, t, apiBase, managementKey]);
 
   const loadPluginsAfterMutation = useCallback(
     async (
@@ -705,6 +806,25 @@ function InstalledPluginsView({
 
   const savingConfig = Boolean(editingPlugin && mutatingID === editingPlugin.id);
 
+  const unresolvedUpdateLicense =
+    !!lastUpdate &&
+    ['unknown', 'unverified', 'required', 'license_unverified'].includes(lastUpdate.license_status);
+  const lastUpdateState = !lastUpdateConfirmed
+    ? 'pending'
+    : lastUpdate && ['failed', 'license_error'].includes(lastUpdate.status)
+      ? 'failed'
+      : lastUpdate &&
+          ['completed', 'completed_disabled'].includes(lastUpdate.status) &&
+          !unresolvedUpdateLicense
+        ? 'success'
+        : lastUpdate &&
+            (['awaiting_restart', 'recovery_required', 'license_unverified'].includes(
+              lastUpdate.status
+            ) ||
+              unresolvedUpdateLicense)
+          ? 'attention'
+          : 'pending';
+
   return (
     <div className={styles.page}>
       {error ? <div className={styles.errorBox}>{error}</div> : null}
@@ -764,6 +884,14 @@ function InstalledPluginsView({
               rightElement={<IconSearch size={16} />}
             />
             <div className={styles.toolbarActions}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setImportOpen(true)}
+                disabled={!canOperate || demoMode}
+              >
+                上传 ZIP
+              </Button>
               <Button variant="secondary" size="sm" onClick={onOpenStore}>
                 <IconPlus size={16} />
                 {t('plugin_management.install_plugin')}
@@ -982,6 +1110,54 @@ function InstalledPluginsView({
         </div>
       )}
 
+      {connected && supportsPlugin && !demoMode && lastUpdate && (
+        <section
+          className={
+            lastUpdateState === 'failed'
+              ? styles.errorBox
+              : lastUpdateState === 'attention'
+                ? styles.warningBox
+                : styles.tabSurface
+          }
+          role="status"
+          aria-live="polite"
+          data-plugin-maintenance-state={lastUpdateState}
+        >
+          <strong>最近插件维护：{lastUpdate.id}</strong>
+          <div>
+            {!lastUpdateConfirmed
+              ? '正在核验后台任务'
+              : unresolvedUpdateLicense && lastUpdateState !== 'failed'
+                ? '许可尚未验证'
+                : PLUGIN_UPDATE_LABELS[lastUpdate.status]}
+          </div>
+          <div>
+            活动版本：{lastUpdate.active_version || '待确认'}；注册状态：
+            {lastUpdate.registered ? '已注册' : '未注册'}
+          </div>
+          {lastUpdate.message && <div>{lastUpdate.message}</div>}
+          {lastUpdateError && (
+            <div role="alert">{lastUpdateError}；正在重试原任务查询，连接恢复不代表安装成功。</div>
+          )}
+        </section>
+      )}
+      {connected && supportsPlugin && !demoMode && !lastUpdate && lastUpdateError && (
+        <div className={styles.warningBox} role="alert">
+          最近插件维护状态尚未确认：{lastUpdateError}
+        </div>
+      )}
+      <PluginZipImportModal
+        isOpen={importOpen && canOperate && !demoMode}
+        connectionScope={connectionScope}
+        api={importApi}
+        onClose={() => setImportOpen(false)}
+        onInstalled={() => {
+          if (!canContinueOperation()) return;
+          clearConfigCache();
+          notifyPluginResourcesChanged();
+          void loadPlugins();
+        }}
+      />
       <Drawer
         open={Boolean(editingPlugin && draft)}
         onClose={closeConfigDrawer}

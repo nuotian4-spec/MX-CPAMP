@@ -1,0 +1,62 @@
+{
+  "baseline": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+  "captured_at": "2026-11-16T05:06:06.648559+08:00",
+  "files": [
+    {
+      "source": "deploy/mx-update-host.py",
+      "bytes": 21775
+    },
+    {
+      "source": "deploy/mx-update.py",
+      "bytes": 19431
+    },
+    {
+      "source": "components/cpa/internal/api/handlers/management/core_updates.go",
+      "bytes": 3036
+    },
+    {
+      "source": "components/cpa/internal/api/handlers/management/plugin_update_backup.go",
+      "bytes": 2821
+    },
+    {
+      "source": "components/cpa/internal/api/handlers/management/update_operations.go",
+      "bytes": 10287
+    },
+    {
+      "source": "components/cpa/internal/api/handlers/management/handler.go",
+      "bytes": 16513
+    },
+    {
+      "source": "components/cpa/internal/api/handlers/management/plugin_imports.go",
+      "bytes": 15683
+    },
+    {
+      "source": "components/cpa/internal/api/handlers/management/plugin_store.go",
+      "bytes": 37372
+    },
+    {
+      "source": "components/cpa/internal/api/server_management_v8.go",
+      "bytes": 6321
+    },
+    {
+      "source": "components/cpa/internal/pluginstore/install.go",
+      "bytes": 20018
+    },
+    {
+      "source": "components/cpa/internal/updatestate/store.go",
+      "bytes": 7170
+    },
+    {
+      "source": "components/cpa/internal/updatestate/lock_unix.go",
+      "bytes": 294
+    },
+    {
+      "source": "components/cpamp/apps/web/src/services/api/pluginImports.ts",
+      "bytes": 2538
+    },
+    {
+      "source": "components/cpamp/apps/web/src/features/system/SystemPage.tsx",
+      "bytes": 16881
+    }
+  ]
+}

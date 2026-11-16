@@ -192,3 +192,16 @@ func cloneConfigFieldValue(value any) any {
 	visited := make(map[metadataCloneVisit]reflect.Value)
 	return cloneInterceptorMetadataAny(reflect.ValueOf(value), visited)
 }
+
+// ActivePluginIdentity returns the current host-owned identity without invoking plugin code.
+func (h *Host) ActivePluginIdentity(id string) (version, path string, registered bool) {
+	if h == nil {
+		return "", "", false
+	}
+	for _, record := range h.activeRecords() {
+		if record.id == id {
+			return record.version, record.path, true
+		}
+	}
+	return "", "", false
+}

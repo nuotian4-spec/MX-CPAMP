@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const InstallTypeLocal = "local"
+
 type Manifest struct {
 	SchemaVersion int                     `yaml:"schema-version,omitempty" json:"schema_version,omitempty"`
 	ID            string                  `yaml:"id,omitempty" json:"id,omitempty"`
@@ -111,6 +113,14 @@ func (m Manifest) Validate() error {
 		return fmt.Errorf("invalid plugin version %q", m.Version)
 	}
 	switch m.InstallType() {
+	case InstallTypeLocal:
+		if errID := validateManifestPluginID(m.ID); errID != nil {
+			return errID
+		}
+		if m.SourceID != "local-import" || m.SourceURL != "" || len(m.Install.Artifacts) != 0 {
+			return fmt.Errorf("local manifest must pin a staged import without remote sources")
+		}
+		return nil
 	case InstallTypeDirect:
 		if m.SchemaVersion != 0 && m.SchemaVersion != SchemaVersionV2 {
 			return fmt.Errorf("unsupported schema-version %d", m.SchemaVersion)

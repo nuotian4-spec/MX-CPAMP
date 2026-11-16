@@ -1,0 +1,9 @@
+{
+  "worker_pid_after": 4663,
+  "worker_pid_before": 4663,
+  "boundary": "仅合成Manager真实重启；站点Docker与发行传输为夹具",
+  "manager": "unified-update-manager-browser-20261116",
+  "rc": 0,
+  "new_pid": 6592,
+  "old_pid": 4130
+}

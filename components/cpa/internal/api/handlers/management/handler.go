@@ -18,6 +18,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/pluginstore"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/updatestate"
 	sdkAuth "github.com/router-for-me/CLIProxyAPI/v8/sdk/auth"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 	log "github.com/sirupsen/logrus"
@@ -64,6 +65,10 @@ type Handler struct {
 	siwcOAuthFactory        func(*config.Config) siwcOAuthService
 	siwcCommitMu            sync.Mutex
 	pluginLoginSaveMu       sync.Mutex
+	updateStateStore        *updatestate.Store
+	updateOperationsMu      sync.Mutex
+	pluginImportsMu         sync.Mutex
+	updateOperations        map[string]*updateMutation
 }
 
 type configReloadSnapshot struct {
@@ -282,13 +287,31 @@ func (h *Handler) reloadConfigAfterManagementSaveAsync(ctx context.Context, snap
 	if ctx != nil {
 		reloadCtx = context.WithoutCancel(ctx)
 	}
+	mutation, _ := reloadCtx.Value(updateContextKey{}).(*updateMutation)
+	if mutation != nil {
+		mutation.mu.Lock()
+		mutation.scheduled = true
+		mutation.mu.Unlock()
+		if err := mutation.lease.Update(func(op *updatestate.Operation) { op.Status = "reloading"; op.Stage = "reloading" }); err != nil {
+			_ = mutation.lease.Detach("Configuration saved; reload state requires recovery")
+			h.forgetUpdate(mutation)
+			return
+		}
+	}
 	go func() {
 		defer func() {
 			if recovered := recover(); recovered != nil {
 				log.WithField("panic", recovered).Error("management: async config reload panicked")
+				if mutation != nil {
+					_ = mutation.lease.Detach("Configuration reload interrupted; inspect runtime before recovery")
+					h.forgetUpdate(mutation)
+				}
 			}
 		}()
 		h.reloadConfigAfterManagementSave(reloadCtx, snapshot)
+		if mutation != nil {
+			h.completeUpdateReload(mutation, snapshot)
+		}
 	}()
 }
 
@@ -349,6 +372,13 @@ func (h *Handler) Middleware() gin.HandlerFunc {
 		if !allowed {
 			c.AbortWithStatusJSON(statusCode, gin.H{"error": errMsg})
 			return
+		}
+		if updateGuardedRequest(c) {
+			mutation, ok := h.ensureUpdateMutation(c)
+			if !ok {
+				return
+			}
+			defer h.finishUpdateRequest(c, mutation)
 		}
 		c.Next()
 	}

@@ -93,7 +93,7 @@ def validate_site(site, path):
 
 
 @contextlib.contextmanager
-def site_lock(site_path, site):
+def site_lock(site_path, site, operation_id=None):
     require(os.name == 'posix' and os.geteuid() == 0, '真实更新入口需要 Linux root')
     os.umask(0o077)
     require(site_path.stat().st_uid == 0 and site_path.stat().st_mode & 0o777 == 0o600,
@@ -102,6 +102,15 @@ def site_lock(site_path, site):
     with (pathlib.Path(site['root']) / '.mx-update.lock').open('a') as lock:
         os.chmod(lock.name, 0o600)
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        state = pathlib.Path(site.get('update_state_dir', str(pathlib.Path(site['root']) / '.mx-update-state')))
+        active_path = state / 'active.json'
+        if active_path.exists():
+            owner = read(active_path).get('id')
+            require(isinstance(owner, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,95}', owner),
+                    '维护所有者记录无效，需要人工核实运行状态')
+            previous = read(state / 'operations' / (owner + '.json'))
+            terminal = previous.get('status') in ('completed', 'completed_disabled', 'failed', 'license_unverified', 'license_error')
+            require(terminal or operation_id == owner, '站点维护尚未收口：' + owner)
         yield
 
 
@@ -226,10 +235,12 @@ def confirm_update(summary):
 
 
 def run_cycle(site_path, site, version, state, confirm=confirm_update, fetcher=fetch_release,
-              loader=load_module, space_check=preflight_space, check_ingress=ingress_health):
+              loader=load_module, space_check=preflight_space, check_ingress=ingress_health, progress=None):
     release_runner = None
     phase = 'preflight'
+    report = progress or (lambda stage: None)
     try:
+        report('preflight')
         folder, release = fetcher(site, version, state)
         library = loader('mx_update_kilo', folder / 'kilo-release.py')
         capability = loader('mx_update_capability', folder / 'capability_probe.py')
@@ -269,10 +280,13 @@ def run_cycle(site_path, site, version, state, confirm=confirm_update, fetcher=f
         def already_confirmed():
             require(confirmed, '本轮尚未确认')
         phase = 'apply'
+        report('backing_up')
         release_runner.apply(already_confirmed)
         phase = 'start'
+        report('starting')
         release_runner.lifecycle('start', capability_path=receipt, confirm=already_confirmed)
         phase = 'complete'
+        report('verifying')
         active = release_runner.complete_update(lambda: check_ingress(site, backend))
         pointer = {'schema': 1, 'version': version, 'commit': release['commit'], 'state_dir': str(state),
                    'compose_files': active['compose_files'], 'updater': str(folder / 'mx-update.py')}
@@ -339,7 +353,7 @@ def main():
         site_path = args.site.resolve()
         site = read(site_path)
         validate_site(site, site_path)
-        selected = active_updater(site)
+        selected = None if site.get('update_state_dir') else active_updater(site)
         if selected is not None and selected != pathlib.Path(__file__).resolve():
             os.execv(sys.executable, [sys.executable, str(selected), *sys.argv[1:]])
         with site_lock(site_path, site):

@@ -1,0 +1,24 @@
+=== RUN   TestV8UpdateRouterAuthenticationAndSharedGate
+=== RUN   TestV8UpdateRouterAuthenticationAndSharedGate/local
+time="2026-11-15T21:08:10Z" level=info msg="management routes registered after secret key configuration"
+=== RUN   TestV8UpdateRouterAuthenticationAndSharedGate/environment
+time="2026-11-15T21:08:10Z" level=info msg="management routes registered after secret key configuration"
+=== RUN   TestV8UpdateRouterAuthenticationAndSharedGate/hash
+time="2026-11-15T21:08:10Z" level=info msg="management routes registered after secret key configuration"
+--- PASS: TestV8UpdateRouterAuthenticationAndSharedGate (0.45s)
+    --- PASS: TestV8UpdateRouterAuthenticationAndSharedGate/local (0.08s)
+    --- PASS: TestV8UpdateRouterAuthenticationAndSharedGate/environment (0.07s)
+    --- PASS: TestV8UpdateRouterAuthenticationAndSharedGate/hash (0.30s)
+=== RUN   TestV8UpdateRouterLoadsSyntheticLibraryAndRejectsActiveOverwrite
+time="2026-11-15T21:08:11Z" level=info msg="management routes registered after secret key configuration"
+time="2026-11-15T21:08:11Z" level=info msg="pluginhost: plugin loaded" path=/tmp/TestV8UpdateRouterLoadsSyntheticLibraryAndRejectsActiveOverwrite896606987/001/plugins/linux/amd64/sample-v1.0.0.so plugin_id=sample version=1.0.0
+time="2026-11-15T21:08:11Z" level=info msg="pluginhost: plugin registered" path=/tmp/TestV8UpdateRouterLoadsSyntheticLibraryAndRejectsActiveOverwrite896606987/001/plugins/linux/amd64/sample-v1.0.0.so plugin_id=sample plugin_name="Synthetic Update Fixture" version=1.0.0
+time="2026-11-15T21:08:11Z" level=warning msg="pluginhost: plugin sample plugin.register failed: plugin schema version 99 is not supported"
+time="2026-11-15T21:08:11Z" level=warning msg="pluginhost: plugin sample returned invalid metadata or no capabilities"
+time="2026-11-15T21:08:11Z" level=info msg="pluginhost: plugin unloaded" path=/tmp/TestV8UpdateRouterLoadsSyntheticLibraryAndRejectsActiveOverwrite896606987/001/plugins/linux/amd64/sample-v1.0.0.so plugin_id=sample plugin_name="Synthetic Update Fixture" version=1.0.0
+--- PASS: TestV8UpdateRouterLoadsSyntheticLibraryAndRejectsActiveOverwrite (0.38s)
+=== RUN   TestV8UpdateRouterPreservesDisabledConfiguration
+time="2026-11-15T21:08:11Z" level=info msg="management routes registered after secret key configuration"
+--- PASS: TestV8UpdateRouterPreservesDisabledConfiguration (0.18s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	1.028s

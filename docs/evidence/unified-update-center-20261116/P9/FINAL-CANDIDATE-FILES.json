@@ -1,0 +1,386 @@
+{
+  "schema": 1,
+  "base_head": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+  "candidate_root": "C:\\Users\\子羽\\.codex\\worktrees\\unified-update-20261116\\MX-CPAMP",
+  "scope": "components与deploy的实际候选增量；文档和证据单独交付",
+  "source_input": "A/P12-BUILD-INPUT.json",
+  "incremental_review": "S/MANAGER-CONNECTION-REVIEW.json",
+  "product_path_count": 53,
+  "modified_count": 19,
+  "added_count": 34,
+  "source_input_mismatches": [],
+  "schema_or_sql_paths": [],
+  "files": [
+    {
+      "path": "components/cpa/internal/api/handlers/management/core_updates.go",
+      "status": "A",
+      "git_blob": "9ac1d726a0708f2b44415f91423a5854d93b3402",
+      "bytes": 3036,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/handler.go",
+      "status": "M",
+      "git_blob": "afaea6798899074759e6b5c3a0906cc06e3c0d8b",
+      "bytes": 16513,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/plugin_imports_test.go",
+      "status": "A",
+      "git_blob": "02c394dd7af8159c2a9c5be449b0cbdf8c12b23a",
+      "bytes": 11754,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/plugin_imports.go",
+      "status": "A",
+      "git_blob": "ff794340f0761f968bf1a692e2ef709e9d08353b",
+      "bytes": 15683,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/plugin_store_release_test.go",
+      "status": "M",
+      "git_blob": "cec950f4da694f8aa0ca836490aab98aaa73ec1d",
+      "bytes": 23477,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/plugin_store_test.go",
+      "status": "M",
+      "git_blob": "54f79cda5c5f5ba754d9797306c130aed3202a0a",
+      "bytes": 57998,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/plugin_store.go",
+      "status": "M",
+      "git_blob": "8402e15b638fabb00340cde6dd63141f10c1ff4a",
+      "bytes": 37372,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/plugin_update_backup.go",
+      "status": "A",
+      "git_blob": "1d08ec244b07e0557b8c385907d2d203a9206075",
+      "bytes": 2821,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/handlers/management/update_operations.go",
+      "status": "A",
+      "git_blob": "b90a1a8c459ba5be093ad60e22dbcfa7d43893d6",
+      "bytes": 10287,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/server_management_v8.go",
+      "status": "M",
+      "git_blob": "49ea7d65f52829ed876ca39460c27e64e76987ef",
+      "bytes": 6321,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/api/server_update_integration_test.go",
+      "status": "A",
+      "git_blob": "5bb89441fa8cfbfbfcc66f7cc694cf074c58443b",
+      "bytes": 14835,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/pluginhost/snapshot.go",
+      "status": "M",
+      "git_blob": "2b38a235c520005a8d9261fb4525671dcb7fbb4f",
+      "bytes": 5652,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/pluginstore/import_test.go",
+      "status": "A",
+      "git_blob": "3289e0a8acfea139641c1dafa87e996ac90c3dcc",
+      "bytes": 5613,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/pluginstore/import.go",
+      "status": "A",
+      "git_blob": "6513fd3b702d1f45724210e12359a0b9e119a3aa",
+      "bytes": 7456,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/pluginstore/install_test.go",
+      "status": "M",
+      "git_blob": "dd2d027a0910d8ecb6387088bbe14150f501ff77",
+      "bytes": 25057,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/pluginstore/install.go",
+      "status": "M",
+      "git_blob": "bbd69d54b45fb8f460f7ebfa5a356bf1272ad1ab",
+      "bytes": 20018,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/pluginstore/manifest.go",
+      "status": "M",
+      "git_blob": "a980125ae23bacdbea6ec30d862977a28641de51",
+      "bytes": 7682,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/updatestate/lock_unix.go",
+      "status": "A",
+      "git_blob": "9dd590462bed55d5a643c87ff8d7d94786c62574",
+      "bytes": 294,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/updatestate/lock_windows.go",
+      "status": "A",
+      "git_blob": "dc8609abd055da0880e045fbdbfc141d257bad82",
+      "bytes": 388,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/updatestate/store_test.go",
+      "status": "A",
+      "git_blob": "1b5db91a423852b9f10cf30e7c8a37b33799527d",
+      "bytes": 1938,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpa/internal/updatestate/store.go",
+      "status": "A",
+      "git_blob": "faf6d0d70eb1d510d1ee00274647bf1e3cad0845",
+      "bytes": 7170,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/manager-server/internal/http/controller/proxy/handler.go",
+      "status": "M",
+      "git_blob": "ff30ef376d1634c4f6661735c36573d184fe3782",
+      "bytes": 3395,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/manager-server/internal/http/middleware/cors.go",
+      "status": "M",
+      "git_blob": "76441ab27b372c8cd0f12af63452c86817785fef",
+      "bytes": 1684,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/manager-server/internal/http/router/router.go",
+      "status": "M",
+      "git_blob": "79f1a09a3966e033948b412689dc9ece600d3823",
+      "bytes": 10527,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/manager-server/internal/httpapi/update_proxy_test.go",
+      "status": "A",
+      "git_blob": "790f4693370d924dc30de5239a29a925327f2cc5",
+      "bytes": 8651,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/manager-server/internal/service/credentialconcurrency/service.go",
+      "status": "M",
+      "git_blob": "58d85e704615623a6a5abe9f05d262163053dd00",
+      "bytes": 10994,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/manager-server/internal/service/proxy/service.go",
+      "status": "M",
+      "git_blob": "b3f116f6d064821b2be41ca54eb5448760c652af",
+      "bytes": 50544,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/manager-server/internal/service/proxy/v8_updates.go",
+      "status": "A",
+      "git_blob": "6215ad4b75adbe0771dffba6c81decfbde376f34",
+      "bytes": 3042,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/pageRefresh.test.tsx",
+      "status": "M",
+      "git_blob": "d1fc0f881e8258849c05af4c3dbdd48dd562d4a7",
+      "bytes": 51700,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/plugins/PluginsPage.tsx",
+      "status": "M",
+      "git_blob": "53f6cf35ccd562e1d2024d117fd18b635861e460",
+      "bytes": 46077,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/plugins/PluginZipImportModal.module.scss",
+      "status": "A",
+      "git_blob": "eb16d0a2e366fe10bd65a161ceb715f05bd7b43e",
+      "bytes": 1861,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/plugins/PluginZipImportModal.test.tsx",
+      "status": "A",
+      "git_blob": "bf9b22a42574f094ea0e8c0433756de8b7151fc2",
+      "bytes": 16613,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/plugins/PluginZipImportModal.tsx",
+      "status": "A",
+      "git_blob": "4030b4bcda4abb44afbade4e5cd6f2496780afe7",
+      "bytes": 16186,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/settings/SystemUpdateSection.module.scss",
+      "status": "A",
+      "git_blob": "445555da2d08fa61af684967ecb1d0ef259c2b0d",
+      "bytes": 1971,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/settings/SystemUpdateSection.test.tsx",
+      "status": "A",
+      "git_blob": "4e763fece68c5c25ac354f813c640f9b54cc053f",
+      "bytes": 14393,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/settings/SystemUpdateSection.tsx",
+      "status": "A",
+      "git_blob": "65c7591b13f51a9558ffb6bfbce0f1c2425ca2b4",
+      "bytes": 17813,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/system/SystemPage.tsx",
+      "status": "M",
+      "git_blob": "93df5693891e8a734b05acef865f00c2e0a60554",
+      "bytes": 16881,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/features/updatePages.integration.test.tsx",
+      "status": "A",
+      "git_blob": "af48571c11d50d96059cf05650f31ea76b51c5b1",
+      "bytes": 16113,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/services/api/pluginImports.test.ts",
+      "status": "A",
+      "git_blob": "8928e36224ed0195a2a8d23705b9ddbdeafa87bb",
+      "bytes": 8403,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/services/api/pluginImports.ts",
+      "status": "A",
+      "git_blob": "090c2d6d3ebdccc0b8f8bdc35c6ed17687ce4af1",
+      "bytes": 3455,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "components/cpamp/apps/web/src/types/pluginImport.ts",
+      "status": "A",
+      "git_blob": "c821d51721e9dc0051520bd2d8efaea7e78835c4",
+      "bytes": 906,
+      "input_record": "A/P12-BUILD-INPUT.json"
+    },
+    {
+      "path": "deploy/mx-update-host-install.py",
+      "status": "A",
+      "git_blob": "b5328655d9c32a9672b75f6750fe99491e4fda69",
+      "bytes": 12674,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/mx-update-host.py",
+      "status": "A",
+      "git_blob": "ad8113b5549b5eba2a34e7d031e2ceee4facc8a2",
+      "bytes": 23767,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/mx-update-host.service",
+      "status": "A",
+      "git_blob": "e767915762c435c201caefed00cddcee9bba96e9",
+      "bytes": 446,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/mx-update-operation@.service",
+      "status": "A",
+      "git_blob": "1c7220d3ab8c734ce82ed40f4eaab5b420024221",
+      "bytes": 450,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/mx-update.py",
+      "status": "M",
+      "git_blob": "2aa5fb79b13b8ed47527eea25db783c40caf0c31",
+      "bytes": 19431,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/package-update-host.py",
+      "status": "A",
+      "git_blob": "21a58b406cf360bccbcb7dd412409aaed0d571ef",
+      "bytes": 1966,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/production-wiring.contract.json",
+      "status": "M",
+      "git_blob": "af664104663c088de75b0fa7d9b3bbb922f84caf",
+      "bytes": 786061,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/README.update-host.zh-CN.md",
+      "status": "A",
+      "git_blob": "7cc573f59e90b5eb7264f3c5570a1d46429ab2a5",
+      "bytes": 7167,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/test_mx_update_host_install.py",
+      "status": "A",
+      "git_blob": "98e80eb4e880495b623719b8aeb0ccea11cca7e4",
+      "bytes": 22878,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/test_mx_update_host.py",
+      "status": "A",
+      "git_blob": "5804ca0ac0f2ac79eb6ac76276ec469a14482233",
+      "bytes": 27522,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/test_package_update_host.py",
+      "status": "A",
+      "git_blob": "5e76eea79177948a3d98ac8fe5a069c02cd3caf6",
+      "bytes": 2674,
+      "input_record": "deploy候选，关联原S审查"
+    },
+    {
+      "path": "deploy/testdata/update-host-fixture.py",
+      "status": "A",
+      "git_blob": "d9e366eaec0971c3c4e80235b16ca45a51f86dd7",
+      "bytes": 4930,
+      "input_record": "deploy候选，关联原S审查"
+    }
+  ]
+}

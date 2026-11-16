@@ -1,0 +1,36 @@
+{
+  "base_head": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+  "captured_at": "2026-11-16T04:46:33.139452+08:00",
+  "files": [
+    {
+      "source": "C:\\Users\\子羽\\.codex\\worktrees\\unified-update-20261116\\MX-CPAMP\\components\\cpa\\internal\\api\\handlers\\management\\update_operations.go",
+      "snapshot": "update_operations.go",
+      "bytes": 10252
+    },
+    {
+      "source": "C:\\Users\\子羽\\.codex\\worktrees\\unified-update-20261116\\MX-CPAMP\\components\\cpa\\internal\\api\\handlers\\management\\plugin_imports.go",
+      "snapshot": "plugin_imports.go",
+      "bytes": 15683
+    },
+    {
+      "source": "C:\\Users\\子羽\\.codex\\worktrees\\unified-update-20261116\\MX-CPAMP\\components\\cpa\\internal\\api\\handlers\\management\\plugin_store.go",
+      "snapshot": "plugin_store.go",
+      "bytes": 36453
+    },
+    {
+      "source": "C:\\Users\\子羽\\.codex\\worktrees\\unified-update-20261116\\MX-CPAMP\\components\\cpa\\internal\\api\\handlers\\management\\plugin_update_backup.go",
+      "snapshot": "plugin_update_backup.go",
+      "bytes": 2821
+    },
+    {
+      "source": "C:\\Users\\子羽\\.codex\\worktrees\\unified-update-20261116\\MX-CPAMP\\components\\cpa\\internal\\pluginstore\\install.go",
+      "snapshot": "install.go",
+      "bytes": 20018
+    },
+    {
+      "source": "C:\\Users\\子羽\\.codex\\worktrees\\unified-update-20261116\\MX-CPAMP\\components\\cpa\\internal\\pluginhost\\host.go",
+      "snapshot": "host.go",
+      "bytes": 43686
+    }
+  ]
+}

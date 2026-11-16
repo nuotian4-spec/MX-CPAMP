@@ -1,0 +1,128 @@
+.content,
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+
+  dt {
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.selection {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.releaseLabel {
+  display: flex;
+  flex: 1;
+  min-width: 200px;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+
+  select {
+    min-height: 38px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+  }
+}
+
+.preview,
+.progress,
+.warning,
+.error,
+.success {
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.warning {
+  color: var(--warning-text);
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+}
+
+.error {
+  color: var(--danger-color);
+  border-color: color-mix(in srgb, var(--danger-color) 36%, transparent);
+}
+
+.success {
+  color: var(--success-color);
+  border-color: color-mix(in srgb, var(--success-color) 36%, transparent);
+}
+
+.steps,
+.blockers {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.blockers {
+  color: var(--warning-text);
+}
+
+.notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  input {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin: 3px 0 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .details {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+
+  .releaseLabel {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+}

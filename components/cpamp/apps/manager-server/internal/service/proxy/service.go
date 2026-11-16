@@ -83,9 +83,9 @@ type authFileWriteMutation struct {
 const cpaPluginResourcePrefix = "/v0/resource/plugins"
 const cpaManagementPrefix = "/v0/management"
 
-// cpaV8APIKeysConfigPath is the only CPA v8 management subtree Manager Server
-// forwards. Other v8 routes stay unreachable because the auth-file and config
-// mutation guards in this package only recognize their v0 paths.
+// CPA v8 forwarding is limited to API-key reads and the update-center allowlist.
+// Other v8 routes stay unreachable because the auth-file and config mutation
+// guards in this package only recognize their v0 paths.
 const cpaV8APIKeysConfigPath = "/v8/management/config/api-keys"
 const codexInviteOriginHeader = "X-Codex-Invite-Origin"
 const managementOriginJSONField = "management_origin"

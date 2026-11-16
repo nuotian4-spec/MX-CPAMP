@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -233,6 +234,11 @@ func (h *Handler) InstallPluginFromStore(c *gin.Context) {
 }
 
 func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
+	mutation, allowed := h.ensureUpdateMutation(c)
+	if !allowed {
+		return
+	}
+	defer h.finishUpdateRequest(c, mutation)
 	id, okID := pluginIDFromRequest(c)
 	if !okID {
 		return
@@ -262,16 +268,40 @@ func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
 	if !validatePluginStoreInstallSource(c, configs, sources, id, source.ID) {
 		return
 	}
+	if errBackup := h.preparePluginBackup(mutation, id); errBackup != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "plugin_backup_failed"})
+		return
+	}
 	pluginIsBusy := func() bool { return pluginBusy(host, id) }
 	installOptions := pluginstore.InstallOptions{
 		PluginsDir:   pluginsDir,
 		GOOS:         goos,
 		GOARCH:       goarch,
 		PluginLoaded: pluginIsBusy,
+		BeforeWrite:  mutation.backupReplacedPlugin,
 	}
 	var manifest pluginstore.Manifest
 	var result pluginstore.InstallResult
 	var errInstall error
+	defer func() {
+		mutation.mu.Lock()
+		scheduled, finished := mutation.scheduled, mutation.finished
+		mutation.mu.Unlock()
+		if scheduled || finished || result.Path == "" {
+			return
+		}
+		errRestore := mutation.restoreReplacedPlugins()
+		if !result.Overwritten && !result.Skipped {
+			errRestore = errors.Join(errRestore, os.Remove(result.Path))
+		}
+		if errRestore != nil {
+			mutation.mu.Lock()
+			mutation.finished = true
+			mutation.mu.Unlock()
+			_ = mutation.lease.Detach("Plugin installation failed; library backup requires operator recovery")
+			h.forgetUpdate(mutation)
+		}
+	}()
 	switch pluginstore.PluginInstallType(plugin) {
 	case pluginstore.InstallTypeDirect:
 		var errManifest error
@@ -326,6 +356,7 @@ func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
 		})
 		return
 	}
+	previousConfig := h.cfg.CloneForRuntime()
 	if errEnable := h.enablePluginConfigLocked(id, manifest); errEnable != nil {
 		h.mu.Unlock()
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -336,7 +367,17 @@ func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
 		return
 	}
 	if errSave := config.SaveConfigPreserveComments(h.configFilePath, h.cfg, c.GetBool(ConfigV8ContextKey)); errSave != nil {
+		h.restorePluginConfigLocked(id, previousConfig)
 		h.mu.Unlock()
+		_ = mutation.restoreReplacedPlugins()
+		if !result.Overwritten && !result.Skipped {
+			_ = os.Remove(result.Path)
+		}
+		mutation.mu.Lock()
+		mutation.finished = true
+		mutation.mu.Unlock()
+		_ = mutation.lease.Detach("Plugin configuration save failed; verify config and backup before recovery")
+		h.forgetUpdate(mutation)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "config_save_failed",
 			"message": fmt.Sprintf("plugin file installed at %s but saving config failed: %s", result.Path, errSave.Error()),
@@ -347,6 +388,7 @@ func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
 	cfgSnapshot := h.reloadSnapshotConfigLocked()
 	h.mu.Unlock()
 
+	h.bindPluginUpdate(c, id, result.Version, result.Path, id == "cpa-bps", previousConfig)
 	h.reloadConfigAfterManagementSaveAsync(c.Request.Context(), cfgSnapshot)
 	log.WithFields(log.Fields{
 		"plugin_id":    result.ID,
@@ -502,12 +544,16 @@ func normalizePluginStoreRequestedVersion(version string) string {
 // preserving the rest of the plugin's raw configuration. Callers must hold h.mu.
 func (h *Handler) enablePluginConfigLocked(id string, storeManifest pluginstore.Manifest) error {
 	ensurePluginConfigMap(h.cfg)
+	enabled := true
+	if previous, exists := h.cfg.Plugins.Configs[id]; exists {
+		enabled = pluginInstanceEnabled(previous)
+	}
 	node := pluginConfigNode(h.cfg.Plugins.Configs[id])
 	storeNode, errStoreNode := pluginStoreManifestYAMLNode(storeManifest)
 	if errStoreNode != nil {
 		return errStoreNode
 	}
-	setYAMLMappingValue(node, "enabled", boolYAMLNode(true))
+	setYAMLMappingValue(node, "enabled", boolYAMLNode(enabled))
 	setYAMLMappingValue(node, "store", storeNode)
 	updated, errConfig := pluginInstanceConfigFromNode(node)
 	if errConfig != nil {

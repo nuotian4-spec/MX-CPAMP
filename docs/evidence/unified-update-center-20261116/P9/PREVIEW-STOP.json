@@ -1,0 +1,21 @@
+{
+  "recorded_at": "2026-11-16T06:43:58.4647202+08:00",
+  "action": "仅停止本轮两个隔离预览容器",
+  "exit": 0,
+  "containers": [
+    {
+      "name": "unified-update-manager-browser-20261116",
+      "id": "96bda4cb8fc15df05c2ab7ed223a355f0447a1a2d38b4aaa65947377a4e2a0e1",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "name": "unified-update-preview-20261116",
+      "id": "5c243d2ad3829affa20e69a97f613e22be009efa2bb48074de4d2c4ad1f37e80",
+      "running": false,
+      "status": "exited"
+    }
+  ],
+  "data_preserved": true,
+  "production_touched": false
+}

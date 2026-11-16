@@ -1,0 +1,17 @@
+{"url": "http://unified-update-manager-browser-20261116:18317/management.html#/login", "body": "Current URL\nhttp://unified-update-manager-browser-20261116:18317\nThis panel is hosted by a configured Manager Server. After login it uses the saved CPA connection on the server.\nAdmin Key\nThis key authenticates the Manager Server panel. It is different from the CPA Management Key.\nRemember credential\nLogin"}
+Traceback (most recent call last):
+  File "/browser/accept_ui.py", line 86, in <module>
+    page.wait_for_function("document.querySelector('[data-core-update-state]')?.getAttribute('data-core-update-state') === 'success'", timeout=30000)
+  File "/usr/local/lib/python3.10/dist-packages/patchright/sync_api/_generated.py", line 20868, in wait_for_function
+    self._sync(
+  File "/usr/local/lib/python3.10/dist-packages/patchright/_impl/_sync_base.py", line 91, in _sync
+    return task.result()
+  File "/usr/local/lib/python3.10/dist-packages/patchright/_impl/_page.py", line 1107, in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+  File "/usr/local/lib/python3.10/dist-packages/patchright/_impl/_frame.py", line 919, in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+  File "/usr/local/lib/python3.10/dist-packages/patchright/_impl/_connection.py", line 61, in send
+    return await self._connection.wrap_api_call(
+  File "/usr/local/lib/python3.10/dist-packages/patchright/_impl/_connection.py", line 568, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+patchright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.

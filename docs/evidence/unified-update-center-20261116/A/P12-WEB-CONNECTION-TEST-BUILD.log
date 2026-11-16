@@ -1,0 +1,87 @@
+src/services/api/pluginImports.ts 99ms
+src/services/api/pluginImports.test.ts 61ms
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/app/apps/web[39m
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页实际挂载导入弹窗并走 raw ZIP 与固定候选安装
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页断线立即关闭导入会话，迟到完成不显示成功
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页最新任务快照声称完成仍先查询原编号
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页恢复 awaiting_restart 任务继续查原编号
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页恢复 recovery_required 任务继续查原编号
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页实际挂载导入弹窗并走 raw ZIP 与固定候选安装[32m 52[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页断线立即关闭导入会话，迟到完成不显示成功[32m 23[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页最新任务快照声称完成仍先查询原编号[32m 14[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页恢复 awaiting_restart 任务继续查原编号[32m 9[2mms[22m[39m
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页任务查询断线保留未确认，不把旧快照当成功
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页 apiBase 变化清理旧导入会话与迟到预览
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页 managementKey 变化清理旧导入会话与迟到预览
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 插件页 managerBase 变化清理旧导入会话与迟到预览
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 系统原页接入本站核心更新，即使 Manager 不可用仍只请求 CPA
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页恢复 recovery_required 任务继续查原编号[32m 8[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页任务查询断线保留未确认，不把旧快照当成功[32m 18[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页 apiBase 变化清理旧导入会话与迟到预览[32m 23[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页 managementKey 变化清理旧导入会话与迟到预览[32m 28[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m插件页 managerBase 变化清理旧导入会话与迟到预览[32m 17[2mms[22m[39m
+stderr | src/features/updatePages.integration.test.tsx > 原页面更新接线联测 > 系统原页断线禁用核心查询，重连重新发现而非沿用成功
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m系统原页接入本站核心更新，即使 Manager 不可用仍只请求 CPA[32m 28[2mms[22m[39m
+ [32m✓[39m src/features/updatePages.integration.test.tsx[2m > [22m原页面更新接线联测[2m > [22m系统原页断线禁用核心查询，重连重新发现而非沿用成功[32m 14[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m真实 Axios 转换后仍发送原始 ZIP，不包 FormData 或 JSON[32m 6[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m插件确认、取消与任务查询符合固定路由和双确认契约[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m核心发现、候选生成与安装仅走 CPA v8 路由[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m创建另一连接和改变全局 Axios 默认值不改变已捕获的 CPA 与密钥[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m并发首次请求只握手一次，固定同一 Manager 连接引用[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22mManager 换靶 409 后保留原引用，不自动重绑或重放安装[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m直连 CPA 无 Manager 引用时保留原始 ZIP 和原有安装请求[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m缺失连接字段时停止发请求：[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/api/pluginImports.test.ts[2m > [22m固定 CPA 更新 API 契约[2m > [22m缺失连接字段时停止发请求：https://cpa-one.test[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m20 passed[39m[22m[90m (20)[39m
+[2m   Start at [22m 22:32:19
+[2m   Duration [22m 2.42s[2m (transform 1.45s, setup 0ms, import 1.89s, tests 251ms, environment 0ms)[22m
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 1735 modules transformed.
+
+(!) outDir /out/web-seam is not inside project root and will not be emptied.
+Use --emptyOutDir to override.
+
+rendering chunks...
+[plugin vite:singlefile]
+
+[plugin vite:singlefile] Inlining: index-ur356fpq.js
+[plugin vite:singlefile] Inlining: style-D1Bp_Gkb.css
+computing gzip size...
+../../../out/web-seam/index.html  6,817.80 kB │ gzip: 1,865.08 kB
+
+✓ built in 5.29s
+web_connection_ref_tests_and_build_exit=0

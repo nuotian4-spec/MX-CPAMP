@@ -1,0 +1,30 @@
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/missing_manifest
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/multiple_manifests
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/multiple_libraries
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/path_traversal
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/identity_mismatch
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/platform_mismatch
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/checksum_mismatch
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/missing_bound_library
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/architecture_mismatch
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/entry_limit
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/symbolic_link
+=== RUN   TestPrepareImportArchiveRejectsInvalidPackages/duplicate_entries
+--- PASS: TestPrepareImportArchiveRejectsInvalidPackages (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/missing_manifest (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/multiple_manifests (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/multiple_libraries (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/path_traversal (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/identity_mismatch (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/platform_mismatch (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/checksum_mismatch (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/missing_bound_library (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/architecture_mismatch (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/entry_limit (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/symbolic_link (0.00s)
+    --- PASS: TestPrepareImportArchiveRejectsInvalidPackages/duplicate_entries (0.00s)
+=== RUN   TestPrepareImportArchiveNormalizesUnifiedPackageWithoutExecuting
+--- PASS: TestPrepareImportArchiveNormalizesUnifiedPackageWithoutExecuting (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/pluginstore	0.070s

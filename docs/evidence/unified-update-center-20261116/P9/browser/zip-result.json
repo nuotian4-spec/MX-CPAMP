@@ -1,0 +1,91 @@
+{
+  "base": "http://unified-update-manager-browser-20261116:18317",
+  "stage": "zip",
+  "checks": [
+    {
+      "name": "插件维护状态无读取错误",
+      "pass": true
+    },
+    {
+      "name": "合成ZIP版本出现在预览",
+      "pass": true
+    },
+    {
+      "name": "取消未发送安装请求",
+      "pass": true
+    },
+    {
+      "name": "取消向后端提交删除暂存",
+      "pass": true
+    },
+    {
+      "name": "插件安装显示实际完成终态",
+      "pass": true
+    },
+    {
+      "name": "单次确认只发送一次安装",
+      "pass": true
+    },
+    {
+      "name": "新增v8正式请求未发生404",
+      "pass": true
+    }
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/v8/management/updates/operations/latest",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v8/management/updates/operations/latest",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v8/management/updates/operations/latest",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v8/management/updates/operations/latest",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/v8/management/plugins/imports",
+      "status": 201
+    },
+    {
+      "method": "DELETE",
+      "path": "/v8/management/plugins/imports/63a5afc5-9fe1-4a3d-8cc0-3b190c8ab6ba",
+      "status": 204
+    },
+    {
+      "method": "POST",
+      "path": "/v8/management/plugins/imports",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/v8/management/plugins/imports/d86bbdac-622e-473b-ade1-a9434c9fef8b/install",
+      "status": 202
+    },
+    {
+      "method": "GET",
+      "path": "/v8/management/updates/operations/plugin-d86bbdac-622e-473b-ade1-a9434c9fef8b",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v8/management/updates/operations/plugin-d86bbdac-622e-473b-ade1-a9434c9fef8b",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/v8/management/updates/operations/plugin-d86bbdac-622e-473b-ade1-a9434c9fef8b",
+      "status": 200
+    }
+  ]
+}

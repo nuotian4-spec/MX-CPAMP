@@ -681,6 +681,7 @@ func TestInstallPluginFromStoreRejectsImplicitSourceSwitch(t *testing.T) {
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	communitySourceID := pluginstore.SourceID(communityURL)
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install?source="+communitySourceID, nil)
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusConflict {
@@ -715,6 +716,7 @@ func TestInstallPluginFromStoreRejectsUnknownManagedSource(t *testing.T) {
 	c, _ := gin.CreateTestContext(rec)
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install", nil)
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusConflict {
@@ -886,6 +888,7 @@ func TestInstallPluginFromStoreRejectsUnresolvedPluginsDir(t *testing.T) {
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install", nil)
 
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusInternalServerError {
@@ -903,7 +906,7 @@ func TestInstallPluginFromStoreRejectsUnresolvedPluginsDir(t *testing.T) {
 	}
 }
 
-func TestInstallPluginFromStoreWritesFileAndEnablesConfig(t *testing.T) {
+func TestInstallPluginFromStoreWritesFileAndPreservesDisabledConfig(t *testing.T) {
 	workspace := t.TempDir()
 	homeDir := filepath.Join(workspace, "home")
 	if errMkdir := os.MkdirAll(homeDir, 0o755); errMkdir != nil {
@@ -950,6 +953,7 @@ plugins:
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install", nil)
 
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusOK {
@@ -982,12 +986,12 @@ plugins:
 		t.Fatalf("installed file = %q, want library-data", data)
 	}
 	item := h.cfg.Plugins.Configs["sample-provider"]
-	if item.Enabled == nil || !*item.Enabled {
-		t.Fatalf("plugin enabled = %#v, want true", item.Enabled)
+	if item.Enabled == nil || *item.Enabled {
+		t.Fatalf("plugin enabled = %#v, want false", item.Enabled)
 	}
 	snapshotItem := cfgSnapshot.Plugins.Configs["sample-provider"]
-	if snapshotItem.Enabled == nil || !*snapshotItem.Enabled {
-		t.Fatalf("snapshot plugin enabled = %#v, want true", snapshotItem.Enabled)
+	if snapshotItem.Enabled == nil || *snapshotItem.Enabled {
+		t.Fatalf("snapshot plugin enabled = %#v, want false", snapshotItem.Enabled)
 	}
 	if h.cfg.Plugins.Enabled {
 		t.Fatal("global plugins.enabled changed to true")
@@ -1036,6 +1040,7 @@ func TestInstallPluginFromStoreInstallsDirectArtifact(t *testing.T) {
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install", nil)
 
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusOK {
@@ -1099,6 +1104,7 @@ func TestInstallPluginFromStoreHonorsDirectQueryVersion(t *testing.T) {
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install?version=0.3.0", nil)
 
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusOK {
@@ -1168,6 +1174,7 @@ func TestInstallPluginFromStoreUsesRequestedThirdPartySource(t *testing.T) {
 	communitySourceID := pluginstore.SourceID("https://community.example/registry.json")
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install?source="+communitySourceID, nil)
 
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusOK {
@@ -1222,6 +1229,7 @@ func TestInstallPluginFromStoreRequiresSourceForDuplicateIDs(t *testing.T) {
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install", nil)
 
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusConflict {
@@ -1278,6 +1286,7 @@ func TestInstallPluginFromStoreOverwritesFilePreservesConfigAndReloads(t *testin
 	c.Params = gin.Params{{Key: "id", Value: "sample-provider"}}
 	c.Request = httptest.NewRequest(http.MethodPost, "/v0/management/plugin-store/sample-provider/install", nil)
 
+	registerTestUpdateSite(t, h)
 	h.InstallPluginFromStore(c)
 
 	if rec.Code != http.StatusOK {
@@ -1296,12 +1305,12 @@ func TestInstallPluginFromStoreOverwritesFilePreservesConfigAndReloads(t *testin
 		t.Fatalf("installed file = %q, want new-library-data", data)
 	}
 	item := h.cfg.Plugins.Configs["sample-provider"]
-	if item.Enabled == nil || !*item.Enabled {
-		t.Fatalf("plugin enabled = %#v, want true", item.Enabled)
+	if item.Enabled == nil || *item.Enabled {
+		t.Fatalf("plugin enabled = %#v, want false", item.Enabled)
 	}
 	snapshotItem := cfgSnapshot.Plugins.Configs["sample-provider"]
-	if snapshotItem.Enabled == nil || !*snapshotItem.Enabled {
-		t.Fatalf("snapshot plugin enabled = %#v, want true", snapshotItem.Enabled)
+	if snapshotItem.Enabled == nil || *snapshotItem.Enabled {
+		t.Fatalf("snapshot plugin enabled = %#v, want false", snapshotItem.Enabled)
 	}
 	if item.Priority != 5 {
 		t.Fatalf("plugin priority = %d, want 5", item.Priority)
@@ -1339,8 +1348,8 @@ func TestEnablePluginConfigLockedPreservesExistingFields(t *testing.T) {
 		t.Fatal("global Plugins.Enabled changed to true")
 	}
 	item := h.cfg.Plugins.Configs["sample-provider"]
-	if item.Enabled == nil || !*item.Enabled {
-		t.Fatalf("plugin enabled = %#v, want true", item.Enabled)
+	if item.Enabled == nil || *item.Enabled {
+		t.Fatalf("plugin enabled = %#v, want false", item.Enabled)
 	}
 	if item.Priority != 5 {
 		t.Fatalf("plugin priority = %d, want 5", item.Priority)

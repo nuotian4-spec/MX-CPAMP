@@ -1,0 +1,4 @@
+manager_latest_http=200 connection_reference_length=32 body={"operation":null}
+manager_core_http=200 body={"site_id": "fixture", "registered": true, "current_version": "", "official_version": "v8.0.73", "site_version": "v1.2.3", "releases": [{"id": "v1.2.3", "version": "v1.2.3", "notes": "离线合成固定发行"}], "blockers": []}
+direct_cpa_handshake_http=200 manager_reference_absent=true
+actual_manager_to_cpa_seam_exit=0

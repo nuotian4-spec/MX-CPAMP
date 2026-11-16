@@ -1,0 +1,7 @@
+=== RUN   TestV8CoreRouterUnixHostIndependentWorkerAndReconnect
+time="2026-11-15T21:14:38Z" level=info msg="management routes registered after secret key configuration"
+time="2026-11-15T21:14:38Z" level=info msg="management routes registered after secret key configuration"
+    server_update_integration_test.go:354: formal v8 Router -> Unix HTTP -> independent worker -> real updater lifecycle; synthetic Docker/release boundary, stopped backup and persistent original-operation reconnect verified
+--- PASS: TestV8CoreRouterUnixHostIndependentWorkerAndReconnect (0.56s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api	0.586s

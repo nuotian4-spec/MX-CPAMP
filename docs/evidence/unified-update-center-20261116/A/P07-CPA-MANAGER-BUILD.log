@@ -1,0 +1,6 @@
+cpa_final_build_exit=0
+go: downloading modernc.org/sqlite v1.46.1
+go: downloading golang.org/x/sys v0.44.0
+internal/usageidentity/model.go:9:2: module lookup disabled by GOPROXY=off
+internal/repository/codexinspection/lifecycle.go:15:2: module lookup disabled by GOPROXY=off
+internal/processlock/lock_unix.go:9:2: module lookup disabled by GOPROXY=off

@@ -27,7 +27,7 @@ type InstallOptions struct {
 	PluginLoaded func() bool
 	// BeforeWrite runs after the archive has been downloaded and verified, but
 	// before an existing target plugin file is replaced.
-	BeforeWrite func() error
+	BeforeWrite func(targetPath string) error
 }
 
 // ErrLoadedPluginLocked is returned when an install would overwrite a plugin
@@ -289,7 +289,7 @@ func InstallArchive(archiveData []byte, plugin Plugin, options InstallOptions) (
 	// Re-check immediately before replacing an existing file: the same version
 	// may have been loaded while the archive was being downloaded and verified.
 	if overwritten && options.BeforeWrite != nil {
-		if errBeforeWrite := options.BeforeWrite(); errBeforeWrite != nil {
+		if errBeforeWrite := options.BeforeWrite(targetPath); errBeforeWrite != nil {
 			return InstallResult{}, fmt.Errorf("prepare plugin write: %w", errBeforeWrite)
 		}
 	}

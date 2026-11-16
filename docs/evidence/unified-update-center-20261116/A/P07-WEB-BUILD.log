@@ -1,0 +1,23 @@
+
+> cpa-manager-plus-web@0.0.0 build
+> tsc && vite build --outDir /out/web
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:27:57). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 1735 modules transformed.
+
+(!) outDir /out/web is not inside project root and will not be emptied.
+Use --emptyOutDir to override.
+
+rendering chunks...
+[plugin vite:singlefile]
+
+[plugin vite:singlefile] Inlining: index-DwG7c-6L.js
+[plugin vite:singlefile] Inlining: style-D1Bp_Gkb.css
+computing gzip size...
+../../../out/web/index.html  6,817.48 kB │ gzip: 1,864.95 kB
+
+✓ built in 5.94s

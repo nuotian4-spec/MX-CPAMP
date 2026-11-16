@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/config"
 )
@@ -37,6 +38,10 @@ func WriteCORS(cfg config.Config, w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Usage-Import-Prefix-SHA256")
+	if strings.HasPrefix(r.URL.Path, "/v8/management/updates/") || strings.HasPrefix(r.URL.Path, "/v8/management/plugins/imports") {
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-CPA-Connection-Ref")
+		w.Header().Set("Access-Control-Expose-Headers", "X-CPA-Connection-Ref")
+	}
 	if r.URL.Path == "/v0/management/config.yaml" {
 		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, If-Match, X-CPA-Connection-Ref")
 		w.Header().Set("Access-Control-Expose-Headers", "ETag, X-CPA-Connection-Ref")

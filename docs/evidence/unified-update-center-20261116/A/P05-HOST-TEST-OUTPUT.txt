@@ -1,0 +1,35 @@
+test_daemon_reconcile_marks_missing_worker_and_retains_owner (__main__.HostTests.test_daemon_reconcile_marks_missing_worker_and_retains_owner) ... ok
+test_daemon_reconcile_preserves_live_systemd_owner (__main__.HostTests.test_daemon_reconcile_preserves_live_systemd_owner) ... ok
+test_failure_after_maintenance_retains_recovery_owner (__main__.HostTests.test_failure_after_maintenance_retains_recovery_owner) ... ok
+test_failure_before_maintenance_is_terminal_and_releases_owner (__main__.HostTests.test_failure_before_maintenance_is_terminal_and_releases_owner) ... ok
+test_install_is_idempotent_and_launches_once (__main__.HostTests.test_install_is_idempotent_and_launches_once) ... ok
+test_install_rejects_changed_baseline_before_launch (__main__.HostTests.test_install_rejects_changed_baseline_before_launch) ... ok
+test_interrupted_after_maintenance_confirms_all_four_stopped (__main__.HostTests.test_interrupted_after_maintenance_confirms_all_four_stopped) ... ok
+test_interrupted_before_maintenance_does_not_halt_runtime (__main__.HostTests.test_interrupted_before_maintenance_does_not_halt_runtime) ... ok
+test_interrupted_does_not_overwrite_terminal_operation (__main__.HostTests.test_interrupted_does_not_overwrite_terminal_operation) ... ok
+test_interrupted_halt_failure_retains_owner_and_negative_receipt (__main__.HostTests.test_interrupted_halt_failure_retains_owner_and_negative_receipt) ... ok
+test_late_launch_failure_does_not_overwrite_running_worker_owner (__main__.HostTests.test_late_launch_failure_does_not_overwrite_running_worker_owner) ... ok
+test_launch_failure_keeps_persistent_recovery_owner (__main__.HostTests.test_launch_failure_keeps_persistent_recovery_owner) ... ok
+test_launch_uses_fixed_systemd_operation_unit (__main__.HostTests.test_launch_uses_fixed_systemd_operation_unit) ... ok
+test_manual_flock_blocks_web_install_without_enqueuing (__main__.HostTests.test_manual_flock_blocks_web_install_without_enqueuing) ... ok
+test_persistent_web_owner_blocks_manual_updater_main (__main__.HostTests.test_persistent_web_owner_blocks_manual_updater_main) ... ok
+test_recovery_accepts_bound_completion_only_after_health (__main__.HostTests.test_recovery_accepts_bound_completion_only_after_health) ... ok
+test_recovery_of_original_images_closes_as_failed_not_updated (__main__.HostTests.test_recovery_of_original_images_closes_as_failed_not_updated) ... ok
+test_recovery_rejects_changed_original_caddy (__main__.HostTests.test_recovery_rejects_changed_original_caddy) ... ok
+test_recovery_rejects_missing_completion_record (__main__.HostTests.test_recovery_rejects_missing_completion_record) ... ok
+test_recovery_rejects_wrong_images_despite_matching_completion (__main__.HostTests.test_recovery_rejects_wrong_images_despite_matching_completion) ... ok
+test_same_site_second_candidate_returns_existing_owner (__main__.HostTests.test_same_site_second_candidate_returns_existing_owner) ... ok
+test_unix_http_preview_install_and_idempotent_acceptance (__main__.HostTests.test_unix_http_preview_install_and_idempotent_acceptance) ... ok
+test_unix_http_rejects_arbitrary_url_fields_before_fetch (__main__.HostTests.test_unix_http_rejects_arbitrary_url_fields_before_fetch) ... ok
+test_unix_http_requires_fixed_registered_site_id (__main__.HostTests.test_unix_http_requires_fixed_registered_site_id) ... ok
+test_worker_binds_live_images_pointer_and_original_caddy (__main__.HostTests.test_worker_binds_live_images_pointer_and_original_caddy) ... ok
+test_worker_confirmation_checks_each_of_four_container_ids (__main__.HostTests.test_worker_confirmation_checks_each_of_four_container_ids) ... ok
+test_worker_rejects_changed_fixed_release (__main__.HostTests.test_worker_rejects_changed_fixed_release) ... ok
+test_worker_rejects_drift_between_enqueue_and_run (__main__.HostTests.test_worker_rejects_drift_between_enqueue_and_run) ... ok
+test_worker_rejects_live_image_not_bound_to_plan (__main__.HostTests.test_worker_rejects_live_image_not_bound_to_plan) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 0.215s
+
+OK
+host_unittest_exit=0

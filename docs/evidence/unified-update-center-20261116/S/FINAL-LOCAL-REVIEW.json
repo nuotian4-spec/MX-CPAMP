@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "reviewer": "S",
+  "receipt": "docs/evidence/unified-update-center-20261116/S/FINAL-LOCAL-REVIEW.zh-CN.md",
+  "base_head": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+  "reviewed_at": "2026-11-16T05:18:18.896306+08:00",
+  "normal_startup_preserved": true,
+  "source_mapping_reviewed": true,
+  "source_mapping": {
+    "count": 4636,
+    "actual_files": 4636,
+    "missing": 0,
+    "blob_mismatches": 0,
+    "contract_equals_build_input": true,
+    "input": "docs/evidence/unified-update-center-20261116/A/P07-BUILD-INPUT.json"
+  },
+  "scope": "local incremental code and exact component source mapping",
+  "evidence": [
+    "P06:18/18 exit0",
+    "P08:formal router, Unix HTTP, independent worker, actual updater lifecycle PASS"
+  ],
+  "not_accepted": [
+    "real systemd or Compose deployment",
+    "browser acceptance",
+    "supplier plugin or license/model business acceptance",
+    "production deployment"
+  ],
+  "build_observation": "P07 web/CPA/Manager builds succeeded; Manager local-cache final exit0 confirmed from P07-MANAGER-LOCAL-CACHE-BUILD.log. Subsequent Manager connection-reference seam requires its separate frozen-input review."
+}

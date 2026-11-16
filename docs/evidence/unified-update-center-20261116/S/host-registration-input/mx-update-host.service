@@ -1,0 +1,19 @@
+[Unit]
+Description=MX fixed-site update host
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+UMask=0077
+RuntimeDirectory=mx-update
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/bin/python3 /usr/local/lib/mx-update/mx-update-host.py --site /etc/mx-update/site.json --serve
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

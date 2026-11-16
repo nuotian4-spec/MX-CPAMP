@@ -92,6 +92,12 @@ func (s *Service) List(ctx context.Context) (Snapshot, error) {
 func sameConnection(a, b store.Setup) bool {
 	return strings.TrimRight(a.CPAUpstreamURL, "/") == strings.TrimRight(b.CPAUpstreamURL, "/") && a.ManagementKey == b.ManagementKey
 }
+
+// BindConnection reuses the shared reference for a confirmed CPA connection.
+func (s *Service) BindConnection(ctx context.Context, shown store.Setup) (string, error) {
+	return s.bindConnection(ctx, shown)
+}
+
 func (s *Service) bindConnection(ctx context.Context, shown store.Setup) (string, error) {
 	current, err := s.setup(ctx)
 	if err != nil {

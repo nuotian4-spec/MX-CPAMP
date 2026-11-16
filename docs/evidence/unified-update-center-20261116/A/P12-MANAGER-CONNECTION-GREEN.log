@@ -1,0 +1,152 @@
+=== RUN   TestServerCompatV8APIKeysConfigProxy
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys status=200 duration=741.327µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys/claude status=200 duration=465.252µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/missing_admin_key
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys status=401 duration=106.316µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/wrong_admin_key
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys status=401 duration=97.098µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/CPA_management_key
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys status=401 duration=39.447µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/put
+2026/11/15 22:32:06 http PUT /v8/management/config/api-keys status=405 duration=55.197µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/patch
+2026/11/15 22:32:06 http PATCH /v8/management/config/api-keys/claude status=405 duration=65.216µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/delete
+2026/11/15 22:32:06 http DELETE /v8/management/config/api-keys status=405 duration=63.964µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/head
+2026/11/15 22:32:06 http HEAD /v8/management/config/api-keys status=405 duration=63.192µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/config_root
+2026/11/15 22:32:06 http GET /v8/management/config status=404 duration=4.208µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/config_yaml
+2026/11/15 22:32:06 http GET /v8/management/config.yaml status=404 duration=1.834µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/sibling_config_key
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys-x status=404 duration=1.814µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/other_v8_route
+2026/11/15 22:32:06 http GET /v8/management/credentials/download status=404 duration=2.685µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/dot_segments
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys/../../credentials/download status=307 duration=8.367µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/encoded_dot_segments
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys/../../credentials/download status=404 duration=59.715µs remote=192.0.2.1:1234
+=== RUN   TestServerCompatV8APIKeysConfigProxy/encoded_slash_dot_segments
+2026/11/15 22:32:06 http GET /v8/management/config/api-keys/../../credentials/download status=404 duration=75.045µs remote=192.0.2.1:1234
+--- PASS: TestServerCompatV8APIKeysConfigProxy (0.44s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/missing_admin_key (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/wrong_admin_key (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/CPA_management_key (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/put (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/patch (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/delete (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/head (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/config_root (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/config_yaml (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/sibling_config_key (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/other_v8_route (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/dot_segments (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/encoded_dot_segments (0.00s)
+    --- PASS: TestServerCompatV8APIKeysConfigProxy/encoded_slash_dot_segments (0.00s)
+=== RUN   TestServerCompatPluginProxyRoutes
+2026/11/15 22:32:06 http POST /v0/management/plugin-store/demo/install status=200 duration=647.926µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http PATCH /v0/management/plugins/demo/custom status=200 duration=444.462µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http GET /v0/management/codex-invite/accounts status=200 duration=360.879µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http POST /v0/management/codex-invite/invite status=200 duration=346.14µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http POST /v0/resource/plugins/codex-invite/invite status=200 duration=308.347µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http POST /v0/resource/plugins/codex-invite/invite status=200 duration=320.959µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http POST /v0/resource/plugins/codex-invite/invite status=200 duration=310.195µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http PUT /v0/resource/plugins/codex-invite/invite status=200 duration=326.863µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http TRACE /v0/resource/plugins/codex-invite/invite status=405 duration=11.703µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http GET /v0/resource/plugins/codex-invite/invite status=200 duration=279.392µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http GET /v0/resource/plugins/codex-invite/invite status=200 duration=266.216µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http GET /v0/resource/plugins/codex-invite/invite status=200 duration=393.934µs remote=192.0.2.1:1234
+2026/11/15 22:32:06 http HEAD /v0/resource/plugins/codex-invite/invite status=200 duration=330.761µs remote=192.0.2.1:1234
+--- PASS: TestServerCompatPluginProxyRoutes (0.44s)
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse
+2026/11/15 22:32:06 http GET /v8/management/updates/operations/latest status=202 duration=1.100583ms remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/updates/operations/latest?type=plugin
+2026/11/15 22:32:06 http GET /v8/management/updates/operations/latest status=202 duration=562.099µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/updates/operations/operation-1
+2026/11/15 22:32:06 http GET /v8/management/updates/operations/operation-1 status=202 duration=386.809µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/updates/core
+2026/11/15 22:32:06 http GET /v8/management/updates/core status=202 duration=400.978µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/updates/core/previews
+2026/11/15 22:32:06 http POST /v8/management/updates/core/previews status=202 duration=429.753µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/updates/core/previews/candidate-1/install
+2026/11/15 22:32:06 http POST /v8/management/updates/core/previews/candidate-1/install status=202 duration=440.964µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/plugins/imports
+2026/11/15 22:32:06 http POST /v8/management/plugins/imports status=202 duration=522.723µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/plugins/imports/import-1
+2026/11/15 22:32:06 http GET /v8/management/plugins/imports/import-1 status=202 duration=493.747µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/DELETE_/v8/management/plugins/imports/import-1
+2026/11/15 22:32:06 http DELETE /v8/management/plugins/imports/import-1 status=202 duration=537.401µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/plugins/imports/import-1/install
+2026/11/15 22:32:06 http POST /v8/management/plugins/imports/import-1/install status=202 duration=541.86µs remote=192.0.2.1:1234
+--- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse (0.43s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/updates/operations/latest?type=plugin (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/updates/operations/operation-1 (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/updates/core (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/updates/core/previews (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/updates/core/previews/candidate-1/install (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/plugins/imports (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/GET_/v8/management/plugins/imports/import-1 (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/DELETE_/v8/management/plugins/imports/import-1 (0.00s)
+    --- PASS: TestServerV8UpdateProxyPreservesCPARequestAndResponse/POST_/v8/management/plugins/imports/import-1/install (0.00s)
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core_
+2026/11/15 22:32:07 http GET /v8/management/updates/core status=401 duration=1.519555ms remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core_wrong-key
+2026/11/15 22:32:07 http GET /v8/management/updates/core status=401 duration=68.492µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/POST_/v8/management/plugins/imports_saved-cpa-key
+2026/11/15 22:32:07 http POST /v8/management/plugins/imports status=401 duration=64.976µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/POST_/v8/management/plugins/imports_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http POST /v8/management/plugins/imports status=400 duration=91.488µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http GET /v8/management/updates/core status=400 duration=102.81µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/DELETE_/v8/management/updates/operations/operation-1_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http DELETE /v8/management/updates/operations/operation-1 status=405 duration=70.457µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/PUT_/v8/management/updates/core_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http PUT /v8/management/updates/core status=405 duration=65.066µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/plugins/imports/import-1/install_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http GET /v8/management/plugins/imports/import-1/install status=405 duration=65.517µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/config_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http GET /v8/management/config status=404 duration=4.037µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/PUT_/v8/management/config/plugins/configs/sample/enabled_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http PUT /v8/management/config/plugins/configs/sample/enabled status=404 duration=3.757µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/DELETE_/v8/management/credentials_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http DELETE /v8/management/credentials status=404 duration=3.456µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/POST_/v8/management/plugins/store/sample/install_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http POST /v8/management/plugins/store/sample/install status=404 duration=2.986µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core-extra_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http GET /v8/management/updates/core-extra status=404 duration=2.846µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/plugins/imports/import-1/extra_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http GET /v8/management/plugins/imports/import-1/extra status=404 duration=3.367µs remote=192.0.2.1:1234
+=== RUN   TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/operations/%2e%2e_cpamp_test_key_0123456789abcdef
+2026/11/15 22:32:07 http GET /v8/management/updates/operations/.. status=404 duration=3.957µs remote=192.0.2.1:1234
+--- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys (0.40s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core_ (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core_wrong-key (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/POST_/v8/management/plugins/imports_saved-cpa-key (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/POST_/v8/management/plugins/imports_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/DELETE_/v8/management/updates/operations/operation-1_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/PUT_/v8/management/updates/core_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/plugins/imports/import-1/install_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/config_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/PUT_/v8/management/config/plugins/configs/sample/enabled_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/DELETE_/v8/management/credentials_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/POST_/v8/management/plugins/store/sample/install_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/core-extra_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/plugins/imports/import-1/extra_cpamp_test_key_0123456789abcdef (0.00s)
+    --- PASS: TestServerV8UpdateProxyRejectsOtherScopesAndCallerKeys/GET_/v8/management/updates/operations/%2e%2e_cpamp_test_key_0123456789abcdef (0.00s)
+=== RUN   TestServerV8UpdateProxyPinsConnectionAcrossConcurrentReadsAndTargetChange
+2026/11/15 22:32:07 http GET /v8/management/updates/operations/latest status=200 duration=1.32062ms remote=192.0.2.1:1234
+2026/11/15 22:32:07 http GET /v8/management/updates/operations/latest status=200 duration=2.067057ms remote=192.0.2.1:1234
+2026/11/15 22:32:07 http POST /v8/management/updates/core/previews status=200 duration=428.309µs remote=192.0.2.1:1234
+2026/11/15 22:32:07 http POST /v8/management/plugins/imports status=409 duration=214.476µs remote=192.0.2.1:1234
+2026/11/15 22:32:07 http POST /v8/management/updates/core/previews status=409 duration=65.317µs remote=192.0.2.1:1234
+2026/11/15 22:32:07 http POST /v8/management/updates/core/previews/fixed-candidate/install status=409 duration=60.537µs remote=192.0.2.1:1234
+2026/11/15 22:32:07 http POST /v8/management/plugins/imports/fixed-import/install status=409 duration=69.695µs remote=192.0.2.1:1234
+2026/11/15 22:32:07 http DELETE /v8/management/plugins/imports/fixed-import status=409 duration=59.585µs remote=192.0.2.1:1234
+2026/11/15 22:32:07 http GET /v8/management/updates/operations/fixed-operation status=409 duration=58.354µs remote=192.0.2.1:1234
+--- PASS: TestServerV8UpdateProxyPinsConnectionAcrossConcurrentReadsAndTargetChange (0.44s)
+PASS
+ok  	github.com/seakee/cpa-manager-plus/apps/manager-server/internal/httpapi	2.162s
+manager_connection_ref_tests_exit=0

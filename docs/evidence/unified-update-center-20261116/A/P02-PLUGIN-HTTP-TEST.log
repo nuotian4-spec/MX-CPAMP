@@ -1,0 +1,70 @@
+=== RUN   TestPluginImportPreviewCancelAndExplicitConfirmations
+--- PASS: TestPluginImportPreviewCancelAndExplicitConfirmations (0.02s)
+=== RUN   TestPluginImportUnknownLicenseRequiresSeparateConsent
+--- PASS: TestPluginImportUnknownLicenseRequiresSeparateConsent (0.01s)
+=== RUN   TestPluginImportDisabledPreservesConfigAndBlocksConcurrentWriters
+--- PASS: TestPluginImportDisabledPreservesConfigAndBlocksConcurrentWriters (0.04s)
+=== RUN   TestPluginImportFailedActivationPreservesConcurrentSettings
+--- PASS: TestPluginImportFailedActivationPreservesConcurrentSettings (0.05s)
+=== RUN   TestPluginImportKnownIncompatiblePairIsBlocked
+--- PASS: TestPluginImportKnownIncompatiblePairIsBlocked (0.02s)
+=== RUN   TestUpdateGuardUsesExactPluginPathSegments
+--- PASS: TestUpdateGuardUsesExactPluginPathSegments (0.00s)
+=== RUN   TestUpdateDeleteDoesNotRequireRemovedPluginRegistration
+--- PASS: TestUpdateDeleteDoesNotRequireRemovedPluginRegistration (0.01s)
+=== RUN   TestPluginStoreListingCooldownAlsoBlocksInstallation
+=== PAUSE TestPluginStoreListingCooldownAlsoBlocksInstallation
+=== RUN   TestPluginStoreInstallationPropagatesRegistryRateLimit
+=== PAUSE TestPluginStoreInstallationPropagatesRegistryRateLimit
+=== RUN   TestInstallPluginFromStoreRejectsImplicitSourceSwitch
+=== PAUSE TestInstallPluginFromStoreRejectsImplicitSourceSwitch
+=== RUN   TestInstallPluginFromStoreRejectsUnknownManagedSource
+=== PAUSE TestInstallPluginFromStoreRejectsUnknownManagedSource
+=== RUN   TestInstallPluginFromStoreRejectsUnresolvedPluginsDir
+--- PASS: TestInstallPluginFromStoreRejectsUnresolvedPluginsDir (0.02s)
+=== RUN   TestInstallPluginFromStoreWritesFileAndPreservesDisabledConfig
+time="2026-11-16T05:07:47+08:00" level=info msg="pluginstore: plugin installed" install_type=github-release overwritten=false path="C:\\Users\\子羽\\AppData\\Local\\Temp\\TestInstallPluginFromStoreWritesFileAndPreservesDisabledConfig3242929277\\001\\home\\.cli-proxy-api\\plugins\\windows\\amd64\\sample-provider-v0.1.0.dll" plugin_id=sample-provider plugin_name="Sample Provider" source_id=official version=0.1.0
+--- PASS: TestInstallPluginFromStoreWritesFileAndPreservesDisabledConfig (0.05s)
+=== RUN   TestInstallPluginFromStoreInstallsDirectArtifact
+=== PAUSE TestInstallPluginFromStoreInstallsDirectArtifact
+=== RUN   TestInstallPluginFromStoreHonorsDirectQueryVersion
+=== PAUSE TestInstallPluginFromStoreHonorsDirectQueryVersion
+=== RUN   TestInstallPluginFromStoreUsesRequestedThirdPartySource
+=== PAUSE TestInstallPluginFromStoreUsesRequestedThirdPartySource
+=== RUN   TestInstallPluginFromStoreRequiresSourceForDuplicateIDs
+=== PAUSE TestInstallPluginFromStoreRequiresSourceForDuplicateIDs
+=== RUN   TestInstallPluginFromStoreOverwritesFilePreservesConfigAndReloads
+=== PAUSE TestInstallPluginFromStoreOverwritesFilePreservesConfigAndReloads
+=== RUN   TestEnablePluginConfigLockedPreservesExistingFields
+=== PAUSE TestEnablePluginConfigLockedPreservesExistingFields
+=== RUN   TestEnablePluginConfigLockedCreatesMissingConfig
+=== PAUSE TestEnablePluginConfigLockedCreatesMissingConfig
+=== CONT  TestPluginStoreListingCooldownAlsoBlocksInstallation
+=== CONT  TestInstallPluginFromStoreUsesRequestedThirdPartySource
+=== CONT  TestInstallPluginFromStoreOverwritesFilePreservesConfigAndReloads
+=== CONT  TestInstallPluginFromStoreRejectsImplicitSourceSwitch
+=== CONT  TestEnablePluginConfigLockedPreservesExistingFields
+=== CONT  TestEnablePluginConfigLockedCreatesMissingConfig
+=== CONT  TestInstallPluginFromStoreRejectsUnknownManagedSource
+=== CONT  TestInstallPluginFromStoreHonorsDirectQueryVersion
+=== CONT  TestInstallPluginFromStoreInstallsDirectArtifact
+=== CONT  TestInstallPluginFromStoreRequiresSourceForDuplicateIDs
+=== CONT  TestPluginStoreInstallationPropagatesRegistryRateLimit
+--- PASS: TestEnablePluginConfigLockedPreservesExistingFields (0.00s)
+--- PASS: TestEnablePluginConfigLockedCreatesMissingConfig (0.00s)
+time="2026-11-16T05:07:47+08:00" level=warning msg="pluginstore: failed to fetch latest release" error="GitHub API rate limited; retry after 2026-11-15T22:07:47Z" plugin_id=sample-provider
+--- PASS: TestInstallPluginFromStoreRequiresSourceForDuplicateIDs (0.03s)
+--- PASS: TestInstallPluginFromStoreRejectsImplicitSourceSwitch (0.04s)
+--- PASS: TestInstallPluginFromStoreRejectsUnknownManagedSource (0.04s)
+--- PASS: TestPluginStoreInstallationPropagatesRegistryRateLimit (0.04s)
+time="2026-11-16T05:07:47+08:00" level=info msg="pluginstore: plugin installed" install_type=github-release overwritten=false path="C:\\Users\\子羽\\AppData\\Local\\Temp\\TestInstallPluginFromStoreUsesRequestedThirdPartySource1912381570\\001\\windows\\amd64\\sample-provider-v0.3.0.dll" plugin_id=sample-provider plugin_name="Sample Provider Community Build" source_id=source-4c4e391d1e2b version=0.3.0
+time="2026-11-16T05:07:47+08:00" level=info msg="pluginstore: plugin installed" install_type=direct overwritten=false path="C:\\Users\\子羽\\AppData\\Local\\Temp\\TestInstallPluginFromStoreHonorsDirectQueryVersion170493417\\001\\windows\\amd64\\sample-provider-v0.3.0.dll" plugin_id=sample-provider plugin_name="Sample Provider" source_id=official version=0.3.0
+time="2026-11-16T05:07:47+08:00" level=info msg="pluginstore: plugin installed" install_type=direct overwritten=false path="C:\\Users\\子羽\\AppData\\Local\\Temp\\TestInstallPluginFromStoreInstallsDirectArtifact3893299913\\001\\windows\\amd64\\sample-provider-v0.4.0.dll" plugin_id=sample-provider plugin_name="Sample Provider" source_id=official version=0.4.0
+time="2026-11-16T05:07:47+08:00" level=info msg="pluginstore: plugin installed" install_type=github-release overwritten=true path="C:\\Users\\子羽\\AppData\\Local\\Temp\\TestInstallPluginFromStoreOverwritesFilePreservesConfigAndReload3305188574\\001\\windows\\amd64\\sample-provider-v0.1.0.dll" plugin_id=sample-provider plugin_name="Sample Provider" source_id=official version=0.1.0
+--- PASS: TestInstallPluginFromStoreUsesRequestedThirdPartySource (0.06s)
+--- PASS: TestInstallPluginFromStoreHonorsDirectQueryVersion (0.06s)
+--- PASS: TestInstallPluginFromStoreInstallsDirectArtifact (0.06s)
+--- PASS: TestInstallPluginFromStoreOverwritesFilePreservesConfigAndReloads (0.06s)
+--- PASS: TestPluginStoreListingCooldownAlsoBlocksInstallation (0.06s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/api/handlers/management	0.497s

@@ -1,0 +1,26 @@
+{
+  "baseline": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+  "captured_at": "2026-11-16T05:11:51.176436+08:00",
+  "files": [
+    {
+      "source": "deploy/mx-update-host-install.py",
+      "bytes": 12674
+    },
+    {
+      "source": "deploy/mx-update-host.py",
+      "bytes": 23767
+    },
+    {
+      "source": "deploy/mx-update-host.service",
+      "bytes": 446
+    },
+    {
+      "source": "deploy/mx-update-operation@.service",
+      "bytes": 450
+    },
+    {
+      "source": "deploy/test_mx_update_host.py",
+      "bytes": 27522
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+test_all_apps_recreate_full_chain_and_original_caddy_is_preserved (__main__.InstallTests.test_all_apps_recreate_full_chain_and_original_caddy_is_preserved) ... ok
+test_cli_does_not_expose_test_system_root (__main__.InstallTests.test_cli_does_not_expose_test_system_root) ... ok
+test_configuration_site_and_original_pointer_are_backed_up (__main__.InstallTests.test_configuration_site_and_original_pointer_are_backed_up) ... ok
+test_existing_lock_keeps_same_inode_and_contents (__main__.InstallTests.test_existing_lock_keeps_same_inode_and_contents) ... ok
+test_existing_system_materials_are_preserved_before_replacement (__main__.InstallTests.test_existing_system_materials_are_preserved_before_replacement) ... ok
+test_failed_ingress_health_halts_and_does_not_publish_success (__main__.InstallTests.test_failed_ingress_health_halts_and_does_not_publish_success) ... ok
+test_failure_after_stop_retains_recovery_owner_and_halts (__main__.InstallTests.test_failure_after_stop_retains_recovery_owner_and_halts) ... ok
+test_halt_failure_still_persists_recovery_owner (__main__.InstallTests.test_halt_failure_still_persists_recovery_owner) ... ok
+test_manual_site_lock_blocks_recreation (__main__.InstallTests.test_manual_site_lock_blocks_recreation) ... ok
+test_other_registered_site_is_rejected_without_replacing_registry (__main__.InstallTests.test_other_registered_site_is_rejected_without_replacing_registry) ... ok
+test_recover_original_runtime_closes_failed_operation_without_database_restore (__main__.InstallTests.test_recover_original_runtime_closes_failed_operation_without_database_restore) ... ok
+test_recover_rejects_wrong_image_chain_or_pointer_before_health (__main__.InstallTests.test_recover_rejects_wrong_image_chain_or_pointer_before_health) ... ok
+test_recover_requires_healthy_ingress_before_releasing_owner (__main__.InstallTests.test_recover_requires_healthy_ingress_before_releasing_owner) ... ok
+test_registry_used_as_site_stays_regular_file_without_self_link (__main__.InstallTests.test_registry_used_as_site_stays_regular_file_without_self_link) ... ok
+test_success_registers_site_and_clears_active_owner (__main__.InstallTests.test_success_registers_site_and_clears_active_owner) ... ok
+test_without_confirmation_changes_nothing (__main__.InstallTests.test_without_confirmation_changes_nothing) ... ok
+test_host_unit_uses_fixed_registry_and_preserves_runtime_directory (__main__.UnitFileTests.test_host_unit_uses_fixed_registry_and_preserves_runtime_directory) ... ok
+test_worker_has_exec_stop_post_and_is_independent_of_manager (__main__.UnitFileTests.test_worker_has_exec_stop_post_and_is_independent_of_manager) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.563s
+
+OK
+host_install_unittest_exit=0

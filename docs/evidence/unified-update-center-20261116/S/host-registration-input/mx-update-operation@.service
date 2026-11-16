@@ -1,0 +1,15 @@
+[Unit]
+Description=MX independent site update %i
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /usr/local/lib/mx-update/mx-update-host.py --site /etc/mx-update/site.json --run %i
+ExecStopPost=/usr/bin/python3 /usr/local/lib/mx-update/mx-update-host.py --site /etc/mx-update/site.json --interrupted %i
+TimeoutStartSec=infinity
+TimeoutStopSec=120
+KillMode=control-group
+Restart=no

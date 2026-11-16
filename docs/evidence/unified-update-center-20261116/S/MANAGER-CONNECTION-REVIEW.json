@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "reviewer": "S",
+  "scope": "P12 Manager 更新精确白名单与 CPA 连接引用九文件增量",
+  "reviewed_at": "2026-11-16T06:36:14.488860+08:00",
+  "base_head": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+  "build_revision_label": "9dce11c-dirty-unified-update-bound",
+  "receipt": "docs/evidence/unified-update-center-20261116/S/MANAGER-CONNECTION-REVIEW.json",
+  "report": "docs/evidence/unified-update-center-20261116/S/MANAGER-CONNECTION-REVIEW.zh-CN.md",
+  "build_input": "docs/evidence/unified-update-center-20261116/A/P12-BUILD-INPUT.json",
+  "normal_startup_preserved": true,
+  "source_mapping_reviewed": true,
+  "source_mapping": {
+    "source_file_count": 4638,
+    "current_paths_equal": true,
+    "current_git_blobs_equal": true,
+    "contract_source_files_equal": true,
+    "p07_source_file_count": 4636,
+    "p07_to_p12_changes_exactly_incremental_paths": true,
+    "cpa_source_unchanged": true
+  },
+  "incremental_paths": [
+    "components/cpamp/apps/manager-server/internal/http/router/router.go",
+    "components/cpamp/apps/manager-server/internal/http/controller/proxy/handler.go",
+    "components/cpamp/apps/manager-server/internal/service/proxy/service.go",
+    "components/cpamp/apps/manager-server/internal/service/proxy/v8_updates.go",
+    "components/cpamp/apps/manager-server/internal/httpapi/update_proxy_test.go",
+    "components/cpamp/apps/manager-server/internal/service/credentialconcurrency/service.go",
+    "components/cpamp/apps/manager-server/internal/http/middleware/cors.go",
+    "components/cpamp/apps/web/src/services/api/pluginImports.ts",
+    "components/cpamp/apps/web/src/services/api/pluginImports.test.ts"
+  ],
+  "review_findings": [],
+  "verified_boundaries": [
+    "仅开放指定更新路径和方法；Manager 管理员鉴权先于上游转发；保存的 CPA 管理密钥用于上游。",
+    "首次只读 GET 取得连接引用；同客户端并发握手共享引用；业务请求沿用同引用。",
+    "保存的 CPA 目标或管理密钥变化后旧引用返回 409；已覆盖写入与查询路径零转发；前端不自动重绑或重放。",
+    "ZIP 原始请求体、查询参数及上游状态和正文沿既有代理保留；直接 CPA 无引用模式保持。",
+    "既有普通启动入口和 v0 代理流程保留；未将整个 v8 范围开放为通配代理。"
+  ],
+  "evidence_reused": [
+    "docs/evidence/unified-update-center-20261116/A/P12-CONNECTION-REF-RED.log",
+    "docs/evidence/unified-update-center-20261116/A/P12-MANAGER-CONNECTION-GREEN.log",
+    "docs/evidence/unified-update-center-20261116/A/P12-WEB-CONNECTION-TEST-BUILD.log",
+    "docs/evidence/unified-update-center-20261116/A/P12-MANAGER-FINAL-BUILD.log"
+  ],
+  "evidence_summary": {
+    "manager_test_top_level_pass": 5,
+    "manager_test_exit": 0,
+    "web_test_files": 2,
+    "web_tests_pass": 20,
+    "web_tests_and_build_exit": 0,
+    "manager_final_build_exit": 0,
+    "tests_rerun_by_S": false
+  },
+  "prior_review": "docs/evidence/unified-update-center-20261116/S/FINAL-LOCAL-REVIEW.json",
+  "prior_scope": "原 S2-S5 结论继续引用；本回执仅补足 P12 增量，不扩大旧证据覆盖范围。",
+  "limitations": [
+    "Manager 使用真实 Router 与合成 HTTP 上游；前端使用适配器测试，均不等于实际浏览器验收。",
+    "实际浏览器验收由 P9 负责。",
+    "真实 systemd、Compose、供应商许可与模型、生产现场未验。",
+    "候选仍为本地未提交工作树；未提交、未推送、未部署。"
+  ],
+  "next_owner": "A 回填 production-wiring.contract.json 的 incremental_review；P9 完成实际浏览器验收。"
+}

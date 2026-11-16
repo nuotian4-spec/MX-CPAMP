@@ -123,6 +123,27 @@ vi.mock('@/services/api', () => ({
   },
 }));
 vi.mock('@/services/api/apiKeys', () => ({ apiKeysApi: { list: mocks.keys } }));
+vi.mock('@/services/api/pluginImports', () => ({
+  createPluginImportApi: () => ({
+    upload: vi.fn(),
+    cancel: vi.fn(),
+    install: vi.fn(),
+    getOperation: vi.fn(),
+    getLatestOperation: vi.fn().mockResolvedValue({ operation: null }),
+  }),
+  createCoreUpdateApi: () => ({
+    discover: vi.fn().mockResolvedValue({
+      site_id: 'page-refresh-test',
+      registered: false,
+      current_version: '1.0',
+      releases: [],
+      blockers: [],
+    }),
+    preview: vi.fn(),
+    install: vi.fn(),
+    getOperation: vi.fn(),
+  }),
+}));
 vi.mock('@/services/api/logs', () => ({
   logsApi: { fetchLogs: mocks.logs, fetchErrorLogs: mocks.errorLogs, clearLogs: mocks.clearLogs },
 }));
