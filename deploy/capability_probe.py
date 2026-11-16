@@ -6,11 +6,13 @@ import json
 import pathlib
 import re
 import subprocess
+import tarfile
 
 
 CHANNELS = ('kilo', 'codex', 'bps')
 ROLES = {'cli-proxy-api': 'cpa', 'cpa-manager-plus': 'manager', 'oauth-login': 'worker'}
 VALIDATOR = 'mx-authz-policy-v1'
+_IMAGE_BINDINGS = {}
 
 
 class Failure(Exception):
@@ -33,6 +35,122 @@ def digest(path):
 def write(path, value):
     pathlib.Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     pathlib.Path(path).chmod(0o600)
+
+
+def archive_image_bindings(folder):
+    """从发行绑定的归档推导配置与 OCI 身份，不采信现场标签新增身份。"""
+    folder = pathlib.Path(folder).resolve()
+    names = ('release.json', 'mx-cpamp-images.manifest.json', 'mx-cpamp-images-linux-amd64.tar.gz')
+    paths = [folder / name for name in names]
+    stamp = tuple((path.stat().st_size, path.stat().st_mtime_ns) for path in paths)
+    cached = _IMAGE_BINDINGS.get(folder)
+    if cached and cached[0] == stamp:
+        return cached[1]
+    release = read(paths[0])
+    manifest_raw = paths[1].read_bytes()
+    expected = release['assets'][names[1]]
+    require(len(manifest_raw) == expected['size'] and hashlib.sha256(manifest_raw).hexdigest() == expected['sha256'],
+            '镜像身份清单与发行不符')
+    manifest = json.loads(manifest_raw)
+    expected = release['assets'][names[2]]
+    require(manifest.get('archive') == {'file': names[2], 'sha256': expected['sha256']},
+            '镜像身份归档绑定不符')
+    metadata = {}
+    archive_hash = hashlib.sha256()
+
+    class ArchiveReader:
+        def __init__(self, stream):
+            self.stream = stream
+
+        def read(self, size=-1):
+            data = self.stream.read(size)
+            archive_hash.update(data)
+            return data
+
+    with paths[2].open('rb') as stream:
+        reader = ArchiveReader(stream)
+        with tarfile.open(fileobj=reader, mode='r|gz') as archive:
+            for member in archive:
+                if member.isfile() and member.size <= 4 * 1024 * 1024 and (
+                        member.name in ('manifest.json', 'index.json') or
+                        re.fullmatch(r'(?:[0-9a-f]{64}\.json|blobs/sha256/[0-9a-f]{64})', member.name)):
+                    raw = archive.extractfile(member).read()
+                    try:
+                        value = json.loads(raw)
+                    except (ValueError, UnicodeDecodeError):
+                        continue
+                    metadata[member.name] = (hashlib.sha256(raw).hexdigest(), len(raw), value)
+        while reader.read(1024 * 1024):
+            pass
+    require(paths[2].stat().st_size == expected['size'] and archive_hash.hexdigest() == expected['sha256'],
+            '镜像身份归档与发行不符')
+    records = metadata.get('manifest.json', ('', 0, []))[2]
+    reachable = {}
+
+    def descriptor_content(descriptor):
+        selected = descriptor.get('digest', '')
+        require(re.fullmatch(r'sha256:[0-9a-f]{64}', selected), 'OCI 身份摘要格式错误')
+        blob = metadata.get('blobs/sha256/' + selected[7:])
+        require(blob and 'sha256:' + blob[0] == selected and blob[1] == descriptor.get('size'),
+                'OCI 身份描述与内容不符')
+        return blob[2]
+
+    def walk(descriptor):
+        node = descriptor_content(descriptor)
+        require(isinstance(node, dict), 'OCI 身份节点格式错误')
+        selected = descriptor['digest']
+        if selected in reachable:
+            return reachable[selected]
+        configs = set()
+        if 'config' in node:
+            config = descriptor_content(node['config'])
+            if config.get('os') == 'linux' and config.get('architecture') == 'amd64':
+                configs.add(node['config']['digest'])
+        else:
+            require(isinstance(node.get('manifests'), list), 'OCI 身份索引缺少子节点')
+            for child in node['manifests']:
+                configs.update(walk(child))
+        reachable[selected] = configs
+        return configs
+
+    for descriptor in metadata.get('index.json', ('', 0, {}))[2].get('manifests', []):
+        walk(descriptor)
+    bindings = {}
+    for service, candidate in release['candidates'].items():
+        declared = manifest.get('images', {}).get(candidate['role'], {})
+        require(all(declared.get(key) == candidate[key] for key in ('ref', 'revision', 'accepted_ids')),
+                '镜像身份候选与发行不符')
+        matches = [record for record in records if record.get('RepoTags') == [candidate['ref']]]
+        require(len(matches) == 1, '镜像身份归档标签映射不唯一')
+        raw = metadata.get(matches[0].get('Config'))
+        require(raw, '镜像身份配置缺失')
+        config_id, config = 'sha256:' + raw[0], raw[2]
+        labels = config.get('config', {}).get('Labels') or {}
+        require(config_id in candidate['accepted_ids'] and config.get('os') == 'linux' and
+                config.get('architecture') == 'amd64' and
+                labels.get('org.opencontainers.image.revision') == candidate['revision'] and
+                labels.get('io.mx-cpamp.role') == candidate['role'], '镜像身份配置与候选不符')
+        ids = {config_id} | {selected for selected, configs in reachable.items() if configs == {config_id}}
+        bindings[service] = {'candidate': candidate, 'config_id': config_id, 'ids': ids}
+    _IMAGE_BINDINGS[folder] = (stamp, bindings)
+    return bindings
+
+
+def candidate_image_ids(folder, candidate):
+    matches = [binding for binding in archive_image_bindings(folder).values() if binding['candidate'] == candidate]
+    require(len(matches) == 1, '镜像身份候选未绑定到当前发行')
+    return matches[0]['ids']
+
+
+def accepts_image_id(image_id, candidate, folder):
+    return image_id in candidate['accepted_ids'] or image_id in candidate_image_ids(folder, candidate)
+
+
+def same_image_identity(executable_id, observed_id, candidate, folder):
+    if executable_id == observed_id:
+        return True
+    ids = candidate_image_ids(folder, candidate)
+    return executable_id in ids and observed_id in ids
 
 
 def policy_expectations(cfg):
@@ -185,7 +303,8 @@ def validate_combined_receipt(receipt, evidence, cfg, images, config_sha, folder
         identity = identities[service]
         candidate = release['candidates'][service]
         require(identity == {'id': images[service], 'revision': commit, 'role': role, 'os': 'linux', 'architecture': 'amd64'} and
-                images[service] in candidate['accepted_ids'] and candidate['revision'] == commit, '组合证据镜像身份不一致')
+                accepts_image_id(images[service], candidate, folder) and candidate['revision'] == commit,
+                '组合证据镜像身份不一致')
     require(receipt.get('scope_matrix_passed') is True and receipt.get('mode') == 'scope-enforced', '组合能力结论缺失')
 
 

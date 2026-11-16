@@ -1,5 +1,6 @@
 import type { PluginConfigField, PluginConfigObject } from '@/types';
 import { isRecord } from '@/utils/helpers';
+import { isSupportedConfigType } from './bpsConfigPresentation';
 
 export type PluginConfigDraftValue = string | boolean;
 
@@ -51,7 +52,8 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 export const buildPluginConfigPatch = (
   draft: PluginConfigDraftState,
   fields: PluginConfigField[],
-  t: Translate
+  t: Translate,
+  pluginId?: string
 ) => {
   const patch: PluginConfigObject = {};
   const errors: Record<string, string> = {};
@@ -68,6 +70,14 @@ export const buildPluginConfigPatch = (
     if (!draft.touched.has(field.name)) return;
     const type = fieldType(field);
     const value = draft.values[field.name];
+    if (!isSupportedConfigType(type)) {
+      errors[field.name] = '当前表单尚不支持此字段类型，原配置保持不变';
+      return;
+    }
+    if (pluginId === 'cpa-bps' && field.name === 'session_proxy_pool' && type === 'string') {
+      patch[field.name] = typeof value === 'string' && value.trim() ? value : null;
+      return;
+    }
     if (type === 'boolean') {
       patch[field.name] = value === true;
       return;

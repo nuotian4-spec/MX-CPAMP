@@ -4,6 +4,7 @@ import copy
 import fcntl
 import gzip
 import hashlib
+import importlib.util
 import json
 import os
 import pathlib
@@ -280,11 +281,24 @@ def image_records():
     result={}
     for service,expected in CANDIDATES.items():
         image=json.loads(command(['docker','image','inspect',expected['ref']]))[0]
-        require(image['Id'] in expected['accepted_ids'],'candidate_image_id')
+        require(image['Id'] in expected['accepted_ids'] or
+                image_identity().accepts_image_id(image['Id'],expected,STATE/'materials'),'candidate_image_id')
         require(image['Os']=='linux' and image['Architecture']=='amd64','candidate_platform')
         require((image['Config'].get('Labels') or {}).get('org.opencontainers.image.revision')==expected['revision'],'candidate_revision')
         result[service]=image['Id']
     return result
+
+_IMAGE_IDENTITY = None
+
+def image_identity():
+    global _IMAGE_IDENTITY
+    if _IMAGE_IDENTITY is None:
+        selected=importlib.util.spec_from_file_location('phase2_image_identity',pathlib.Path(__file__).with_name('capability_probe.py'))
+        _IMAGE_IDENTITY=importlib.util.module_from_spec(selected);selected.loader.exec_module(_IMAGE_IDENTITY)
+    return _IMAGE_IDENTITY
+
+def runtime_image_matches(service, executable_id, observed_id):
+    return image_identity().same_image_identity(executable_id,observed_id,CANDIDATES[service],STATE/'materials')
 
 def load_bundle(source):
     mode,location=source
@@ -314,7 +328,9 @@ def health(candidate=False):
     if candidate:
         for service in APPS:
             c=live[service]
-            require(c['State']['Running'] and c['Image']==plan['images'][service],'candidate_runtime_identity')
+            require(c['State']['Running'] and c['Config']['Image']==plan['images'][service] and
+                    (c['Image']==plan['images'][service] or runtime_image_matches(service,plan['images'][service],c['Image'])),
+                    'candidate_runtime_identity')
             expected=copy.deepcopy(plan['facts'][service]['mounts'])
             if service=='cli-proxy-api':expected.append({'type':'bind','source':str(ROOT/'cpa/bps-state'),'target':'/var/lib/cpa/bps-state','rw':True})
             require(mounts(c)==sorted(expected,key=lambda x:x['target']),'candidate_runtime_mounts')

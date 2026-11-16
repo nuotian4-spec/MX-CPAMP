@@ -48,6 +48,9 @@ import { waitForPluginState } from './pluginPolling';
 import { buildPluginDisplay, type PluginStatusTone } from './pluginDisplay';
 import { PluginStorePage } from './PluginStorePage';
 import { PluginZipImportModal } from './PluginZipImportModal';
+import { BpsLicensePanel } from './BpsLicensePanel';
+import { bpsConfigPresentation, isSupportedConfigType } from './bpsConfigPresentation';
+import { pluginMaintenanceLabel } from './pluginMaintenance';
 import {
   buildPluginConfigPatch,
   createPluginConfigDraft,
@@ -66,18 +69,6 @@ const PLUGIN_UPDATE_TERMINAL = new Set<UpdateOperation['status']>([
   'license_unverified',
   'license_error',
 ]);
-const PLUGIN_UPDATE_LABELS: Record<UpdateOperation['status'], string> = {
-  queued: '等待安装',
-  installing: '正在安装',
-  reloading: '正在重新加载插件',
-  completed: '安装完成',
-  completed_disabled: '安装完成，插件保持停用',
-  failed: '安装失败',
-  license_unverified: '许可尚未验证',
-  license_error: '许可验证失败',
-  awaiting_restart: '等待重启，安装尚未完成',
-  recovery_required: '需要恢复，安装尚未完成',
-};
 
 const resolvePluginPageTab = (value: string | null): PluginPageTab =>
   value === 'store' ? 'store' : 'installed';
@@ -333,6 +324,7 @@ function InstalledPluginsView({
       importActive.current = false;
       importEpoch.current += 1;
       listRequestIdRef.current += 1;
+      configRequestSeq.current += 1;
     },
     []
   );
@@ -459,22 +451,24 @@ function InstalledPluginsView({
     setDraft(null);
 
     try {
-      const currentConfig = await pluginsApi.getConfig(plugin.id);
-      if (configRequestSeq.current !== requestSeq) return;
+      const currentConfig = await pluginsApi.getConfig(plugin.id, { apiBase, managementKey });
+      if (!canContinueOperation() || configRequestSeq.current !== requestSeq) return;
 
       setDraft(createPluginConfigDraft(plugin.configFields, currentConfig, plugin.enabled));
     } catch (err: unknown) {
-      if (configRequestSeq.current !== requestSeq) return;
+      if (!canContinueOperation() || configRequestSeq.current !== requestSeq) return;
 
       setEditingPlugin(null);
       setDraft(null);
       showNotification(
         hasStatus(err, 404)
           ? t('plugin_management.config_not_found')
-          : `${t('plugin_management.config_load_failed')}: ${getErrorMessage(
-              err,
-              t('plugin_management.config_load_failed')
-            )}`,
+          : plugin.id === 'cpa-bps'
+            ? t('plugin_management.config_load_failed')
+            : `${t('plugin_management.config_load_failed')}: ${getErrorMessage(
+                err,
+                t('plugin_management.config_load_failed')
+              )}`,
         'error'
       );
     } finally {
@@ -641,7 +635,12 @@ function InstalledPluginsView({
   const handleSaveConfig = async () => {
     if (!canContinueOperation() || !editingPlugin || !draft || openingConfigID || mutatingID)
       return;
-    const { patch, errors } = buildPluginConfigPatch(draft, editingPlugin.configFields, t);
+    const { patch, errors } = buildPluginConfigPatch(
+      draft,
+      editingPlugin.configFields,
+      t,
+      editingPlugin.id
+    );
 
     if (Object.keys(errors).length > 0) {
       setDraft({ ...draft, errors });
@@ -651,23 +650,28 @@ function InstalledPluginsView({
 
     setMutatingID(editingPlugin.id);
     try {
-      await pluginsApi.patchConfig(editingPlugin.id, patch);
+      await pluginsApi.patchConfig(editingPlugin.id, patch, { apiBase, managementKey });
+      if (!canContinueOperation()) return;
       clearConfigCache();
       await loadPluginsAfterMutation(
         patch.enabled === true && editingPlugin.enabled !== true,
         editingPlugin.id,
         (item) => item.enabled === true
       );
+      if (!canContinueOperation()) return;
       notifyPluginResourcesChanged();
       setEditingPlugin(null);
       setDraft(null);
       showNotification(t('plugin_management.save_success'), 'success');
     } catch (err: unknown) {
+      if (!canContinueOperation()) return;
       showNotification(
-        `${t('plugin_management.save_failed')}: ${getErrorMessage(
-          err,
-          t('plugin_management.save_failed')
-        )}`,
+        editingPlugin.id === 'cpa-bps'
+          ? t('plugin_management.save_failed')
+          : `${t('plugin_management.save_failed')}: ${getErrorMessage(
+              err,
+              t('plugin_management.save_failed')
+            )}`,
         'error'
       );
     } finally {
@@ -711,12 +715,45 @@ function InstalledPluginsView({
     const value = draft.values[field.name];
     const textValue = typeof value === 'string' ? value : '';
     const errorText = draft.errors[field.name];
+    const { label, multiline } = bpsConfigPresentation(editingPlugin?.id || '', field);
+
+    if (!isSupportedConfigType(field.type)) {
+      return (
+        <div key={field.name} className={styles.formField}>
+          <label>{label}</label>
+          <div className={styles.fieldHint}>
+            当前表单尚不支持此字段类型，已保留原配置；请核实插件注册元数据。
+          </div>
+        </div>
+      );
+    }
+
+    if (multiline) {
+      return (
+        <div key={field.name} className={styles.formField}>
+          <label htmlFor={`plugin-field-${field.name}`}>{label}（每行一个代理）</label>
+          <textarea
+            id={`plugin-field-${field.name}`}
+            className={styles.textarea}
+            rows={10}
+            value={textValue}
+            onChange={handleFieldTextChange(field.name)}
+            spellCheck={false}
+            autoComplete="off"
+          />
+          <div className={styles.fieldHint}>
+            按插件声明的字符串原样保存。代理地址可能含认证信息，仅在此处编辑，不复制到日志或回执。
+          </div>
+          {errorText ? <div className={styles.fieldError}>{errorText}</div> : null}
+        </div>
+      );
+    }
 
     if (fieldType === 'boolean') {
       return (
         <div key={field.name} className={styles.fieldRow}>
           <div className={styles.fieldText}>
-            <div className={styles.fieldLabel}>{field.name}</div>
+            <div className={styles.fieldLabel}>{label}</div>
             {field.description ? (
               <div className={styles.fieldDescription}>{field.description}</div>
             ) : null}
@@ -724,7 +761,7 @@ function InstalledPluginsView({
           <ToggleSwitch
             checked={value === true}
             onChange={(nextValue) => handleFieldBooleanChange(field.name, nextValue)}
-            ariaLabel={field.name}
+            ariaLabel={label}
           />
         </div>
       );
@@ -733,7 +770,7 @@ function InstalledPluginsView({
     if (fieldType === 'enum' && field.enumValues.length > 0) {
       return (
         <div key={field.name} className={styles.formField}>
-          <label htmlFor={`plugin-field-${field.name}`}>{field.name}</label>
+          <label htmlFor={`plugin-field-${field.name}`}>{label}</label>
           <Select
             id={`plugin-field-${field.name}`}
             value={textValue}
@@ -757,7 +794,7 @@ function InstalledPluginsView({
     if (fieldType === 'array') {
       return (
         <div key={field.name} className={styles.formField}>
-          <label htmlFor={`plugin-field-${field.name}`}>{field.name}</label>
+          <label htmlFor={`plugin-field-${field.name}`}>{label}</label>
           <textarea
             id={`plugin-field-${field.name}`}
             className={styles.textarea}
@@ -775,7 +812,7 @@ function InstalledPluginsView({
     if (fieldType === 'object') {
       return (
         <div key={field.name} className={styles.formField}>
-          <label htmlFor={`plugin-field-${field.name}`}>{field.name}</label>
+          <label htmlFor={`plugin-field-${field.name}`}>{label}</label>
           <textarea
             id={`plugin-field-${field.name}`}
             className={styles.textarea}
@@ -794,7 +831,7 @@ function InstalledPluginsView({
       <Input
         key={field.name}
         id={`plugin-field-${field.name}`}
-        label={field.name}
+        label={label}
         value={textValue}
         onChange={handleFieldTextChange(field.name)}
         inputMode={fieldType === 'integer' || fieldType === 'number' ? 'decimal' : undefined}
@@ -1008,6 +1045,13 @@ function InstalledPluginsView({
                     <div className={styles.pluginSubtitle} title={subtitle || plugin.id}>
                       {subtitle || plugin.id}
                     </div>
+                    {plugin.id === 'cpa-bps' && (
+                      <BpsLicensePanel
+                        scope={{ apiBase, managementKey }}
+                        connected={connected && supportsPlugin && !demoMode}
+                        registered={plugin.registered}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -1127,9 +1171,7 @@ function InstalledPluginsView({
           <div>
             {!lastUpdateConfirmed
               ? '正在核验后台任务'
-              : unresolvedUpdateLicense && lastUpdateState !== 'failed'
-                ? '许可尚未验证'
-                : PLUGIN_UPDATE_LABELS[lastUpdate.status]}
+              : pluginMaintenanceLabel(lastUpdate, unresolvedUpdateLicense)}
           </div>
           <div>
             活动版本：{lastUpdate.active_version || '待确认'}；注册状态：

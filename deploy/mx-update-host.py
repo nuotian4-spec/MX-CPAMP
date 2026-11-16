@@ -75,6 +75,18 @@ def inspect_runtime(site):
     return {'version': pointer.get('version', '') if pointer else '', 'pointer': pointer, 'services': services}
 
 
+def candidate_runtime_images_match(state, plan, services):
+    if all(services[name]['image'] == plan['images'][name] for name in updater.APPS):
+        return True
+    folder = pathlib.Path(state) / 'materials'
+    selected = importlib.util.spec_from_file_location('mx_host_image_identity', folder / 'capability_probe.py')
+    identity = importlib.util.module_from_spec(selected)
+    selected.loader.exec_module(identity)
+    candidates = updater.read(folder / 'release.json')['candidates']
+    return all(identity.same_image_identity(plan['images'][name], services[name]['image'], candidates[name], folder)
+               for name in updater.APPS)
+
+
 def halt_registered_runtime(site):
     result = subprocess.run(['docker', 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + site['project']],
                             check=True, text=True, capture_output=True, timeout=15)
@@ -305,9 +317,8 @@ class UpdateHost:
                                       confirm=confirm_fixed, fetcher=fetch_fixed, progress=progress)
                 actual = self.current()
                 plan = updater.read(state / 'plan.json')
-                expected_images = plan['images']
                 if (actual['version'] != pointer['version'] or actual['pointer'] != pointer or
-                        any(actual['services'][name]['image'] != expected_images[name] for name in updater.APPS) or
+                        not candidate_runtime_images_match(state, plan, actual['services']) or
                         actual['services']['caddy']['id'] != candidate['baseline']['services']['caddy']['id']):
                     raise RequestError('updated_runtime_not_verified')
                 operation.update(status='completed', stage='completed', active_version=pointer['version'], registered=True,
@@ -345,7 +356,7 @@ class UpdateHost:
                                  completed.get('commit') == candidate['release']['commit'] and
                                  completed.get('ingress_restored') is True and completed.get('ingress_health') == 'passed' and
                                  current['services']['caddy']['id'] == completed.get('original_caddy_id') == candidate['baseline']['services']['caddy']['id'] and
-                                 all(current['services'][name]['image'] == plan['images'][name] for name in updater.APPS))
+                                  candidate_runtime_images_match(state, plan, current['services']))
             if not (old_restored or new_completed):
                 raise RequestError('runtime_recovery_not_verified')
             result = subprocess.run(['curl','--fail','--silent','--show-error','--max-time','15','--output','/dev/null','--write-out','%{http_code}',self.site['ingress']['health_url']],

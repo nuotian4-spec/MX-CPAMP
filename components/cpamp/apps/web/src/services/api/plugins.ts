@@ -312,8 +312,12 @@ export const pluginsApi = {
   putConfig: (id: string, config: PluginConfigObject) =>
     apiClient.put(`/plugins/${encodeURIComponent(id)}/config`, config),
 
-  patchConfig: (id: string, patch: PluginConfigObject) =>
-    apiClient.patch(`/plugins/${encodeURIComponent(id)}/config`, patch),
+  patchConfig: (id: string, patch: PluginConfigObject, requestScope?: ApiClientRequestScope) =>
+    apiClient.patch(
+      `/plugins/${encodeURIComponent(id)}/config`,
+      patch,
+      requestScope ? createScopedApiRequestConfig(requestScope) : undefined
+    ),
 };
 
 export const pluginStoreApi = {

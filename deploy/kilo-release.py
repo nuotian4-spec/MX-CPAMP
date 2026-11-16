@@ -457,7 +457,10 @@ class Release:
         self.topology(plan, rendered, live, ingress_stopped=ingress_stopped)
         self.b.compose_matches_live(rendered, live)
         for service in APPS:
-            require(live[service]['State']['Running'] and live[service]['Config']['Image'] == images[service] and live[service]['Image'] == images[service], '运行镜像或服务状态不符')
+            require(live[service]['State']['Running'] and live[service]['Config']['Image'] == images[service] and
+                    (live[service]['Image'] == images[service] or
+                     self.b.runtime_image_matches(service, images[service], live[service]['Image'])),
+                    '运行镜像或服务状态不符')
             labels = live[service]['Config'].get('Labels') or {}
             require(labels.get('com.docker.compose.project.config_files', '').split(',') == compose_files, '运行Compose链不完整')
         return live
@@ -528,7 +531,10 @@ class Release:
             if container['Image'] == original['image_id'] and container['Config']['Image'] == original['image_ref']:
                 current['services'][service] = copy.deepcopy(plan['base']['services'][service])
             else:
-                require(service in APPS and container['Image'] == plan['images'][service], '回退前实际镜像漂移')
+                require(service in APPS and container['Config']['Image'] == plan['images'][service] and
+                        (container['Image'] == plan['images'][service] or
+                         self.b.runtime_image_matches(service, plan['images'][service], container['Image'])),
+                        '回退前实际镜像漂移')
         self.b.compose_matches_live(current, live)
 
     def save_current_backup(self, plan, live):

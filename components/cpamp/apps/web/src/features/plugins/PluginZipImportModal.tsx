@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import type { PluginImportPreview, UpdateOperation } from '@/types/pluginImport';
 import styles from './PluginZipImportModal.module.scss';
+import { pluginMaintenanceLabel } from './pluginMaintenance';
 
 export interface PluginZipImportModalProps {
   isOpen: boolean;
@@ -31,18 +32,6 @@ const SUCCESS_STATUSES = new Set<UpdateOperation['status']>(['completed', 'compl
 const hasUnverifiedLicense = (operation: UpdateOperation, preview: PluginImportPreview | null) =>
   ['unknown', 'unverified', 'license_unverified', 'required'].includes(operation.license_status) ||
   (preview?.license_status === 'unknown' && operation.license_status !== 'verified');
-const STATUS_LABELS: Record<UpdateOperation['status'], string> = {
-  queued: '等待安装',
-  installing: '正在安装',
-  reloading: '正在重新加载插件',
-  completed: '安装完成',
-  completed_disabled: '安装完成，插件保持停用',
-  failed: '安装失败',
-  license_unverified: '许可尚未验证',
-  license_error: '许可验证失败',
-  awaiting_restart: '等待重启，安装尚未完成',
-  recovery_required: '需要恢复，安装尚未完成',
-};
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : '请求失败，请稍后重试';
 
@@ -330,6 +319,10 @@ function ImportSession({ onClose, onInstalled, api }: PluginZipImportModalProps)
               </dd>
             </dl>
             <div className={styles.notice}>
+              ZIP
+              仅安装插件库，附带面板不会覆盖本站。新增能力是否承接须在注册后核实：标准配置字段与资源入口按实际注册展示，新的原生业务动作需要界面适配。
+            </div>
+            <div className={styles.notice}>
               {preview.license_status === 'unknown'
                 ? '此插件的许可需求尚未知。安装、启动或重新加载可能连接插件许可服务；显式确认不会把许可状态变为已验证或无需许可。'
                 : preview.license_required
@@ -405,9 +398,7 @@ function ImportSession({ onClose, onInstalled, api }: PluginZipImportModalProps)
               {operation
                 ? !confirmedTerminal && TERMINAL_STATUSES.has(operation.status)
                   ? '正在核验安装结果'
-                  : confirmedTerminal && licenseUnverified && !failed
-                    ? '许可尚未验证'
-                    : STATUS_LABELS[operation.status]
+                  : pluginMaintenanceLabel(operation, confirmedTerminal && licenseUnverified)
                 : '正在提交安装任务'}
             </strong>
             {operation && (
