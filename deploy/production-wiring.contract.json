@@ -986,6 +986,10 @@
       "mode": "100644",
       "blob": "6dd2e83060e84f6a34f2b0ff4ac8bdd465e56666"
     },
+    "components/cpa/internal/api/bps_browser_preview_test.go": {
+      "mode": "100644",
+      "blob": "cf3a2ae0e2ff7235812840d696affcc465423cfd"
+    },
     "components/cpa/internal/api/bps_capability_request_test.go": {
       "mode": "100644",
       "blob": "57464eb5582c50479f9cc868838d84915e924e28"
@@ -1017,6 +1021,10 @@
     "components/cpa/internal/api/bps_http_diagnostics_test.go": {
       "mode": "100644",
       "blob": "f79ef9fc58c4aba57d5ace46a575b366029986b6"
+    },
+    "components/cpa/internal/api/bps_management_joint_test.go": {
+      "mode": "100644",
+      "blob": "9e711671da040c2d6dabb2c21c45f87307b80fff"
     },
     "components/cpa/internal/api/bps_permission_cancellation_test.go": {
       "mode": "100644",
@@ -11854,6 +11862,14 @@
       "mode": "100644",
       "blob": "58665ae50c5a8ebd3cd794ea055697f9a11c0e46"
     },
+    "components/cpamp/apps/manager-server/internal/http/router/bps_browser_preview_test.go": {
+      "mode": "100644",
+      "blob": "dc19a9dd16f1ee5b85a618f83bdcecad712e6a8b"
+    },
+    "components/cpamp/apps/manager-server/internal/http/router/bps_management_joint_test.go": {
+      "mode": "100644",
+      "blob": "ed1976cf45b7c205d89297b5d18edd323831d887"
+    },
     "components/cpamp/apps/manager-server/internal/http/router/config_keys_test.go": {
       "mode": "100644",
       "blob": "8f7304a07e7cb6f85139fc14254aff32d1e03252"
@@ -12024,7 +12040,7 @@
     },
     "components/cpamp/apps/manager-server/internal/httpapi/web/management.html": {
       "mode": "100644",
-      "blob": "04708ea72ee44b4e99954e44a8a7376634c6a22a"
+      "blob": "7d90b9d978504d395bf9a5adf7de9ed57992b7b2"
     },
     "components/cpamp/apps/manager-server/internal/httpqueue/client.go": {
       "mode": "100644",
@@ -16146,6 +16162,14 @@
       "mode": "100644",
       "blob": "d1fc0f881e8258849c05af4c3dbdd48dd562d4a7"
     },
+    "components/cpamp/apps/web/src/features/plugins/BpsLicensePanel.module.scss": {
+      "mode": "100644",
+      "blob": "25876c8783c3dc59d7046df1e71a37266b3a09ef"
+    },
+    "components/cpamp/apps/web/src/features/plugins/BpsLicensePanel.tsx": {
+      "mode": "100644",
+      "blob": "54a65b5b178b94e0a1681d17c331b1dc70c8fcad"
+    },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.module.scss": {
       "mode": "100644",
       "blob": "73d460edbb28e080d99404e1ee175abaf7a48480"
@@ -16176,7 +16200,11 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginZipImportModal.tsx": {
       "mode": "100644",
-      "blob": "4030b4bcda4abb44afbade4e5cd6f2496780afe7"
+      "blob": "42df12b74b3fe4aca2e5351eb3ac8db9baa62a50"
+    },
+    "components/cpamp/apps/web/src/features/plugins/PluginsPage.bps.test.tsx": {
+      "mode": "100644",
+      "blob": "1d8e1af798480e582140c67fa7116f832377e2f2"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.module.scss": {
       "mode": "100644",
@@ -16184,7 +16212,15 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.tsx": {
       "mode": "100644",
-      "blob": "53f6cf35ccd562e1d2024d117fd18b635861e460"
+      "blob": "660ab7b01c9b442edfd35513a74b792bfd51e1bc"
+    },
+    "components/cpamp/apps/web/src/features/plugins/bpsConfigPresentation.test.ts": {
+      "mode": "100644",
+      "blob": "3a0bf5598122d4577b0dda3d5f90f712ad48913b"
+    },
+    "components/cpamp/apps/web/src/features/plugins/bpsConfigPresentation.ts": {
+      "mode": "100644",
+      "blob": "2d0609559c5911cf6b27e53998f3a23d9e726f29"
     },
     "components/cpamp/apps/web/src/features/plugins/components/PluginInstallGateModal.module.scss": {
       "mode": "100644",
@@ -16200,7 +16236,7 @@
     },
     "components/cpamp/apps/web/src/features/plugins/pluginConfigDraft.ts": {
       "mode": "100644",
-      "blob": "ca6e06ecf248a7cdef4c128fc20369e72ee085ba"
+      "blob": "77bfbccf8955600210fbcefd5f4a721d6da4a0ba"
     },
     "components/cpamp/apps/web/src/features/plugins/pluginDisplay.test.ts": {
       "mode": "100644",
@@ -16217,6 +16253,10 @@
     "components/cpamp/apps/web/src/features/plugins/pluginHostStyle.ts": {
       "mode": "100644",
       "blob": "36b4b7a549d7d71f63057a79c92ca35c5bb4405c"
+    },
+    "components/cpamp/apps/web/src/features/plugins/pluginMaintenance.ts": {
+      "mode": "100644",
+      "blob": "5c55c2e549f9f4fa248eac945c18a04c4d4ac31f"
     },
     "components/cpamp/apps/web/src/features/plugins/pluginPolling.test.ts": {
       "mode": "100644",
@@ -16742,6 +16782,10 @@
       "mode": "100644",
       "blob": "742cd63e86439d5d7514445e336a7d68183c56d2"
     },
+    "components/cpamp/apps/web/src/services/api/bpsLicense.ts": {
+      "mode": "100644",
+      "blob": "303bd2825266b034d0e9dadc2e4500dbda91310c"
+    },
     "components/cpamp/apps/web/src/services/api/bpsModels.ts": {
       "mode": "100644",
       "blob": "288bcf7b906bacf74d9f361ef2e0056389ab1c7e"
@@ -16924,7 +16968,7 @@
     },
     "components/cpamp/apps/web/src/services/api/plugins.ts": {
       "mode": "100644",
-      "blob": "09f0d43c7d0ca57131feca7360665788aa1cfeb5"
+      "blob": "5498ebadf57014b224799b72c9f8f2570caf665d"
     },
     "components/cpamp/apps/web/src/services/api/providers.test.ts": {
       "mode": "100644",
@@ -17505,6 +17549,10 @@
     "components/cpamp/apps/web/src/vite-env.d.ts": {
       "mode": "100644",
       "blob": "0fb4ba5b8eb7b185742d1401baf63a984fab717b"
+    },
+    "components/cpamp/apps/web/tests/BpsLicensePanel.test.tsx": {
+      "mode": "100644",
+      "blob": "ae41d43e4d5c72cc3b100511ce7678783aef3805"
     },
     "components/cpamp/apps/web/tsconfig.app.json": {
       "mode": "100644",
@@ -18581,6 +18629,41 @@
     {
       "commit": "583d86f81764312009904e080e3fe672b33e5655",
       "change": "CI scripts, release docs, two Dockerfiles; no business-source change"
+    },
+    {
+      "input": "unified-update-center-20261116",
+      "mapped_component_commit": "a66224fc48958ac511f7efd8fb331ddf5d69b193",
+      "incremental_review": {
+        "status": "PASS",
+        "reviewer": "S",
+        "receipt": "docs/evidence/unified-update-center-20261116/S/MANAGER-CONNECTION-REVIEW.json",
+        "normal_startup_preserved": true,
+        "source_mapping_reviewed": true
+      },
+      "working_tree_candidate": {
+        "base_commit": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
+        "input_record": "docs/evidence/unified-update-center-20261116/A/P12-BUILD-INPUT.json",
+        "publication": "local uncommitted candidate; not a release commit"
+      }
+    },
+    {
+      "input": "bps-capability-local-20261116",
+      "tested_source_commit": "dba6b7b5843253aea4980482bd79e1511ec40aad",
+      "parent_commit": "a66224fc48958ac511f7efd8fb331ddf5d69b193",
+      "component_delta": {
+        "products": 10,
+        "tests": 7,
+        "added": 12,
+        "modified": 5,
+        "deleted": 0
+      },
+      "evidence": {
+        "execution": "docs/evidence/bps-0562-activation-20261116/A/BPS-CAPABILITY-IMPLEMENTATION-20261116.zh-CN.md",
+        "implementation_review": "docs/evidence/bps-0562-activation-20261116/S/CAPABILITY-IMPLEMENTATION-REVIEW-20261116.zh-CN.md",
+        "local_acceptance": "docs/evidence/bps-0562-activation-20261116/P9/LOCAL-ACCEPTANCE-20261116.zh-CN.md",
+        "wiring_incremental_review": "docs/evidence/bps-0562-activation-20261116/S/RC4-WIRING-EVIDENCE-REVIEW-20261116.zh-CN.md"
+      },
+      "evidence_summary": "复用已验配置/ZIP/OAuth 50项、正式Axios许可10项、超时1项、页面continuation 5项、正式双Router/PATCH、集中编译和最终构建页面验收；原始日志留本地，不将历史五组runs改写为本提交重跑。"
     }
   ],
   "test_runs": {
@@ -18756,18 +18839,22 @@
   "limitations": [
     "Historical wiring ran on Windows with synthetic accounts and local upstreams.",
     "Candidate linux/amd64 config policy is observed separately.",
-    "No live account, external cpa-bps binary, or real supplier inference acceptance."
+    "No live account, external cpa-bps binary, or real supplier inference acceptance.",
+    "本轮Windows预览仅在测试HTTP包装层模拟插件支持能力头；不证明真实插件加载、注册流程或ABI兼容。",
+    "真实BPS商业许可激活、刷新、账号登录、模型及供应商业务未验。",
+    "CI从固定源码重新构建UI，不承诺与本地已验HTML逐字节一致。"
   ],
   "incremental_review": {
     "status": "PASS",
     "reviewer": "S",
-    "receipt": "docs/evidence/unified-update-center-20261116/S/MANAGER-CONNECTION-REVIEW.json",
+    "receipt": "docs/evidence/bps-0562-activation-20261116/S/RC4-WIRING-EVIDENCE-REVIEW-20261116.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true
   },
   "working_tree_candidate": {
-    "base_commit": "9dce11c613c5bc2c45d922cd2c021a7d5bba7a25",
-    "input_record": "docs/evidence/unified-update-center-20261116/A/P12-BUILD-INPUT.json",
-    "publication": "local uncommitted candidate; not a release commit"
+    "tested_source_commit": "dba6b7b5843253aea4980482bd79e1511ec40aad",
+    "component_tree": "components/cpa 与 components/cpamp 的已提交且本地验收通过组件树",
+    "input_record": "docs/evidence/bps-0562-activation-20261116/A/BPS-CAPABILITY-IMPLEMENTATION-20261116.zh-CN.md",
+    "publication": "组件已提交；本次补证提交尚未产生，不预填最终发行提交SHA。"
   }
 }
