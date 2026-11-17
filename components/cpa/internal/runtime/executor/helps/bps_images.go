@@ -14,6 +14,7 @@ import (
 	"github.com/MoeForge/moego/ojson"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/requestlatency"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 )
 
@@ -36,7 +37,7 @@ func (e bpsImageError) Error() string         { return e.message }
 func (e bpsImageError) StatusCode() int       { return e.status }
 func (e bpsImageError) IsRequestScoped() bool { return true }
 
-// BPSContainsImages只检查协议中的图片部件，不遍历工具参数或文本。
+// BPSContainsImages inspects protocol image parts, not tool arguments or text.
 func BPSContainsImages(raw []byte) bool {
 	root := ojson.ParseBytes(raw)
 	for _, key := range []string{"input", "messages"} {
@@ -76,7 +77,7 @@ func bpsRelayHost(cfg *config.Config) (*bpsImageHost, error) {
 	return host, nil
 }
 
-// ServeBPSImage按随机能力链接读取临时图片；关图不使在途请求的链接失效。
+// ServeBPSImage serves temporary capability links, including in-flight requests after disabling images.
 func ServeBPSImage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		w.Header().Set("Allow", "GET, HEAD")
@@ -99,7 +100,7 @@ func ServeBPSImage(w http.ResponseWriter, r *http.Request) {
 	relay.ServeHTTP(w, r)
 }
 
-// PrepareBPSImages完成图片处理后进入同一供体协议，调用者随后执行最终payload规则。
+// PrepareBPSImages prepares native images before the final payload rules.
 func PrepareBPSImages(ctx context.Context, cfg *config.Config, auth *coreauth.Auth, raw []byte, scope string) ([]byte, *basispoints.Bridge, func(), error) {
 	if cfg == nil {
 		cfg = &config.Config{}
@@ -136,7 +137,7 @@ func PrepareBPSImages(ctx context.Context, cfg *config.Config, auth *coreauth.Au
 	if err != nil {
 		return fail(bpsImageError{400, err.Error()})
 	}
-	// 整个请求先通过协议校验，再产生附件上传或中转文件副作用。
+	// Validate the entire protocol before uploading attachments or creating relay files.
 	if _, _, err = plan.PrepareWithCatalog(scope, nil, nil); err != nil {
 		return fail(err)
 	}
@@ -184,6 +185,7 @@ func PrepareBPSImages(ctx context.Context, cfg *config.Config, auth *coreauth.Au
 }
 
 func uploadBPSImage(ctx context.Context, client *http.Client, token, account string, img basispoints.InlineAttachment) (string, error) {
+	defer requestlatency.From(ctx).Measure(requestlatency.BPSUpload)()
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	body, contentType, size, err := img.Multipart()
@@ -201,7 +203,7 @@ func uploadBPSImage(ctx context.Context, client *http.Client, token, account str
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0")
 	req.ContentLength = size
-	// 附件重定向不携带凭证，也不自动重试其他账号。
+	// Attachment redirects do not forward credentials or retry another account.
 	transport := *client
 	transport.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	res, err := transport.Do(req)

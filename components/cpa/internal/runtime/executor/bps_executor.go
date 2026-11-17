@@ -15,6 +15,7 @@ import (
 	bpsauth "github.com/router-for-me/CLIProxyAPI/v8/internal/auth/bps"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/basispoints"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/requestlatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
@@ -102,6 +103,8 @@ type bpsPrepared struct {
 }
 
 func (e *BPSExecutor) build(ctx context.Context, auth *coreauth.Auth, req coreexecutor.Request, opts coreexecutor.Options) (*bpsPrepared, error) {
+	requestlatency.From(ctx).Executor("", true)
+	defer requestlatency.From(ctx).Measure(requestlatency.BPSPrepare)()
 	if !e.cfg.IsBPSProtocolEnabled() {
 		return nil, bpsRequestError{message: "BPS protocol is disabled"}
 	}

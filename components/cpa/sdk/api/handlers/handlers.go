@@ -23,6 +23,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/interfaces"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/logging"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/requestlatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/util"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
@@ -655,6 +656,7 @@ func (h *BaseAPIHandler) GetContextWithCancel(handler interfaces.APIHandler, c *
 
 	if requestCtx != nil {
 		parentCtx = kilolatency.Inherit(parentCtx, requestCtx)
+		parentCtx = requestlatency.Inherit(parentCtx, requestCtx)
 		parentCtx = httptransport.InheritDecorator(parentCtx, requestCtx)
 		parentCtx = channelscope.With(parentCtx, channelscope.From(requestCtx))
 		parentCtx = channelscope.WithKiloPayload(parentCtx, channelscope.KiloPayload(requestCtx))
@@ -719,6 +721,7 @@ func (h *BaseAPIHandler) GetContextWithCancel(handler interfaces.APIHandler, c *
 		if len(params) == 1 {
 			if err, ok := params[0].(error); ok {
 				kilolatency.From(newCtx).Failure(err)
+				requestlatency.From(newCtx).Failure(err)
 			}
 		}
 		if c != nil {

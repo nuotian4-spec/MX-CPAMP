@@ -13,6 +13,7 @@ import (
 
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/requestlatency"
 	cliproxyexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
 )
 
@@ -283,6 +284,7 @@ func (m *Manager) waitCredentialCapacity(ctx context.Context, changed <-chan str
 	start := time.Now()
 	if !kilolatency.IsSessionWait(ctx) {
 		defer observation.Measure("capacity_wait")()
+		defer requestlatency.From(ctx).Measure(requestlatency.CredentialWait)()
 	}
 	defer func() { budget.spent += time.Since(start) }()
 	timer := time.NewTimer(remaining)
@@ -328,8 +330,10 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 		}
 		observation := kilolatency.From(ctx)
 		selectionWait := observation.Measure("selection_lock_wait")
+		requestSelectionWait := requestlatency.From(ctx).Measure(requestlatency.SelectionLockWait)
 		m.concurrencyPickMu.Lock()
 		selectionWait()
+		requestSelectionWait()
 		observation.Count("selection_attempts", 1)
 		active, changed := m.capacitySnapshot()
 		pinned := pinnedAuthIDFromMetadata(opts.Metadata)

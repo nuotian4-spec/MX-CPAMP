@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/MoeForge/moego/ojson"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/requestlatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginabi"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
 	log "github.com/sirupsen/logrus"
@@ -267,7 +268,9 @@ func registerRPCPlugin(ctx context.Context, host *Host, id string, client plugin
 
 func callPlugin[T any](ctx context.Context, client pluginClient, method string, request any) (T, error) {
 	var zero T
+	finishSerialize := requestlatency.From(ctx).Measure(requestlatency.RPCSerialize)
 	rawRequest, errMarshal := json.Marshal(sanitizePluginRequest(request))
+	finishSerialize()
 	if errMarshal != nil {
 		return zero, fmt.Errorf("marshal plugin request %s: %w", method, errMarshal)
 	}

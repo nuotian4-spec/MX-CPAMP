@@ -15,11 +15,13 @@ import (
 // ObserveKiloHTTP starts at the HTTP handler entrance, before reading the body.
 // Non-Kilo requests never enable the observer or emit a diagnostic summary.
 func ObserveKiloHTTP(c *gin.Context) func() {
+	finishRequest := observeRequestHTTP(c)
 	ctx, state := kilolatency.NewContext(c.Request.Context())
 	c.Request = c.Request.WithContext(ctx)
 	writer := &kiloLatencyWriter{ResponseWriter: c.Writer, state: state}
 	c.Writer = writer
 	return func() {
+		defer finishRequest(state.Enabled())
 		if fields := state.Finish(c.Request.Context().Err(), c.Writer.Status()); fields != nil && log.IsLevelEnabled(log.DebugLevel) {
 			fields["request_id"] = logging.GetRequestID(ctx)
 			fields["protocol"] = c.Request.Proto

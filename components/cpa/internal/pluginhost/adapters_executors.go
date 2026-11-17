@@ -14,6 +14,7 @@ import (
 
 	"github.com/MoeForge/moego/ojson"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/requestlatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
@@ -988,7 +989,10 @@ func (a *executorAdapter) Execute(ctx context.Context, auth *coreauth.Auth, req 
 		}
 	}()
 
+	requestlatency.From(ctx).Executor(a.pluginID, false)
+	finishPrepare := requestlatency.From(ctx).Measure(requestlatency.HostPrepare)
 	prepared, errPrepare := a.prepareExecutorCall(req, opts)
+	finishPrepare()
 	if errPrepare != nil {
 		return coreexecutor.Response{}, errPrepare
 	}
@@ -998,7 +1002,13 @@ func (a *executorAdapter) Execute(ctx context.Context, auth *coreauth.Auth, req 
 		reporter.StartResponseTTFT()
 	}
 
-	pluginResp, errExecute := a.executor.Execute(ctx, buildExecutorRequest(a.host, a.provider, auth, prepared.req, prepared.opts))
+	finishClone := requestlatency.From(ctx).Measure(requestlatency.RequestClone)
+	pluginRequest := buildExecutorRequest(a.host, a.provider, auth, prepared.req, prepared.opts)
+	finishClone()
+	ctx = requestlatency.StartPlugin(ctx)
+	finishCall := requestlatency.From(ctx).Measure(requestlatency.PluginCallReturn)
+	pluginResp, errExecute := a.executor.Execute(ctx, pluginRequest)
+	finishCall()
 	if errExecute != nil {
 		return coreexecutor.Response{}, errExecute
 	}
@@ -1058,7 +1068,10 @@ func (a *executorAdapter) ExecuteStream(ctx context.Context, auth *coreauth.Auth
 		}
 	}()
 
+	requestlatency.From(ctx).Executor(a.pluginID, false)
+	finishPrepare := requestlatency.From(ctx).Measure(requestlatency.HostPrepare)
 	prepared, errPrepare := a.prepareExecutorCall(req, opts)
+	finishPrepare()
 	if errPrepare != nil {
 		return nil, errPrepare
 	}
@@ -1081,7 +1094,13 @@ func (a *executorAdapter) ExecuteStream(ctx context.Context, auth *coreauth.Auth
 			}
 		}()
 	}
-	pluginResp, errExecuteStream := a.executor.ExecuteStream(streamCtx, buildExecutorRequest(a.host, a.provider, auth, prepared.req, prepared.opts))
+	finishClone := requestlatency.From(ctx).Measure(requestlatency.RequestClone)
+	pluginRequest := buildExecutorRequest(a.host, a.provider, auth, prepared.req, prepared.opts)
+	finishClone()
+	streamCtx = requestlatency.StartPlugin(streamCtx)
+	finishCall := requestlatency.From(ctx).Measure(requestlatency.PluginCallReturn)
+	pluginResp, errExecuteStream := a.executor.ExecuteStream(streamCtx, pluginRequest)
+	finishCall()
 	if errExecuteStream != nil {
 		return nil, errExecuteStream
 	}
@@ -1090,7 +1109,7 @@ func (a *executorAdapter) ExecuteStream(ctx context.Context, auth *coreauth.Auth
 	if cancel != nil {
 		chunks = a.observeAndTranslateResponsesChatStream(ctx, streamCtx, cancel, prepared, pluginResp.Chunks, reporter)
 	} else {
-		chunks = a.observeAndTranslateExecutorStream(ctx, prepared, pluginResp.Chunks, reporter)
+		chunks = a.observeAndTranslateExecutorStream(streamCtx, prepared, pluginResp.Chunks, reporter)
 	}
 	return &coreexecutor.StreamResult{
 		Headers: cloneHeader(pluginResp.Headers),
@@ -1178,6 +1197,7 @@ func (a *executorAdapter) observeAndTranslateResponsesChatStream(parentCtx, ctx 
 				if chunk.Err != nil && streamErr == nil {
 					streamErr = chunk.Err
 				}
+				requestlatency.PluginOutput(ctx, chunk.Payload)
 				select {
 				case out <- coreexecutor.StreamChunk{Payload: chunk.Payload, Err: chunk.Err}:
 				case <-parentCtx.Done():
@@ -1587,6 +1607,7 @@ func mapExecutorStreamChunks(ctx context.Context, in <-chan pluginapi.ExecutorSt
 				if !ok {
 					return
 				}
+				requestlatency.PluginOutput(ctx, chunk.Payload)
 				mapped = coreexecutor.StreamChunk{
 					Payload: bytes.Clone(chunk.Payload),
 					Err:     chunk.Err,
