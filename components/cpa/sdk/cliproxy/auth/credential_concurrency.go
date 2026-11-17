@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
 	cliproxyexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
 )
@@ -227,6 +228,7 @@ func isConcurrencyError(err error) bool {
 	return false
 }
 func (m *Manager) waitCredentialCapacity(ctx context.Context, changed <-chan struct{}, pinned string, exits ...<-chan struct{}) error {
+	observation := kilolatency.From(ctx)
 	var exitChanged <-chan struct{}
 	if len(exits) > 0 {
 		exitChanged = exits[0]
@@ -234,6 +236,22 @@ func (m *Manager) waitCredentialCapacity(ctx context.Context, changed <-chan str
 	g := &m.concurrency
 	g.mu.Lock()
 	g.initLocked()
+	if observation.Enabled() {
+		if observation.NeedsQueueLoad() {
+			active := 0
+			for _, state := range g.states {
+				active += state.active
+			}
+			observation.QueueLoad(g.waiting, active)
+		}
+		if !kilolatency.IsSessionWait(ctx) {
+			if pinned != "" {
+				observation.Count("pinned_wait_count", 1)
+			} else {
+				observation.Count("public_wait_count", 1)
+			}
+		}
+	}
 	if g.waiting >= credentialWaitLimit {
 		g.mu.Unlock()
 		return concurrencyError("credential_queue_full")
@@ -263,6 +281,9 @@ func (m *Manager) waitCredentialCapacity(ctx context.Context, changed <-chan str
 		return concurrencyError("credential_concurrency_timeout")
 	}
 	start := time.Now()
+	if !kilolatency.IsSessionWait(ctx) {
+		defer observation.Measure("capacity_wait")()
+	}
 	defer func() { budget.spent += time.Since(start) }()
 	timer := time.NewTimer(remaining)
 	defer timer.Stop()
@@ -305,7 +326,11 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 		if err := ctx.Err(); err != nil {
 			return nil, nil, "", nil, err
 		}
+		observation := kilolatency.From(ctx)
+		selectionWait := observation.Measure("selection_lock_wait")
 		m.concurrencyPickMu.Lock()
+		selectionWait()
+		observation.Count("selection_attempts", 1)
 		active, changed := m.capacitySnapshot()
 		pinned := pinnedAuthIDFromMetadata(opts.Metadata)
 		if pinned == "" {
@@ -441,6 +466,7 @@ func (m *Manager) pickNextMixedAdmitted(ctx context.Context, providers []string,
 		}
 		m.concurrencyPickMu.Unlock()
 		if lease != nil {
+			observation.Mark("admitted")
 			return a, e, p, lease, nil
 		}
 		if err != nil && !busy {

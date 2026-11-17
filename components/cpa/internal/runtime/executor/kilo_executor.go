@@ -14,6 +14,7 @@ import (
 	device "github.com/router-for-me/CLIProxyAPI/v8/internal/auth/kilo"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilo"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
@@ -540,10 +541,12 @@ func (e *KiloExecutor) send(ctx context.Context, a *coreauth.Auth, req core.Requ
 	if err = coreauth.RecordKiloDiagnosticCall(ctx); err != nil {
 		return nil, nil, err
 	}
+	kilolatency.From(ctx).Mark("sent")
 	response, err := helps.KiloDo(ctx, a, httpReq)
 	if err != nil {
 		return nil, nil, err
 	}
+	kilolatency.From(ctx).Mark("headers")
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		errorBody, _ := io.ReadAll(io.LimitReader(response.Body, 4096))
 		_ = response.Body.Close()
@@ -552,6 +555,8 @@ func (e *KiloExecutor) send(ctx context.Context, a *coreauth.Auth, req core.Requ
 	return response, body, nil
 }
 func (e *KiloExecutor) Execute(ctx context.Context, a *coreauth.Auth, req core.Request, opts core.Options) (result core.Response, err error) {
+	ctx, observation := kilolatency.NewContext(ctx)
+	observation.Enable(false)
 	if err = coreauth.BeginKiloDiagnostic(ctx, a); err != nil {
 		return result, err
 	}
@@ -567,7 +572,10 @@ func (e *KiloExecutor) Execute(ctx context.Context, a *coreauth.Auth, req core.R
 	}
 	defer response.Body.Close()
 	var terminal []byte
-	err = helps.ReadKiloPublicEvents(ctx, response, search, func(event []byte) error { return helps.ObserveKiloBinding(ctx, event) }, func(_ []byte, event []byte) error {
+	err = helps.ReadKiloPublicEvents(ctx, response, search, func(event []byte) error {
+		helps.ObserveKiloLatency(ctx, event)
+		return helps.ObserveKiloBinding(ctx, event)
+	}, func(_ []byte, event []byte) error {
 		if ojson.GetBytes(event, "type").String() == "response.completed" {
 			_, terminal = helps.KiloPublicEvent(nil, bytes.Clone(event))
 		}
@@ -597,6 +605,8 @@ func (e *KiloExecutor) Execute(ctx context.Context, a *coreauth.Auth, req core.R
 	return core.Response{Payload: payload}, nil
 }
 func (e *KiloExecutor) ExecuteStream(ctx context.Context, a *coreauth.Auth, req core.Request, opts core.Options) (*core.StreamResult, error) {
+	ctx, observation := kilolatency.NewContext(ctx)
+	observation.Enable(true)
 	reporter := helps.NewExecutorUsageReporter(ctx, e, req.Model, a)
 	reporter.SetStream(true)
 	search := &helps.KiloToolSearch{}
@@ -618,7 +628,10 @@ func (e *KiloExecutor) ExecuteStream(ctx context.Context, a *coreauth.Auth, req 
 				return ctx.Err()
 			}
 		}
-		err := helps.ReadKiloPublicEvents(ctx, response, search, func(event []byte) error { return helps.ObserveKiloBinding(ctx, event) }, func(frame, event []byte) error {
+		err := helps.ReadKiloPublicEvents(ctx, response, search, func(event []byte) error {
+			helps.ObserveKiloLatency(ctx, event)
+			return helps.ObserveKiloBinding(ctx, event)
+		}, func(frame, event []byte) error {
 			frame, event = helps.KiloPublicEvent(frame, event)
 			if detail, ok := helps.ParseCodexUsage(event); ok {
 				reporter.Publish(ctx, detail)

@@ -3586,6 +3586,10 @@
       "mode": "100644",
       "blob": "4431a05b46e242aedcbefb34142ba2b814de56e0"
     },
+    "components/cpa/internal/kilobinding/kilo_latency_test.go": {
+      "mode": "100644",
+      "blob": "38502adf0cee23b1886ae685063299c8c17c562e"
+    },
     "components/cpa/internal/kilobinding/storage_cancel_windows_test.go": {
       "mode": "100644",
       "blob": "bcdda1bd09fad2271e46add6cb301c6a7f62e582"
@@ -3608,11 +3612,23 @@
     },
     "components/cpa/internal/kilobinding/store.go": {
       "mode": "100644",
-      "blob": "127bdf7411cbc15dca485c5fe6cc811a0cf51627"
+      "blob": "7816931218e64d039f3bea02f63997d975e74e0f"
     },
     "components/cpa/internal/kilobinding/store_test.go": {
       "mode": "100644",
       "blob": "b16aef34cd35143fb53a0745faefc59740799fe6"
+    },
+    "components/cpa/internal/kilolatency/content.go": {
+      "mode": "100644",
+      "blob": "81dfbca650e28571de6990fa510f37fb1b7db673"
+    },
+    "components/cpa/internal/kilolatency/latency.go": {
+      "mode": "100644",
+      "blob": "9dc3043f04ba772c4e7d929926ea7c9906daf910"
+    },
+    "components/cpa/internal/kilolatency/latency_test.go": {
+      "mode": "100644",
+      "blob": "c839719f92c5f6ada37de02e21ee306cec72a5d1"
     },
     "components/cpa/internal/kvstore/bolt_store.go": {
       "mode": "100644",
@@ -4286,9 +4302,17 @@
       "mode": "100644",
       "blob": "5821fee3cd930c25a3807237491e9699299439e2"
     },
+    "components/cpa/internal/redisqueue/kilo_latency.go": {
+      "mode": "100644",
+      "blob": "02c74964e3648c099d35f9985d72a4c5e2b4476e"
+    },
+    "components/cpa/internal/redisqueue/kilo_latency_test.go": {
+      "mode": "100644",
+      "blob": "eedc181616c12ebe5542f6b62d31eb133c2aa010"
+    },
     "components/cpa/internal/redisqueue/plugin.go": {
       "mode": "100644",
-      "blob": "acbdf4f8a8567c8be8e6476068ad90a64c4c4e2a"
+      "blob": "36677ca8c956c201143a421d8ed9c878e53632e8"
     },
     "components/cpa/internal/redisqueue/plugin_test.go": {
       "mode": "100644",
@@ -5898,6 +5922,14 @@
       "mode": "100644",
       "blob": "bcd1f7d0a863b3e754ade5fbca087d19ea8e5783"
     },
+    "components/cpa/internal/runtime/executor/helps/kilo_latency.go": {
+      "mode": "100644",
+      "blob": "3bc5caf59e9d4c81b63b8b09cd10ba4d09f81d73"
+    },
+    "components/cpa/internal/runtime/executor/helps/kilo_latency_test.go": {
+      "mode": "100644",
+      "blob": "c586620b6ed7f6aa6e81d656d2bf42c3c91133f8"
+    },
     "components/cpa/internal/runtime/executor/helps/kilo_payload.go": {
       "mode": "100644",
       "blob": "f92473f04f480d2967b1317b7fd175420787687b"
@@ -6248,7 +6280,7 @@
     },
     "components/cpa/internal/runtime/executor/helps/usage_helpers.go": {
       "mode": "100644",
-      "blob": "1fbbf6963f8346e5a4f1d696e1a67a812775b31b"
+      "blob": "40ee19e6ea8625c9d4f2c90bda79f70ec9c85025"
     },
     "components/cpa/internal/runtime/executor/helps/usage_helpers_bench_test.go": {
       "mode": "100644",
@@ -6376,7 +6408,7 @@
     },
     "components/cpa/internal/runtime/executor/kilo_executor.go": {
       "mode": "100644",
-      "blob": "446688c4d9df24804300ef7713c32874f6b9df71"
+      "blob": "41fcc3d2077d54d40819426b944e77cb62efde97"
     },
     "components/cpa/internal/runtime/executor/kilo_proxy_admission_legacy_test.go": {
       "mode": "100644",
@@ -8620,7 +8652,7 @@
     },
     "components/cpa/sdk/api/handlers/handlers.go": {
       "mode": "100644",
-      "blob": "3464753ad5c814f8d50a9c48b746cfc84f9d0a82"
+      "blob": "bf2d23fb867c418461e25744ab040f29dc8e4e82"
     },
     "components/cpa/sdk/api/handlers/handlers_context.go": {
       "mode": "100644",
@@ -8702,6 +8734,18 @@
       "mode": "100644",
       "blob": "54d8939a93c3c1bbd4c6ba16ef3953b52e89998e"
     },
+    "components/cpa/sdk/api/handlers/kilo_latency.go": {
+      "mode": "100644",
+      "blob": "d4c3515a7158af5c9d6e631924becf65b4de1f38"
+    },
+    "components/cpa/sdk/api/handlers/kilo_latency_benchmark_test.go": {
+      "mode": "100644",
+      "blob": "5031eb82c0601e5d15d6ee776650fc6497c9d087"
+    },
+    "components/cpa/sdk/api/handlers/kilo_latency_test.go": {
+      "mode": "100644",
+      "blob": "9b91860db3a4e8cecf00d54928653376c741aa92"
+    },
     "components/cpa/sdk/api/handlers/kilo_payload_body_test.go": {
       "mode": "100644",
       "blob": "e2ce3cba811cf6fcadde258ee3e20c523d3ac205"
@@ -8768,7 +8812,7 @@
     },
     "components/cpa/sdk/api/handlers/openai/openai_handlers.go": {
       "mode": "100644",
-      "blob": "fa60daef0bdab9dcf8e221cae61866254f42f948"
+      "blob": "534ca9760b42f0b24c774676386acc90bc7abf00"
     },
     "components/cpa/sdk/api/handlers/openai/openai_handlers_stream_error_test.go": {
       "mode": "100644",
@@ -8804,7 +8848,7 @@
     },
     "components/cpa/sdk/api/handlers/openai/openai_responses_handlers.go": {
       "mode": "100644",
-      "blob": "576056ac5e4a621958495626ab40b459a6695342"
+      "blob": "ffdc0f1642092f91c0a4b06333d76b00c93290eb"
     },
     "components/cpa/sdk/api/handlers/openai/openai_responses_handlers_stream_error_test.go": {
       "mode": "100644",
@@ -9684,7 +9728,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/credential_concurrency.go": {
       "mode": "100644",
-      "blob": "14b7ff4a906b661fd7d1fcaac5d39ce9fe41f89d"
+      "blob": "c5eaf32905d354afcb85bf7490a63dc3daab29e9"
     },
     "components/cpa/sdk/cliproxy/auth/credential_concurrency_test.go": {
       "mode": "100644",
@@ -9868,7 +9912,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/kilo_binding.go": {
       "mode": "100644",
-      "blob": "4cabbb4cce4f6d9a53e651e3483b51dac2302812"
+      "blob": "5cc00fc9953bef1c75a2548120749b341043676a"
     },
     "components/cpa/sdk/cliproxy/auth/kilo_binding_budget_test.go": {
       "mode": "100644",
@@ -9901,6 +9945,10 @@
     "components/cpa/sdk/cliproxy/auth/kilo_egress_wake_fix_test.go": {
       "mode": "100644",
       "blob": "86e2b6b04512fed4477918d89aa73d318e9d5d3a"
+    },
+    "components/cpa/sdk/cliproxy/auth/kilo_latency_test.go": {
+      "mode": "100644",
+      "blob": "64afb0b903b263839e3198b3f24ff2e55766ca4f"
     },
     "components/cpa/sdk/cliproxy/auth/kilo_machine.go": {
       "mode": "100644",
@@ -10357,6 +10405,10 @@
     "components/cpa/sdk/cliproxy/kilo_binding_storage_windows_test.go": {
       "mode": "100644",
       "blob": "87afa8655b61db4e63c67f3cb1f9b24150f87fa3"
+    },
+    "components/cpa/sdk/cliproxy/kilo_latency_observation_test.go": {
+      "mode": "100644",
+      "blob": "3abe2a06bac2c1d1f81d2b9066a7df76ea2b56e8"
     },
     "components/cpa/sdk/cliproxy/kilo_native_a1_boundaries_test.go": {
       "mode": "100644",
@@ -18703,6 +18755,23 @@
         "wiring_incremental_review": "docs/evidence/kilo-public-errors-20261117/S/RELEASE-WIRING-REVIEW-20261117.zh-CN.md"
       },
       "evidence_reuse": "Historical five wiring runs retain original identities and results. Frozen Kilo public-error input reuses its reviewed local incremental tests and Windows/Linux builds; no historical run is relabeled as a new execution."
+    },
+    {
+      "input": "kilo-latency-observation-20261117",
+      "base_commit": "f9ef5c16a027b7e9a7c01e85c4c65e079018f691",
+      "component_delta": {
+        "runtime": 14,
+        "tests": 8,
+        "added": 13,
+        "modified": 9,
+        "deleted": 0
+      },
+      "input_record": "docs/execution/KILO-LATENCY-RELEASE-INPUTS-20261117.json",
+      "evidence": {
+        "phase1_receipt": "docs/execution/KILO-LATENCY-PHASE1-RECEIPT-20261117.zh-CN.md"
+      },
+      "review_status": "PASS",
+      "evidence_reuse": "复用同一冻结候选的既有专项测试、Router场景、日志落地、基准和Windows/Linux构建回执；本次输入准备未重新运行产品门禁，历史五组接线证据保留原身份。"
     }
   ],
   "test_runs": {
@@ -18881,19 +18950,21 @@
     "No live account, external cpa-bps binary, or real supplier inference acceptance.",
     "本轮Windows预览仅在测试HTTP包装层模拟插件支持能力头；不证明真实插件加载、注册流程或ABI兼容。",
     "真实BPS商业许可激活、刷新、账号登录、模型及供应商业务未验。",
-    "CI从固定源码重新构建UI，不承诺与本地已验HTML逐字节一致。"
+    "CI从固定源码重新构建UI，不承诺与本地已验HTML逐字节一致。",
+    "本轮结论为本地观测候选及发布接线审查通过；不代表正式镜像、插件加载、生产采样或性能收益已验收。"
   ],
   "incremental_review": {
     "status": "PASS",
-    "reviewer": "S",
-    "receipt": "docs/evidence/kilo-public-errors-20261117/S/RELEASE-WIRING-REVIEW-20261117.zh-CN.md",
+    "reviewer": "P9",
+    "receipt": "docs/execution/KILO-LATENCY-PHASE1-RECEIPT-20261117.zh-CN.md",
     "normal_startup_preserved": true,
-    "source_mapping_reviewed": true
+    "source_mapping_reviewed": true,
+    "review_note": "P9已独立核对22项增量及完整组件映射；普通启动、历史接线证据和已验产品候选保持。"
   },
   "working_tree_candidate": {
-    "base_commit": "67445a35ba450468948447492b560c204afa7321",
-    "component_tree": "Exact components/cpa and components/cpamp mapping with the 18 frozen Kilo public-error paths.",
-    "input_record": "docs/evidence/kilo-public-errors-20261117/A/frozen-inputs.json",
-    "publication": "The final release commit is assigned after integration; source_files binds the reviewed component tree without a self-referential commit value."
+    "base_commit": "f9ef5c16a027b7e9a7c01e85c4c65e079018f691",
+    "component_tree": "4d0a4667fd0a1e9ff0f686884c7049e2116a4ec0",
+    "input_record": "docs/execution/KILO-LATENCY-RELEASE-INPUTS-20261117.json",
+    "publication": "本地未提交候选。component_tree由独立临时索引在base_commit上仅加入22个CPA Go文件生成，用于精确组件映射；不含本轮4份文档改动与2份发布输入改动，不代表最终发布提交。"
   }
 }

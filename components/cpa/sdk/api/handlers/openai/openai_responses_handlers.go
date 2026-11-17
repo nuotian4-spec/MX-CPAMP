@@ -967,6 +967,7 @@ func (h *OpenAIResponsesAPIHandler) prepareCodexRequestPayload(c *gin.Context, p
 // Parameters:
 //   - c: The Gin context containing the HTTP request and response
 func (h *OpenAIResponsesAPIHandler) Responses(c *gin.Context) {
+	defer handlers.ObserveKiloHTTP(c)()
 	rawJSON, err := handlers.ReadRequestBody(c)
 	// If data retrieval fails, return a 400 Bad Request error.
 	if err != nil {

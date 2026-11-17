@@ -21,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/interfaces"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/logging"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/thinking"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/util"
@@ -653,6 +654,7 @@ func (h *BaseAPIHandler) GetContextWithCancel(handler interfaces.APIHandler, c *
 	}
 
 	if requestCtx != nil {
+		parentCtx = kilolatency.Inherit(parentCtx, requestCtx)
 		parentCtx = httptransport.InheritDecorator(parentCtx, requestCtx)
 		parentCtx = channelscope.With(parentCtx, channelscope.From(requestCtx))
 		parentCtx = channelscope.WithKiloPayload(parentCtx, channelscope.KiloPayload(requestCtx))
@@ -714,6 +716,11 @@ func (h *BaseAPIHandler) GetContextWithCancel(handler interfaces.APIHandler, c *
 	newCtx = coreauth.WithCodexClientRequest(newCtx, coreauth.IsCodexClientRequest(newCtx))
 	newCtx = context.WithValue(newCtx, "handler", handler)
 	return newCtx, func(params ...interface{}) {
+		if len(params) == 1 {
+			if err, ok := params[0].(error); ok {
+				kilolatency.From(newCtx).Failure(err)
+			}
+		}
 		if c != nil {
 			logging.SetResponseStatus(cancelCtx, c.Writer.Status())
 		}

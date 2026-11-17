@@ -9,6 +9,7 @@ import (
 
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilobinding"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 	core "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
 	log "github.com/sirupsen/logrus"
 )
@@ -36,6 +37,7 @@ func (m *Manager) bindKiloHistory(ctx context.Context, providers []string, req c
 	if !slices.Contains(providers, "kilo") {
 		return ctx, opts, noop, nil
 	}
+	kilolatency.From(ctx).Enable(opts.Stream)
 	cfg, _ := m.runtimeConfig.Load().(*config.Config)
 	if err := cfg.ValidateKiloState(); err != nil {
 		return ctx, opts, noop, NewRequestScopedError(err.Error(), 503)
@@ -65,7 +67,8 @@ func (m *Manager) bindKiloHistory(ctx context.Context, providers []string, req c
 	if hints.Session != "" && (hints.Thread != "" || (hints.Previous == "" && len(hints.Calls) == 0)) {
 		var err error
 		release, err = kilobinding.LockWithWait(ctx, store.Dir+"\x00"+caller+"\x00"+hints.Session, func(waitCtx context.Context, ready <-chan struct{}) error {
-			return m.waitCredentialCapacity(waitCtx, ready, "")
+			defer kilolatency.From(waitCtx).Measure("session_wait")()
+			return m.waitCredentialCapacity(kilolatency.WithSessionWait(waitCtx), ready, "")
 		})
 		if err != nil {
 			return ctx, opts, noop, err

@@ -1,0 +1,285 @@
+{
+  "schema": 1,
+  "kind": "kilo-latency-local-release-inputs",
+  "status": "RELEASE_AUTHORIZED_INPUT_SNAPSHOT",
+  "prepared_at": "2026-11-17T14:39:20+08:00",
+  "baseline": {
+    "commit": "f9ef5c16a027b7e9a7c01e85c4c65e079018f691",
+    "branch": "codex/kilo-latency-observation-20261117",
+    "worktree": "C:/Users/子羽/.codex/worktrees/kilo-latency-observation-20261117/MX-CPAMP"
+  },
+  "source_input_tree": {
+    "tree": "4d0a4667fd0a1e9ff0f686884c7049e2116a4ec0",
+    "method": "GIT_INDEX_FILE临时索引：read-tree基线，git add精确22路径，write-tree；真实索引不变。",
+    "scope": "仅22个CPA Go候选改动进入source_input_tree；其余树内容沿用基线。",
+    "uncommitted_changes_excluded": [
+      "GLOSSARY.md",
+      "deploy/production-wiring.contract.json",
+      "docs/execution/KILO-LATENCY-DESIGN-20261117.zh-CN.md",
+      "docs/execution/KILO-LATENCY-PHASE1-RECEIPT-20261117.zh-CN.md",
+      "docs/execution/KILO-LATENCY-PHASE1-TASK-20261117.zh-CN.md",
+      "docs/execution/KILO-LATENCY-RELEASE-INPUTS-20261117.json"
+    ],
+    "self_reference": "合同与本记录的本轮改动不写入该输入树，避免tree/input_record自引用。"
+  },
+  "component_mapping": {
+    "source_roots": [
+      "components/cpa",
+      "components/cpamp"
+    ],
+    "baseline_count": 4655,
+    "candidate_count": 4668,
+    "unchanged_count": 4646,
+    "added": 13,
+    "modified": 9,
+    "deleted": 0,
+    "changes": [
+      {
+        "path": "components/cpa/internal/kilobinding/kilo_latency_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "38502adf0cee23b1886ae685063299c8c17c562e",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/kilobinding/store.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "7816931218e64d039f3bea02f63997d975e74e0f",
+        "baseline": {
+          "mode": "100644",
+          "blob": "127bdf7411cbc15dca485c5fe6cc811a0cf51627"
+        }
+      },
+      {
+        "path": "components/cpa/internal/kilolatency/content.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "81dfbca650e28571de6990fa510f37fb1b7db673",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/kilolatency/latency.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "9dc3043f04ba772c4e7d929926ea7c9906daf910",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/kilolatency/latency_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "c839719f92c5f6ada37de02e21ee306cec72a5d1",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/redisqueue/kilo_latency.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "02c74964e3648c099d35f9985d72a4c5e2b4476e",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/redisqueue/kilo_latency_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "eedc181616c12ebe5542f6b62d31eb133c2aa010",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/redisqueue/plugin.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "36677ca8c956c201143a421d8ed9c878e53632e8",
+        "baseline": {
+          "mode": "100644",
+          "blob": "acbdf4f8a8567c8be8e6476068ad90a64c4c4e2a"
+        }
+      },
+      {
+        "path": "components/cpa/internal/runtime/executor/helps/kilo_latency.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "3bc5caf59e9d4c81b63b8b09cd10ba4d09f81d73",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/runtime/executor/helps/kilo_latency_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "c586620b6ed7f6aa6e81d656d2bf42c3c91133f8",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/internal/runtime/executor/helps/usage_helpers.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "40ee19e6ea8625c9d4f2c90bda79f70ec9c85025",
+        "baseline": {
+          "mode": "100644",
+          "blob": "1fbbf6963f8346e5a4f1d696e1a67a812775b31b"
+        }
+      },
+      {
+        "path": "components/cpa/internal/runtime/executor/kilo_executor.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "41fcc3d2077d54d40819426b944e77cb62efde97",
+        "baseline": {
+          "mode": "100644",
+          "blob": "446688c4d9df24804300ef7713c32874f6b9df71"
+        }
+      },
+      {
+        "path": "components/cpa/sdk/api/handlers/handlers.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "bf2d23fb867c418461e25744ab040f29dc8e4e82",
+        "baseline": {
+          "mode": "100644",
+          "blob": "3464753ad5c814f8d50a9c48b746cfc84f9d0a82"
+        }
+      },
+      {
+        "path": "components/cpa/sdk/api/handlers/kilo_latency.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "d4c3515a7158af5c9d6e631924becf65b4de1f38",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/sdk/api/handlers/kilo_latency_benchmark_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "5031eb82c0601e5d15d6ee776650fc6497c9d087",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/sdk/api/handlers/kilo_latency_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "9b91860db3a4e8cecf00d54928653376c741aa92",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/sdk/api/handlers/openai/openai_handlers.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "534ca9760b42f0b24c774676386acc90bc7abf00",
+        "baseline": {
+          "mode": "100644",
+          "blob": "fa60daef0bdab9dcf8e221cae61866254f42f948"
+        }
+      },
+      {
+        "path": "components/cpa/sdk/api/handlers/openai/openai_responses_handlers.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "ffdc0f1642092f91c0a4b06333d76b00c93290eb",
+        "baseline": {
+          "mode": "100644",
+          "blob": "576056ac5e4a621958495626ab40b459a6695342"
+        }
+      },
+      {
+        "path": "components/cpa/sdk/cliproxy/auth/credential_concurrency.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "c5eaf32905d354afcb85bf7490a63dc3daab29e9",
+        "baseline": {
+          "mode": "100644",
+          "blob": "14b7ff4a906b661fd7d1fcaac5d39ce9fe41f89d"
+        }
+      },
+      {
+        "path": "components/cpa/sdk/cliproxy/auth/kilo_binding.go",
+        "change": "modified",
+        "mode": "100644",
+        "blob": "5cc00fc9953bef1c75a2548120749b341043676a",
+        "baseline": {
+          "mode": "100644",
+          "blob": "4cabbb4cce4f6d9a53e651e3483b51dac2302812"
+        }
+      },
+      {
+        "path": "components/cpa/sdk/cliproxy/auth/kilo_latency_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "64afb0b903b263839e3198b3f24ff2e55766ca4f",
+        "baseline": null
+      },
+      {
+        "path": "components/cpa/sdk/cliproxy/kilo_latency_observation_test.go",
+        "change": "added",
+        "mode": "100644",
+        "blob": "3abe2a06bac2c1d1f81d2b9066a7df76ea2b56e8",
+        "baseline": null
+      }
+    ]
+  },
+  "candidate_scope": {
+    "count": 28,
+    "paths": [
+      "GLOSSARY.md",
+      "components/cpa/internal/kilobinding/kilo_latency_test.go",
+      "components/cpa/internal/kilobinding/store.go",
+      "components/cpa/internal/kilolatency/content.go",
+      "components/cpa/internal/kilolatency/latency.go",
+      "components/cpa/internal/kilolatency/latency_test.go",
+      "components/cpa/internal/redisqueue/kilo_latency.go",
+      "components/cpa/internal/redisqueue/kilo_latency_test.go",
+      "components/cpa/internal/redisqueue/plugin.go",
+      "components/cpa/internal/runtime/executor/helps/kilo_latency.go",
+      "components/cpa/internal/runtime/executor/helps/kilo_latency_test.go",
+      "components/cpa/internal/runtime/executor/helps/usage_helpers.go",
+      "components/cpa/internal/runtime/executor/kilo_executor.go",
+      "components/cpa/sdk/api/handlers/handlers.go",
+      "components/cpa/sdk/api/handlers/kilo_latency.go",
+      "components/cpa/sdk/api/handlers/kilo_latency_benchmark_test.go",
+      "components/cpa/sdk/api/handlers/kilo_latency_test.go",
+      "components/cpa/sdk/api/handlers/openai/openai_handlers.go",
+      "components/cpa/sdk/api/handlers/openai/openai_responses_handlers.go",
+      "components/cpa/sdk/cliproxy/auth/credential_concurrency.go",
+      "components/cpa/sdk/cliproxy/auth/kilo_binding.go",
+      "components/cpa/sdk/cliproxy/auth/kilo_latency_test.go",
+      "components/cpa/sdk/cliproxy/kilo_latency_observation_test.go",
+      "deploy/production-wiring.contract.json",
+      "docs/execution/KILO-LATENCY-DESIGN-20261117.zh-CN.md",
+      "docs/execution/KILO-LATENCY-PHASE1-RECEIPT-20261117.zh-CN.md",
+      "docs/execution/KILO-LATENCY-PHASE1-TASK-20261117.zh-CN.md",
+      "docs/execution/KILO-LATENCY-RELEASE-INPUTS-20261117.json"
+    ]
+  },
+  "review": {
+    "owner": "P9",
+    "status": "PASS",
+    "receipt": "docs/execution/KILO-LATENCY-PHASE1-RECEIPT-20261117.zh-CN.md",
+    "validators": {
+      "validate_wiring_contract": "PASS",
+      "validate_source_mapping": "PASS"
+    },
+    "reviewed_on": "2026-11-17",
+    "evidence": "C:/Users/子羽/AppData/Local/Temp/kilo-latency-phase1-20261117/p9-release-wiring-20261117.json"
+  },
+  "publication": {
+    "committed": false,
+    "pushed": false,
+    "actions_triggered": false,
+    "deployed": false,
+    "planned_version": "v2026.11.17-rc.2",
+    "authorization": {
+      "confirmed": true,
+      "request_time": "2026-11-17T15:10:33+08:00",
+      "scope": "28路径提交推送main，既有Actions发布v2026.11.17-rc.2；不部署、不重启生产。"
+    },
+    "snapshot_note": "本记录为发布前输入快照；实际提交、Actions及发行结果以GitHub固定标签与工作流回执为准。"
+  },
+  "preservation": {
+    "real_git_index": "不修改",
+    "original_26_candidates": "不修改",
+    "historical_evidence": "deploy/production-wiring.evidence.json原样保留",
+    "test_runs": "原样保留",
+    "coverage": "原样保留",
+    "historical_limitations": "原样保留，仅追加本轮范围说明"
+  }
+}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/MoeForge/moego/ojson"
 	"github.com/google/uuid"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 )
 
 const Lifetime = time.Hour
@@ -67,6 +68,7 @@ func (s Store) path(caller string) string {
 	return filepath.Join(s.Dir, fmt.Sprintf("%x.json", sha256.Sum256([]byte(caller))))
 }
 func (s Store) read(caller string) ([]Record, error) {
+	defer kilolatency.From(s.requestContext).Measure("binding_read")()
 	raw, err := os.ReadFile(s.path(caller))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
@@ -107,6 +109,7 @@ func (s Store) read(caller string) ([]Record, error) {
 	return records, nil
 }
 func (s Store) write(caller string, records []Record) error {
+	defer kilolatency.From(s.requestContext).Measure("binding_commit")()
 	if err := os.MkdirAll(s.Dir, 0700); err != nil {
 		return storageError("mkdir", err)
 	}
@@ -174,7 +177,9 @@ func find(records []Record, kind, key string) (Record, bool) {
 
 // Lookup retains expired records so a later lookup cannot reinterpret them as new.
 func (s Store) Lookup(caller, kind, key string) (Record, bool, error) {
+	wait := kilolatency.From(s.requestContext).Measure("binding_lock_wait")
 	diskMu.Lock()
+	wait()
 	defer diskMu.Unlock()
 	records, err := s.read(caller)
 	if err != nil {
@@ -187,7 +192,9 @@ func (s Store) Lookup(caller, kind, key string) (Record, bool, error) {
 	return r, ok, nil
 }
 func (s Store) Commit(caller string, r Record, identity Identity, sessionKey string, preferSession bool, firstProfile ...string) (Record, error) {
+	wait := kilolatency.From(s.requestContext).Measure("binding_lock_wait")
 	diskMu.Lock()
+	wait()
 	defer diskMu.Unlock()
 	if caller == "" || identity.AuthID == "" || identity.Provider != "kilo" {
 		return Record{}, ErrConflict
@@ -279,7 +286,9 @@ func (s Store) Commit(caller string, r Record, identity Identity, sessionKey str
 // Publish starts the response lifetime when its first identifier is observed.
 // Loading the same record after restart never renews its absolute expiry.
 func (s Store) Publish(r Record, response string, calls map[string]string) error {
+	wait := kilolatency.From(s.requestContext).Measure("binding_lock_wait")
 	diskMu.Lock()
+	wait()
 	defer diskMu.Unlock()
 	records, err := s.read(r.Caller)
 	if err != nil {
