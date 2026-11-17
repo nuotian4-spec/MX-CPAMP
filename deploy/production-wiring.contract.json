@@ -3852,7 +3852,7 @@
     },
     "components/cpa/internal/pluginhost/adapters_executors.go": {
       "mode": "100644",
-      "blob": "8199d214b2c7bbb20fff99ffa855a0ddde776449"
+      "blob": "d0935ecfafd3ec5af74f2291c8a029f91a3dab00"
     },
     "components/cpa/internal/pluginhost/adapters_executors_count_tokens_test.go": {
       "mode": "100644",
@@ -4106,6 +4106,10 @@
       "mode": "100644",
       "blob": "3f6bc331568079a5bf736924436072055c988e6f"
     },
+    "components/cpa/internal/pluginhost/request_latency_test.go": {
+      "mode": "100644",
+      "blob": "647dc9c83e67d087c57086f067b886dcf2de2a86"
+    },
     "components/cpa/internal/pluginhost/request_lifecycle_test.go": {
       "mode": "100644",
       "blob": "fa1ce164b0c1fd9aff79bd5c44dd44349b1bb58f"
@@ -4120,7 +4124,7 @@
     },
     "components/cpa/internal/pluginhost/rpc_client.go": {
       "mode": "100644",
-      "blob": "3b47a6df3d51fa93f96b93f91693822f1b9df268"
+      "blob": "9275f163b32d8d5ff0e447deadb69c81b346546b"
     },
     "components/cpa/internal/pluginhost/rpc_client_error_test.go": {
       "mode": "100644",
@@ -4458,6 +4462,14 @@
       "mode": "100644",
       "blob": "e4353179d1ba377b326c568866d46bc25729d9c9"
     },
+    "components/cpa/internal/requestlatency/latency.go": {
+      "mode": "100644",
+      "blob": "9bca9863f9f4ce8f53c88be0dd0ca84b16daa082"
+    },
+    "components/cpa/internal/requestlatency/latency_test.go": {
+      "mode": "100644",
+      "blob": "1e573498ded3b6f959d92a0220890a32d238f622"
+    },
     "components/cpa/internal/runtime/executor/aistudio_executor.go": {
       "mode": "100644",
       "blob": "7acfd20b6aa96e61572d3f66d023d6ed0f40599e"
@@ -4680,7 +4692,7 @@
     },
     "components/cpa/internal/runtime/executor/bps_executor.go": {
       "mode": "100644",
-      "blob": "3e07ddb53e647cfe7755256b5a8bf0ad122034bc"
+      "blob": "db9e2cdc7234d6252173d5fea209c24181e42f70"
     },
     "components/cpa/internal/runtime/executor/bps_executor_test.go": {
       "mode": "100644",
@@ -5460,7 +5472,7 @@
     },
     "components/cpa/internal/runtime/executor/helps/bps_images.go": {
       "mode": "100644",
-      "blob": "f932456fe4b6290cdf54c8cb24f7e2f07f3c2bb3"
+      "blob": "7848247fa6704c5ac50d4c4fe480483a2b9b139c"
     },
     "components/cpa/internal/runtime/executor/helps/bps_images_test.go": {
       "mode": "100644",
@@ -6142,6 +6154,10 @@
       "mode": "100644",
       "blob": "e1da6859d06f8851b7971b2e45c5f816408c1e24"
     },
+    "components/cpa/internal/runtime/executor/helps/request_latency_test.go": {
+      "mode": "100644",
+      "blob": "e08699e8ef7586e94659c7531801c80c58449758"
+    },
     "components/cpa/internal/runtime/executor/helps/request_pair_compat_test.go": {
       "mode": "100644",
       "blob": "2e3db0422dfa0d83f43af2f060f5bdc8e7b71df6"
@@ -6533,6 +6549,10 @@
     "components/cpa/internal/runtime/executor/payload_review_test.go": {
       "mode": "100644",
       "blob": "bb5bb5aa367735e3343ab64908ef1fd362970fbf"
+    },
+    "components/cpa/internal/runtime/executor/request_latency_test.go": {
+      "mode": "100644",
+      "blob": "0ff11dd8ecd7b513fdbbda203e255857665d2057"
     },
     "components/cpa/internal/runtime/executor/request_proxy_priority_test.go": {
       "mode": "100644",
@@ -8652,7 +8672,7 @@
     },
     "components/cpa/sdk/api/handlers/handlers.go": {
       "mode": "100644",
-      "blob": "bf2d23fb867c418461e25744ab040f29dc8e4e82"
+      "blob": "673bb44b844cd9ae5074d84611ee07d42c57aaa8"
     },
     "components/cpa/sdk/api/handlers/handlers_context.go": {
       "mode": "100644",
@@ -8672,7 +8692,7 @@
     },
     "components/cpa/sdk/api/handlers/handlers_execution.go": {
       "mode": "100644",
-      "blob": "f70788636c0ba95073a362b7ee29906b93cd88f3"
+      "blob": "baff823174b60ffcd925e84e8218b52b85511e43"
     },
     "components/cpa/sdk/api/handlers/handlers_interceptors.go": {
       "mode": "100644",
@@ -8712,7 +8732,7 @@
     },
     "components/cpa/sdk/api/handlers/handlers_stream.go": {
       "mode": "100644",
-      "blob": "991910b9923fce219f88f7bcc3021fe1b363bda8"
+      "blob": "9e8a154403db574325e06e5ef4f23b66247609c8"
     },
     "components/cpa/sdk/api/handlers/handlers_stream_bootstrap_test.go": {
       "mode": "100644",
@@ -8736,7 +8756,7 @@
     },
     "components/cpa/sdk/api/handlers/kilo_latency.go": {
       "mode": "100644",
-      "blob": "d4c3515a7158af5c9d6e631924becf65b4de1f38"
+      "blob": "a64b5716938d5ec6969bf141813b5b2461230061"
     },
     "components/cpa/sdk/api/handlers/kilo_latency_benchmark_test.go": {
       "mode": "100644",
@@ -9025,6 +9045,14 @@
     "components/cpa/sdk/api/handlers/request_body.go": {
       "mode": "100644",
       "blob": "31cb51c2d2b5161a7a0abbf6dbe3e8e04a93ce40"
+    },
+    "components/cpa/sdk/api/handlers/request_latency.go": {
+      "mode": "100644",
+      "blob": "d48f0cfb2964669a224953ce339e0fd7395aaa0d"
+    },
+    "components/cpa/sdk/api/handlers/request_latency_test.go": {
+      "mode": "100644",
+      "blob": "71c99b3298faf2aa619d66e17b7e2eae3bfa32fd"
     },
     "components/cpa/sdk/api/handlers/retry_deadline_test.go": {
       "mode": "100644",
@@ -9728,7 +9756,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/credential_concurrency.go": {
       "mode": "100644",
-      "blob": "c5eaf32905d354afcb85bf7490a63dc3daab29e9"
+      "blob": "c6016d18ae0524fb5cb1ffad9d8dd9f63939f604"
     },
     "components/cpa/sdk/cliproxy/auth/credential_concurrency_test.go": {
       "mode": "100644",
@@ -10097,6 +10125,10 @@
     "components/cpa/sdk/cliproxy/auth/request_auth_prepare_test.go": {
       "mode": "100644",
       "blob": "ef12f5879ce80fdd1fed28a02a54c06ef303196c"
+    },
+    "components/cpa/sdk/cliproxy/auth/request_latency_test.go": {
+      "mode": "100644",
+      "blob": "5fedbd27a33dfe9f3a911d4cdd608723b269ff04"
     },
     "components/cpa/sdk/cliproxy/auth/request_proxy_refresh_test.go": {
       "mode": "100644",
@@ -18772,6 +18804,24 @@
       },
       "review_status": "PASS",
       "evidence_reuse": "复用同一冻结候选的既有专项测试、Router场景、日志落地、基准和Windows/Linux构建回执；本次输入准备未重新运行产品门禁，历史五组接线证据保留原身份。"
+    },
+    {
+      "input": "cpa-attachment-observation-20261117",
+      "base_commit": "e9196e142dd685eb8534a6f851b3564d70700b12",
+      "mapped_component_commit": "e3c643fb38ed39593e8dc4b7e17f30daa2143101",
+      "component_delta": {
+        "runtime": 11,
+        "tests": 6,
+        "added": 8,
+        "modified": 9,
+        "deleted": 0
+      },
+      "evidence": {
+        "execution": "docs/execution/CPA-ATTACHMENT-OBSERVATION-RECEIPT-20261117.zh-CN.md",
+        "independent_review": "docs/execution/CPA-ATTACHMENT-OBSERVATION-REVIEW-20261117.zh-CN.md",
+        "investigation": "docs/execution/CPA-ATTACHMENT-QUEUE-INVESTIGATION-20261117.zh-CN.md"
+      },
+      "evidence_reuse": "复用本轮同一17项组件输入的专项测试、独立静态审查及Windows服务器构建回执；历史五组接线日志保留原输入身份，不标记为本提交重新执行。Linux镜像由固定版本Actions构建，未执行生产请求或性能验收。"
     }
   ],
   "test_runs": {
@@ -18955,16 +19005,17 @@
   ],
   "incremental_review": {
     "status": "PASS",
-    "reviewer": "P9",
-    "receipt": "docs/execution/KILO-LATENCY-PHASE1-RECEIPT-20261117.zh-CN.md",
+    "reviewer": "attachment_path_audit",
+    "receipt": "docs/execution/CPA-ATTACHMENT-OBSERVATION-REVIEW-20261117.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true,
-    "review_note": "P9已独立核对22项增量及完整组件映射；普通启动、历史接线证据和已验产品候选保持。"
+    "review_note": "attachment_path_audit独立核验完整4676项组件映射，17项差异精确对应已审11产品及6测试；普通启动保持，历史五组接线证据及验证器未修改。"
   },
   "working_tree_candidate": {
-    "base_commit": "f9ef5c16a027b7e9a7c01e85c4c65e079018f691",
-    "component_tree": "4d0a4667fd0a1e9ff0f686884c7049e2116a4ec0",
-    "input_record": "docs/execution/KILO-LATENCY-RELEASE-INPUTS-20261117.json",
-    "publication": "本地未提交候选。component_tree由独立临时索引在base_commit上仅加入22个CPA Go文件生成，用于精确组件映射；不含本轮4份文档改动与2份发布输入改动，不代表最终发布提交。"
+    "base_commit": "e9196e142dd685eb8534a6f851b3564d70700b12",
+    "component_source_commit": "e3c643fb38ed39593e8dc4b7e17f30daa2143101",
+    "component_tree": "a56789000310960b7fbcfd7bc99b45a2fbeec3b1",
+    "input_record": "docs/execution/CPA-ATTACHMENT-OBSERVATION-RECEIPT-20261117.zh-CN.md",
+    "publication": "组件输入绑定已入仓提交；固定发布提交另包含接线合同及独立审查记录，组件树保持一致。"
   }
 }

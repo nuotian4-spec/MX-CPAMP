@@ -53,3 +53,13 @@
 - 静态通过与离线专项通过只证明观测候选符合边界，不证明截图根因、生产阶段分布或实际性能改善。
 
 下一责任人：发布执行者按用户本轮批准完成受控入仓与固定版本发布，主会话核验发布结果；生产部署另行确认。
+
+## 发布接线补证审查（2026-11-17）
+
+结论：PASS，放行本次合同增量。
+
+- 组件源提交：e3c643fb38ed39593e8dc4b7e17f30daa2143101；components 树：a56789000310960b7fbcfd7bc99b45a2fbeec3b1。
+- 完整 source_files 与该提交精确一致，共 4676 项；相对旧合同仅 9 修改、8 新增，无删除，恰为已审 11 产品与 6 测试，Manager 无差异。
+- schema、kind、source_roots、五组 test_runs、coverage、limitations 及旧 lineage 保持；production-wiring.evidence.json 与 capability_probe.py 未改，历史证据身份和精确映射门禁保留。
+- 本轮观测不改变普通启动、payload、插件 ABI、流式消费与并发合同；既有专项、静态审查及构建证据足够支撑该增量，未重复测试或构建。
+- 下一责任人：p8_attachment_release 按本真实结论更新合同 PASS/source_mapping_reviewed=true，执行两项 validator 与 diff-check 后精确提交、继续获准发布；不代表生产性能验收。
