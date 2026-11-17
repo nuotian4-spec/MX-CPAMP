@@ -1732,7 +1732,7 @@
     },
     "components/cpa/internal/api/server_kilo_alpha_search.go": {
       "mode": "100644",
-      "blob": "1bcd1a955c2b5da6730195ab8e31e59183c855d6"
+      "blob": "2d4ce81221f87437f7a9c015726e2cbb8823ab9c"
     },
     "components/cpa/internal/api/server_kimi_oauth_test.go": {
       "mode": "100644",
@@ -5900,7 +5900,7 @@
     },
     "components/cpa/internal/runtime/executor/helps/kilo_payload.go": {
       "mode": "100644",
-      "blob": "313bb25066820a52a713d9d98a68fd499071c2f6"
+      "blob": "f92473f04f480d2967b1317b7fd175420787687b"
     },
     "components/cpa/internal/runtime/executor/helps/kilo_payload_test.go": {
       "mode": "100644",
@@ -5946,9 +5946,17 @@
       "mode": "100644",
       "blob": "73888ee1641202ea9d0998e3ed6799d5ae33cfaf"
     },
+    "components/cpa/internal/runtime/executor/helps/kilo_public_error.go": {
+      "mode": "100644",
+      "blob": "be8e7e5821bef7e1edf80cf23db8dada91046170"
+    },
+    "components/cpa/internal/runtime/executor/helps/kilo_public_error_test.go": {
+      "mode": "100644",
+      "blob": "436c993c1c8ad7bd02aa918bdb2d2d9b94a64dc9"
+    },
     "components/cpa/internal/runtime/executor/helps/kilo_response.go": {
       "mode": "100644",
-      "blob": "292fe8ce04de129c77956eadbe57d06ac3d96df6"
+      "blob": "3dc1e8440ff2b478529ea303c33b2eb619af54c1"
     },
     "components/cpa/internal/runtime/executor/helps/kilo_runtime.go": {
       "mode": "100644",
@@ -6368,7 +6376,7 @@
     },
     "components/cpa/internal/runtime/executor/kilo_executor.go": {
       "mode": "100644",
-      "blob": "c5e9b796116caa3fb367c099cd18041e3b22d91e"
+      "blob": "446688c4d9df24804300ef7713c32874f6b9df71"
     },
     "components/cpa/internal/runtime/executor/kilo_proxy_admission_legacy_test.go": {
       "mode": "100644",
@@ -8612,7 +8620,7 @@
     },
     "components/cpa/sdk/api/handlers/handlers.go": {
       "mode": "100644",
-      "blob": "b623095aa42ab913c18ffd8233373f2d37d3c56c"
+      "blob": "3464753ad5c814f8d50a9c48b746cfc84f9d0a82"
     },
     "components/cpa/sdk/api/handlers/handlers_context.go": {
       "mode": "100644",
@@ -8632,7 +8640,7 @@
     },
     "components/cpa/sdk/api/handlers/handlers_execution.go": {
       "mode": "100644",
-      "blob": "e66d4cb92d262b2e0972644409947f766b2be8b6"
+      "blob": "f70788636c0ba95073a362b7ee29906b93cd88f3"
     },
     "components/cpa/sdk/api/handlers/handlers_interceptors.go": {
       "mode": "100644",
@@ -8672,7 +8680,7 @@
     },
     "components/cpa/sdk/api/handlers/handlers_stream.go": {
       "mode": "100644",
-      "blob": "fba6ee182fa7aa035a6c493176974e3aa2304094"
+      "blob": "991910b9923fce219f88f7bcc3021fe1b363bda8"
     },
     "components/cpa/sdk/api/handlers/handlers_stream_bootstrap_test.go": {
       "mode": "100644",
@@ -8697,6 +8705,14 @@
     "components/cpa/sdk/api/handlers/kilo_payload_body_test.go": {
       "mode": "100644",
       "blob": "e2ce3cba811cf6fcadde258ee3e20c523d3ac205"
+    },
+    "components/cpa/sdk/api/handlers/kilo_public_error.go": {
+      "mode": "100644",
+      "blob": "3225a6eb5f60f80a494cd85e6f11b3fd8e1ac412"
+    },
+    "components/cpa/sdk/api/handlers/kilo_public_error_test.go": {
+      "mode": "100644",
+      "blob": "33b89266fc736d9c6673c42d8bf9f585318ae39d"
     },
     "components/cpa/sdk/api/handlers/kilo_search_capability.go": {
       "mode": "100644",
@@ -8748,7 +8764,7 @@
     },
     "components/cpa/sdk/api/handlers/openai/kilo_scope_test.go": {
       "mode": "100644",
-      "blob": "818446b3775814c23d260df1166881d64f33a254"
+      "blob": "d4b33aeed410d5256a9e4f7b35a551c1842c09b3"
     },
     "components/cpa/sdk/api/handlers/openai/openai_handlers.go": {
       "mode": "100644",
@@ -8840,7 +8856,7 @@
     },
     "components/cpa/sdk/api/handlers/openai/openai_responses_websocket.go": {
       "mode": "100644",
-      "blob": "dabeccf87cdb0fdf336c980ba9511bec6b931a58"
+      "blob": "a575d945a4c87a0c8799bc3ade91a7133d145713"
     },
     "components/cpa/sdk/api/handlers/openai/openai_responses_websocket_claimed_interrupt_test.go": {
       "mode": "100644",
@@ -10360,7 +10376,7 @@
     },
     "components/cpa/sdk/cliproxy/kilo_native_a2_contract_test.go": {
       "mode": "100644",
-      "blob": "60638948deffd393824bc401d51435f9324d614b"
+      "blob": "35bfcb7c0492dbd1e4f82007435ad3752810ae6c"
     },
     "components/cpa/sdk/cliproxy/kilo_native_a2_test.go": {
       "mode": "100644",
@@ -10420,7 +10436,7 @@
     },
     "components/cpa/sdk/cliproxy/kilo_native_fidelity_test.go": {
       "mode": "100644",
-      "blob": "aa1324419bdb7af7d19608758ad2b0afd3c202b0"
+      "blob": "a35c70b1cd29ebe904e998c2a6e7f927beb139d0"
     },
     "components/cpa/sdk/cliproxy/kilo_native_identity_i1_acceptance_test.go": {
       "mode": "100644",
@@ -10484,7 +10500,7 @@
     },
     "components/cpa/sdk/cliproxy/kilo_native_payload_test.go": {
       "mode": "100644",
-      "blob": "5742abd64bc30fbd135348c1471438e69fda0fc4"
+      "blob": "ab29c460e75598be1158ac9c8d339240b4cce242"
     },
     "components/cpa/sdk/cliproxy/kilo_native_protocol_test.go": {
       "mode": "100644",
@@ -10509,6 +10525,10 @@
     "components/cpa/sdk/cliproxy/kilo_native_proxy_state_test.go": {
       "mode": "100644",
       "blob": "e59bdf1ef776dbe983f0b9daed18fd0e23f70c39"
+    },
+    "components/cpa/sdk/cliproxy/kilo_native_public_error_test.go": {
+      "mode": "100644",
+      "blob": "9b1eb3e028d470b15b60ae9ab505e5e8a56acc76"
     },
     "components/cpa/sdk/cliproxy/kilo_native_quota_batch_joint_test.go": {
       "mode": "100644",
@@ -10592,7 +10612,7 @@
     },
     "components/cpa/sdk/cliproxy/kilo_payload_supplement_test.go": {
       "mode": "100644",
-      "blob": "a5b46b539e94c0edfbd3ab412610d06ca168fa7c"
+      "blob": "b3dc577798ec144ed0b7f0b61d28441becacbf9a"
     },
     "components/cpa/sdk/cliproxy/kv_store.go": {
       "mode": "100644",
@@ -18664,6 +18684,25 @@
         "wiring_incremental_review": "docs/evidence/bps-0562-activation-20261116/S/RC4-WIRING-EVIDENCE-REVIEW-20261116.zh-CN.md"
       },
       "evidence_summary": "复用已验配置/ZIP/OAuth 50项、正式Axios许可10项、超时1项、页面continuation 5项、正式双Router/PATCH、集中编译和最终构建页面验收；原始日志留本地，不将历史五组runs改写为本提交重跑。"
+    },
+    {
+      "input": "kilo-public-errors-20261117",
+      "base_commit": "67445a35ba450468948447492b560c204afa7321",
+      "component_delta": {
+        "runtime": 10,
+        "tests": 8,
+        "added": 5,
+        "modified": 13,
+        "deleted": 0
+      },
+      "input_record": "docs/evidence/kilo-public-errors-20261117/A/frozen-inputs.json",
+      "evidence": {
+        "execution": "docs/evidence/kilo-public-errors-20261117/A/EXECUTION-RECEIPT-20261117.zh-CN.md",
+        "implementation_review": "docs/evidence/kilo-public-errors-20261117/S/FINAL-REVIEW-20261117.zh-CN.md",
+        "local_acceptance": "docs/evidence/kilo-public-errors-20261117/V/ACCEPTANCE-20261117.zh-CN.md",
+        "wiring_incremental_review": "docs/evidence/kilo-public-errors-20261117/S/RELEASE-WIRING-REVIEW-20261117.zh-CN.md"
+      },
+      "evidence_reuse": "Historical five wiring runs retain original identities and results. Frozen Kilo public-error input reuses its reviewed local incremental tests and Windows/Linux builds; no historical run is relabeled as a new execution."
     }
   ],
   "test_runs": {
@@ -18847,14 +18886,14 @@
   "incremental_review": {
     "status": "PASS",
     "reviewer": "S",
-    "receipt": "docs/evidence/bps-0562-activation-20261116/S/RC4-WIRING-EVIDENCE-REVIEW-20261116.zh-CN.md",
+    "receipt": "docs/evidence/kilo-public-errors-20261117/S/RELEASE-WIRING-REVIEW-20261117.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true
   },
   "working_tree_candidate": {
-    "tested_source_commit": "dba6b7b5843253aea4980482bd79e1511ec40aad",
-    "component_tree": "components/cpa 与 components/cpamp 的已提交且本地验收通过组件树",
-    "input_record": "docs/evidence/bps-0562-activation-20261116/A/BPS-CAPABILITY-IMPLEMENTATION-20261116.zh-CN.md",
-    "publication": "组件已提交；本次补证提交尚未产生，不预填最终发行提交SHA。"
+    "base_commit": "67445a35ba450468948447492b560c204afa7321",
+    "component_tree": "Exact components/cpa and components/cpamp mapping with the 18 frozen Kilo public-error paths.",
+    "input_record": "docs/evidence/kilo-public-errors-20261117/A/frozen-inputs.json",
+    "publication": "The final release commit is assigned after integration; source_files binds the reviewed component tree without a self-referential commit value."
   }
 }

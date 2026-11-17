@@ -1,11 +1,13 @@
 package openai
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/MoeForge/moego/ojson"
+	"github.com/gin-gonic/gin"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/channelscope"
 )
 
@@ -20,5 +22,11 @@ func TestKiloScopeRejectsWebsocketBeforeUpgrade(t *testing.T) {
 	(&OpenAIResponsesAPIHandler{}).ResponsesWebsocket(c)
 	if rec.Code != http.StatusNotImplemented {
 		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if ojson.Get(rec.Body.String(), "error.code").String() != "unsupported_transport" || strings.Contains(strings.ToLower(rec.Body.String()), "kilo") {
+		t.Fatalf("uncontrolled upgrade rejection: %s", rec.Body.String())
+	}
+	if rec.Header().Get("Upgrade") != "" {
+		t.Fatal("rejected request upgraded")
 	}
 }

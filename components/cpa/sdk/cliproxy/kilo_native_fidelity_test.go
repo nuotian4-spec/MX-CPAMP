@@ -11,16 +11,23 @@ import (
 	"github.com/MoeForge/moego/ojson"
 )
 
+const kiloOpaqueThirdPartyError = "event: error\ndata: {\"code\":\"request_failed\",\"error\":{\"code\":\"request_failed\",\"message\":\"请求受限，请稍后重试。\",\"type\":\"api_error\"},\"message\":\"请求受限，请稍后重试。\",\"param\":null,\"sequence_number\":2,\"type\":\"error\"}\n\n"
+
 func TestKiloM7ErrorShapes(t *testing.T) {
 	for _, sample := range []struct {
-		name, frame, code, kind string
-		upstream, status        int
+		name, frame, code, kind, public string
+		upstream, status                int
 	}{
-		{"event-error", "event: error\ndata: {\"message\":\"synthetic-private-upstream-detail\"}\n\n", "", "", 200, 502},
-		{"nested-quota", "data: {\"error\":{\"code\":\"subscription_sharing_usage_limit_exceeded\",\"type\":\"usage_limit_error\",\"message\":\"synthetic-private-upstream-detail\"}}\n\n", "subscription_sharing_usage_limit_exceeded", "usage_limit_error", 200, 429},
-		{"code-message", "data: {\"code\":\"synthetic_unknown_error\",\"type\":\"synthetic_error\",\"message\":\"synthetic-private-upstream-detail\"}\n\n", "synthetic_unknown_error", "synthetic_error", 200, 502},
-		{"sse-restricted", "data: {\"error\":{\"code\":\"account_restricted\",\"type\":\"account_restricted\",\"message\":\"synthetic-private-upstream-detail\"}}\n\n", "account_restricted", "account_restricted", 200, 502},
-		{"http-restricted", `{"error":{"code":"account_restricted","type":"account_restricted","message":"synthetic-private-upstream-detail"}}`, "account_restricted", "account_restricted", 403, 403},
+		{"third-party-opaque", kiloOpaqueThirdPartyError, "request_failed", "api_error", "request_failed", 200, 502},
+		{"event-error", "event: error\ndata: {\"message\":\"synthetic-private-upstream-detail\"}\n\n", "", "", "request_failed", 200, 502},
+		{"nested-quota", "data: {\"error\":{\"code\":\"subscription_sharing_usage_limit_exceeded\",\"type\":\"usage_limit_error\",\"message\":\"synthetic-private-upstream-detail\"}}\n\n", "subscription_sharing_usage_limit_exceeded", "usage_limit_error", "upstream_quota_exhausted", 200, 429},
+		{"code-message", "data: {\"code\":\"synthetic_unknown_error\",\"type\":\"synthetic_error\",\"message\":\"synthetic-private-upstream-detail\"}\n\n", "synthetic_unknown_error", "synthetic_error", "request_failed", 200, 502},
+		{"sse-restricted", "data: {\"error\":{\"code\":\"account_restricted\",\"type\":\"account_restricted\",\"message\":\"synthetic-private-upstream-detail\"}}\n\n", "account_restricted", "account_restricted", "request_failed", 200, 502},
+		{"http-restricted", `{"error":{"code":"account_restricted","type":"account_restricted","message":"synthetic-private-upstream-detail"}}`, "account_restricted", "account_restricted", "upstream_access_restricted", 403, 403},
+		{"http-rate", `{"error":{"message":"\u8bf7\u6c42\u53d7\u9650\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002"}}`, "", "", "rate_limit_exceeded", 429, 429},
+		{"http-payment", `{"error":{"message":"\u8bf7\u6c42\u53d7\u9650\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002"}}`, "", "", "upstream_payment_required", 402, 402},
+		{"http-denied", `{"error":{"message":"\u8bf7\u6c42\u53d7\u9650\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002"}}`, "", "", "upstream_access_denied", 403, 403},
+		{"http-auth", `{"error":{"message":"\u8bf7\u6c42\u53d7\u9650\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002"}}`, "", "", "upstream_authentication_required", 401, 401},
 	} {
 		for _, protocol := range []string{"responses", "chat/completions"} {
 			for _, stream := range []bool{false, true} {
@@ -48,12 +55,23 @@ func TestKiloM7ErrorShapes(t *testing.T) {
 					if status != sample.status || result.HTTPStatus != sample.status || result.Code != sample.code || ojson.Get(result.Message, "error.type").String() != sample.kind || ojson.Get(result.Message, "upstream_status").Int() != int64(sample.upstream) {
 						t.Errorf("classification status=%d result=%+v", status, result)
 					}
-					for _, forbidden := range []string{"synthetic-private-upstream-detail", "response.completed", "kilo-ok"} {
+					for _, forbidden := range []string{"synthetic-private-upstream-detail", "response.completed", "kilo", "Kilo", "Bearer"} {
 						if bytes.Contains(body, []byte(forbidden)) || strings.Contains(result.Message, "synthetic-private-upstream-detail") {
 							t.Errorf("failed response leaked or completed: %s", body)
 						}
 					}
-					if !bytes.Contains(body, []byte("request_failed")) {
+					wantRestriction := "none"
+					if sample.code == "subscription_sharing_usage_limit_exceeded" {
+						wantRestriction = "quota_exhausted"
+					}
+					if sample.upstream == 403 && sample.code == "account_restricted" {
+						wantRestriction = "account_restricted"
+					}
+					if got := f.manager.KiloRestriction(results[0].AuthID).Reason; got != wantRestriction {
+						t.Errorf("restriction=%s want=%s", got, wantRestriction)
+					}
+
+					if !bytes.Contains(body, []byte(sample.public)) {
 						t.Errorf("missing fixed public error: %s", body)
 					}
 				})
@@ -119,13 +137,14 @@ func TestKiloM7ResponseControlFrames(t *testing.T) {
 }
 
 func TestKiloM7StartedStreamErrors(t *testing.T) {
-	for _, frame := range []string{
+	for index, frame := range []string{
 		"event: error\ndata: {\"message\":\"synthetic-private-upstream-detail\"}\n\n",
 		"data: {\"error\":{\"code\":\"rate_limit_exceeded\",\"type\":\"rate_limit_error\",\"message\":\"synthetic-private-upstream-detail\"}}\n\n",
 		"data: {\"code\":\"invalid_api_key\",\"type\":\"authentication_error\",\"message\":\"synthetic-private-upstream-detail\"}\n\n",
+		kiloOpaqueThirdPartyError,
 	} {
 		for _, protocol := range []string{"responses", "chat/completions"} {
-			t.Run(fmt.Sprintf("%s/%s", protocol, frame[:10]), func(t *testing.T) {
+			t.Run(fmt.Sprintf("%s/case-%d", protocol, index), func(t *testing.T) {
 				f := newKiloNativeFixture(t, func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Content-Type", "text/event-stream")
 					_, _ = io.WriteString(w, "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp-before-error\",\"model\":\"openai/gpt-6.1-sol\",\"status\":\"in_progress\"}}\n\n"+
@@ -136,7 +155,15 @@ func TestKiloM7StartedStreamErrors(t *testing.T) {
 				status, body := f.request(t, "POST", "/v1/"+protocol, "synthetic-kilo-key", `{"model":"gpt-6.1-sol","input":"test","messages":[{"role":"user","content":"test"}],"stream":true}`)
 				f.assertReleased(t, 1)
 				result := f.hook.snapshot()[0]
-				if status != 200 || result.Success || f.posts.Load() != 1 || !bytes.Contains(body, []byte("request_failed")) || bytes.Contains(body, []byte("synthetic-private")) || bytes.Contains(body, []byte("response.completed")) || bytes.Contains(body, []byte("kilo-ok")) {
+				publicCode := "request_failed"
+				if strings.Contains(frame, "rate_limit_error") {
+					publicCode = "rate_limit_exceeded"
+				}
+				if strings.Contains(frame, "authentication_error") {
+					publicCode = "upstream_authentication_required"
+				}
+
+				if status != 200 || result.Success || f.posts.Load() != 1 || !bytes.Contains(body, []byte(publicCode)) || bytes.Contains(body, []byte("synthetic-private")) || bytes.Contains(body, []byte("response.completed")) || bytes.Contains(body, []byte("kilo-ok")) {
 					t.Fatalf("started failure HTTP=%d result=%+v body=%s", status, result, body)
 				}
 				wantStatus := 502
@@ -148,6 +175,15 @@ func TestKiloM7StartedStreamErrors(t *testing.T) {
 				}
 				if result.Error == nil || result.Error.HTTPStatus != wantStatus || ojson.Get(result.Error.Message, "upstream_status").Int() != 200 {
 					t.Errorf("started classification=%+v", result.Error)
+				}
+				if index == 3 {
+					assertKiloPublicErrorClean(t, body)
+					if bytes.Count(body, []byte(`"error":`)) != 1 || bytes.Contains(body, []byte("rate_limit_exceeded")) {
+						t.Fatalf("opaque error changed category or duplicated terminal: %s", body)
+					}
+					if protocol == "responses" && !bytes.Contains(body, []byte(`"sequence_number":2`)) {
+						t.Fatalf("unexpected event sequence: %s", body)
+					}
 				}
 				t.Logf("started HTTP200, result=%+v, POST1, released, public=%s", result.Error, body)
 			})

@@ -59,7 +59,7 @@ func (h *BaseAPIHandler) executeWithAuthManagerFormats(ctx context.Context, entr
 	}
 	providers, normalizedModel, errMsg := h.providersForExecution(modelName, originalRequestedModel, allowImageModel, routeDecision, execOptions)
 	if errMsg != nil {
-		return nil, nil, errMsg
+		return nil, nil, executionPreflightErrorMessage(ctx, errMsg)
 	}
 	providers = adjustExecutionProvidersForEntryProtocol(entryProtocol, providers)
 	reqMeta := requestExecutionMetadata(ctx)
@@ -113,7 +113,7 @@ func (h *BaseAPIHandler) executeWithAuthManagerFormats(ctx context.Context, entr
 	resp, err := h.AuthManager.Execute(ctx, providers, req, opts)
 	if err != nil {
 		err = enrichAuthSelectionError(err, providers, normalizedModel)
-		errMsg := executionErrorMessage(err)
+		errMsg := executionErrorMessageForRequest(ctx, err, false)
 		lifecycle.completeError(ctx, errMsg)
 		return nil, nil, errMsg
 	}
@@ -142,7 +142,7 @@ func (h *BaseAPIHandler) executeCountWithAuthManager(ctx context.Context, handle
 	}
 	providers, normalizedModel, errMsg := h.providersForExecution(modelName, originalRequestedModel, false, routeDecision, execOptions)
 	if errMsg != nil {
-		return nil, nil, errMsg
+		return nil, nil, executionPreflightErrorMessage(ctx, errMsg)
 	}
 	providers = adjustExecutionProvidersForEntryProtocol(handlerType, providers)
 	reqMeta := requestExecutionMetadata(ctx)
@@ -185,7 +185,7 @@ func (h *BaseAPIHandler) executeCountWithAuthManager(ctx context.Context, handle
 	resp, err := h.AuthManager.ExecuteCount(ctx, providers, req, opts)
 	if err != nil {
 		err = enrichAuthSelectionError(err, providers, normalizedModel)
-		errMsg := executionErrorMessage(err)
+		errMsg := executionErrorMessageForRequest(ctx, err, false)
 		lifecycle.completeError(ctx, errMsg)
 		return nil, nil, errMsg
 	}
@@ -373,12 +373,14 @@ func ExecutionErrorMessage(err error) *interfaces.ErrorMessage {
 }
 
 type publicExecutionError struct {
-	message string
-	cause   error
+	message   string
+	cause     error
+	requestID string
 }
 
-func (e publicExecutionError) Error() string { return e.message }
-func (e publicExecutionError) Unwrap() error { return e.cause }
+func (e publicExecutionError) Error() string     { return e.message }
+func (e publicExecutionError) Unwrap() error     { return e.cause }
+func (e publicExecutionError) RequestID() string { return e.requestID }
 
 func executionErrorMessage(err error) *interfaces.ErrorMessage {
 	var terminated *coreexecutor.RequestTerminatedError

@@ -52,10 +52,10 @@ func (e *KiloPayloadError) StatusCode() int {
 }
 func (*KiloPayloadError) IsRequestScoped() bool { return true }
 func (*KiloPayloadError) NoReplay() bool        { return true }
-func (e *KiloPayloadError) Error() string       { return e.PublicErrorBody() }
-func (e *KiloPayloadError) PublicErrorBody() string {
+func (e *KiloPayloadError) Error() string {
 	return fmt.Sprintf(`{"error":{"code":%q,"type":"invalid_request_error","message":"Kilo request exceeds the byte budget; reduce inline images or request size","actual_bytes":%d,"limit_bytes":%d}}`, e.ErrorCode(), e.Bytes, KiloMaxRequestBytes)
 }
+func (e *KiloPayloadError) PublicErrorBody() string { return PresentKiloError(e).Body("") }
 
 type kiloImageField struct{ path, value string }
 

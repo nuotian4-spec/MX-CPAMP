@@ -340,7 +340,7 @@ func (h *OpenAIResponsesAPIHandler) authenticateResponsesWebsocketTurn(c *gin.Co
 		return "", nil
 	}
 	if result.Metadata["channel_scope"] == "kilo" {
-		return "", &interfaces.ErrorMessage{StatusCode: http.StatusNotImplemented, Error: errors.New("Kilo does not support WebSocket")}
+		return "", &interfaces.ErrorMessage{StatusCode: http.StatusNotImplemented, Error: errors.New("WebSocket is not supported for this channel")}
 	}
 	if c != nil && updateRequestContext {
 		c.Set("userApiKey", result.Principal)
@@ -367,7 +367,7 @@ func (h *OpenAIResponsesAPIHandler) authenticateResponsesWebsocketTurn(c *gin.Co
 // is forwarded to the current Codex upstream socket without starting a new turn.
 func (h *OpenAIResponsesAPIHandler) ResponsesWebsocket(c *gin.Context) {
 	if channelscope.From(c.Request.Context()) == "kilo" {
-		c.AbortWithStatusJSON(http.StatusNotImplemented, gin.H{"error": "Kilo does not support WebSocket"})
+		c.AbortWithStatusJSON(http.StatusNotImplemented, gin.H{"error": gin.H{"code": "unsupported_transport", "type": "invalid_request_error", "message": "WebSocket is not supported for this channel"}})
 		return
 	}
 	upgrader := responsesWebsocketUpgrader

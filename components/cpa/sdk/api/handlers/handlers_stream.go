@@ -366,7 +366,7 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 	providers, normalizedModel, errMsg := h.providersForExecution(modelName, originalRequestedModel, allowImageModel, routeDecision, execOptions)
 	if errMsg != nil {
 		errChan := make(chan *interfaces.ErrorMessage, 1)
-		errChan <- errMsg
+		errChan <- executionPreflightErrorMessage(ctx, errMsg)
 		close(errChan)
 		return nil, nil, errChan
 	}
@@ -426,7 +426,7 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 	streamResult, err := h.AuthManager.ExecuteStream(ctx, providers, req, opts)
 	if err != nil {
 		err = enrichAuthSelectionError(err, providers, normalizedModel)
-		errMsg := executionErrorMessage(err)
+		errMsg := executionErrorMessageForRequest(ctx, err, false)
 		errMsg.Addon = coreauth.BPSFailoverResponseHeaders(ctx, errMsg.Addon)
 		errMsg.Headers = coreauth.BPSFailoverResponseHeaders(ctx, errMsg.Headers)
 		lifecycle.completeError(ctx, errMsg)
@@ -622,22 +622,22 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 			break
 		}
 		if bootstrapRetries >= maxBootstrapRetries || !bootstrapEligible(bootstrapStreamErr) {
-			bootstrapErr = executionErrorMessage(bootstrapStreamErr)
+			bootstrapErr = executionErrorMessageForRequest(ctx, bootstrapStreamErr, false)
 			break
 		}
 		bootstrapRetries++
 		retryResult, retryErr := h.AuthManager.ExecuteStream(ctx, providers, req, opts)
 		if retryErr != nil {
-			originalBootstrapErr := executionErrorMessage(bootstrapStreamErr)
+			originalBootstrapErr := executionErrorMessageForRequest(ctx, bootstrapStreamErr, false)
 			if isAuthSelectionUnavailable(retryErr) && originalBootstrapErr.StatusCode >= http.StatusInternalServerError {
 				bootstrapErr = originalBootstrapErr
 			} else {
-				bootstrapErr = executionErrorMessage(enrichAuthSelectionError(retryErr, providers, normalizedModel))
+				bootstrapErr = executionErrorMessageForRequest(ctx, enrichAuthSelectionError(retryErr, providers, normalizedModel), false)
 			}
 			break
 		}
 		if retryResult == nil {
-			bootstrapErr = executionErrorMessage(fmt.Errorf("auth manager returned nil stream"))
+			bootstrapErr = executionErrorMessageForRequest(ctx, fmt.Errorf("auth manager returned nil stream"), false)
 			break
 		}
 		rawStreamHeaders = cloneHeader(retryResult.Headers)
@@ -699,16 +699,19 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 			}
 		}
 
+		clientOutputStarted := false
 		sendData := func(chunk []byte) bool {
 			coreauth.MarkBPSClientEvent(ctx)
 			if ctx == nil {
 				dataChan <- chunk
+				clientOutputStarted = true
 				return true
 			}
 			select {
 			case <-ctx.Done():
 				return false
 			case dataChan <- chunk:
+				clientOutputStarted = true
 				return true
 			}
 		}
@@ -762,7 +765,7 @@ func (h *BaseAPIHandler) executeStreamWithAuthManagerFormats(ctx context.Context
 				return
 			}
 			if chunk.Err != nil {
-				errMsg := executionErrorMessage(chunk.Err)
+				errMsg := executionErrorMessageForRequest(ctx, chunk.Err, clientOutputStarted)
 				completionOutcome = pluginapi.RequestCompletionFailed
 				completionStatus = errMsg.StatusCode
 				completionErr = chunk.Err

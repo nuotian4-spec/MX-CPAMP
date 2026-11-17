@@ -85,7 +85,7 @@ func TestKiloPayloadHTTPBusyAndCancellationBeforeAdmission(t *testing.T) {
 	}
 	f.assertReleased(t, 0)
 	status, data := f.request(t, "POST", "/v1/responses", "synthetic-kilo-key", body)
-	if status != 503 || !bytes.Contains(data, []byte("kilo_image_preparation_busy")) {
+	if status != 503 || !bytes.Contains(data, []byte("request_preparation_busy")) {
 		t.Fatalf("busy=%d %s", status, data)
 	}
 	for _, cancel := range cancels {

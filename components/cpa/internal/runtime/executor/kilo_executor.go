@@ -581,7 +581,7 @@ func (e *KiloExecutor) Execute(ctx context.Context, a *coreauth.Auth, req core.R
 		if errors.As(err, &responseErr) {
 			return result, err
 		}
-		return result, statusErr{code: 502, msg: err.Error()}
+		return result, helps.KiloProtocolFailure(statusErr{code: 502, msg: err.Error()})
 	}
 	if detail, ok := helps.ParseCodexUsage(terminal); ok {
 		reporter.Publish(ctx, detail)
@@ -592,7 +592,7 @@ func (e *KiloExecutor) Execute(ctx context.Context, a *coreauth.Auth, req core.R
 	var parameter any
 	payload := translator.TranslateNonStream(ctx, translator.FormatCodex, core.ResponseFormatOrSource(opts), req.Model, opts.OriginalRequest, body, terminal, &parameter)
 	if len(payload) == 0 {
-		return result, statusErr{code: 502, msg: "Kilo response translation failed"}
+		return result, helps.KiloProtocolFailure(statusErr{code: 502, msg: "Kilo response translation failed"})
 	}
 	return core.Response{Payload: payload}, nil
 }
@@ -643,7 +643,7 @@ func (e *KiloExecutor) ExecuteStream(ctx context.Context, a *coreauth.Auth, req 
 			} else {
 				var responseErr *helps.KiloResponseError
 				if !errors.As(err, &responseErr) {
-					err = statusErr{code: 502, msg: err.Error()}
+					err = helps.KiloProtocolFailure(statusErr{code: 502, msg: err.Error()})
 				}
 			}
 			select {

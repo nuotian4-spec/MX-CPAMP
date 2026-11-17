@@ -1,0 +1,128 @@
+{
+  "head": "67445a35ba450468948447492b560c204afa7321",
+  "worktree": "C:/Users/子羽/.codex/worktrees/kilo-public-errors-20261117/MX-CPAMP",
+  "purpose": "S/V比对候选输入是否变化，未变则复用现有专项证据；不是部署或产物许可。",
+  "modified_count": 13,
+  "added_count": 5,
+  "files": [
+    {
+      "path": "components/cpa/internal/api/server_kilo_alpha_search.go",
+      "change": "modified",
+      "bytes": 3424,
+      "sha256": "ba55e3c70e656f5736b152b070963efff717dc22fb760e6fb56f44f5d6456890"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_payload.go",
+      "change": "modified",
+      "bytes": 8887,
+      "sha256": "0303a0c76382fa936cf9924719906fec3eb96c2186f5db35a34ddb9c32c2c14b"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_public_error.go",
+      "change": "added",
+      "bytes": 7136,
+      "sha256": "0245cff5159ac664903e51db9534e4f837366ea694812b06fc7636638e5f0137"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_public_error_test.go",
+      "change": "added",
+      "bytes": 6066,
+      "sha256": "ce2fbcd76e5c05048fa1c0ca572db1501e08e1b415a480343e6743ab4e26f936"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_response.go",
+      "change": "modified",
+      "bytes": 4084,
+      "sha256": "62dcbc2a7c927ea9989192ae40c9855d90a914f047c9ccb4bedc741f25fabecc"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/kilo_executor.go",
+      "change": "modified",
+      "bytes": 22397,
+      "sha256": "fbad1d8620b3888b2d58494cfab39583de0553fa2295dd1dd882f674afd8e456"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/handlers.go",
+      "change": "modified",
+      "bytes": 27245,
+      "sha256": "2d7f17c811131c212b73c6f2fe41826a3c237f920bba47cceab8d7af851e025f"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/handlers_execution.go",
+      "change": "modified",
+      "bytes": 24193,
+      "sha256": "9ea0de0edacfec4d84e19063e8b571f39090a464297bfd720f3f6e82c188b255"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/handlers_stream.go",
+      "change": "modified",
+      "bytes": 35979,
+      "sha256": "ad2a130eb95bd1c93f0e5f405740a8c649e0049e238aabbafe5bfbd2fa18348b"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/kilo_public_error.go",
+      "change": "added",
+      "bytes": 2357,
+      "sha256": "f1f61a7e156bb4b60b17e9d95024a2cc2e36f589ac2c468a4b89bfd309320edb"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/kilo_public_error_test.go",
+      "change": "added",
+      "bytes": 3618,
+      "sha256": "96905220ef72e8a1f22751409b3652c22e17fa0c2f4b2e1c284c8596ff0a615e"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/openai/kilo_scope_test.go",
+      "change": "modified",
+      "bytes": 1054,
+      "sha256": "27564257d7f89c2ba63595092debe7ec0197015642d2151595c7e75fab3b278f"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/openai/openai_responses_websocket.go",
+      "change": "modified",
+      "bytes": 46023,
+      "sha256": "e71f52dde9eb01cd11e063a87869ef8faed58547c7400597d6233c1e7ad64e7c"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_a2_contract_test.go",
+      "change": "modified",
+      "bytes": 7909,
+      "sha256": "05aecfa29c126f1464e356670523bbde0ba6d9c6f3a6bfb4dc81eb6f8151a638"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_fidelity_test.go",
+      "change": "modified",
+      "bytes": 10186,
+      "sha256": "4c9097aa9da8e3d0f76e107f32604c9cb4a31e300ab5a586c30b1c4a4427e9da"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_payload_test.go",
+      "change": "modified",
+      "bytes": 22809,
+      "sha256": "a7c56701b41b7e2fcd87956126bd62e71bbbefa6ad5f2d510b80e6a02fc6ac67"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_public_error_test.go",
+      "change": "added",
+      "bytes": 9009,
+      "sha256": "cb351999007c5ee291a7cb3c5b5ff4bf993bf462d4d6a2494d687214c97c12d4"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_payload_supplement_test.go",
+      "change": "modified",
+      "bytes": 7111,
+      "sha256": "51f34f4b858c1ba27c2f31c3a3b31c36b1124737b71db5d3e4550c1c4c7a0608"
+    }
+  ],
+  "build_environment": {
+    "go": "go1.26.10",
+    "CGO_ENABLED": "0",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "platforms": [
+      "windows/amd64",
+      "linux/amd64"
+    ]
+  }
+}

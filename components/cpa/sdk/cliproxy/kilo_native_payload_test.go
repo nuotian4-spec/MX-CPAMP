@@ -136,7 +136,7 @@ func TestKiloPayloadHTTPExactFinalBoundary(t *testing.T) {
 						if !maps.Equal(bindingsBefore, kiloPayloadBindingFiles(t, f)) {
 							t.Fatal("local rejection wrote session bindings")
 						}
-						if status != 413 || !bytes.Contains(data, []byte("kilo_request_too_large")) {
+						if status != 413 || !bytes.Contains(data, []byte("request_too_large")) {
 							t.Fatalf("oversize=%d %s", status, data)
 						}
 					} else {
@@ -168,7 +168,7 @@ func TestKiloPayloadHTTPImageReductionAndFinalRules(t *testing.T) {
 				f := newKiloNativeFixture(t, kiloPayloadSuccessStream)
 				source := kiloPayloadBody(protocol, stream, "preserve-private-text", imageURL)
 				status, data := f.request(t, "POST", "/v1/"+protocol, "synthetic-kilo-key", source)
-				if status != 413 || f.posts.Load() != 0 || !bytes.Contains(data, []byte("kilo_request_too_large")) {
+				if status != 413 || f.posts.Load() != 0 || !bytes.Contains(data, []byte("request_too_large")) {
 					t.Fatalf("default off=%d POST=%d %s", status, f.posts.Load(), data)
 				}
 				f.assertReleased(t, 0)
@@ -210,7 +210,7 @@ func TestKiloPayloadHTTPImageReductionAndFinalRules(t *testing.T) {
 				next.Payload.Override = []config.PayloadRule{{Models: []config.PayloadModelRule{{Name: "*"}}, Params: map[string]any{"input.0.content.1.image_url": imageURL}}}
 				f.executor.UpdateConfig(next)
 				status, data = f.request(t, "POST", "/v1/"+protocol, "synthetic-kilo-key", source)
-				if status != 413 || !bytes.Contains(data, []byte("kilo_request_too_large")) {
+				if status != 413 || !bytes.Contains(data, []byte("request_too_large")) {
 					t.Fatalf("rule expansion=%d %s", status, data)
 				}
 				if f.posts.Load() != 2 {
@@ -227,7 +227,7 @@ func TestKiloPayloadHTTPUpstreamRequestErrorsNeutral(t *testing.T) {
 		name, body, code string
 		upstream, want   int
 	}{
-		{"http413", `{"error":{"code":"too_large","message":"private-upstream"}}`, "kilo_upstream_request_too_large", 413, 413},
+		{"http413", `{"error":{"code":"too_large","message":"private-upstream"}}`, "request_too_large", 413, 413},
 		{"encrypted", "data: {\"type\":\"response.failed\",\"response\":{\"error\":{\"code\":\"invalid_encrypted_content\",\"message\":\"private-upstream\"}}}\n\n", "invalid_encrypted_content", 200, 400},
 	} {
 		for _, protocol := range []string{"responses", "chat/completions"} {
@@ -419,7 +419,7 @@ func TestKiloPayloadHTTPInboundLimitsAndLogs(t *testing.T) {
 			t.Cleanup(f.server.Close)
 			large := kiloPayloadBody("responses", false, strings.Repeat("private-input-", kiloPayloadLimit/14+2), "")
 			status, data := f.request(t, "POST", "/backend-api/codex/responses", "synthetic-kilo-key", large)
-			if status != 413 || !bytes.Contains(data, []byte("kilo_request_too_large")) {
+			if status != 413 || !bytes.Contains(data, []byte("request_too_large")) {
 				t.Fatalf("alias=%d %s", status, data)
 			}
 			decoded := kiloPayloadBody("responses", false, strings.Repeat("z", 65<<20), "")

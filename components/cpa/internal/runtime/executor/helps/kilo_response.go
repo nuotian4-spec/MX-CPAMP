@@ -28,13 +28,7 @@ func (e *KiloResponseError) IsRequestScoped() bool {
 	return e.upstreamStatus == 413 || e.code == "invalid_encrypted_content"
 }
 func (e *KiloResponseError) PublicErrorBody() string {
-	if e.code == "invalid_encrypted_content" {
-		return `{"error":{"message":"Kilo rejected encrypted content","type":"invalid_request_error","code":"invalid_encrypted_content"}}`
-	}
-	if e.upstreamStatus == 413 {
-		return `{"error":{"message":"Kilo upstream rejected request size","type":"invalid_request_error","code":"kilo_upstream_request_too_large"}}`
-	}
-	return `{"error":{"message":"Kilo upstream response failed","type":"api_error","code":"request_failed"}}`
+	return PresentKiloError(e).Body("")
 }
 
 // KiloHTTPResponseError preserves real HTTP refusals without exposing the body.

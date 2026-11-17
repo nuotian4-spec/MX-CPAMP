@@ -6,6 +6,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -52,7 +53,8 @@ type ErrorDetail struct {
 	Code string `json:"code,omitempty"`
 
 	// Retryable optionally indicates whether a retry might fix the issue automatically.
-	Retryable *bool `json:"retryable,omitempty"`
+	Retryable *bool  `json:"retryable,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 }
 
 const idempotencyKeyMetadataKey = "idempotency_key"
@@ -86,6 +88,11 @@ func BuildErrorResponseBodyWithError(status int, errText string, err error) []by
 	trimmed := strings.TrimSpace(errText)
 
 	if coreauth.IsTerminalAuthError(err) {
+		var requestID string
+		var correlated interface{ RequestID() string }
+		if errors.As(err, &correlated) {
+			requestID = correlated.RequestID()
+		}
 		message := errText
 		if trimmed != "" && json.Valid([]byte(trimmed)) {
 			var parsed map[string]any
@@ -106,6 +113,7 @@ func BuildErrorResponseBodyWithError(status int, errText string, err error) []by
 				Type:      "authentication_error",
 				Code:      "upstream_authentication_required",
 				Retryable: &r,
+				RequestID: requestID,
 			},
 		})
 		if errMarshal != nil {

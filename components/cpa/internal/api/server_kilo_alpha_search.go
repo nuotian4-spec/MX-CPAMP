@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -32,23 +31,21 @@ func (s *Server) kiloAlphaSearch(c *gin.Context, body []byte) bool {
 		}
 		return false
 	}
-	fail := func(status int, code string, err error, completed int) {
-		c.JSON(status, gin.H{"error": gin.H{"code": code, "message": err.Error(), "completed_queries": completed}})
+	fail := func(status int, err error, completed int) {
+		failure := handlers.ExecutionErrorMessageForRequest(c.Request.Context(), err, false)
+		doc := ojson.NewDoc(handlers.BuildErrorResponseBodyWithError(status, failure.Error.Error(), failure.Error))
+		_ = doc.Set("error.completed_queries", completed)
+		c.Data(status, "application/json", doc.Bytes())
 	}
 	plan, err := helps.ParseKiloAlphaSearch(body)
 	if err != nil {
-		code := "kilo_alpha_invalid_request"
-		var alpha *helps.KiloAlphaError
-		if errors.As(err, &alpha) {
-			code = alpha.Code
-		}
-		fail(400, code, err, 0)
+		fail(400, err, 0)
 		return true
 	}
 	ctx := context.WithValue(c.Request.Context(), "gin", c)
 	ctx, target, err := s.handlers.PrepareKiloAlphaExecution(ctx, plan.Model, body)
 	if err != nil {
-		fail(400, "kilo_alpha_model_unavailable", err, 0)
+		fail(400, &helps.KiloAlphaError{Code: "kilo_alpha_model_unavailable", Message: err.Error()}, 0)
 		return true
 	}
 	plan.Model = target
@@ -63,7 +60,7 @@ func (s *Server) kiloAlphaSearch(c *gin.Context, body []byte) bool {
 	for i, query := range plan.Queries {
 		doc, err := plan.Request(i)
 		if err != nil {
-			fail(400, "kilo_alpha_invalid_request", err, i)
+			fail(400, err, i)
 			return true
 		}
 		raw := doc.Bytes()
@@ -73,17 +70,12 @@ func (s *Server) kiloAlphaSearch(c *gin.Context, body []byte) bool {
 			for _, value := range failure.Headers.Values("Retry-After") {
 				c.Header("Retry-After", value)
 			}
-			code := "kilo_alpha_execution_failed"
-			var coded interface{ ErrorCode() string }
-			if errors.As(failure.Error, &coded) && strings.HasPrefix(coded.ErrorCode(), "kilo_alpha_") {
-				code = coded.ErrorCode()
-			}
-			fail(failure.StatusCode, code, failure.Error, i)
+			fail(failure.StatusCode, failure.Error, i)
 			return true
 		}
 		output, err := helps.KiloAlphaResult(response.Body)
 		if err != nil {
-			fail(clienterror.HTTPStatusFromErrorOr(err, http.StatusBadGateway), strings.SplitN(err.Error(), ":", 2)[0], err, i)
+			fail(clienterror.HTTPStatusFromErrorOr(err, http.StatusBadGateway), helps.KiloProtocolFailure(err), i)
 			return true
 		}
 		outputs = append(outputs, output)

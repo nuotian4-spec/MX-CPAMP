@@ -21,10 +21,10 @@ func TestKiloSearchA2NativeContractScenarios(t *testing.T) {
 		code                              string
 	}{
 		{"live_domains", 200, 1, 1, 0, ""}, {"empty", 200, 1, 1, 0, ""},
-		{"no_search", 502, 1, 1, 0, "kilo_alpha_no_search"}, {"no_sources", 502, 1, 1, 0, "kilo_alpha_missing_sources"},
-		{"failed_terminal", 502, 1, 1, 0, "kilo_alpha_execution_failed"}, {"middle_failure", 502, 2, 2, 1, "kilo_alpha_missing_sources"},
-		{"final_filter", 400, 0, 1, 0, "kilo_alpha_payload_conflict"}, {"late_filter", 400, 1, 2, 1, "kilo_alpha_payload_conflict"},
-		{"mode_conflict", 400, 0, 1, 0, "kilo_alpha_payload_conflict"},
+		{"no_search", 502, 1, 1, 0, "upstream_response_invalid"}, {"no_sources", 502, 1, 1, 0, "upstream_response_invalid"},
+		{"failed_terminal", 502, 1, 1, 0, "request_failed"}, {"middle_failure", 502, 2, 2, 1, "upstream_response_invalid"},
+		{"final_filter", 400, 0, 1, 0, "invalid_request"}, {"late_filter", 400, 1, 2, 1, "invalid_request"},
+		{"mode_conflict", 400, 0, 1, 0, "invalid_request"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			step := 0
@@ -88,6 +88,12 @@ func TestKiloSearchA2NativeContractScenarios(t *testing.T) {
 			}
 			if tc.status != 200 && ojson.GetBytes(data, "error.completed_queries").Int() != int64(tc.completed) {
 				t.Fatalf("completed count=%s", data)
+			}
+			if tc.status != 200 {
+				assertKiloPublicErrorClean(t, data)
+				if ojson.GetBytes(data, "error.request_id").String() == "" {
+					t.Fatalf("missing error correlation: %s", data)
+				}
 			}
 			if f.posts.Load() != int32(tc.posts) || int(helps.PayloadConfigEvaluationCount()-before) != tc.results {
 				t.Fatalf("POST=%d payload evaluations=%d", f.posts.Load(), helps.PayloadConfigEvaluationCount()-before)

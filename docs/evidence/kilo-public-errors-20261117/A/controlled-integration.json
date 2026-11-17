@@ -1,0 +1,89 @@
+{
+  "recorded_at": "2026-11-17T11:40:36.005551+08:00",
+  "baseline": "67445a35ba450468948447492b560c204afa7321",
+  "target": "D:\\MX-CPAMP",
+  "target_head": "c4f693a9b97ab7b5643d6178bec03f9ad5b95094",
+  "target_branch": "codex/openai-bps-login",
+  "target_drift": false,
+  "written_count": 18,
+  "verified_equal_count": 18,
+  "rows": [
+    {
+      "path": "components/cpa/internal/api/server_kilo_alpha_search.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_payload.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_public_error.go",
+      "before": "missing"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_public_error_test.go",
+      "before": "missing"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/helps/kilo_response.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/internal/runtime/executor/kilo_executor.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/handlers.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/handlers_execution.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/handlers_stream.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/kilo_public_error.go",
+      "before": "missing"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/kilo_public_error_test.go",
+      "before": "missing"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/openai/kilo_scope_test.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/api/handlers/openai/openai_responses_websocket.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_a2_contract_test.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_fidelity_test.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_payload_test.go",
+      "before": "unchanged_base"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_native_public_error_test.go",
+      "before": "missing"
+    },
+    {
+      "path": "components/cpa/sdk/cliproxy/kilo_payload_supplement_test.go",
+      "before": "unchanged_base"
+    }
+  ],
+  "unknown_changes_preserved": true,
+  "tests_repeated": false,
+  "staged": false,
+  "committed": false,
+  "pushed": false
+}
