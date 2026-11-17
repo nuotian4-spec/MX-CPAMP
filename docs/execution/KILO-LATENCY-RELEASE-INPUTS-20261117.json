@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "kind": "kilo-latency-local-release-inputs",
-  "status": "RELEASE_AUTHORIZED_INPUT_SNAPSHOT",
+  "status": "RELEASE_PUBLISHED_NOT_DEPLOYED",
   "prepared_at": "2026-11-17T14:39:20+08:00",
   "baseline": {
     "commit": "f9ef5c16a027b7e9a7c01e85c4c65e079018f691",
@@ -262,17 +262,26 @@
     "evidence": "C:/Users/子羽/AppData/Local/Temp/kilo-latency-phase1-20261117/p9-release-wiring-20261117.json"
   },
   "publication": {
-    "committed": false,
-    "pushed": false,
-    "actions_triggered": false,
+    "committed": true,
+    "pushed": true,
+    "actions_triggered": true,
     "deployed": false,
     "planned_version": "v2026.11.17-rc.2",
     "authorization": {
       "confirmed": true,
-      "request_time": "2026-11-17T15:10:33+08:00",
-      "scope": "28路径提交推送main，既有Actions发布v2026.11.17-rc.2；不部署、不重启生产。"
+      "scope": "28路径提交推送main，既有Actions发布v2026.11.17-rc.2；不部署、不重启生产。",
+      "confirmed_on": "2026-11-17"
     },
-    "snapshot_note": "本记录为发布前输入快照；实际提交、Actions及发行结果以GitHub固定标签与工作流回执为准。"
+    "snapshot_note": "组件输入保持发布前冻结身份；publication记录实际固定版本发布结果。发布后仅补充交付文档，不改变版本标签绑定。",
+    "published": true,
+    "version": "v2026.11.17-rc.2",
+    "commit": "de91ff230d071e4f97b705593d8f49167796239e",
+    "run_id": 44036892194,
+    "run_url": "https://github.com/nuotian4-spec/MX-CPAMP/actions/runs/44036892194",
+    "release_url": "https://github.com/nuotian4-spec/MX-CPAMP/releases/tag/v2026.11.17-rc.2",
+    "published_at": "2026-11-17T07:17:03Z",
+    "asset_count": 16,
+    "asset_verification": "16项完整；15项绑定资产大小与API摘要匹配，release.json自身摘要匹配。"
   },
   "preservation": {
     "real_git_index": "不修改",
