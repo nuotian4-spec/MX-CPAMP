@@ -114,6 +114,13 @@ func waitTestOperation(t *testing.T, h *Handler, id string) updatestate.Operatio
 	t.Helper()
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
+		h.updateOperationsMu.Lock()
+		_, running := h.updateOperations[id]
+		h.updateOperationsMu.Unlock()
+		if running {
+			time.Sleep(time.Millisecond)
+			continue
+		}
 		op, err := h.updateStateStore.Get(id)
 		if err == nil && (updatestate.Terminal(op.Status) || op.Status == "recovery_required") {
 			return op
@@ -247,6 +254,13 @@ func TestPluginImportFailedActivationPreservesConcurrentSettings(t *testing.T) {
 	}
 	if pluginStoreDesiredVersion(h.cfg.Plugins.Configs["sample"]) != "" {
 		t.Fatal("failed candidate pin was not restored")
+	}
+	path := filepath.Join(h.cfg.Plugins.Dir, "linux", "amd64", "sample-v1.0.0.so")
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("failed candidate remains selectable: %v", err)
+	}
+	if _, err := os.Stat(path + ".failed-plugin-" + id); err != nil {
+		t.Fatalf("failed candidate was not retained for diagnosis: %v", err)
 	}
 }
 

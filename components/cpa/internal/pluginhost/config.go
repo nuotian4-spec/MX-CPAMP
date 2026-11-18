@@ -162,6 +162,13 @@ func normalizedConfigNode(item config.PluginInstanceConfig, enabled bool) *yaml.
 	if node.Kind != yaml.MappingNode {
 		return node
 	}
+	// The store manifest selects the library; it is not part of its runtime configuration.
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value == "store" {
+			node.Content = append(node.Content[:i], node.Content[i+2:]...)
+			break
+		}
+	}
 	ensureMappingScalar(node, "enabled", boolYAMLValue(enabled), "!!bool")
 	ensureMappingScalar(node, "priority", intYAMLValue(item.Priority), "!!int")
 	return node

@@ -54,6 +54,14 @@ func (m *updateMutation) backupReplacedPlugin(path string) error {
 	return updatestate.WriteJSON(filepath.Join(m.backupRoot, "replaced-files.json"), m.replacedFiles)
 }
 
+func (m *updateMutation) recordCreatedPlugin(path string) error {
+	if err := updatestate.WriteJSON(filepath.Join(m.backupRoot, "created-path.json"), path); err != nil {
+		return err
+	}
+	m.createdPath = path
+	return nil
+}
+
 func copyPluginBackup(source, target string) error {
 	input, err := os.Open(source)
 	if err != nil {
@@ -75,6 +83,13 @@ func copyPluginBackup(source, target string) error {
 }
 
 func (m *updateMutation) restoreReplacedPlugins() error {
+	if m.createdPath != "" {
+		// Stay on the plugin filesystem even when the backup is a different bind mount.
+		target := m.createdPath + ".failed-" + filepath.Base(m.backupRoot)
+		if err := os.Rename(m.createdPath, target); err != nil {
+			return err
+		}
+	}
 	for target, backup := range m.replacedFiles {
 		input, err := os.ReadFile(backup)
 		if err != nil {

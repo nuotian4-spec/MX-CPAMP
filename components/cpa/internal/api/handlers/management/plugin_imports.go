@@ -365,7 +365,7 @@ func (h *Handler) runPluginImport(directory string, record pluginImportRecord, m
 	}
 	result, err := pluginstore.InstallArchive(archive, pluginstore.Plugin{ID: record.Preview.PluginID, Version: record.Preview.Version}, pluginstore.InstallOptions{
 		PluginsDir: pluginsDir, GOOS: platform[0], GOARCH: platform[1], PluginLoaded: func() bool { return pluginBusy(host, record.Preview.PluginID) },
-		BeforeWrite: mutation.backupReplacedPlugin,
+		BeforeWrite: mutation.backupReplacedPlugin, BeforeCreate: mutation.recordCreatedPlugin,
 	})
 	if err != nil {
 		if errors.Is(err, pluginstore.ErrLoadedPluginLocked) {
@@ -392,6 +392,11 @@ func (h *Handler) runPluginImport(directory string, record pluginImportRecord, m
 	if err != nil {
 		h.restorePluginConfigLocked(record.Preview.PluginID, mutation.previous)
 		h.mu.Unlock()
+		if restoreErr := mutation.restoreReplacedPlugins(); restoreErr != nil {
+			_ = mutation.lease.Detach("Configuration save failed; library and configuration require recovery")
+			h.forgetUpdate(mutation)
+			return
+		}
 		_ = mutation.lease.Detach("Library installed; configuration save requires recovery from the preserved backup")
 		h.forgetUpdate(mutation)
 		return

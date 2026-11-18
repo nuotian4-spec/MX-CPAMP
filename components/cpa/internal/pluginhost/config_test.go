@@ -52,7 +52,7 @@ func TestRuntimeConfigYAMLDefaultsEnabledFalse(t *testing.T) {
 
 func TestRuntimeConfigFromConfigExtractsStoreVersion(t *testing.T) {
 	var node yaml.Node
-	if errDecode := yaml.Unmarshal([]byte("store:\n  version: 1.0.3\n  release-tag: v1.0.3\n"), &node); errDecode != nil {
+	if errDecode := yaml.Unmarshal([]byte("store:\n  version: 1.0.3\n  release-tag: v1.0.3\nsettings:\n  store: local\n"), &node); errDecode != nil {
 		t.Fatalf("yaml.Unmarshal() error = %v", errDecode)
 	}
 	enabled := true
@@ -74,6 +74,16 @@ func TestRuntimeConfigFromConfigExtractsStoreVersion(t *testing.T) {
 	}
 	if got.Items["alpha"].Version != "1.0.3" {
 		t.Fatalf("runtimeConfigFromConfig() version = %q, want 1.0.3", got.Items["alpha"].Version)
+	}
+	var runtimeNode yaml.Node
+	if err := yaml.Unmarshal(got.Items["alpha"].ConfigYAML, &runtimeNode); err != nil {
+		t.Fatal(err)
+	}
+	raw := runtimeNode.Content[0]
+	if yamlMappingValue(raw, "store") != nil ||
+		yamlScalarString(yamlMappingValue(yamlMappingValue(raw, "settings"), "store")) != "local" ||
+		pluginConfigDesiredVersion(cfg.Plugins.Configs["alpha"]) != "1.0.3" {
+		t.Fatalf("runtime config or source manifest was not preserved correctly: %s", got.Items["alpha"].ConfigYAML)
 	}
 }
 

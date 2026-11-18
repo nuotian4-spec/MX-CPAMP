@@ -31,7 +31,7 @@ export function bpsLicenseSummary(status: BpsLicenseStatus): string {
   if (status.active) return '商业许可有效';
   if (status.code === 'license_expired') return '商业许可已过期';
   if (status.code === 'license_invalid') return '商业许可无效';
-  if (status.code === 'license_required' || status.code === 'not_activated')
+  if (['license_required', 'license_activation_required', 'not_activated'].includes(status.code))
     return '商业许可待激活';
   return '商业许可未生效，服务状态代码未识别';
 }
@@ -63,6 +63,18 @@ function BpsLicenseSession({ scope, connected, registered }: Props) {
   const epoch = useRef(0);
   const pendingWrite = useRef(false);
   const available = connected && registered && Boolean(scope.apiBase && scope.managementKey);
+  const canActivate = Boolean(
+    available &&
+    status?.required &&
+    !status.active &&
+    [
+      'license_required',
+      'license_activation_required',
+      'not_activated',
+      'license_expired',
+      'license_invalid',
+    ].includes(status.code)
+  );
   const current = (token: number) => mounted.current && epoch.current === token;
 
   const read = async (token: number) => {
@@ -104,7 +116,7 @@ function BpsLicenseSession({ scope, connected, registered }: Props) {
   const write = async (action: 'activate' | 'refresh') => {
     if (!available || !status || reading || pendingWrite.current) return;
     const key = licenseKey.trim();
-    if (action === 'activate' && !key) return;
+    if (action === 'activate' && (!canActivate || !key)) return;
     pendingWrite.current = true;
     setWriting(true);
     setLicenseKey('');
@@ -113,7 +125,7 @@ function BpsLicenseSession({ scope, connected, registered }: Props) {
     try {
       if (action === 'activate') await api.activate(key);
       else await api.refresh();
-      if (current(token)) setNotice('操作已返回，已只读核实许可状态。');
+      if (current(token)) setNotice('操作已返回。');
     } catch {
       if (current(token)) setNotice('操作结果未确认；仅查询许可状态，不会自动重发。');
     } finally {
@@ -123,10 +135,10 @@ function BpsLicenseSession({ scope, connected, registered }: Props) {
     }
   };
 
-  const summary = !registered
-    ? '插件未注册，许可未核实'
-    : !connected
-      ? '管理连接未就绪，许可未核实'
+  const summary = !connected
+    ? '管理连接未就绪，许可未核实'
+    : !registered
+      ? '插件未注册，许可未核实。请查看最近插件维护记录，无需输入授权码。'
       : failure
         ? failureText[failure]
         : status
@@ -178,7 +190,7 @@ function BpsLicenseSession({ scope, connected, registered }: Props) {
               <dd>{status.hasLastError ? '插件报告许可错误，请只读核实状态。' : '无报告错误'}</dd>
             </dl>
           )}
-          {(!status || status.required) && (
+          {canActivate && (
             <Input
               label="当次授权码"
               type="password"
@@ -199,7 +211,7 @@ function BpsLicenseSession({ scope, connected, registered }: Props) {
             >
               读取状态
             </Button>
-            {(!status || status.required) && (
+            {canActivate && (
               <Button
                 disabled={disabled || !licenseKey.trim()}
                 onClick={() => void write('activate')}

@@ -35,6 +35,7 @@ type updateMutation struct {
 	action          string
 	backupRoot      string
 	replacedFiles   map[string]string
+	createdPath     string
 }
 
 func (h *Handler) updateStore() (*updatestate.Store, error) {
@@ -281,7 +282,9 @@ func (h *Handler) GetUpdateOperation(c *gin.Context) {
 		if !owned {
 			op.Status = "recovery_required"
 			op.Stage = "recovery_required"
-			op.Message = "Operation was interrupted; inspect runtime state before recovery"
+			if op.Message == "" {
+				op.Message = "Operation was interrupted; inspect runtime state before recovery"
+			}
 		}
 	}
 	c.JSON(http.StatusOK, op)
@@ -309,7 +312,9 @@ func (h *Handler) GetLatestUpdateOperation(c *gin.Context) {
 		if !owned {
 			op.Status = "recovery_required"
 			op.Stage = "recovery_required"
-			op.Message = "Operation interrupted; runtime inspection is required"
+			if op.Message == "" {
+				op.Message = "Operation interrupted; runtime inspection is required"
+			}
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"operation": op})

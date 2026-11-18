@@ -1047,8 +1047,9 @@ function InstalledPluginsView({
                     </div>
                     {plugin.id === 'cpa-bps' && (
                       <BpsLicensePanel
+                        key={JSON.stringify([plugin.path, plugin.metadata?.version])}
                         scope={{ apiBase, managementKey }}
-                        connected={connected && supportsPlugin && !demoMode}
+                        connected={connected && supportsPlugin && !demoMode && !error}
                         registered={plugin.registered}
                       />
                     )}
@@ -1174,8 +1175,12 @@ function InstalledPluginsView({
               : pluginMaintenanceLabel(lastUpdate, unresolvedUpdateLicense)}
           </div>
           <div>
-            活动版本：{lastUpdate.active_version || '待确认'}；注册状态：
-            {lastUpdate.registered ? '已注册' : '未注册'}
+            任务记录的活动版本：{lastUpdate.active_version || '未确认'}；当时的注册状态：
+            {lastUpdate.registered
+              ? '已注册'
+              : lastUpdate.status === 'completed_disabled'
+                ? '已停用'
+                : '未确认'}
           </div>
           {lastUpdate.message && <div>{lastUpdate.message}</div>}
           {lastUpdateError && (

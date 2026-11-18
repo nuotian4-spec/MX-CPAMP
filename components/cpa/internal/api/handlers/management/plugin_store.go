@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -279,6 +278,7 @@ func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
 		GOARCH:       goarch,
 		PluginLoaded: pluginIsBusy,
 		BeforeWrite:  mutation.backupReplacedPlugin,
+		BeforeCreate: mutation.recordCreatedPlugin,
 	}
 	var manifest pluginstore.Manifest
 	var result pluginstore.InstallResult
@@ -291,9 +291,6 @@ func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
 			return
 		}
 		errRestore := mutation.restoreReplacedPlugins()
-		if !result.Overwritten && !result.Skipped {
-			errRestore = errors.Join(errRestore, os.Remove(result.Path))
-		}
 		if errRestore != nil {
 			mutation.mu.Lock()
 			mutation.finished = true
@@ -369,14 +366,15 @@ func (h *Handler) installPluginFromStore(c *gin.Context, goos, goarch string) {
 	if errSave := config.SaveConfigPreserveComments(h.configFilePath, h.cfg, c.GetBool(ConfigV8ContextKey)); errSave != nil {
 		h.restorePluginConfigLocked(id, previousConfig)
 		h.mu.Unlock()
-		_ = mutation.restoreReplacedPlugins()
-		if !result.Overwritten && !result.Skipped {
-			_ = os.Remove(result.Path)
-		}
+		errRestore := mutation.restoreReplacedPlugins()
 		mutation.mu.Lock()
 		mutation.finished = true
 		mutation.mu.Unlock()
-		_ = mutation.lease.Detach("Plugin configuration save failed; verify config and backup before recovery")
+		reason := "Plugin configuration save failed; verify config and backup before recovery"
+		if errRestore != nil {
+			reason = "Configuration save failed; library and configuration require recovery"
+		}
+		_ = mutation.lease.Detach(reason)
 		h.forgetUpdate(mutation)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "config_save_failed",

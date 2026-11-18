@@ -29,6 +29,7 @@ type loadedPlugin struct {
 	plugin           pluginapi.Plugin
 	registered       bool
 	needsRecovery    bool
+	quiesced         bool
 	client           pluginClient
 	callbackInstance *hostCallbackInstance
 }
@@ -292,6 +293,7 @@ func (h *Host) ApplyConfig(ctx context.Context, cfg *config.Config) {
 			lp = nil
 		}
 		_, disabled := h.fused[file.ID]
+		restoreQuiesced := lp != nil && lp.quiesced && bytes.Equal(lp.configYAML, item.ConfigYAML)
 		h.mu.Unlock()
 		if disabled && replaced == nil {
 			continue
@@ -301,6 +303,21 @@ func (h *Host) ApplyConfig(ctx context.Context, cfg *config.Config) {
 		var hotReloadFields log.Fields
 		var plugin pluginapi.Plugin
 		registeredNow := false
+		if restoreQuiesced {
+			// Some plugins resume on reconfigure, others permanently stop this client.
+			// Reopen the restored file through the normal replacement/drain path.
+			plugin, registeredNow = h.callRegister(ctx, lp, item)
+			if !registeredNow {
+				if ctx.Err() != nil {
+					return
+				}
+				h.mu.Lock()
+				lp.quiesced = false // At most one fresh mapping per confirmed quiesce.
+				h.mu.Unlock()
+				file.freshImage = true
+				replaced, lp = lp, nil
+			}
+		}
 		if lp == nil {
 			request := &pluginLoadRequest{result: make(chan pluginLoadResult, 1)}
 			h.mu.Lock()
@@ -319,7 +336,10 @@ func (h *Host) ApplyConfig(ctx context.Context, cfg *config.Config) {
 					}
 					return
 				}
-				_, proceedQuiesce := h.callQuiesceWithOutcome(ctx, replaced)
+				proceedQuiesce := true
+				if !restoreQuiesced {
+					_, proceedQuiesce = h.callQuiesceWithOutcome(ctx, replaced)
+				}
 				if errContext := ctx.Err(); errContext != nil {
 					h.clearLoadingRequest(file.ID, request)
 					if _, _, okRollback := h.rollbackReplacement(replaced, item); okRollback {
@@ -352,9 +372,9 @@ func (h *Host) ApplyConfig(ctx context.Context, cfg *config.Config) {
 				}
 				return
 			}
-			if loadResult.err != nil || (replaced != nil && !loadResult.initialized) {
+			if loadResult.err != nil || !loadResult.initialized {
 				if replaced == nil {
-					h.cleanupPluginLoad(file.ID, request, loadResult.loaded)
+					h.cleanupPluginLoadAndWait(file.ID, request, loadResult.loaded)
 				} else {
 					h.cleanupPluginLoadAndWait(file.ID, request, loadResult.loaded)
 					if rollbackRecord, rollbackFile, okRollback := h.rollbackReplacement(replaced, item); okRollback {
@@ -1172,7 +1192,10 @@ func (h *Host) callQuiesceWithOutcome(ctx context.Context, lp *loadedPlugin) (qu
 		return false, false
 	}
 	if errQuiesce == nil {
-		h.setPluginNeedsRecovery(lp, true)
+		h.mu.Lock()
+		lp.needsRecovery = true
+		lp.quiesced = true
+		h.mu.Unlock()
 		return true, true
 	}
 	if quiesceUnsupported(errQuiesce) {
@@ -1385,15 +1408,13 @@ func (h *Host) callRegister(ctx context.Context, lp *loadedPlugin, item runtimeI
 	if !okCall {
 		return pluginapi.Plugin{}, false
 	}
-	h.mu.Lock()
-	lp.registered = true
-	h.mu.Unlock()
 	if !validPlugin(plugin) {
 		log.Warnf("pluginhost: plugin %s returned invalid metadata or no capabilities", lp.id)
 		return pluginapi.Plugin{}, false
 	}
 	plugin.Metadata = clonePluginMetadata(plugin.Metadata)
 	h.mu.Lock()
+	lp.registered = true
 	lp.name = strings.TrimSpace(plugin.Metadata.Name)
 	if strings.TrimSpace(lp.version) == "" {
 		lp.version = strings.TrimSpace(plugin.Metadata.Version)
@@ -1401,6 +1422,7 @@ func (h *Host) callRegister(ctx context.Context, lp *loadedPlugin, item runtimeI
 	lp.configYAML = bytes.Clone(item.ConfigYAML)
 	lp.plugin = plugin
 	lp.needsRecovery = false
+	lp.quiesced = false
 	h.mu.Unlock()
 	return plugin, true
 }

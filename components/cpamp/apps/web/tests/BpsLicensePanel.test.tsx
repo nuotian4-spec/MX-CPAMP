@@ -48,7 +48,7 @@ const proxySecret = 'http://synthetic-user:synthetic-password@proxy.invalid:80';
 const initialStatus = () => ({
   required: true,
   active: false,
-  code: 'license_required',
+  code: 'license_activation_required',
   key_hint: 'BPS-****-EEFF00',
   bound_ip: '127.0.0.1',
   license_expires_at: '2026-12-01T00:00:00Z',
@@ -140,6 +140,8 @@ describe('BPS 许可组件与正式 Axios 管理客户端', () => {
     await mount(false);
     expect(text()).toContain('插件未注册，许可未核实');
     expect(button('管理许可')).toBeDefined();
+    await act(async () => button('管理许可').props.onClick());
+    expect(renderer!.root.findAllByType('input')).toHaveLength(0);
     expect(requests).toHaveLength(0);
   });
   it('状态读取与打开详情只 GET，明确未激活允许当次激活', async () => {
@@ -289,6 +291,8 @@ describe('BPS 许可组件与正式 Axios 管理客户端', () => {
     await mount();
     await waitFor(() => text().includes(label));
     expect(text()).not.toContain('商业许可待激活');
+    await act(async () => button('管理许可').props.onClick());
+    expect(renderer!.root.findAllByType('input')).toHaveLength(0);
   });
   it('未知代码与供应商错误不直接显示，完整授权码不冒充 key_hint', () => {
     const result = normalizeBpsLicense({

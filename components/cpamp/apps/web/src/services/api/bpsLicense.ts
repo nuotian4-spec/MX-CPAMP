@@ -54,6 +54,7 @@ export function normalizeBpsLicense(value: unknown): BpsLicenseStatus {
       'active',
       'ok',
       'license_required',
+      'license_activation_required',
       'license_expired',
       'license_invalid',
       'not_activated',

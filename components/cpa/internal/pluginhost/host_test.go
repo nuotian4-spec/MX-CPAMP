@@ -2492,7 +2492,7 @@ func TestHostApplyConfigKeepsLoadedVersionWhenPinnedVersionMissing(t *testing.T)
 	}
 }
 
-func TestHostApplyConfigLogsLoadedWhenRegistrationInvalid(t *testing.T) {
+func TestHostApplyConfigRetriesInvalidRegistration(t *testing.T) {
 	var out bytes.Buffer
 	originalOut := log.StandardLogger().Out
 	originalFormatter := log.StandardLogger().Formatter
@@ -2510,26 +2510,30 @@ func TestHostApplyConfigLogsLoadedWhenRegistrationInvalid(t *testing.T) {
 	})
 
 	loader := newTestSymbolLoader()
-	loader.lookups["empty-name"] = newTestSymbolLookup(&testPlugin{
+	instance := &testPlugin{
 		registerResult: validTestPlugin(""),
-	})
+	}
+	loader.lookups["empty-name"] = newTestSymbolLookup(instance)
 	h := NewForTest(loader)
 	t.Cleanup(h.ShutdownAll)
 
-	h.ApplyConfig(context.Background(), &config.Config{
+	cfg := &config.Config{
 		Plugins: config.PluginsConfig{
 			Enabled: true,
 			Dir:     makePluginDir(t, "empty-name"),
 			Configs: enabledPluginConfigs("empty-name"),
 		},
-	})
+	}
+	h.ApplyConfig(context.Background(), cfg)
 
 	logs := out.String()
-	if count := strings.Count(logs, `msg="pluginhost: plugin loaded"`); count != 1 {
-		t.Fatalf("plugin loaded log count = %d, want 1\n%s", count, logs)
-	}
 	if strings.Contains(logs, `msg="pluginhost: plugin registered"`) {
 		t.Fatalf("plugin registered log emitted for invalid registration:\n%s", logs)
+	}
+	instance.registerResult = validTestPlugin("retry")
+	h.ApplyConfig(context.Background(), cfg)
+	if instance.registerCalls != 2 || instance.reconfigureCalls != 0 || len(h.RegisteredPlugins()) != 1 {
+		t.Fatalf("retry registration calls=%d reconfigure=%d active=%d", instance.registerCalls, instance.reconfigureCalls, len(h.RegisteredPlugins()))
 	}
 }
 

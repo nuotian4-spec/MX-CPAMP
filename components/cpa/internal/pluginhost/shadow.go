@@ -195,7 +195,7 @@ func shadowCopyPluginToDirWithDigest(file pluginFile, dir string, size int64, di
 	source := filepath.Clean(file.Path)
 	ext := filepath.Ext(source)
 	target := shadowPluginPath(dir, file.ID, digest, ext)
-	if shadowPluginMatches(target, size, digest) {
+	if !file.freshImage && shadowPluginMatches(target, size, digest) {
 		return target, nil
 	}
 
@@ -235,6 +235,15 @@ func shadowCopyPluginToDirWithDigest(file pluginFile, dir string, size int64, di
 		return "", errClose
 	}
 	copiedDigest := hex.EncodeToString(hasher.Sum(nil))
+	if file.freshImage {
+		// dlopen of the cached inode would reuse the stopped plugin's globals.
+		// Keep the independent copy under the existing per-process cleanup policy.
+		if copiedSize != size || copiedDigest != digest {
+			return "", fmt.Errorf("plugin changed during recovery")
+		}
+		removeTemp = false
+		return tmpName, nil
+	}
 	target = shadowPluginPath(dir, file.ID, copiedDigest, ext)
 	if errPublish := publishShadowTempFile(tmpName, target, copiedSize, copiedDigest); errPublish != nil {
 		return "", errPublish

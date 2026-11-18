@@ -28,6 +28,8 @@ type InstallOptions struct {
 	// BeforeWrite runs after the archive has been downloaded and verified, but
 	// before an existing target plugin file is replaced.
 	BeforeWrite func(targetPath string) error
+	// BeforeCreate records a previously absent target before it becomes selectable.
+	BeforeCreate func(targetPath string) error
 }
 
 // ErrLoadedPluginLocked is returned when an install would overwrite a plugin
@@ -295,6 +297,11 @@ func InstallArchive(archiveData []byte, plugin Plugin, options InstallOptions) (
 	}
 	if overwritten && loadedPluginInstallBlocked(options) {
 		return InstallResult{}, ErrLoadedPluginLocked
+	}
+	if !overwritten && options.BeforeCreate != nil {
+		if errCreate := options.BeforeCreate(targetPath); errCreate != nil {
+			return InstallResult{}, fmt.Errorf("prepare new plugin: %w", errCreate)
+		}
 	}
 	if errWrite := writeFileAtomic(targetPath, libraryData, mode); errWrite != nil {
 		return InstallResult{}, errWrite
