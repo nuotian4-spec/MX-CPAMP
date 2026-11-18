@@ -1524,11 +1524,11 @@
     },
     "components/cpa/internal/api/handlers/management/plugin_imports.go": {
       "mode": "100644",
-      "blob": "ff794340f0761f968bf1a692e2ef709e9d08353b"
+      "blob": "cfe4543bdd3b7385862effb6e5b3cb3d7d1087e8"
     },
     "components/cpa/internal/api/handlers/management/plugin_imports_test.go": {
       "mode": "100644",
-      "blob": "02c394dd7af8159c2a9c5be449b0cbdf8c12b23a"
+      "blob": "081e3127ab9e7ab6cf919f59c58ba63d80e006ce"
     },
     "components/cpa/internal/api/handlers/management/plugin_quota.go": {
       "mode": "100644",
@@ -1540,7 +1540,7 @@
     },
     "components/cpa/internal/api/handlers/management/plugin_store.go": {
       "mode": "100644",
-      "blob": "8402e15b638fabb00340cde6dd63141f10c1ff4a"
+      "blob": "a0e48dd95ea4af9726613fdc2d298bdfaeab025d"
     },
     "components/cpa/internal/api/handlers/management/plugin_store_release.go": {
       "mode": "100644",
@@ -1556,7 +1556,7 @@
     },
     "components/cpa/internal/api/handlers/management/plugin_update_backup.go": {
       "mode": "100644",
-      "blob": "1d08ec244b07e0557b8c385907d2d203a9206075"
+      "blob": "67c7a715f4f1c566ff2de4cf0516c16356620e75"
     },
     "components/cpa/internal/api/handlers/management/plugins.go": {
       "mode": "100644",
@@ -1588,7 +1588,7 @@
     },
     "components/cpa/internal/api/handlers/management/update_operations.go": {
       "mode": "100644",
-      "blob": "b90a1a8c459ba5be093ad60e22dbcfa7d43893d6"
+      "blob": "1fa3770a88f60013b39779c6fa1dce224e02ecc5"
     },
     "components/cpa/internal/api/handlers/management/usage.go": {
       "mode": "100644",
@@ -3968,11 +3968,11 @@
     },
     "components/cpa/internal/pluginhost/config.go": {
       "mode": "100644",
-      "blob": "4bed5e6918ca55fd41fa635fd62f4d42de149379"
+      "blob": "275be34238a61e175a0873b780cce4602f0bfc12"
     },
     "components/cpa/internal/pluginhost/config_test.go": {
       "mode": "100644",
-      "blob": "97f53fa53cab6b79b8259b049a7958817c4c2916"
+      "blob": "faf1df018dd7188619562449eafe5e7310547f42"
     },
     "components/cpa/internal/pluginhost/executor_route.go": {
       "mode": "100644",
@@ -3980,7 +3980,7 @@
     },
     "components/cpa/internal/pluginhost/host.go": {
       "mode": "100644",
-      "blob": "f95b69b5e607a0085e7b8fd19daec46e12ec8aa9"
+      "blob": "2658ab812742e94f52ea5368c68c56ffdac157c5"
     },
     "components/cpa/internal/pluginhost/host_callbacks.go": {
       "mode": "100644",
@@ -4004,7 +4004,7 @@
     },
     "components/cpa/internal/pluginhost/host_test.go": {
       "mode": "100644",
-      "blob": "8b8fcd27790697d92117be946f6b362cc27727cd"
+      "blob": "841d08b1a3e610cc25248f2d0c41354ef35f94ff"
     },
     "components/cpa/internal/pluginhost/http_bridge.go": {
       "mode": "100644",
@@ -4084,7 +4084,7 @@
     },
     "components/cpa/internal/pluginhost/platform.go": {
       "mode": "100644",
-      "blob": "f4c928e6782f5efc21b5dfce2a2215131f9def29"
+      "blob": "caacd8ff46880adc3b7015c418bc52ca0cfdea24"
     },
     "components/cpa/internal/pluginhost/platform_test.go": {
       "mode": "100644",
@@ -4160,7 +4160,7 @@
     },
     "components/cpa/internal/pluginhost/shadow.go": {
       "mode": "100644",
-      "blob": "2438e3b7cedc3ac9f77a63bf285a5684a242367a"
+      "blob": "5ab1d3a214f71e0fffb2b850a993c014be7906fb"
     },
     "components/cpa/internal/pluginhost/shadow_test.go": {
       "mode": "100644",
@@ -4268,7 +4268,7 @@
     },
     "components/cpa/internal/pluginstore/install.go": {
       "mode": "100644",
-      "blob": "bbd69d54b45fb8f460f7ebfa5a356bf1272ad1ab"
+      "blob": "3610c4b6333545a2a59ad1c891fe945aec034559"
     },
     "components/cpa/internal/pluginstore/install_test.go": {
       "mode": "100644",
@@ -16272,7 +16272,7 @@
     },
     "components/cpamp/apps/web/src/features/plugins/BpsLicensePanel.tsx": {
       "mode": "100644",
-      "blob": "54a65b5b178b94e0a1681d17c331b1dc70c8fcad"
+      "blob": "c4751bc4ba9674c3d6f347212d779d2008c33e08"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.module.scss": {
       "mode": "100644",
@@ -16316,7 +16316,7 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.tsx": {
       "mode": "100644",
-      "blob": "660ab7b01c9b442edfd35513a74b792bfd51e1bc"
+      "blob": "a89c0206121d00006b2a19dabbbaea0629ee1d64"
     },
     "components/cpamp/apps/web/src/features/plugins/bpsConfigPresentation.test.ts": {
       "mode": "100644",
@@ -16888,7 +16888,7 @@
     },
     "components/cpamp/apps/web/src/services/api/bpsLicense.ts": {
       "mode": "100644",
-      "blob": "303bd2825266b034d0e9dadc2e4500dbda91310c"
+      "blob": "93bc7e7d07f68765249763f26d41a0fbf109123e"
     },
     "components/cpamp/apps/web/src/services/api/bpsModels.ts": {
       "mode": "100644",
@@ -17656,7 +17656,7 @@
     },
     "components/cpamp/apps/web/tests/BpsLicensePanel.test.tsx": {
       "mode": "100644",
-      "blob": "ae41d43e4d5c72cc3b100511ce7678783aef3805"
+      "blob": "06c5179f67e7596e68753c02d151e5f523e246a3"
     },
     "components/cpamp/apps/web/tsconfig.app.json": {
       "mode": "100644",
@@ -18822,6 +18822,23 @@
         "investigation": "docs/execution/CPA-ATTACHMENT-QUEUE-INVESTIGATION-20261117.zh-CN.md"
       },
       "evidence_reuse": "复用本轮同一17项组件输入的专项测试、独立静态审查及Windows服务器构建回执；历史五组接线日志保留原输入身份，不标记为本提交重新执行。Linux镜像由固定版本Actions构建，未执行生产请求或性能验收。"
+    },
+    {
+      "input": "bps-plugin-upgrade-registration-20261119",
+      "base_commit": "07dc177c43f925fe6e69231ec6fa879e897fbc40",
+      "mapped_component_commit": "aef7d2e6d7d8d6143de8beaf1ab35d85e831bf09",
+      "component_delta": {
+        "runtime": 12,
+        "tests": 4,
+        "added": 0,
+        "modified": 16,
+        "deleted": 0
+      },
+      "evidence": {
+        "execution": "docs/execution/BPS-PLUGIN-UPGRADE-WORK-20261119.zh-CN.md",
+        "investigation": "docs/execution/BPS-PLUGIN-UPGRADE-REGISTRATION-20261119.zh-CN.md"
+      },
+      "evidence_reuse": "同一候选的 Linux 隔离验收覆盖真实 ZIP 连续升级、失败恢复和旧版重启；许可页面另有组件专项。历史五组生产接线日志归属不变，真实有效许可续用未验。"
     }
   ],
   "test_runs": {
@@ -19005,17 +19022,17 @@
   ],
   "incremental_review": {
     "status": "PASS",
-    "reviewer": "attachment_path_audit",
-    "receipt": "docs/execution/CPA-ATTACHMENT-OBSERVATION-REVIEW-20261117.zh-CN.md",
+    "reviewer": "MX-CPAMP 发布整合",
+    "receipt": "docs/execution/BPS-PLUGIN-UPGRADE-WORK-20261119.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true,
-    "review_note": "attachment_path_audit独立核验完整4676项组件映射，17项差异精确对应已审11产品及6测试；普通启动保持，历史五组接线证据及验证器未修改。"
+    "review_note": "4676 项组件映射中仅 16 项变化，覆盖 12 项实现和 4 项测试；启动入口、镜像构建文件与接线验证器未变。"
   },
   "working_tree_candidate": {
-    "base_commit": "e9196e142dd685eb8534a6f851b3564d70700b12",
-    "component_source_commit": "e3c643fb38ed39593e8dc4b7e17f30daa2143101",
-    "component_tree": "a56789000310960b7fbcfd7bc99b45a2fbeec3b1",
-    "input_record": "docs/execution/CPA-ATTACHMENT-OBSERVATION-RECEIPT-20261117.zh-CN.md",
-    "publication": "组件输入绑定已入仓提交；固定发布提交另包含接线合同及独立审查记录，组件树保持一致。"
+    "base_commit": "07dc177c43f925fe6e69231ec6fa879e897fbc40",
+    "component_source_commit": "aef7d2e6d7d8d6143de8beaf1ab35d85e831bf09",
+    "component_tree": "741353bee78c2c012ec31e7e15291efdd18131c9",
+    "input_record": "docs/execution/BPS-PLUGIN-UPGRADE-WORK-20261119.zh-CN.md",
+    "publication": "发布清单绑定 BPS 修复的源码提交；清单提交不改变组件树。"
   }
 }
