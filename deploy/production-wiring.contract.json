@@ -11568,7 +11568,7 @@
     },
     "components/cpamp/apps/docs/manual/plugins.md": {
       "mode": "100644",
-      "blob": "5f3fd2368a2c976a8c655816abc54bffdd137f3b"
+      "blob": "63df11930369d5b7dc9f68e2956969732e810daf"
     },
     "components/cpamp/apps/docs/manual/system.md": {
       "mode": "100644",
@@ -16264,7 +16264,7 @@
     },
     "components/cpamp/apps/web/src/features/pageRefresh.test.tsx": {
       "mode": "100644",
-      "blob": "d1fc0f881e8258849c05af4c3dbdd48dd562d4a7"
+      "blob": "d6297491485b279d7f1f3dea4b2a1c199d68a018"
     },
     "components/cpamp/apps/web/src/features/plugins/BpsLicensePanel.module.scss": {
       "mode": "100644",
@@ -16276,15 +16276,15 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.module.scss": {
       "mode": "100644",
-      "blob": "73d460edbb28e080d99404e1ee175abaf7a48480"
+      "blob": "4ed36ddf1823830526dd878fee13e99e6ba6c7ee"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.test.tsx": {
       "mode": "100644",
-      "blob": "87b4e580c205450831e696ea75865ae9ecd44706"
+      "blob": "bf2a0150465951c3693d9c60ee70e7a42541dafc"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.tsx": {
       "mode": "100644",
-      "blob": "7e8e3c57ff9b3c82442a1dc4326e308cc6e2d9a9"
+      "blob": "0013d534689eddca2bde4cfc3245731a549485df"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginStorePage.module.scss": {
       "mode": "100644",
@@ -16316,7 +16316,7 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.tsx": {
       "mode": "100644",
-      "blob": "a89c0206121d00006b2a19dabbbaea0629ee1d64"
+      "blob": "fe4dfa50d3c92ff19609dd0218c2b0f72a1f06b3"
     },
     "components/cpamp/apps/web/src/features/plugins/bpsConfigPresentation.test.ts": {
       "mode": "100644",
@@ -16380,11 +16380,11 @@
     },
     "components/cpamp/apps/web/src/features/plugins/pluginResources.test.ts": {
       "mode": "100644",
-      "blob": "19b8e93ba07f9ef02a95b537ad53582b3c0aae21"
+      "blob": "4688de59214ce876da4cf8f23765046b0fb61847"
     },
     "components/cpamp/apps/web/src/features/plugins/pluginResources.ts": {
       "mode": "100644",
-      "blob": "dc3c3b6ffe47c410e0f7462b12e81e0bfbb19445"
+      "blob": "597b8b1dd78e73d4056d1aeea20d10aeda1df3ea"
     },
     "components/cpamp/apps/web/src/features/settings/SystemUpdateSection.module.scss": {
       "mode": "100644",
@@ -16696,19 +16696,19 @@
     },
     "components/cpamp/apps/web/src/i18n/locales/en.json": {
       "mode": "100644",
-      "blob": "33ed8a4e624ac07b459fb56a5b53d70062dc6465"
+      "blob": "347a3ede7721aa0670397c683ea8825581ae5d74"
     },
     "components/cpamp/apps/web/src/i18n/locales/ru.json": {
       "mode": "100644",
-      "blob": "b15c5bc4662ab34ca5fe96db4251a3dbd7bd43df"
+      "blob": "49e8b79fb05ac50694243a51dd45b9b1e6a93764"
     },
     "components/cpamp/apps/web/src/i18n/locales/zh-CN.json": {
       "mode": "100644",
-      "blob": "af23785c18ab8c6e032590aade52bbc020059e64"
+      "blob": "0671a13dcde59745122da26da6d723f1adad2543"
     },
     "components/cpamp/apps/web/src/i18n/locales/zh-TW.json": {
       "mode": "100644",
-      "blob": "e5e1473ee33beadfcc18fbddeccf01616513fd80"
+      "blob": "4066fde561e8df46955cc36e08419d26a4e6ec56"
     },
     "components/cpamp/apps/web/src/index.css": {
       "mode": "100644",
@@ -18839,6 +18839,23 @@
         "investigation": "docs/execution/BPS-PLUGIN-UPGRADE-REGISTRATION-20261119.zh-CN.md"
       },
       "evidence_reuse": "同一候选的 Linux 隔离验收覆盖真实 ZIP 连续升级、失败恢复和旧版重启；许可页面另有组件专项。历史五组生产接线日志归属不变，真实有效许可续用未验。"
+    },
+    {
+      "input": "bps-native-menu-20261119",
+      "base_commit": "eff63a1f9881f79aaf4ad26396b41810618182f3",
+      "mapped_component_commit": "ab3033d55be6050692dd22be3387465b38ae5cf2",
+      "component_delta": {
+        "runtime": 8,
+        "tests": 3,
+        "docs": 1,
+        "added": 0,
+        "modified": 12,
+        "deleted": 0
+      },
+      "evidence": {
+        "review": "docs/execution/BPS-NATIVE-MENU-20261119.zh-CN.md"
+      },
+      "evidence_reuse": "复用同一菜单候选的前端专项、类型检查及构建结果；原有接线记录不变。"
     }
   ],
   "test_runs": {
@@ -19023,16 +19040,16 @@
   "incremental_review": {
     "status": "PASS",
     "reviewer": "MX-CPAMP 发布整合",
-    "receipt": "docs/execution/BPS-PLUGIN-UPGRADE-WORK-20261119.zh-CN.md",
+    "receipt": "docs/execution/BPS-NATIVE-MENU-20261119.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true,
-    "review_note": "4676 项组件映射中仅 16 项变化，覆盖 12 项实现和 4 项测试；启动入口、镜像构建文件与接线验证器未变。"
+    "review_note": "组件清单仅 12 项变化，均属于 Manager 前端、相关测试和手册；普通启动与构建入口保持不变。"
   },
   "working_tree_candidate": {
-    "base_commit": "07dc177c43f925fe6e69231ec6fa879e897fbc40",
-    "component_source_commit": "aef7d2e6d7d8d6143de8beaf1ab35d85e831bf09",
-    "component_tree": "741353bee78c2c012ec31e7e15291efdd18131c9",
-    "input_record": "docs/execution/BPS-PLUGIN-UPGRADE-WORK-20261119.zh-CN.md",
-    "publication": "发布清单绑定 BPS 修复的源码提交；清单提交不改变组件树。"
+    "base_commit": "eff63a1f9881f79aaf4ad26396b41810618182f3",
+    "component_source_commit": "ab3033d55be6050692dd22be3387465b38ae5cf2",
+    "component_tree": "ab99e690dd2e2a0af32976b12da270594c9a0e56",
+    "input_record": "docs/execution/BPS-NATIVE-MENU-20261119.zh-CN.md",
+    "publication": "绑定 BPS 原生菜单修复；发布清单提交不改变组件树。"
   }
 }
