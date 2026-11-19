@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
@@ -119,11 +119,10 @@ function PluginResourcePageContent() {
     return entries.find((entry) => entry.pluginID === pluginID && entry.menuIndex === menuIndex);
   }, [data?.plugins, menuIndex, pluginID]);
 
-  const useUnifiedBpsOAuth = Boolean(
+  const isBpsAuthPage = Boolean(
     resource && isCpaBpsAuthorizationResource(resource.pluginID, resource.menu.path)
   );
-  const iframeSrc =
-    resource && !useUnifiedBpsOAuth ? resolvePluginAssetURL(resource.menu.path, apiBase) : '';
+  const iframeSrc = resource ? resolvePluginAssetURL(resource.menu.path, apiBase) : '';
 
   const refreshPluginHostStyle = useCallback(() => {
     const iframe = iframeRef.current;
@@ -142,8 +141,23 @@ function PluginResourcePageContent() {
   const handleIframeLoad = useCallback(() => {
     hostStyleBridgeRef.current?.disconnect();
     hostStyleBridgeRef.current = null;
+    if (isBpsAuthPage) {
+      const frame = iframeRef.current;
+      if (frame) {
+        // The vendor form requires a host RPC session. Keep its controls read-only.
+        frame.inert = true;
+        const doc = frame.contentDocument;
+        if (doc) {
+          doc.querySelectorAll('input, textarea, button, select').forEach((control) =>
+            control.setAttribute('disabled', '')
+          );
+          doc.querySelectorAll('a[href]').forEach((link) => link.removeAttribute('href'));
+          frame.inert = false;
+        }
+      }
+    }
     refreshPluginHostStyle();
-  }, [refreshPluginHostStyle]);
+  }, [isBpsAuthPage, refreshPluginHostStyle]);
 
   useEffect(() => {
     if (!iframeSrc) {
@@ -164,7 +178,7 @@ function PluginResourcePageContent() {
   );
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page}${isBpsAuthPage ? ` ${styles.bpsPage}` : ''}`}>
       {error && resource && connected && supportsPlugin ? <div role="alert">{error}</div> : null}
       {loading && !data ? (
         <div className={styles.stateShell}>
@@ -181,8 +195,6 @@ function PluginResourcePageContent() {
             description={t('plugin_resource.not_found_desc')}
           />
         </div>
-      ) : useUnifiedBpsOAuth ? (
-        <Navigate to={CPA_BPS_OAUTH_ROUTE} replace />
       ) : !iframeSrc ? (
         <div className={styles.stateShell}>
           <EmptyState
@@ -191,15 +203,26 @@ function PluginResourcePageContent() {
           />
         </div>
       ) : (
-        <iframe
-          ref={iframeRef}
-          className={styles.frame}
-          src={iframeSrc}
-          title={resource.label}
-          referrerPolicy="no-referrer"
-          allow="clipboard-read; clipboard-write"
-          onLoad={handleIframeLoad}
-        />
+        <>
+          {isBpsAuthPage && (
+            <div className={styles.bpsNotice}>
+              <span>{t('plugin_resource.bps_preview')}</span>
+              <Link to={CPA_BPS_OAUTH_ROUTE}>{t('plugin_resource.bps_manual')}</Link>
+            </div>
+          )}
+          <iframe
+            key={`${resource.pluginID}:${iframeSrc}`}
+            ref={iframeRef}
+            className={styles.frame}
+            src={iframeSrc}
+            title={resource.label}
+            referrerPolicy="no-referrer"
+            sandbox={isBpsAuthPage ? 'allow-same-origin' : undefined}
+            inert={isBpsAuthPage || undefined}
+            allow={isBpsAuthPage ? undefined : 'clipboard-read; clipboard-write'}
+            onLoad={handleIframeLoad}
+          />
+        </>
       )}
     </div>
   );

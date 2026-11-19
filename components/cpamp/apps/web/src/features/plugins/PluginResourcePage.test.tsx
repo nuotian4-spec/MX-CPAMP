@@ -10,9 +10,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('react-router-dom', () => ({
   useParams: () => mocks.params,
-  Navigate: ({ to, replace }: { to: string; replace: boolean }) => (
-    <span data-navigate={to} data-replace={replace} />
-  ),
+  Link: ({ to, children }: { to: string; children: string }) => <a href={to}>{children}</a>,
 }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: mocks.t }) }));
 vi.mock('@/hooks/useHeaderRefresh', () => ({ useHeaderRefresh: () => undefined }));
@@ -56,18 +54,26 @@ afterEach(async () => {
   renderer = undefined;
   vi.unstubAllGlobals();
 });
-describe('BPS插件授权旧深链接', () => {
-  it('确认菜单为授权资源后替换路由，不加载iframe', async () => {
+describe('BPS 插件资源页', () => {
+  it('打开原生授权页面，并将手动 OAuth 保留为独立链接', async () => {
+    const input = { setAttribute: vi.fn() };
+    const docs = { querySelectorAll: (s: string) => s.startsWith('input') ? [input] : [] };
+    const frame = { contentDocument: docs, inert: true };
     await act(async () => {
-      renderer = create(<PluginResourcePage />);
+      renderer = create(<PluginResourcePage />, {
+        createNodeMock: (element) => element.type === 'iframe' ? frame : null,
+      });
     });
-    expect(
-      renderer!.root.findByProps({ 'data-navigate': '/oauth?provider=cpa-bps' }).props[
-        'data-replace'
-      ]
-    ).toBe(true);
-    expect(renderer!.root.findAllByType('iframe')).toHaveLength(0);
-    expect(mocks.bridge).not.toHaveBeenCalled();
+    const iframe = renderer!.root.findByType('iframe');
+    expect(iframe.props.src).toBe('https://panel.invalid/v0/resource/plugins/cpa-bps/index.html');
+    expect(iframe.props.title).toBe('BPS 授权');
+    expect(iframe.props.sandbox).toBe('allow-same-origin');
+    expect(iframe.props.inert).toBe(true);
+    expect(iframe.props.allow).toBeUndefined();
+    iframe.props.onLoad();
+    expect(input.setAttribute).toHaveBeenCalledWith('disabled', '');
+    expect(frame.inert).toBe(false);
+    expect(renderer!.root.findByType('a').props.href).toBe('/oauth?provider=cpa-bps');
   });
   it('同插件其他资源继续显示iframe', async () => {
     mocks.params = { pluginId: 'cpa-bps', menuIndex: '1' };
@@ -77,8 +83,7 @@ describe('BPS插件授权旧深链接', () => {
     expect(renderer!.root.findByType('iframe').props.src).toBe(
       'https://panel.invalid/v0/resource/plugins/cpa-bps/other.html'
     );
-    expect(
-      renderer!.root.findAllByProps({ 'data-navigate': '/oauth?provider=cpa-bps' })
-    ).toHaveLength(0);
+    expect(renderer!.root.findByType('iframe').props.sandbox).toBeUndefined();
+    expect(renderer!.root.findAllByType('a')).toHaveLength(0);
   });
 });

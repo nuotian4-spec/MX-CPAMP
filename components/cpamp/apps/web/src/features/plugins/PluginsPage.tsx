@@ -40,6 +40,7 @@ import { getErrorMessage, isRecord } from '@/utils/helpers';
 import type { PluginConfigField, PluginListEntry, PluginListResponse } from '@/types';
 import {
   buildRepositoryURL,
+  collectPluginResourceEntries,
   getPluginTitle,
   notifyPluginResourcesChanged,
   resolvePluginAssetURL,
@@ -996,6 +997,15 @@ function InstalledPluginsView({
             const actionBusy = !canOperate || Boolean(mutatingID || openingConfigID);
             const subtitle = display.subtitleParts.join(' / ');
             const menuItems: DropdownMenuItem[] = [
+              ...(data?.pluginsEnabled === true ? collectPluginResourceEntries([plugin]) : []).map(
+                (entry) => ({
+                  key: `resource-${entry.menuIndex}`,
+                  label: entry.label,
+                  icon: <IconPlugin size={14} />,
+                  disabled: !connected || actionBusy,
+                  onClick: () => navigate(entry.route),
+                })
+              ),
               ...(repositoryURL
                 ? [
                     {

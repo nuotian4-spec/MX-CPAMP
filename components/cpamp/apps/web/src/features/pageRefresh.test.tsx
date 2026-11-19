@@ -581,6 +581,21 @@ describe('page refresh interactions', () => {
     expect(version().errorLogCount).toBe(0);
   });
 
+  it('opens the declared plugin menu from installed plugins without replacing the OAuth action', async () => {
+    mocks.plugins.mockResolvedValue({
+      ...pluginData,
+      plugins: [{ ...pluginData.plugins[0], supportsOAuth: true }],
+    });
+    await mount(<PluginsPage />);
+    const items = renderer.root.findByType(DropdownMenu).props.items;
+    const resource = items.find((item: { key: string }) => item.key === 'resource-0');
+    expect(resource.label).toBe('Resource');
+    act(() => resource.onClick());
+    expect(mocks.noop).toHaveBeenLastCalledWith('/plugin-pages/retained-plugin/0');
+    act(() => items.find((item: { key: string }) => item.key === 'oauth').onClick());
+    expect(mocks.noop).toHaveBeenLastCalledWith('/oauth');
+  });
+
   it.each(['installed-read', 'installed-delete', 'store-delete'] as const)(
     'never resumes an old reinstall after capability revoke and restore (%s)',
     async (phase) => {

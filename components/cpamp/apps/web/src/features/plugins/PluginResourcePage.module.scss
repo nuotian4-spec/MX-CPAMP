@@ -13,6 +13,29 @@
   background: var(--bg-primary);
 }
 
+.bpsPage {
+  flex-direction: column;
+
+  .frame {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+.bpsNotice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+
+  a {
+    color: var(--primary-color);
+  }
+}
+
 .stateShell {
   display: flex;
   align-items: center;

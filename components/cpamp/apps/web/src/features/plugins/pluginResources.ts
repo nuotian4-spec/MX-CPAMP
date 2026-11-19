@@ -120,9 +120,7 @@ export const collectPluginResourceEntries = (
           menu: { ...menu, path },
           label: menuLabel || pluginTitle,
           description: menu.description.trim() || pluginTitle,
-          route: isCpaBpsAuthorizationResource(plugin.id, path)
-            ? CPA_BPS_OAUTH_ROUTE
-            : buildPluginResourceRoute(plugin.id, menuIndex),
+          route: buildPluginResourceRoute(plugin.id, menuIndex),
         };
       })
       .filter((entry): entry is PluginResourceEntry => Boolean(entry));

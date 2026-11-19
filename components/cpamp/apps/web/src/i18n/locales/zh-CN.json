@@ -5058,6 +5058,8 @@
     "gate_step3_hint": "请输入上方显示的完整标识。"
   },
   "plugin_resource": {
+    "bps_preview": "BPS 原生授权页（只读）。当前面板尚未接入邮箱密码自动授权。",
+    "bps_manual": "使用手动 OAuth 授权",
     "title": "插件页面",
     "page_count": "{{count}} 个页面",
     "load_failed": "加载插件页面失败",

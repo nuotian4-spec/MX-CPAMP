@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { PluginListEntry, PluginStoreEntry } from '@/types';
 import {
   collectPluginResourceEntries,
-  CPA_BPS_OAUTH_ROUTE,
   getPluginConfirmToken,
   getPluginRepositorySlug,
   isDefaultPluginStoreSource,
@@ -138,7 +137,7 @@ describe('plugin resource helpers', () => {
     expect(getPluginConfirmToken(createStoreEntry({ repository: '' }))).toBe('demo-plugin');
   });
 
-  it('仅将cpa-bps授权资源映射到统一OAuth入口', () => {
+  it('按插件声明的菜单为侧栏和插件列表生成原生页面入口', () => {
     const authMenu = {
       path: '/v0/resource/plugins/cpa-bps/index.html',
       menu: 'BPS 授权',
@@ -152,11 +151,12 @@ describe('plugin resource helpers', () => {
       createPlugin({ id: 'other-plugin', menus: [authMenu] }),
     ]);
     expect(entries.map((entry) => entry.route)).toEqual([
-      CPA_BPS_OAUTH_ROUTE,
+      '/plugin-pages/cpa-bps/0',
       '/plugin-pages/cpa-bps/1',
       '/plugin-pages/other-plugin/0',
     ]);
-    expect(CPA_BPS_OAUTH_ROUTE).toBe('/oauth?provider=cpa-bps');
+    expect(entries[0].menu.path).toBe(authMenu.path);
+    expect(entries[0].label).toBe('BPS 授权');
   });
 
   it('detects only official router-for-me GitHub repositories as first-party', () => {
