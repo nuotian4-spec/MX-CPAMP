@@ -60,7 +60,7 @@ afterEach(async () => {
 describe('BPS 插件资源页', () => {
   it('打开原生授权页面，并将手动 OAuth 保留为独立链接', async () => {
     const disconnect = vi.fn();
-    mocks.manual.mockReturnValue(disconnect);
+    mocks.manual.mockReturnValue({ autoReady: true, manualReady: true, disconnect });
     const frame = { inert: true };
     await act(async () => {
       renderer = create(<PluginResourcePage />, {
@@ -77,10 +77,28 @@ describe('BPS 插件资源页', () => {
     expect(mocks.manual).toHaveBeenCalledWith(frame, iframe.props.src, {
       apiBase: 'https://panel.invalid', managementKey: 'TEST_ONLY',
     });
-    expect(renderer!.root.findByType('span').children).toContain('plugin_resource.bps_interactive');
+    expect(renderer!.root.findAllByType('span').flatMap(el => el.children)).toEqual([
+      'plugin_resource.bps_auto_live', 'plugin_resource.bps_interactive',
+    ]);
     expect(renderer!.root.findByType('a').props.href).toBe('/oauth?provider=cpa-bps');
     await act(async () => renderer!.unmount()); renderer = undefined;
     expect(disconnect).toHaveBeenCalledOnce();
+  });
+  it('手动区未识别时保留只读原生预览和面板手动入口', async () => {
+    mocks.manual.mockReturnValue(null);
+    await act(async () => {
+      renderer = create(<PluginResourcePage />, {
+        createNodeMock: (element) => element.type === 'iframe' ? {} : null,
+      });
+    });
+    const iframe = renderer!.root.findByType('iframe');
+    await act(async () => iframe.props.onLoad());
+    expect(iframe.props.hidden).toBeFalsy();
+    expect(iframe.props.inert).toBe(true);
+    expect(renderer!.root.findAllByType('span').flatMap(el => el.children)).toEqual([
+      'plugin_resource.bps_auto_unavailable', 'plugin_resource.bps_preview',
+    ]);
+    expect(renderer!.root.findByType('a').props.href).toBe('/oauth?provider=cpa-bps');
   });
   it('同插件其他资源继续显示iframe', async () => {
     mocks.params = { pluginId: 'cpa-bps', menuIndex: '1' };

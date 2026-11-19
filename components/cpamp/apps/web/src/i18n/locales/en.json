@@ -5063,8 +5063,10 @@
     "gate_step3_hint": "Enter the exact identifier shown above."
   },
   "plugin_resource": {
-    "bps_preview": "Manual authorization is unavailable in this plugin page. Use the dashboard link. Email/password automation is not connected.",
-    "bps_interactive": "To authorize manually, generate a link below. Email/password automation is not connected.",
+    "bps_auto_live": "Email/password authorization: fill the form and select “Start auto authorization”; the plugin performs it and shows the result on this page.",
+    "bps_auto_unavailable": "Email/password authorization is unavailable on this page. Use the dashboard link to authorize manually.",
+    "bps_preview": "Use the dashboard link to authorize manually.",
+    "bps_interactive": "For manual authorization, generate a link below.",
     "bps_manual": "Open manual OAuth in the dashboard",
     "title": "Plugin Page",
     "page_count": "{{count}} pages",

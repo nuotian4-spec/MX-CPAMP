@@ -5058,8 +5058,10 @@
     "gate_step3_hint": "请输入上方显示的完整标识。"
   },
   "plugin_resource": {
-    "bps_preview": "原生页手动授权当前不可用，可使用面板入口。邮箱密码自动授权未接入。",
-    "bps_interactive": "手动授权：从下方「生成授权链接」开始。邮箱密码自动授权未接入。",
+    "bps_auto_live": "邮箱密码自动授权：填好后点「开始自动授权」，由插件完成并在本页显示结果。",
+    "bps_auto_unavailable": "邮箱密码自动授权本次不可用，请使用面板入口手动授权。",
+    "bps_preview": "请使用面板入口手动授权。",
+    "bps_interactive": "手动授权：点击下方「生成授权链接」。",
     "bps_manual": "面板手动 OAuth 入口",
     "title": "插件页面",
     "page_count": "{{count}} 个页面",

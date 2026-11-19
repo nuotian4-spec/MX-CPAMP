@@ -59,7 +59,7 @@ function PluginResourcePageContent() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hostStyleBridgeRef = useRef<PluginHostStyleBridge | null>(null);
   const disconnectManual = useRef<(() => void) | null>(null);
-  const [manualReady, setManualReady] = useState(false);
+  const [menuReady, setMenuReady] = useState({ auto: false, manual: false });
 
   const connected = connectionStatus === 'connected';
   const pluginID = useMemo(() => safeDecodeURIComponent(params.pluginId), [params.pluginId]);
@@ -130,7 +130,7 @@ function PluginResourcePageContent() {
   const manualAvailable =
     isBpsAuthPage && connected && supportsPlugin && data?.pluginsEnabled === true && !error;
   useLayoutEffect(() => {
-    setManualReady(false);
+    setMenuReady({ auto: false, manual: false });
     return () => { disconnectManual.current?.(); disconnectManual.current = null; };
   }, [iframeSrc, manualAvailable]);
 
@@ -152,11 +152,11 @@ function PluginResourcePageContent() {
     hostStyleBridgeRef.current?.disconnect();
     hostStyleBridgeRef.current = null;
     disconnectManual.current?.();
-    disconnectManual.current = null;
-    if (manualAvailable && iframeRef.current) {
-      disconnectManual.current = bindBpsManualMenu(iframeRef.current, iframeSrc, { apiBase, managementKey });
-    }
-    setManualReady(Boolean(disconnectManual.current));
+    const binding = manualAvailable && iframeRef.current
+      ? bindBpsManualMenu(iframeRef.current, iframeSrc, { apiBase, managementKey })
+      : null;
+    disconnectManual.current = binding?.disconnect ?? null;
+    setMenuReady({ auto: Boolean(binding?.autoReady), manual: Boolean(binding?.manualReady) });
     refreshPluginHostStyle();
   }, [manualAvailable, iframeSrc, apiBase, managementKey, refreshPluginHostStyle]);
 
@@ -207,7 +207,8 @@ function PluginResourcePageContent() {
         <>
           {isBpsAuthPage && (
             <div className={styles.bpsNotice}>
-              <span>{t(manualReady ? 'plugin_resource.bps_interactive' : 'plugin_resource.bps_preview')}</span>
+              <span>{t(menuReady.auto ? 'plugin_resource.bps_auto_live' : 'plugin_resource.bps_auto_unavailable')}</span>
+              <span>{t(menuReady.manual ? 'plugin_resource.bps_interactive' : 'plugin_resource.bps_preview')}</span>
               <Link to={CPA_BPS_OAUTH_ROUTE}>{t('plugin_resource.bps_manual')}</Link>
             </div>
           )}

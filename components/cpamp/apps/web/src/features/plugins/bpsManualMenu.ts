@@ -1,5 +1,11 @@
 import type { ApiClientRequestScope } from '@/services/api/client';
 import { oauthApi, type OAuthStartResponse } from '@/services/api/oauth';
+import { bpsAutoLoginApi } from '@/services/api/bpsAutoLogin';
+import {
+  bindBpsAutoLogin,
+  type BpsAutoLoginApi,
+  type BpsAutoLoginBinding,
+} from './bpsAutoLoginMenu';
 
 const callbackURL =
   'https://bps.openai.com/basispoints/extension/360590d7-f8f9-4d88-bf75-0edfe0a4b9f3/auth/callback';
@@ -35,14 +41,30 @@ export function validBpsCallback(value: string, state: string) {
 }
 
 type ManualApi = Pick<typeof oauthApi, 'startAuth' | 'submitCallback' | 'getAuthStatus'>;
+export type MenuApi = ManualApi & BpsAutoLoginApi;
+type MenuBinding = {
+  /** 原生邮箱密码区已接上插件提交与结果确认。 */
+  autoReady: boolean;
+  manualReady: boolean;
+  disconnect: () => void;
+};
+
+const defaultApi: MenuApi = {
+  startAuth: oauthApi.startAuth,
+  submitCallback: oauthApi.submitCallback,
+  getAuthStatus: oauthApi.getAuthStatus,
+  submit: bpsAutoLoginApi.submit,
+  status: bpsAutoLoginApi.status,
+  cancel: bpsAutoLoginApi.cancel,
+};
 
 /** 保留插件原生 DOM；事件处理和管理请求只在 Manager 窗口中执行。 */
 export function bindBpsManualMenu(
   frame: HTMLIFrameElement,
   expectedURL: string,
   scope: ApiClientRequestScope,
-  api: ManualApi = oauthApi,
-): (() => void) | null {
+  api: MenuApi = defaultApi,
+): MenuBinding | null {
   frame.inert = true;
   const host = window;
   const url = new URL(expectedURL, host.location.href);
@@ -58,16 +80,40 @@ export function bindBpsManualMenu(
     const el = doc.getElementById(id);
     return el?.localName === tag ? el as HTMLElementTagNameMap[K] : null;
   };
+  const accounts = find('auto-accounts', 'textarea');
+  const lifetime = new AbortController();
+  const alive = () => !lifetime.signal.aborted && frame.contentDocument === doc;
+  const clearAccounts = () => { if (accounts) accounts.value = ''; };
+
+  let auto: BpsAutoLoginBinding = { ready: false, disconnect: () => undefined };
+  if (accounts) {
+    const detail = doc.getElementById('auto-detail');
+    auto = bindBpsAutoLogin({
+      doc, api, scope, validStart: validBpsStart, alive, clearAccounts,
+      signal: lifetime.signal,
+    });
+    if (!auto.ready && detail) detail.textContent = '本页自动授权控件不完整，请使用面板入口手动授权。';
+  }
+
   const start = find('start', 'button'), reset = find('reset', 'button'), open = find('open', 'a');
   const link = find('link', 'textarea'), callback = find('callback', 'textarea');
   const copy = find('copy', 'button'), submit = find('submit', 'button'), check = find('check', 'button');
   const status = doc.getElementById('status'), detail = doc.getElementById('detail');
-  if (!start || !reset || !open || !link || !callback || !copy || !submit || !check || !status || !detail) return null;
+  if (!start || !reset || !open || !link || !callback || !copy || !submit || !check || !status || !detail) {
+    if (!auto.ready) {
+      lifetime.abort(); auto.disconnect(); frame.inert = true;
+      return null;
+    }
+    frame.inert = false;
+    return {
+      autoReady: true, manualReady: false,
+      disconnect: () => { lifetime.abort(); auto.disconnect(); clearAccounts(); frame.inert = true; },
+    };
+  }
 
   let session: ReturnType<typeof validBpsStart> = null;
   let busy = false, submitted = false;
-  const lifetime = new AbortController();
-  const current = () => !lifetime.signal.aborted && frame.contentDocument === doc;
+  const current = alive;
   const say = (title: string, text = '') => { status.textContent = title; detail.textContent = text; };
   const render = () => {
     start.disabled = busy || !!session;
@@ -136,9 +182,12 @@ export function bindBpsManualMenu(
   }));
   action(check, () => void run(async () => { if (session) await probe(session.state); }));
   clear(); render(); frame.inert = false;
-  return () => {
-    lifetime.abort();
-    clear();
-    link.value = ''; open.removeAttribute('href'); frame.inert = true;
+  return {
+    autoReady: auto.ready, manualReady: true,
+    disconnect: () => {
+      lifetime.abort(); auto.disconnect(); clearAccounts(); clear();
+      link.value = ''; open.removeAttribute('href');
+      frame.inert = true;
+    },
   };
 }
