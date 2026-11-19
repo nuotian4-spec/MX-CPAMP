@@ -11568,7 +11568,7 @@
     },
     "components/cpamp/apps/docs/manual/plugins.md": {
       "mode": "100644",
-      "blob": "63df11930369d5b7dc9f68e2956969732e810daf"
+      "blob": "8a82b9a118e7f38a7c8f96ebc27c4d45c524a3e4"
     },
     "components/cpamp/apps/docs/manual/system.md": {
       "mode": "100644",
@@ -13505,6 +13505,10 @@
     "components/cpamp/apps/web/joint-tests/bpsJointFixture.test.ts": {
       "mode": "100644",
       "blob": "dc0b62da186c66ea3cf9ff88bce5b780e556ca7c"
+    },
+    "components/cpamp/apps/web/joint-tests/bpsNativeManual.browser.mjs": {
+      "mode": "100644",
+      "blob": "478b3724c9e3c158e9f462ce8b402fc67de59142"
     },
     "components/cpamp/apps/web/joint-tests/visual.html": {
       "mode": "100644",
@@ -16280,11 +16284,11 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.test.tsx": {
       "mode": "100644",
-      "blob": "bf2a0150465951c3693d9c60ee70e7a42541dafc"
+      "blob": "b0089568b5dd6196aaa9ebff42712d696313415c"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.tsx": {
       "mode": "100644",
-      "blob": "0013d534689eddca2bde4cfc3245731a549485df"
+      "blob": "2e5ae231ba3fa77929dd9a96703e10ff695d9417"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginStorePage.module.scss": {
       "mode": "100644",
@@ -16325,6 +16329,14 @@
     "components/cpamp/apps/web/src/features/plugins/bpsConfigPresentation.ts": {
       "mode": "100644",
       "blob": "2d0609559c5911cf6b27e53998f3a23d9e726f29"
+    },
+    "components/cpamp/apps/web/src/features/plugins/bpsManualMenu.test.ts": {
+      "mode": "100644",
+      "blob": "de9c27c3129339159570ab5c416da1eaade1a9f2"
+    },
+    "components/cpamp/apps/web/src/features/plugins/bpsManualMenu.ts": {
+      "mode": "100644",
+      "blob": "b088a3104402b5dd52acd4a7911c01390ed1874c"
     },
     "components/cpamp/apps/web/src/features/plugins/components/PluginInstallGateModal.module.scss": {
       "mode": "100644",
@@ -16696,19 +16708,19 @@
     },
     "components/cpamp/apps/web/src/i18n/locales/en.json": {
       "mode": "100644",
-      "blob": "347a3ede7721aa0670397c683ea8825581ae5d74"
+      "blob": "f53d3df1aab2b25e40ad4448a5fae274325dfe9a"
     },
     "components/cpamp/apps/web/src/i18n/locales/ru.json": {
       "mode": "100644",
-      "blob": "49e8b79fb05ac50694243a51dd45b9b1e6a93764"
+      "blob": "a21860650715eea411d983a2a338d9ad52acd583"
     },
     "components/cpamp/apps/web/src/i18n/locales/zh-CN.json": {
       "mode": "100644",
-      "blob": "0671a13dcde59745122da26da6d723f1adad2543"
+      "blob": "8755aca734e59b8bc1adea66dfdae21b6a2193fa"
     },
     "components/cpamp/apps/web/src/i18n/locales/zh-TW.json": {
       "mode": "100644",
-      "blob": "4066fde561e8df46955cc36e08419d26a4e6ec56"
+      "blob": "c09aaa28520338f6005ddb3d8cc557a405a230c9"
     },
     "components/cpamp/apps/web/src/index.css": {
       "mode": "100644",
@@ -18856,6 +18868,23 @@
         "review": "docs/execution/BPS-NATIVE-MENU-20261119.zh-CN.md"
       },
       "evidence_reuse": "复用同一菜单候选的前端专项、类型检查及构建结果；原有接线记录不变。"
+    },
+    {
+      "input": "bps-native-manual-20261120",
+      "base_commit": "477ed7bef211ce6af46068ec1ff13658bd3a23df",
+      "mapped_component_commit": "31e0fbcf28d895e13e8eb247e36d4596c655e74c",
+      "component_delta": {
+        "runtime": 6,
+        "tests": 3,
+        "docs": 1,
+        "added": 3,
+        "modified": 7,
+        "deleted": 0
+      },
+      "evidence": {
+        "review": "docs/execution/BPS-NATIVE-MENU-RESTORE-20261120.zh-CN.md"
+      },
+      "evidence_reuse": "同一候选的4项专项、类型检查、构建和0.5.86原生HTML浏览器交互已通过；原有接线记录不变。"
     }
   ],
   "test_runs": {
@@ -19039,17 +19068,17 @@
   ],
   "incremental_review": {
     "status": "PASS",
-    "reviewer": "MX-CPAMP 发布整合",
-    "receipt": "docs/execution/BPS-NATIVE-MENU-20261119.zh-CN.md",
+    "reviewer": "菜单发布专项审查",
+    "receipt": "docs/execution/BPS-NATIVE-MENU-RESTORE-20261120.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true,
-    "review_note": "组件清单仅 12 项变化，均属于 Manager 前端、相关测试和手册；普通启动与构建入口保持不变。"
+    "review_note": "10项组件变化覆盖原生页手动OAuth、相关测试及手册；同源与脚本隔离、连接清理、state与成功条件审查通过。普通启动、CPA及构建入口保持不变。"
   },
   "working_tree_candidate": {
-    "base_commit": "eff63a1f9881f79aaf4ad26396b41810618182f3",
-    "component_source_commit": "ab3033d55be6050692dd22be3387465b38ae5cf2",
-    "component_tree": "ab99e690dd2e2a0af32976b12da270594c9a0e56",
-    "input_record": "docs/execution/BPS-NATIVE-MENU-20261119.zh-CN.md",
-    "publication": "绑定 BPS 原生菜单修复；发布清单提交不改变组件树。"
+    "base_commit": "477ed7bef211ce6af46068ec1ff13658bd3a23df",
+    "component_source_commit": "31e0fbcf28d895e13e8eb247e36d4596c655e74c",
+    "component_tree": "dec2b6768df1c3091574164e2e267305f4db0990",
+    "input_record": "docs/execution/BPS-NATIVE-MENU-RESTORE-20261120.zh-CN.md",
+    "publication": "绑定原生页手动授权；清单提交不改变组件树。"
   }
 }
