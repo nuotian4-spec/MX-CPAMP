@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { pluginsApi } from '@/services/api';
 import { useAuthStore, useThemeStore } from '@/stores';
+import { bindBpsManualMenu } from './bpsManualMenu';
 import { getErrorMessage, isRecord } from '@/utils/helpers';
 import type { PluginListResponse } from '@/types';
 import {
@@ -48,6 +49,7 @@ function PluginResourcePageContent() {
   const params = useParams<{ pluginId: string; menuIndex: string }>();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const apiBase = useAuthStore((state) => state.apiBase);
+  const managementKey = useAuthStore((state) => state.managementKey);
   const supportsPlugin = useAuthStore((state) => state.supportsPlugin);
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
 
@@ -56,6 +58,8 @@ function PluginResourcePageContent() {
   const [error, setError] = useState('');
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hostStyleBridgeRef = useRef<PluginHostStyleBridge | null>(null);
+  const disconnectManual = useRef<(() => void) | null>(null);
+  const [manualReady, setManualReady] = useState(false);
 
   const connected = connectionStatus === 'connected';
   const pluginID = useMemo(() => safeDecodeURIComponent(params.pluginId), [params.pluginId]);
@@ -123,6 +127,12 @@ function PluginResourcePageContent() {
     resource && isCpaBpsAuthorizationResource(resource.pluginID, resource.menu.path)
   );
   const iframeSrc = resource ? resolvePluginAssetURL(resource.menu.path, apiBase) : '';
+  const manualAvailable =
+    isBpsAuthPage && connected && supportsPlugin && data?.pluginsEnabled === true && !error;
+  useLayoutEffect(() => {
+    setManualReady(false);
+    return () => { disconnectManual.current?.(); disconnectManual.current = null; };
+  }, [iframeSrc, manualAvailable]);
 
   const refreshPluginHostStyle = useCallback(() => {
     const iframe = iframeRef.current;
@@ -141,23 +151,14 @@ function PluginResourcePageContent() {
   const handleIframeLoad = useCallback(() => {
     hostStyleBridgeRef.current?.disconnect();
     hostStyleBridgeRef.current = null;
-    if (isBpsAuthPage) {
-      const frame = iframeRef.current;
-      if (frame) {
-        // The vendor form requires a host RPC session. Keep its controls read-only.
-        frame.inert = true;
-        const doc = frame.contentDocument;
-        if (doc) {
-          doc.querySelectorAll('input, textarea, button, select').forEach((control) =>
-            control.setAttribute('disabled', '')
-          );
-          doc.querySelectorAll('a[href]').forEach((link) => link.removeAttribute('href'));
-          frame.inert = false;
-        }
-      }
+    disconnectManual.current?.();
+    disconnectManual.current = null;
+    if (manualAvailable && iframeRef.current) {
+      disconnectManual.current = bindBpsManualMenu(iframeRef.current, iframeSrc, { apiBase, managementKey });
     }
+    setManualReady(Boolean(disconnectManual.current));
     refreshPluginHostStyle();
-  }, [isBpsAuthPage, refreshPluginHostStyle]);
+  }, [manualAvailable, iframeSrc, apiBase, managementKey, refreshPluginHostStyle]);
 
   useEffect(() => {
     if (!iframeSrc) {
@@ -206,12 +207,12 @@ function PluginResourcePageContent() {
         <>
           {isBpsAuthPage && (
             <div className={styles.bpsNotice}>
-              <span>{t('plugin_resource.bps_preview')}</span>
+              <span>{t(manualReady ? 'plugin_resource.bps_interactive' : 'plugin_resource.bps_preview')}</span>
               <Link to={CPA_BPS_OAUTH_ROUTE}>{t('plugin_resource.bps_manual')}</Link>
             </div>
           )}
           <iframe
-            key={`${resource.pluginID}:${iframeSrc}`}
+            key={`${resource.pluginID}:${iframeSrc}:${manualAvailable}`}
             ref={iframeRef}
             className={styles.frame}
             src={iframeSrc}

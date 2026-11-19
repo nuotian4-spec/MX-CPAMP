@@ -5063,8 +5063,9 @@
     "gate_step3_hint": "Enter the exact identifier shown above."
   },
   "plugin_resource": {
-    "bps_preview": "Native BPS authorization page (read-only). This panel does not support automatic email and password authorization.",
-    "bps_manual": "Authorize manually with OAuth",
+    "bps_preview": "Manual authorization is unavailable in this plugin page. Use the dashboard link. Email/password automation is not connected.",
+    "bps_interactive": "To authorize manually, generate a link below. Email/password automation is not connected.",
+    "bps_manual": "Open manual OAuth in the dashboard",
     "title": "Plugin Page",
     "page_count": "{{count}} pages",
     "load_failed": "Failed to load plugin page",

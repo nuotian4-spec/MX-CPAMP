@@ -5058,8 +5058,9 @@
     "gate_step3_hint": "請輸入上方顯示的完整識別碼。"
   },
   "plugin_resource": {
-    "bps_preview": "BPS 原生授權頁面（唯讀）。目前面板尚未接入電子郵件密碼自動授權。",
-    "bps_manual": "使用手動 OAuth 授權",
+    "bps_preview": "原生頁面手動授權目前無法使用，請使用面板入口。電子郵件密碼自動授權尚未接入。",
+    "bps_interactive": "手動授權：從下方「產生授權連結」開始。電子郵件密碼自動授權尚未接入。",
+    "bps_manual": "面板手動 OAuth 入口",
     "title": "插件頁面",
     "page_count": "{{count}} 個頁面",
     "load_failed": "載入插件頁面失敗",

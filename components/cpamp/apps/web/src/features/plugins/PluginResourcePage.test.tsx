@@ -5,6 +5,7 @@ import { PluginResourcePage } from './PluginResourcePage';
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   bridge: vi.fn(),
+  manual: vi.fn(),
   t: (key: string) => key,
   params: { pluginId: 'cpa-bps', menuIndex: '0' },
 }));
@@ -27,6 +28,7 @@ vi.mock('@/stores', () => ({
     select({ resolvedTheme: 'light' }),
 }));
 vi.mock('./pluginHostStyle', () => ({ createPluginHostStyleBridge: mocks.bridge }));
+vi.mock('./bpsManualMenu', () => ({ bindBpsManualMenu: mocks.manual }));
 
 let renderer: ReactTestRenderer | undefined;
 beforeEach(() => {
@@ -35,6 +37,7 @@ beforeEach(() => {
   vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
   mocks.params = { pluginId: 'cpa-bps', menuIndex: '0' };
   mocks.list.mockResolvedValue({
+    pluginsEnabled: true,
     plugins: [
       {
         id: 'cpa-bps',
@@ -56,9 +59,9 @@ afterEach(async () => {
 });
 describe('BPS 插件资源页', () => {
   it('打开原生授权页面，并将手动 OAuth 保留为独立链接', async () => {
-    const input = { setAttribute: vi.fn() };
-    const docs = { querySelectorAll: (s: string) => s.startsWith('input') ? [input] : [] };
-    const frame = { contentDocument: docs, inert: true };
+    const disconnect = vi.fn();
+    mocks.manual.mockReturnValue(disconnect);
+    const frame = { inert: true };
     await act(async () => {
       renderer = create(<PluginResourcePage />, {
         createNodeMock: (element) => element.type === 'iframe' ? frame : null,
@@ -70,10 +73,14 @@ describe('BPS 插件资源页', () => {
     expect(iframe.props.sandbox).toBe('allow-same-origin');
     expect(iframe.props.inert).toBe(true);
     expect(iframe.props.allow).toBeUndefined();
-    iframe.props.onLoad();
-    expect(input.setAttribute).toHaveBeenCalledWith('disabled', '');
-    expect(frame.inert).toBe(false);
+    await act(async () => iframe.props.onLoad());
+    expect(mocks.manual).toHaveBeenCalledWith(frame, iframe.props.src, {
+      apiBase: 'https://panel.invalid', managementKey: 'TEST_ONLY',
+    });
+    expect(renderer!.root.findByType('span').children).toContain('plugin_resource.bps_interactive');
     expect(renderer!.root.findByType('a').props.href).toBe('/oauth?provider=cpa-bps');
+    await act(async () => renderer!.unmount()); renderer = undefined;
+    expect(disconnect).toHaveBeenCalledOnce();
   });
   it('同插件其他资源继续显示iframe', async () => {
     mocks.params = { pluginId: 'cpa-bps', menuIndex: '1' };
