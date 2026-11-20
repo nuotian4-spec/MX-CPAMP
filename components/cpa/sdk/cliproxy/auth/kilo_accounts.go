@@ -211,6 +211,8 @@ func (m *Manager) changeKiloAccount(ctx context.Context, id string, change KiloA
 		}
 		m.mu.Lock()
 		delete(m.auths, id)
+		delete(m.modelDiscoveries, id)
+		delete(m.modelDiscoveryInvalidBefore, id)
 		delete(m.kiloQuotaRecords, id)
 		delete(m.kiloRecoveryStates, id)
 		delete(m.modelPoolOffsets, id)

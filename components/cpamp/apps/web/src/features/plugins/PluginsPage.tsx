@@ -1178,7 +1178,9 @@ function InstalledPluginsView({
           aria-live="polite"
           data-plugin-maintenance-state={lastUpdateState}
         >
-          <strong>最近插件维护：{lastUpdate.id}</strong>
+          <strong>
+            最近插件维护：{lastUpdate.plugin_id || '所属插件未记录'} · {lastUpdate.id}
+          </strong>
           <div>
             {!lastUpdateConfirmed
               ? '正在核验后台任务'

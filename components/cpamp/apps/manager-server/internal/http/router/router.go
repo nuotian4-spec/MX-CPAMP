@@ -159,6 +159,10 @@ func rootHandler(
 			middleware.WithCORS(appCtx.Config, proxyHandler.CPAResource)(w, r)
 			return
 		}
+		if r.URL.Path == "/v8/management/credentials/models" {
+			middleware.WithCORS(appCtx.Config, proxyHandler.V8CredentialModels)(w, r)
+			return
+		}
 		if proxysvc.IsCPAV8APIKeysConfigPath(r.URL.Path) {
 			middleware.WithCORS(appCtx.Config, proxyHandler.V8APIKeysConfig)(w, r)
 			return

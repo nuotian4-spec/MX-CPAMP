@@ -19,6 +19,7 @@ type Operation struct {
 	ID            string `json:"id"`
 	Type          string `json:"type"`
 	PluginID      string `json:"plugin_id,omitempty"`
+	Action        string `json:"action,omitempty"`
 	TargetVersion string `json:"target_version"`
 	Status        string `json:"status"`
 	Stage         string `json:"stage"`
@@ -71,7 +72,7 @@ func (s *Store) Get(id string) (Operation, error) {
 		return Operation{}, fmt.Errorf("invalid operation record")
 	}
 	d := ojson.ParseBytes(data)
-	return Operation{ID: d.Get("id").String(), Type: d.Get("type").String(), PluginID: d.Get("plugin_id").String(),
+	return Operation{ID: d.Get("id").String(), Type: d.Get("type").String(), PluginID: d.Get("plugin_id").String(), Action: d.Get("action").String(),
 		TargetVersion: d.Get("target_version").String(), Status: d.Get("status").String(), Stage: d.Get("stage").String(),
 		ActiveVersion: d.Get("active_version").String(), Registered: d.Get("registered").Bool(), LicenseStatus: d.Get("license_status").String(),
 		Message: d.Get("message").String(), StartedAt: d.Get("started_at").String(), FinishedAt: d.Get("finished_at").String(), Baseline: d.Get("baseline").String()}, nil
@@ -94,16 +95,26 @@ func (s *Store) ActiveID() (string, error) {
 
 func (s *Store) Latest(kind string) (Operation, error) {
 	entries, err := os.ReadDir(filepath.Join(s.Directory, "operations"))
-	if err != nil { return Operation{}, err }
+	if err != nil {
+		return Operation{}, err
+	}
 	var latest Operation
 	for _, entry := range entries {
 		name := entry.Name()
-		if entry.IsDir() || filepath.Ext(name) != ".json" { continue }
+		if entry.IsDir() || filepath.Ext(name) != ".json" {
+			continue
+		}
 		op, errRead := s.Get(name[:len(name)-5])
-		if errRead != nil || (kind != "" && op.Type != kind) { continue }
-		if op.StartedAt > latest.StartedAt { latest = op }
+		if errRead != nil || (kind != "" && op.Type != kind) {
+			continue
+		}
+		if op.StartedAt > latest.StartedAt {
+			latest = op
+		}
 	}
-	if latest.ID == "" { return Operation{}, os.ErrNotExist }
+	if latest.ID == "" {
+		return Operation{}, os.ErrNotExist
+	}
 	return latest, nil
 }
 

@@ -90,12 +90,19 @@ func (h *Handler) ensureUpdateMutation(c *gin.Context) (*updateMutation, bool) {
 		c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "update_site_unregistered", "message": err.Error()})
 		return nil, false
 	}
-	lease, err := store.Begin(updatestate.Operation{ID: uuid.NewString(), Type: "plugin", Stage: "preparing", PluginID: c.Param("id")})
+	action := "configure"
+	if c.Request.Method == http.MethodPost && (c.FullPath() == "/v8/management/plugins/store/:id/install" || c.FullPath() == "/v0/management/plugin-store/:id/install") {
+		action = "install"
+	}
+	if c.Request.Method == http.MethodDelete && strings.HasSuffix(c.FullPath(), "/plugins/:id") {
+		action = "remove"
+	}
+	lease, err := store.Begin(updatestate.Operation{ID: uuid.NewString(), Type: "plugin", Stage: "preparing", PluginID: c.Param("id"), Action: action})
 	if err != nil {
 		writeUpdateBusy(c, err)
 		return nil, false
 	}
-	m := &updateMutation{lease: lease, pluginID: c.Param("id"), action: "configure"}
+	m := &updateMutation{lease: lease, pluginID: c.Param("id"), action: action}
 	if c.Request.Method == http.MethodDelete && strings.HasSuffix(c.FullPath(), "/plugins/:id") {
 		m.action = "remove"
 	}
@@ -154,6 +161,7 @@ func (h *Handler) bindPluginUpdate(c *gin.Context, id, version, path string, lic
 	_ = m.lease.Update(func(op *updatestate.Operation) {
 		op.PluginID = id
 		op.TargetVersion = version
+		op.Action = "install"
 		op.Status = "installing"
 		op.Stage = "installed"
 	})

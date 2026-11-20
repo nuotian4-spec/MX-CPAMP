@@ -573,6 +573,10 @@ func (s *Service) tryRegisterPluginModelsForAuthWithConfigFenced(ctx context.Con
 	if ctx != nil && ctx.Err() != nil {
 		return true, true
 	}
+	var discoveryAttempt uint64
+	if s.coreManager != nil {
+		discoveryAttempt = s.coreManager.NextModelDiscoveryAttempt()
+	}
 	result := s.pluginHost.ModelsForAuth(ctx, a)
 	if ctx != nil && ctx.Err() != nil {
 		return true, true
@@ -581,6 +585,7 @@ func (s *Service) tryRegisterPluginModelsForAuthWithConfigFenced(ctx context.Con
 		return false, true
 	}
 	if result.Err != nil {
+		s.recordPluginModelDiscovery(a, fence, discoveryAttempt, result.PluginID, result.Err)
 		return true, true
 	}
 	if s.coreManager != nil && strings.EqualFold(a.Provider, "antigravity") && !s.antigravityHomeEnabled() {
@@ -608,7 +613,7 @@ func (s *Service) tryRegisterPluginModelsForAuthWithConfigFenced(ctx context.Con
 				result.Auth.Attributes[key] = value
 			}
 		}
-		updated, committed, errUpdate := s.coreManager.UpdateIfRegistrationCurrent(ctx, a, result.Auth)
+		updated, committed, errUpdate := s.coreManager.UpdateForModelDiscovery(ctx, a, result.Auth, &discoveryAttempt)
 		if errUpdate != nil {
 			// A real update failure (validation, persistence) is not a
 			// fencing race: report it as handled without asking the
@@ -668,7 +673,15 @@ func (s *Service) tryRegisterPluginModelsForAuthWithConfigFenced(ctx context.Con
 	publicationFence.fallbackExclusionProvider = fallbackExclusionProvider
 	if len(models) > 0 {
 		models = applyOAuthSettingsForAuth(cfg, providerKey, activeAuthKind, models)
-		return true, s.registerResolvedModelsForAuthFenced(activeAuth, publicationFence, providerKey, applyModelPrefixes(models, activeAuth.Prefix, cfg != nil && cfg.ForceModelPrefix))
+		published := s.registerResolvedModelsForAuthFenced(activeAuth, publicationFence, providerKey, applyModelPrefixes(models, activeAuth.Prefix, cfg != nil && cfg.ForceModelPrefix))
+		if published {
+			s.recordPluginModelDiscovery(activeAuth, publicationFence, discoveryAttempt, result.PluginID, nil)
+		}
+		return true, published
 	}
-	return true, s.unregisterModelsForAuthFenced(activeAuth, publicationFence)
+	published := s.unregisterModelsForAuthFenced(activeAuth, publicationFence)
+	if published {
+		s.recordPluginModelDiscovery(activeAuth, publicationFence, discoveryAttempt, result.PluginID, nil)
+	}
+	return true, published
 }

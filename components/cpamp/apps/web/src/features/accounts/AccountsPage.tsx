@@ -1443,6 +1443,7 @@ export function AccountsPage() {
     modelsLoading,
     modelsRefreshing,
     modelsList,
+    modelsDiscovery,
     modelDefinitions,
     modelDefinitionsLoading,
     modelDefinitionsError,
@@ -7842,6 +7843,17 @@ export function AccountsPage() {
           .map((row) => getAuthFilePatchTarget(row.raw));
         if (patchTargets.length) await batchSetStatus(patchTargets, enabled);
         if (current()) {
+          for (const row of targets) {
+            if (row.provider === 'cpa-bps') invalidateModels(row.raw);
+          }
+          if (
+            detailTab === 'models' &&
+            selectedRow?.provider === 'cpa-bps' &&
+            targets.some((row) => row.selectionKey === selectedRow.selectionKey)
+          ) {
+            await refreshModels(selectedRow.raw);
+          }
+          if (!current()) return;
           if (kiloTargets.length > 0 || patchTargets.length > 1) await loadFiles();
           deselectAll();
         }
@@ -7852,6 +7864,10 @@ export function AccountsPage() {
     },
     [
       batchSetStatus,
+      invalidateModels,
+      refreshModels,
+      detailTab,
+      selectedRow,
       deselectAll,
       loadFiles,
       selectedRows,
@@ -10894,6 +10910,7 @@ export function AccountsPage() {
               refreshing={modelsTargetMatches ? modelsRefreshing : false}
               error={modelsTargetMatches ? modelsError : null}
               models={modelsTargetMatches ? modelsList : []}
+              discovery={modelsTargetMatches ? modelsDiscovery : undefined}
               modelDefinitions={modelsTargetMatches ? modelDefinitions : []}
               modelDefinitionsLoading={modelsTargetMatches ? modelDefinitionsLoading : true}
               modelDefinitionsError={modelsTargetMatches ? modelDefinitionsError : null}

@@ -5412,6 +5412,15 @@ describe('AccountsPage replacement flows', () => {
     }
   );
 
+  it('BPS 状态变更会清除模型发现缓存', async () => {
+    mocks.files = [{ ...makeCodexFile('bps.json', 'bps-auth', 'fixture@example.invalid'), type: 'cpa-bps', provider: 'cpa-bps' }];
+    const renderer = await renderAccountsPage();
+    const statusToggle = renderer.root.findAllByType(ToggleSwitch)
+      .find((node) => node.props.ariaLabel === 'auth_files.status_toggle_label')!;
+    await act(async () => { await statusToggle.props.onChange(false); });
+    expect(mocks.invalidateModels).toHaveBeenCalledWith(mocks.files[0]);
+  });
+
   it.each([true, false])(
     'keeps the full reload for a multi-row status action with enabled=%s',
     async (enabled) => {

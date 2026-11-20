@@ -847,3 +847,35 @@ describe('AccountModelsTab', () => {
     expect(prefixedRow.props['data-model-scope']).toBe('credential');
   });
 });
+
+describe('BPS 插件模型发现结果', () => {
+  it('凭证即时停用覆盖已缓存的成功状态', () => {
+    const { renderer, props } = renderTab({
+      fileType: 'cpa-bps',
+      discovery: { status: 'succeeded' },
+    });
+    act(() =>
+      renderer.update(<AccountModelsTab {...props} row={{ ...props.row, disabled: true }} />)
+    );
+    expect(readText(renderer.root)).toContain('凭证已停用');
+    expect(readText(renderer.root)).not.toContain('最近模型发现成功');
+  });
+  it('失败时明确展示原因且保留已有模型', () => {
+    const { renderer } = renderTab({
+      fileType: 'cpa-bps',
+      models: [{ id: 'previous-model' }],
+      discovery: { status: 'failed', error_code: 'bps_model_discovery_rejected' },
+    });
+    expect(readText(renderer.root)).toContain('插件模型发现失败');
+    expect(readText(renderer.root)).toContain('previous-model');
+    expect(readText(renderer.root)).toContain('bps_model_discovery_rejected');
+  });
+  it('空目录失败不展示绑定提供商引导', () => {
+    const { renderer } = renderTab({
+      fileType: 'cpa-bps',
+      discovery: { status: 'failed', error_code: 'bps_model_discovery_rejected' },
+    });
+    expect(readText(renderer.root)).toContain('插件模型发现失败');
+    expect(readText(renderer.root)).not.toContain('auth_files.models_empty_desc');
+  });
+});

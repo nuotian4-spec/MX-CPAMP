@@ -2003,6 +2003,10 @@ func (m *Manager) PublishIfRegistrationCurrent(id string, registrationEpoch uint
 // a removed or re-registered identity merely because its zero registration
 // epoch would otherwise inherit the current epoch during Update.
 func (m *Manager) UpdateIfRegistrationCurrent(ctx context.Context, base *Auth, updated *Auth) (*Auth, bool, error) {
+	return m.updateIfRegistrationCurrent(ctx, base, updated, nil)
+}
+
+func (m *Manager) updateIfRegistrationCurrent(ctx context.Context, base *Auth, updated *Auth, discoveryAttempt *uint64) (*Auth, bool, error) {
 	if m == nil || base == nil || updated == nil || base.ID == "" || updated.ID != base.ID {
 		return nil, false, nil
 	}
@@ -2014,11 +2018,22 @@ func (m *Manager) UpdateIfRegistrationCurrent(ctx context.Context, base *Auth, u
 	m.mu.RLock()
 	current, ok := m.auths[base.ID]
 	matches := ok && current != nil && modelRegistrationInputsMatch(current, base.RegistrationEpoch, base.Prefix, base.Provider, base.Disabled || base.Status == StatusDisabled, base.AuthKind(), base.Attributes)
+	if discoveryAttempt != nil && (*discoveryAttempt <= m.modelDiscoveryInvalidBefore[base.ID] || current == nil || current.CredentialVersion != base.CredentialVersion || current.ProxyURL != base.ProxyURL) {
+		matches = false
+	}
 	m.mu.RUnlock()
 	if !matches {
 		return nil, false, nil
 	}
 	committedAuth, didCommit, persistCooldown, errUpdate := m.updateInternalLocked(ctx, nil, updated, updateModeReplace)
+	if discoveryAttempt != nil && errUpdate == nil && didCommit && committedAuth != nil {
+		m.mu.RLock()
+		invalidated := *discoveryAttempt <= m.modelDiscoveryInvalidBefore[base.ID]
+		m.mu.RUnlock()
+		if invalidated {
+			*discoveryAttempt = m.NextModelDiscoveryAttempt()
+		}
+	}
 	releaseMutation()
 	if errUpdate == nil && didCommit && committedAuth != nil {
 		m.finishAuthUpdate(ctx, committedAuth, persistCooldown)

@@ -20,6 +20,46 @@ import {
 import { sha256RawTextHex } from '@/utils/apiKeyHash';
 import { parseTimestampMs } from '@/utils/timestamp';
 
+export interface ModelDiscoveryState {
+  status: 'unknown' | 'failed' | 'succeeded' | 'disabled';
+  checked_at?: string;
+  plugin_id?: string;
+  error_code?: string;
+}
+
+export interface AuthFileModelsResult {
+  models: AuthFileModelApiItem[];
+  discovery?: ModelDiscoveryState;
+}
+
+const normalizeModelDiscovery = (value: unknown): ModelDiscoveryState | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+  const data = value as Record<string, unknown>;
+  if (!['unknown', 'failed', 'succeeded', 'disabled'].includes(String(data.status)))
+    return undefined;
+  const codes = [
+    'bps_model_discovery_rejected',
+    'bps_model_discovery_failed',
+    'bps_invalid_model_catalog',
+    'bps_reauthorization_required',
+    'bps_proxy_invalid',
+  ];
+  return {
+    status: data.status as ModelDiscoveryState['status'],
+    checked_at:
+      typeof data.checked_at === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(data.checked_at)
+        ? data.checked_at
+        : undefined,
+    plugin_id: typeof data.plugin_id === 'string' ? data.plugin_id : undefined,
+    error_code:
+      data.status === 'failed'
+        ? codes.includes(String(data.error_code))
+          ? String(data.error_code)
+          : 'plugin_model_discovery_failed'
+        : undefined,
+  };
+};
+
 type StatusError = { status?: number };
 export type AuthFilesApiRequestScope = ApiClientRequestScope;
 type AuthFileStatusResponse = { status: string; disabled: boolean };
@@ -1600,6 +1640,25 @@ export const authFilesApi = {
       } else {
         await apiClient.delete(endpoint);
       }
+    }
+  },
+
+  async getModelsWithDiscovery(
+    name: string,
+    requestScope?: AuthFilesApiRequestScope
+  ): Promise<AuthFileModelsResult> {
+    try {
+      const data = await apiClient.getV8<Record<string, unknown>>(
+        `/credentials/models?name=${encodeURIComponent(name)}`,
+        requestScope
+      );
+      return {
+        models: normalizeAuthFileModelItems(data.models),
+        discovery: normalizeModelDiscovery(data.discovery),
+      };
+    } catch (error) {
+      if ((error as StatusError).status !== 404) throw error;
+      return { models: await authFilesApi.getModelsForAuthFile(name, requestScope) };
     }
   },
 

@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
     supportsPlugin: true,
   },
   list: vi.fn(),
+  latest: vi.fn(),
+  operation: vi.fn(),
   getConfig: vi.fn(),
   patchConfig: vi.fn(),
   notification: vi.fn(),
@@ -42,7 +44,10 @@ vi.mock('@/services/api', () => ({
   pluginStoreApi: {},
 }));
 vi.mock('@/services/api/pluginImports', () => ({
-  createPluginImportApi: () => ({ getLatestOperation: async () => ({ operation: null }) }),
+  createPluginImportApi: () => ({
+    getLatestOperation: mocks.latest,
+    getOperation: mocks.operation,
+  }),
 }));
 vi.mock('./PluginStorePage', () => ({ PluginStorePage: () => null }));
 vi.mock('@/components/ui/Drawer', () => ({
@@ -103,6 +108,7 @@ const switchConnection = async () => {
   });
 };
 beforeEach(() => {
+  mocks.latest.mockResolvedValue({ operation: null });
   vi.clearAllMocks();
   mocks.auth = {
     apiBase: 'http://first.invalid',
@@ -226,4 +232,25 @@ describe('BPS 插件页配置 continuation', () => {
     expect(mocks.notification).toHaveBeenCalledWith('plugin_management.save_failed', 'error');
     expect(JSON.stringify(mocks.notification.mock.calls)).not.toContain('synthetic-private');
   });
+});
+
+it('其他插件历史失败明确归属，不标成BPS安装失败', async () => {
+  const operation = {
+    id: 'history-other',
+    type: 'plugin',
+    plugin_id: 'cpa-codex-candy-eval',
+    status: 'failed',
+    stage: 'failed',
+    active_version: '',
+    registered: false,
+    license_status: '',
+    message: '',
+  };
+  mocks.latest.mockResolvedValue({ operation });
+  mocks.operation.mockResolvedValue(operation);
+  await mount();
+  const text = JSON.stringify(renderer?.toJSON());
+  expect(text).toContain('cpa-codex-candy-eval');
+  expect(text).toContain('插件维护失败');
+  expect(text).not.toContain('安装失败');
 });

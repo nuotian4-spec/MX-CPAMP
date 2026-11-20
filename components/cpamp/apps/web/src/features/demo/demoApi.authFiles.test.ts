@@ -372,3 +372,15 @@ describe('auth file credential refresh demo API', () => {
     expect(definitions.models.map((model) => model.id)).toContain('o1-preview');
   });
 });
+
+it('v8 模型目录在演示环境仍由本地夹具返回', async () => {
+  const legacy = await handleDemoApiRequest(
+    'get',
+    '/auth-files/models?name=codex-upgrade-demo-runtime'
+  );
+  const result = await handleDemoApiRequest(
+    'get',
+    '/credentials/models?name=codex-upgrade-demo-runtime'
+  );
+  expect(result).toEqual(legacy);
+});

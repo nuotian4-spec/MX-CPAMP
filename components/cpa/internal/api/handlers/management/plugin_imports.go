@@ -284,7 +284,7 @@ func (h *Handler) InstallPluginImport(c *gin.Context) {
 		c.JSON(http.StatusConflict, gin.H{"error": "license_network_confirmation_required"})
 		return
 	}
-	lease, err := store.Begin(updatestate.Operation{ID: operationID, Type: "plugin", PluginID: record.Preview.PluginID, TargetVersion: record.Preview.Version,
+	lease, err := store.Begin(updatestate.Operation{ID: operationID, Type: "plugin", Action: "install", PluginID: record.Preview.PluginID, TargetVersion: record.Preview.Version,
 		Status: "queued", Stage: "preparing", Baseline: record.Baseline, LicenseStatus: "unverified"})
 	if err != nil {
 		if previous, errPrevious := store.Get(operationID); errPrevious == nil {

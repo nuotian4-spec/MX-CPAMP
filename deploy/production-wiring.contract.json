@@ -1082,6 +1082,14 @@
       "mode": "100644",
       "blob": "49e5dac1a8f395a61f1fd7f43379882578536958"
     },
+    "components/cpa/internal/api/handlers/management/auth_file_models_v8.go": {
+      "mode": "100644",
+      "blob": "bb05011f079c459e17bcb39a6b655ddff9a1a6b9"
+    },
+    "components/cpa/internal/api/handlers/management/auth_file_models_v8_test.go": {
+      "mode": "100644",
+      "blob": "2db4874af63f15f254c49fe842ae1b192edf8476"
+    },
     "components/cpa/internal/api/handlers/management/auth_files.go": {
       "mode": "100644",
       "blob": "602256c1b9ff6e73a585d41227f255b9fcc6467c"
@@ -1524,7 +1532,7 @@
     },
     "components/cpa/internal/api/handlers/management/plugin_imports.go": {
       "mode": "100644",
-      "blob": "cfe4543bdd3b7385862effb6e5b3cb3d7d1087e8"
+      "blob": "1cd2e4fda6293a77b9b0172c0f440f8f07edd68d"
     },
     "components/cpa/internal/api/handlers/management/plugin_imports_test.go": {
       "mode": "100644",
@@ -1586,9 +1594,13 @@
       "mode": "100644",
       "blob": "2343d1fd2b143b54a22df2cd694423510b7ebe43"
     },
+    "components/cpa/internal/api/handlers/management/update_operation_action_test.go": {
+      "mode": "100644",
+      "blob": "91d08a871633ea1fbad09c0ad9621b312a39d606"
+    },
     "components/cpa/internal/api/handlers/management/update_operations.go": {
       "mode": "100644",
-      "blob": "1fa3770a88f60013b39779c6fa1dce224e02ecc5"
+      "blob": "60cc0a84349d01e8cd76170466a1cfee08d73bde"
     },
     "components/cpa/internal/api/handlers/management/usage.go": {
       "mode": "100644",
@@ -1744,7 +1756,7 @@
     },
     "components/cpa/internal/api/server_management_v8.go": {
       "mode": "100644",
-      "blob": "49ea7d65f52829ed876ca39460c27e64e76987ef"
+      "blob": "5c6cfa7bd10cc8421e3442a08936c9fb85891edc"
     },
     "components/cpa/internal/api/server_management_v8_test.go": {
       "mode": "100644",
@@ -3832,7 +3844,7 @@
     },
     "components/cpa/internal/pluginhost/adapters.go": {
       "mode": "100644",
-      "blob": "eec740d2321bed8d8602a4b0c0cec8b0c024c4bc"
+      "blob": "9dd0af947b876fa0b256320906a33959ba643466"
     },
     "components/cpa/internal/pluginhost/adapters_auth.go": {
       "mode": "100644",
@@ -8232,11 +8244,11 @@
     },
     "components/cpa/internal/updatestate/store.go": {
       "mode": "100644",
-      "blob": "faf6d0d70eb1d510d1ee00274647bf1e3cad0845"
+      "blob": "f509a529b81597409d9cda2fd9ed81af2eeefd26"
     },
     "components/cpa/internal/updatestate/store_test.go": {
       "mode": "100644",
-      "blob": "1b5db91a423852b9f10cf30e7c8a37b33799527d"
+      "blob": "16b9721d79a1b2c0e696f4f2d675e7ea7da64d58"
     },
     "components/cpa/internal/util/claude_attribution.go": {
       "mode": "100644",
@@ -9404,7 +9416,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/conductor.go": {
       "mode": "100644",
-      "blob": "206cdacc8ad508b19eac4c02552b1f218b6042cb"
+      "blob": "882653f985fdc327b2d8e6cc4b7e1b1056f9d07b"
     },
     "components/cpa/sdk/cliproxy/auth/conductor_alias_cooldown_test.go": {
       "mode": "100644",
@@ -9548,7 +9560,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/conductor_lifecycle.go": {
       "mode": "100644",
-      "blob": "11a86a6cff6fff3e651d1b1c28a133d3f12f985e"
+      "blob": "8ebbbdfb89b99bcc258c1837163a0b2b8b7e7096"
     },
     "components/cpa/sdk/cliproxy/auth/conductor_lifecycle_race_test.go": {
       "mode": "100644",
@@ -9652,7 +9664,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/conductor_selection.go": {
       "mode": "100644",
-      "blob": "06e434aeaec9070dc3bdeb2241a4b1a54be5cfa4"
+      "blob": "06d2a219ee1aa88aa7188975ccbe32f626ed858e"
     },
     "components/cpa/sdk/cliproxy/auth/conductor_selection_cooldown_test.go": {
       "mode": "100644",
@@ -9920,7 +9932,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/kilo_accounts.go": {
       "mode": "100644",
-      "blob": "9fe17f17783a6552309cee28f356edf72262b41c"
+      "blob": "e7012457e5c12c9ded3ffa11ec6f161df0f8d78d"
     },
     "components/cpa/sdk/cliproxy/auth/kilo_accounts_test.go": {
       "mode": "100644",
@@ -10053,6 +10065,14 @@
     "components/cpa/sdk/cliproxy/auth/metadata_merge_test.go": {
       "mode": "100644",
       "blob": "c4bf8b2d1555c17aab68648b590661cd34a5ca09"
+    },
+    "components/cpa/sdk/cliproxy/auth/model_discovery.go": {
+      "mode": "100644",
+      "blob": "00c5099df413279206efdabac7dec1f833fb54e3"
+    },
+    "components/cpa/sdk/cliproxy/auth/model_discovery_test.go": {
+      "mode": "100644",
+      "blob": "f6f6d224453c0f8e0ffba4e46a304cd0074d0ad1"
     },
     "components/cpa/sdk/cliproxy/auth/native_tool_search_capability.go": {
       "mode": "100644",
@@ -10706,6 +10726,14 @@
       "mode": "100644",
       "blob": "e569fb816f2cd1423d94ae59a277cd1f46762a56"
     },
+    "components/cpa/sdk/cliproxy/model_discovery.go": {
+      "mode": "100644",
+      "blob": "648971aff3b6256f188b4b1c42e7108b8e5e593d"
+    },
+    "components/cpa/sdk/cliproxy/model_discovery_test.go": {
+      "mode": "100644",
+      "blob": "b5c701c61a6ca80da477eafbb0120fbf8474af52"
+    },
     "components/cpa/sdk/cliproxy/model_registration_config_fence_test.go": {
       "mode": "100644",
       "blob": "4d0603b8b40c5b055a3b9b84e54168190ba2464f"
@@ -10828,7 +10856,7 @@
     },
     "components/cpa/sdk/cliproxy/service_executors.go": {
       "mode": "100644",
-      "blob": "d88fbbdb687d5c5d0c1a98522f3f1dd4853c3d1a"
+      "blob": "221c473fbe85bbb181b3d37d2571a3c33c1c1f49"
     },
     "components/cpa/sdk/cliproxy/service_home.go": {
       "mode": "100644",
@@ -11568,7 +11596,7 @@
     },
     "components/cpamp/apps/docs/manual/plugins.md": {
       "mode": "100644",
-      "blob": "8a82b9a118e7f38a7c8f96ebc27c4d45c524a3e4"
+      "blob": "4c7273e1e221a42287f0300565528e39db23f92e"
     },
     "components/cpamp/apps/docs/manual/system.md": {
       "mode": "100644",
@@ -11896,7 +11924,7 @@
     },
     "components/cpamp/apps/manager-server/internal/http/controller/proxy/handler.go": {
       "mode": "100644",
-      "blob": "ff30ef376d1634c4f6661735c36573d184fe3782"
+      "blob": "cb21ce6b43d40a5375065153592ad6012e2effe5"
     },
     "components/cpamp/apps/manager-server/internal/http/controller/quotacooldown/handler.go": {
       "mode": "100644",
@@ -12104,7 +12132,7 @@
     },
     "components/cpamp/apps/manager-server/internal/http/router/router.go": {
       "mode": "100644",
-      "blob": "79f1a09a3966e033948b412689dc9ece600d3823"
+      "blob": "88d2bbd04cee048f6a014925136b4a2218e54905"
     },
     "components/cpamp/apps/manager-server/internal/httpapi/codex_inspection_test.go": {
       "mode": "100644",
@@ -12116,7 +12144,7 @@
     },
     "components/cpamp/apps/manager-server/internal/httpapi/server_compat_test.go": {
       "mode": "100644",
-      "blob": "2947dc7149b7f0878fb6214cc795fb4f0f11d359"
+      "blob": "d1a9c7cd89b3052ebe91eed3830801767b858da1"
     },
     "components/cpamp/apps/manager-server/internal/httpapi/server_quota_cooldown_test.go": {
       "mode": "100644",
@@ -13168,7 +13196,7 @@
     },
     "components/cpamp/apps/manager-server/internal/service/proxy/service.go": {
       "mode": "100644",
-      "blob": "b3f116f6d064821b2be41ca54eb5448760c652af"
+      "blob": "7c9db8b776080c61a8c0f7d13499e8c7bd74c73c"
     },
     "components/cpamp/apps/manager-server/internal/service/proxy/service_test.go": {
       "mode": "100644",
@@ -13508,7 +13536,11 @@
     },
     "components/cpamp/apps/web/joint-tests/bpsNativeManual.browser.mjs": {
       "mode": "100644",
-      "blob": "478b3724c9e3c158e9f462ce8b402fc67de59142"
+      "blob": "09ffd94126eb87a449936fe453673f3dcf867325"
+    },
+    "components/cpamp/apps/web/joint-tests/bpsNativeMenuWindow.mjs": {
+      "mode": "100644",
+      "blob": "97b1f29ac28f3f92d186be749f0b0cf60670d820"
     },
     "components/cpamp/apps/web/joint-tests/visual.html": {
       "mode": "100644",
@@ -14304,11 +14336,11 @@
     },
     "components/cpamp/apps/web/src/features/accounts/AccountsPage.test.tsx": {
       "mode": "100644",
-      "blob": "8f4a3a7c339f9387dbde82881bc24a26bd144b83"
+      "blob": "858ea7ed979d4be08fb1754eacfeb6970341dc4e"
     },
     "components/cpamp/apps/web/src/features/accounts/AccountsPage.tsx": {
       "mode": "100644",
-      "blob": "b371cd160a0cd34e7e8e3dde0fced77d8880dc24"
+      "blob": "f5c5cc3a21113b547162372445cd464c5c7e9989"
     },
     "components/cpamp/apps/web/src/features/accounts/CredentialConcurrencyPage.test.tsx": {
       "mode": "100644",
@@ -14480,11 +14512,11 @@
     },
     "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountModelsTab.test.tsx": {
       "mode": "100644",
-      "blob": "2c2e5f0b10f221a936392028e0f4f6ec7a32f4dd"
+      "blob": "7963dc5e3420e250947199b009f845c600128711"
     },
     "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountModelsTab.tsx": {
       "mode": "100644",
-      "blob": "79085f35f4fe7fc0e091968d95d0cef75b0412de"
+      "blob": "8ae55d6ab95e2069e404ff0233ed800669c1fe70"
     },
     "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountOverviewTab.tsx": {
       "mode": "100644",
@@ -14942,6 +14974,10 @@
       "mode": "100644",
       "blob": "8062b62de7fc2f0e4b603592b717a74c9e2cf1c2"
     },
+    "components/cpamp/apps/web/src/features/authFiles/components/ModelDiscoveryNotice.tsx": {
+      "mode": "100644",
+      "blob": "0bfd2ebd187f2ac079120212ae5bcb310d83bbaf"
+    },
     "components/cpamp/apps/web/src/features/authFiles/components/OAuthConfigLoadGuard.test.tsx": {
       "mode": "100644",
       "blob": "b235072f715f2b5265c7f7a8fcd837fa3dc4a1e2"
@@ -15000,11 +15036,11 @@
     },
     "components/cpamp/apps/web/src/features/authFiles/hooks/useAuthFilesModels.test.tsx": {
       "mode": "100644",
-      "blob": "9f4129b00ac1247ef71c7c917a2c2c903380dcbe"
+      "blob": "b978b7310e9aeceac59bad923cea3ef5470f9d7e"
     },
     "components/cpamp/apps/web/src/features/authFiles/hooks/useAuthFilesModels.ts": {
       "mode": "100644",
-      "blob": "f81de0c39712aa6b79ccaf3c5d51c8ab2828ca1a"
+      "blob": "29d9ce3e7cd139999bf821298e84e2c91c66ed62"
     },
     "components/cpamp/apps/web/src/features/authFiles/hooks/useAuthFilesOauth.stability.test.tsx": {
       "mode": "100644",
@@ -15220,7 +15256,7 @@
     },
     "components/cpamp/apps/web/src/features/demo/demoApi.authFiles.test.ts": {
       "mode": "100644",
-      "blob": "96d7d4adacbc92a33331ac6f50d8d0e660b42fd0"
+      "blob": "55632e25e33b6f9894fff42cbcdbb67495197ea7"
     },
     "components/cpamp/apps/web/src/features/demo/demoApi.config.test.ts": {
       "mode": "100644",
@@ -15228,7 +15264,7 @@
     },
     "components/cpamp/apps/web/src/features/demo/demoApi.ts": {
       "mode": "100644",
-      "blob": "73c946931811b46e246f7264eae2e1ccc9a2d51d"
+      "blob": "ecd73550d6a77e01352ed1958212d0035cb56273"
     },
     "components/cpamp/apps/web/src/features/demo/demoFixtures.apiCall.test.ts": {
       "mode": "100644",
@@ -16284,11 +16320,11 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.test.tsx": {
       "mode": "100644",
-      "blob": "b0089568b5dd6196aaa9ebff42712d696313415c"
+      "blob": "f522561acaf018e160aacfae4dac39e835aeb714"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginResourcePage.tsx": {
       "mode": "100644",
-      "blob": "2e5ae231ba3fa77929dd9a96703e10ff695d9417"
+      "blob": "e0f92a60af7d59a9d13da693a0b9ffc1052a493e"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginStorePage.module.scss": {
       "mode": "100644",
@@ -16312,7 +16348,7 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.bps.test.tsx": {
       "mode": "100644",
-      "blob": "1d8e1af798480e582140c67fa7116f832377e2f2"
+      "blob": "20e7d0b17fe1a4692278244d903cda468d7f795e"
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.module.scss": {
       "mode": "100644",
@@ -16320,7 +16356,15 @@
     },
     "components/cpamp/apps/web/src/features/plugins/PluginsPage.tsx": {
       "mode": "100644",
-      "blob": "fe4dfa50d3c92ff19609dd0218c2b0f72a1f06b3"
+      "blob": "243ff2f4da5ae99da59ce53e690128aec11e12a1"
+    },
+    "components/cpamp/apps/web/src/features/plugins/bpsAutoLoginMenu.test.ts": {
+      "mode": "100644",
+      "blob": "e4b22f4fef1d67a7bf08cc49124ce5c2bfc321f9"
+    },
+    "components/cpamp/apps/web/src/features/plugins/bpsAutoLoginMenu.ts": {
+      "mode": "100644",
+      "blob": "8afd79c3d11578d679284ad7f65587826d278bb5"
     },
     "components/cpamp/apps/web/src/features/plugins/bpsConfigPresentation.test.ts": {
       "mode": "100644",
@@ -16336,7 +16380,7 @@
     },
     "components/cpamp/apps/web/src/features/plugins/bpsManualMenu.ts": {
       "mode": "100644",
-      "blob": "b088a3104402b5dd52acd4a7911c01390ed1874c"
+      "blob": "134d524fb3f45e4c25f9ae5deb9d614f34381ace"
     },
     "components/cpamp/apps/web/src/features/plugins/components/PluginInstallGateModal.module.scss": {
       "mode": "100644",
@@ -16370,9 +16414,13 @@
       "mode": "100644",
       "blob": "36b4b7a549d7d71f63057a79c92ca35c5bb4405c"
     },
+    "components/cpamp/apps/web/src/features/plugins/pluginMaintenance.test.ts": {
+      "mode": "100644",
+      "blob": "8d3ccbf177e2248cd65689dc95fce13c4219238c"
+    },
     "components/cpamp/apps/web/src/features/plugins/pluginMaintenance.ts": {
       "mode": "100644",
-      "blob": "5c55c2e549f9f4fa248eac945c18a04c4d4ac31f"
+      "blob": "19746c1d94ca9f5eec17bd1498bb75b620f8337d"
     },
     "components/cpamp/apps/web/src/features/plugins/pluginPolling.test.ts": {
       "mode": "100644",
@@ -16460,11 +16508,15 @@
     },
     "components/cpamp/apps/web/src/features/system/components/BPSSettingsRouting.test.tsx": {
       "mode": "100644",
-      "blob": "e59b1677aefaff5b12236a8020b10beaee821b10"
+      "blob": "ab160b4101d0f7923015e313a73dcc58a192e30b"
+    },
+    "components/cpamp/apps/web/src/features/system/components/CpaBpsModelsPanel.test.tsx": {
+      "mode": "100644",
+      "blob": "6747798671ede99bd66ae84eb0c87f89deb23082"
     },
     "components/cpamp/apps/web/src/features/system/components/CpaBpsModelsPanel.tsx": {
       "mode": "100644",
-      "blob": "e087a19cf7ec0f77f012fcdc0ffe7385fbfc0a4f"
+      "blob": "ae6456bc254d6b2c8e12cbaa70a2d6d98d7c2932"
     },
     "components/cpamp/apps/web/src/features/system/components/DatabaseStatusCard.module.scss": {
       "mode": "100644",
@@ -16708,19 +16760,19 @@
     },
     "components/cpamp/apps/web/src/i18n/locales/en.json": {
       "mode": "100644",
-      "blob": "f53d3df1aab2b25e40ad4448a5fae274325dfe9a"
+      "blob": "403817075cc572ed74c25e6138e041af50d708a1"
     },
     "components/cpamp/apps/web/src/i18n/locales/ru.json": {
       "mode": "100644",
-      "blob": "a21860650715eea411d983a2a338d9ad52acd583"
+      "blob": "c6c5c1429dcbbc8d3eeef02012494f073436f2b3"
     },
     "components/cpamp/apps/web/src/i18n/locales/zh-CN.json": {
       "mode": "100644",
-      "blob": "8755aca734e59b8bc1adea66dfdae21b6a2193fa"
+      "blob": "6c9a7a4e073479a64e5b02e24aeeaceb83bc7fc5"
     },
     "components/cpamp/apps/web/src/i18n/locales/zh-TW.json": {
       "mode": "100644",
-      "blob": "c09aaa28520338f6005ddb3d8cc557a405a230c9"
+      "blob": "0af38c78392772dc78f3f17a005011af39dbb725"
     },
     "components/cpamp/apps/web/src/index.css": {
       "mode": "100644",
@@ -16874,13 +16926,17 @@
       "mode": "100644",
       "blob": "decf09a77afb913ed7ac9b893e9deaaf542f7aa9"
     },
+    "components/cpamp/apps/web/src/services/api/authFiles.discovery.test.ts": {
+      "mode": "100644",
+      "blob": "8fe8ac618effb1edcd94fe4a80292a8a5fcb29f4"
+    },
     "components/cpamp/apps/web/src/services/api/authFiles.test.ts": {
       "mode": "100644",
       "blob": "a9b68cff936c7600e8a3d1ce66ecd4583ed4b703"
     },
     "components/cpamp/apps/web/src/services/api/authFiles.ts": {
       "mode": "100644",
-      "blob": "40c4cc60e6e9bbdf5880fafec19a4ef06f847c4c"
+      "blob": "da8fe1b78df8cc6fe4cb0e19e3098009bf905817"
     },
     "components/cpamp/apps/web/src/services/api/bpsAccess.test.ts": {
       "mode": "100644",
@@ -16889,6 +16945,10 @@
     "components/cpamp/apps/web/src/services/api/bpsAccess.ts": {
       "mode": "100644",
       "blob": "9b71d6bad9e8568d741fe6c59ba2657c523ef646"
+    },
+    "components/cpamp/apps/web/src/services/api/bpsAutoLogin.ts": {
+      "mode": "100644",
+      "blob": "29d57e120724b00e067442835148173df66fd131"
     },
     "components/cpamp/apps/web/src/services/api/bpsCredentialSnapshot.test.ts": {
       "mode": "100644",
@@ -16936,7 +16996,7 @@
     },
     "components/cpamp/apps/web/src/services/api/client.ts": {
       "mode": "100644",
-      "blob": "2f3aea6ac275896b4cf67a2279a3f089641e522d"
+      "blob": "7409ff8a1afab22423778102248f5d96e14e8db1"
     },
     "components/cpamp/apps/web/src/services/api/codexQuota.test.ts": {
       "mode": "100644",
@@ -17276,7 +17336,7 @@
     },
     "components/cpamp/apps/web/src/types/pluginImport.ts": {
       "mode": "100644",
-      "blob": "c821d51721e9dc0051520bd2d8efaea7e78835c4"
+      "blob": "c9016f95e5433eb9c79ae140e92c141495ed09a8"
     },
     "components/cpamp/apps/web/src/types/provider.ts": {
       "mode": "100644",
@@ -18885,6 +18945,38 @@
         "review": "docs/execution/BPS-NATIVE-MENU-RESTORE-20261120.zh-CN.md"
       },
       "evidence_reuse": "同一候选的4项专项、类型检查、构建和0.5.86原生HTML浏览器交互已通过；原有接线记录不变。"
+    },
+    {
+      "input": "bps-native-auto-login-20261120",
+      "base_commit": "31e0fbcf28d895e13e8eb247e36d4596c655e74c",
+      "mapped_component_commit": "05bea8d5b24cc001ab888e87418ce7d96754f3b9",
+      "component_delta": {
+        "total": 13,
+        "added": 4,
+        "modified": 9,
+        "deleted": 0
+      },
+      "evidence": {
+        "execution": "docs/execution/BPS-AUTO-LOGIN-RESTORE-PLAN.zh-CN.md",
+        "review": "docs/execution/BPS-DISCOVERY-RELEASE-READINESS-20261120.zh-CN.md"
+      },
+      "evidence_reuse": "引用既有自动授权执行文档的76项插件目录测试、4个手动和5个自动模拟浏览器场景、类型检查、lint和构建记录；本轮未重跑。主会话已对13项差异完成独立静态审查，真实授权及生产辅助服务未验。"
+    },
+    {
+      "input": "bps-model-discovery-state-20261120",
+      "base_commit": "05bea8d5b24cc001ab888e87418ce7d96754f3b9",
+      "mapped_component_tree": "2d3e50a5d1681c81c0e188fc8f2dccee153cde65",
+      "component_delta": {
+        "total": 42,
+        "added": 11,
+        "modified": 31,
+        "deleted": 0
+      },
+      "evidence": {
+        "execution": "docs/execution/BPS-DISCOVERY-STATE-RECEIPT-20261120.zh-CN.md",
+        "release_readiness": "docs/execution/BPS-DISCOVERY-RELEASE-READINESS-20261120.zh-CN.md"
+      },
+      "evidence_reuse": "本轮42项组件候选已由主会话验收，复用定向测试、两项Go编译和前端构建；不替代既有13项自动授权审查，不代表上游模型目录已恢复。"
     }
   ],
   "test_runs": {
@@ -19068,17 +19160,16 @@
   ],
   "incremental_review": {
     "status": "PASS",
-    "reviewer": "菜单发布专项审查",
-    "receipt": "docs/execution/BPS-NATIVE-MENU-RESTORE-20261120.zh-CN.md",
+    "reviewer": "主会话 P9",
+    "receipt": "docs/execution/BPS-DISCOVERY-RELEASE-READINESS-20261120.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true,
-    "review_note": "10项组件变化覆盖原生页手动OAuth、相关测试及手册；同源与脚本隔离、连接清理、state与成功条件审查通过。普通启动、CPA及构建入口保持不变。"
+    "review_note": "主会话分别验收42项模型发现状态组件候选，并独立静态审查13项既有自动授权差异。固定连接scope、state绑定、单次提交、保存成功三元组、停止及输入清理、sandbox边界保持；既有运行证据引用原执行记录。临时Git tree完整映射通过，普通启动入口保持。"
   },
   "working_tree_candidate": {
-    "base_commit": "477ed7bef211ce6af46068ec1ff13658bd3a23df",
-    "component_source_commit": "31e0fbcf28d895e13e8eb247e36d4596c655e74c",
-    "component_tree": "dec2b6768df1c3091574164e2e267305f4db0990",
-    "input_record": "docs/execution/BPS-NATIVE-MENU-RESTORE-20261120.zh-CN.md",
-    "publication": "绑定原生页手动授权；清单提交不改变组件树。"
+    "base_commit": "05bea8d5b24cc001ab888e87418ce7d96754f3b9",
+    "component_tree": "2d3e50a5d1681c81c0e188fc8f2dccee153cde65",
+    "input_record": "docs/execution/BPS-DISCOVERY-RELEASE-READINESS-20261120.zh-CN.md",
+    "publication": "仅本地临时Git tree映射，尚未提交、推送或发布；正式发行绑定后续固定提交。"
   }
 }

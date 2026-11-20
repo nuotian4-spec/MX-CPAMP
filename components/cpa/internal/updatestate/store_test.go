@@ -65,3 +65,22 @@ func TestTerminalPublicationReleasesSiteMaintenance(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestOperationActionRoundTrip(t *testing.T) {
+	root := t.TempDir()
+	store, err := New(filepath.Join(root, "site.lock"), filepath.Join(root, "state"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lease, err := store.Begin(Operation{ID: "action-test", Type: "plugin", PluginID: "cpa-bps", Action: "configure"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = lease.Finish(func(op *Operation) { op.Status = "failed"; op.Stage = "failed" }); err != nil {
+		t.Fatal(err)
+	}
+	op, err := store.Get("action-test")
+	if err != nil || op.Action != "configure" || op.PluginID != "cpa-bps" {
+		t.Fatalf("roundtrip: %+v %v", op, err)
+	}
+}

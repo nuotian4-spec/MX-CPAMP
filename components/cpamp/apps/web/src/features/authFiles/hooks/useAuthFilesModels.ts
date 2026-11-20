@@ -1,3 +1,4 @@
+import type { AuthFileModelsResult, ModelDiscoveryState } from '@/services/api/authFiles';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authFilesApi, type AuthFilesApiRequestScope } from '@/services/api';
@@ -27,6 +28,7 @@ export type UseAuthFilesModelsResult = {
   modelsLoading: boolean;
   modelsRefreshing: boolean;
   modelsList: AuthFileModelItem[];
+  modelsDiscovery?: ModelDiscoveryState;
   modelDefinitions: AuthFileModelItem[];
   modelDefinitionsLoading: boolean;
   modelDefinitionsError: ModelDefinitionsError;
@@ -69,6 +71,7 @@ export function useAuthFilesModels(
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsRefreshing, setModelsRefreshing] = useState(false);
   const [modelsList, setModelsList] = useState<AuthFileModelItem[]>([]);
+  const [modelsDiscovery, setModelsDiscovery] = useState<ModelDiscoveryState>();
   const [modelDefinitions, setModelDefinitions] = useState<AuthFileModelItem[]>([]);
   const [modelDefinitionsLoading, setModelDefinitionsLoading] = useState(false);
   const [modelDefinitionsError, setModelDefinitionsError] = useState<ModelDefinitionsError>(null);
@@ -77,7 +80,7 @@ export function useAuthFilesModels(
   const [modelsSelectionKey, setModelsSelectionKey] = useState('');
   const [modelsConnectionKey, setModelsConnectionKey] = useState(normalizedConnectionKey);
   const [modelsError, setModelsError] = useState<ModelsError>(null);
-  const modelsCacheRef = useRef<Map<string, AuthFileModelItem[]>>(new Map());
+  const modelsCacheRef = useRef<Map<string, AuthFileModelsResult>>(new Map());
   const modelDefinitionsCacheRef = useRef<Map<string, AuthFileModelItem[]>>(new Map());
   const staleModelsRef = useRef<Set<string>>(new Set());
   const requestIdRef = useRef(0);
@@ -94,6 +97,7 @@ export function useAuthFilesModels(
       setModelsLoading(false);
       setModelsRefreshing(false);
       setModelsList([]);
+      setModelsDiscovery(undefined);
       setModelDefinitions([]);
       setModelDefinitionsLoading(false);
       setModelDefinitionsError(null);
@@ -144,7 +148,8 @@ export function useAuthFilesModels(
       const shouldLoadModels = force || staleModelsRef.current.has(cacheKey) || !cachedModels;
       const shouldLoadDefinitions = Boolean(definitionsChannel) && (force || !cachedDefinitions);
 
-      if (cachedModels) setModelsList(cachedModels);
+      setModelsDiscovery(cachedModels?.discovery);
+      if (cachedModels) setModelsList(cachedModels.models);
       else setModelsList([]);
       if (cachedDefinitions) setModelDefinitions(cachedDefinitions);
       else setModelDefinitions([]);
@@ -153,11 +158,14 @@ export function useAuthFilesModels(
       setModelDefinitionsLoading(shouldLoadDefinitions);
       setModelDefinitionsError(null);
 
-      const modelsPromise = shouldLoadModels
-        ? requestScope
-          ? authFilesApi.getModelsForAuthFile(selector, requestScope)
-          : authFilesApi.getModelsForAuthFile(selector)
-        : Promise.resolve(cachedModels ?? []);
+      const modelsPromise: Promise<AuthFileModelsResult> = shouldLoadModels
+        ? provider === 'cpa-bps'
+          ? authFilesApi.getModelsWithDiscovery(selector, requestScope)
+          : (requestScope
+              ? authFilesApi.getModelsForAuthFile(selector, requestScope)
+              : authFilesApi.getModelsForAuthFile(selector)
+            ).then((models) => ({ models }))
+        : Promise.resolve(cachedModels ?? { models: [] });
       const definitionsPromise = shouldLoadDefinitions
         ? requestScope
           ? authFilesApi.getModelDefinitions(definitionsChannel, requestScope)
@@ -177,7 +185,8 @@ export function useAuthFilesModels(
         modelsRequestSucceeded = true;
         modelsCacheRef.current.set(cacheKey, modelsResult.value);
         staleModelsRef.current.delete(cacheKey);
-        setModelsList(modelsResult.value);
+        setModelsList(modelsResult.value.models);
+        setModelsDiscovery(modelsResult.value.discovery);
       } else {
         const errorMessage = getErrorMessage(modelsResult.reason);
         if (isUnsupportedEndpointError(modelsResult.reason)) {
@@ -247,7 +256,20 @@ export function useAuthFilesModels(
 
   const invalidateModels = useCallback(
     (item: AuthFileItem) => {
-      staleModelsRef.current.add(getScopedModelsKey(normalizedConnectionKey, item));
+      const key = getScopedModelsKey(normalizedConnectionKey, item);
+      staleModelsRef.current.add(key);
+      modelsCacheRef.current.delete(key);
+      const current = currentItemRef.current;
+      if (
+        current?.connectionKey === normalizedConnectionKey &&
+        getScopedModelsKey(normalizedConnectionKey, current.item) === key
+      ) {
+        requestIdRef.current += 1;
+        setModelsDiscovery(undefined);
+        setModelsLoading(false);
+        setModelsRefreshing(false);
+        setModelDefinitionsLoading(false);
+      }
     },
     [normalizedConnectionKey]
   );
@@ -259,6 +281,7 @@ export function useAuthFilesModels(
     modelsLoading: hasCurrentConnection && modelsLoading,
     modelsRefreshing: hasCurrentConnection && modelsRefreshing,
     modelsList: hasCurrentConnection ? modelsList : [],
+    modelsDiscovery: hasCurrentConnection ? modelsDiscovery : undefined,
     modelDefinitions: hasCurrentConnection ? modelDefinitions : [],
     modelDefinitionsLoading: hasCurrentConnection && modelDefinitionsLoading,
     modelDefinitionsError: hasCurrentConnection ? modelDefinitionsError : null,

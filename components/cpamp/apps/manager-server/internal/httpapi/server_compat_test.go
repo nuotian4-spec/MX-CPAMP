@@ -2113,3 +2113,27 @@ func TestServerCompatCPAConnectionValidation(t *testing.T) {
 		testutil.RequireStatus(t, rr, http.StatusOK)
 	})
 }
+
+func TestServerCompatV8CredentialModelsProxy(t *testing.T) {
+	cpa := testutil.NewCPAMock(t)
+	setup := &store.Setup{CPAUpstreamURL: cpa.URL(), ManagementKey: "management-key", Queue: "usage", PopSide: "right"}
+	handler, _ := newCompatHandler(t, testutil.NewConfig(t), setup)
+	const path = "/v8/management/credentials/models"
+	rr := testutil.Request(t, handler, http.MethodGet, path+"?name=new.json", "", testutil.AdminKey)
+	testutil.RequireStatus(t, rr, http.StatusOK)
+	got, ok := cpa.LastRequest(path)
+	if !ok || got.Query != "name=new.json" || got.Authorization != "Bearer management-key" {
+		t.Fatalf("proxy: %+v", got)
+	}
+	for _, tc := range []struct {
+		method, key string
+		want        int
+	}{{http.MethodGet, "", 401}, {http.MethodGet, "management-key", 401}, {http.MethodPost, testutil.AdminKey, 405}} {
+		before := len(cpa.Requests())
+		rr = testutil.Request(t, handler, tc.method, path, "", tc.key)
+		testutil.RequireStatus(t, rr, tc.want)
+		if len(cpa.Requests()) != before {
+			t.Fatal("rejected request reached CPA")
+		}
+	}
+}

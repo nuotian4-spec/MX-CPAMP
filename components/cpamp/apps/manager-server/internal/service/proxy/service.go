@@ -201,6 +201,19 @@ func (s *Service) ProxyV8APIKeysConfig(w http.ResponseWriter, r *http.Request, w
 	s.proxyToSavedSetup(w, r, writeError, true, false)
 }
 
+// ProxyV8CredentialModels forwards the read-only per-credential model result.
+func (s *Service) ProxyV8CredentialModels(w http.ResponseWriter, r *http.Request, writeError func(http.ResponseWriter, int, error), methodNotAllowed func(http.ResponseWriter)) {
+	if r.URL.Path != "/v8/management/credentials/models" || !isCanonicalRequestPath(r.URL) {
+		writeError(w, http.StatusNotFound, errors.New("unknown credential model path"))
+		return
+	}
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+	s.proxyToSavedSetup(w, r, writeError, true, false)
+}
+
 func (s *Service) proxyToSavedSetup(w http.ResponseWriter, r *http.Request, writeError func(http.ResponseWriter, int, error), useSavedManagementKey bool, rewritePluginOrigin bool, guards ...*configYAMLGuard) {
 	setup, ok, err := s.resolveSetup(r.Context())
 	if err != nil {

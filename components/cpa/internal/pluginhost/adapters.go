@@ -110,6 +110,7 @@ func executorFormatContains(formats []sdktranslator.Format, target sdktranslator
 }
 
 type AuthModelResult struct {
+	PluginID string
 	Provider string
 	Models   []*registry.ModelInfo
 	Auth     *coreauth.Auth
@@ -405,7 +406,7 @@ func (h *Host) ModelsForAuth(ctx context.Context, auth *coreauth.Auth) AuthModel
 		resp, errModels := h.callModelsForAuth(ctx, record, record.plugin.Capabilities.ModelProvider, auth)
 		if errModels != nil {
 			log.Warnf("pluginhost: models for auth %s failed: %v", auth.ID, errModels)
-			return AuthModelResult{Handled: true, Err: errModels}
+			return AuthModelResult{PluginID: record.id, Handled: true, Err: errModels}
 		}
 		respProvider := normalizeProviderID(resp.Provider)
 		if respProvider != "" && respProvider != providerKey {
@@ -432,7 +433,7 @@ func (h *Host) ModelsForAuth(ctx context.Context, auth *coreauth.Auth) AuthModel
 		if authDataHasValue(resp.AuthUpdate) {
 			updated = h.AuthDataToCoreAuth(authDataWithDefaults(resp.AuthUpdate, auth), path, auth.FileName)
 		}
-		return AuthModelResult{Provider: respProvider, Models: models, Auth: updated, Handled: true}
+		return AuthModelResult{PluginID: record.id, Provider: respProvider, Models: models, Auth: updated, Handled: true}
 	}
 	return AuthModelResult{}
 }

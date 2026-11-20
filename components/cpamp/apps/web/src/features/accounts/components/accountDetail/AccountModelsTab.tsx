@@ -1,3 +1,5 @@
+import { ModelDiscoveryNotice } from '@/features/authFiles/components/ModelDiscoveryNotice';
+import type { ModelDiscoveryState } from '@/services/api/authFiles';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BPSAccountModelsSummary } from '@/features/system/components/BPSModelsPanel';
@@ -38,6 +40,7 @@ interface AccountModelsTabProps {
   refreshing: boolean;
   error: 'unsupported' | 'failed' | null;
   models: AuthFileModelItem[];
+  discovery?: ModelDiscoveryState;
   modelDefinitions: AuthFileModelItem[];
   modelDefinitionsLoading: boolean;
   modelDefinitionsError: 'unsupported' | 'failed' | null;
@@ -99,6 +102,7 @@ export function AccountModelsTab({
   refreshing,
   error,
   models,
+  discovery,
   modelDefinitions,
   modelDefinitionsLoading,
   modelDefinitionsError,
@@ -574,6 +578,13 @@ export function AccountModelsTab({
         </div>
       ) : null}
 
+      {fileType === 'cpa-bps' && !loading && !error && (
+        <ModelDiscoveryNotice
+          discovery={discovery}
+          modelCount={models.length}
+          disabled={row.disabled}
+        />
+      )}
       {loading && projection.rows.length === 0 ? (
         <div className={styles.configurationLoading}>
           <span>{t('auth_files.models_loading')}</span>
@@ -583,13 +594,18 @@ export function AccountModelsTab({
           title={t('auth_files.models_unsupported')}
           description={t('auth_files.models_unsupported_desc')}
         />
-      ) : showLoadFailed ? null : showEmpty ? (
+      ) : showLoadFailed ||
+        (fileType === 'cpa-bps' &&
+          discovery?.status === 'failed' &&
+          models.length === 0) ? null : showEmpty ? (
         <EmptyState
           title={t('auth_files.models_empty')}
           description={
-            isBps
-              ? '请前往系统设置中的BPS模型设置发布清单，并检查本凭证禁用规则。'
-              : t('auth_files.models_empty_desc')
+            fileType === 'cpa-bps'
+              ? '请查看上方模型发现状态；刷新目录不会重新授权或重新发现。'
+              : isBps
+                ? '请前往系统设置中的BPS模型设置发布清单，并检查本凭证禁用规则。'
+                : t('auth_files.models_empty_desc')
           }
         />
       ) : filteredRows.length === 0 ? (

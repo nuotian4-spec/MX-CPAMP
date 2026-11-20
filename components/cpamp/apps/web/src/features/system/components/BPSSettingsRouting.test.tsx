@@ -21,7 +21,11 @@ vi.mock('@/services/api/loginTasks', () => ({
   loginTasksApi: { capabilities: mocks.capabilities },
 }));
 vi.mock('@/services/api/authFiles', () => ({
-  authFilesApi: { list: mocks.list, getModelsForAuthFile: mocks.models },
+  authFilesApi: {
+    list: mocks.list,
+    getModelsWithDiscovery: (...args: unknown[]) =>
+      mocks.models(...args).then((models: unknown) => ({ models })),
+  },
 }));
 vi.mock('@/services/api/plugins', () => ({ pluginsApi: { getConfig: mocks.config } }));
 vi.mock('@/services/api/bpsSettings', () => ({

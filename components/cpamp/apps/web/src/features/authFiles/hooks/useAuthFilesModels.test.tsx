@@ -8,6 +8,7 @@ import { useAuthFilesModels, type UseAuthFilesModelsResult } from './useAuthFile
 const { mocks } = vi.hoisted(() => ({
   mocks: {
     getModelsForAuthFile: vi.fn(),
+    getModelsWithDiscovery: vi.fn(),
     getModelDefinitions: vi.fn(),
     showNotification: vi.fn(),
     t: (key: string, options?: { message?: string }) =>
@@ -26,6 +27,7 @@ vi.mock('@/services/api', async (importOriginal) => {
     authFilesApi: {
       ...actual.authFilesApi,
       getModelsForAuthFile: mocks.getModelsForAuthFile,
+      getModelsWithDiscovery: mocks.getModelsWithDiscovery,
       getModelDefinitions: mocks.getModelDefinitions,
     },
   };
@@ -64,6 +66,7 @@ describe('useAuthFilesModels', () => {
     latest = null;
     renderer = null;
     mocks.getModelsForAuthFile.mockReset();
+    mocks.getModelsWithDiscovery.mockReset();
     mocks.getModelDefinitions.mockReset();
     mocks.showNotification.mockReset();
     mocks.getModelsForAuthFile.mockResolvedValue([{ id: 'gpt-5-codex' }]);
@@ -80,6 +83,91 @@ describe('useAuthFilesModels', () => {
       await Promise.resolve();
     });
   };
+
+  it('缓存BPS发现状态时保持凭证隔离并丢弃旧响应', async () => {
+    await mount();
+    const bps = { ...file, type: 'cpa-bps', provider: 'cpa-bps' };
+    mocks.getModelsWithDiscovery.mockResolvedValue({
+      models: [],
+      discovery: { status: 'failed', error_code: 'bps_model_discovery_rejected' },
+    });
+    await act(async () => {
+      await latest?.showModels(bps);
+    });
+    expect(latest?.modelsDiscovery?.status).toBe('failed');
+    mocks.getModelsWithDiscovery.mockResolvedValue({
+      models: [],
+      discovery: { status: 'succeeded' },
+    });
+    await act(async () => {
+      await latest?.showModels({ ...bps, id: 'second', name: 'second.json' });
+    });
+    expect(latest?.modelsDiscovery?.status).toBe('succeeded');
+    await act(async () => {
+      await latest?.showModels(bps);
+    });
+    expect(latest?.modelsDiscovery?.status).toBe('failed');
+    let finish!: (value: { models: []; discovery: { status: string } }) => void;
+    mocks.getModelsWithDiscovery.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    let oldRequest: Promise<void> | undefined;
+    await act(async () => {
+      oldRequest = latest?.refreshModels(bps);
+    });
+    await act(async () => {
+      await latest?.showModels({ ...bps, id: 'second', name: 'second.json' });
+    });
+    await act(async () => {
+      finish({ models: [], discovery: { status: 'disabled' } });
+      await oldRequest;
+    });
+    expect(latest?.modelsDiscovery?.status).toBe('succeeded');
+  });
+
+  it('停用更新会清除缓存并阻止挂起的发现结果回写', async () => {
+    await mount();
+    const bps = { ...file, type: 'cpa-bps', provider: 'cpa-bps' };
+    mocks.getModelsWithDiscovery.mockResolvedValue({
+      models: [],
+      discovery: { status: 'succeeded' },
+    });
+    await act(async () => {
+      await latest?.showModels(bps);
+    });
+    let finish!: (value: { models: []; discovery: { status: string } }) => void;
+    mocks.getModelsWithDiscovery.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    let pending: Promise<void> | undefined;
+    await act(async () => {
+      pending = latest?.refreshModels(bps);
+    });
+    act(() => {
+      latest?.invalidateModels(bps);
+    });
+    expect(latest?.modelsDiscovery).toBeUndefined();
+    await act(async () => {
+      finish({ models: [], discovery: { status: 'failed' } });
+      await pending;
+    });
+    expect(latest?.modelsDiscovery).toBeUndefined();
+    mocks.getModelsWithDiscovery.mockResolvedValueOnce({
+      models: [],
+      discovery: { status: 'disabled' },
+    });
+    await act(async () => {
+      await latest?.showModels(bps);
+    });
+    expect(latest?.modelsDiscovery?.status).toBe('disabled');
+    expect(mocks.getModelsWithDiscovery).toHaveBeenCalledTimes(3);
+  });
 
   it('loads models by runtime identity and caches provider definitions', async () => {
     await mount();

@@ -245,6 +245,17 @@ class ApiClient {
   /**
    * GET 请求
    */
+  async getV8<T = unknown>(url: string, scope?: ApiClientRequestScope): Promise<T> {
+    const config = createScopedApiRequestConfig(
+      scope ?? {
+        apiBase: this.apiBase,
+        managementKey: this.managementKey,
+      }
+    );
+    config.baseURL = String(config.baseURL).replace(/\/v0\/management\/?$/, '/v8/management');
+    return this.get<T>(url, config);
+  }
+
   async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     if (__DEMO_SITE__ && isDemoMode()) {
       return handleDemoApiRequest<T>('get', url, undefined, config);

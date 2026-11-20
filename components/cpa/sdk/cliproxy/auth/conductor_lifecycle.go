@@ -415,6 +415,11 @@ func (m *Manager) updateInternalLocked(ctx context.Context, base, auth *Auth, mo
 	} else {
 		auth.CredentialVersion = existingVersion
 	}
+	if credChanged || existing.Disabled != auth.Disabled || existing.ProxyURL != auth.ProxyURL ||
+		!modelRegistrationInputsMatch(auth, existing.RegistrationEpoch, existing.Prefix, existing.Provider,
+			existing.Disabled || existing.Status == StatusDisabled, existing.AuthKind(), existing.Attributes) {
+		m.invalidateModelDiscoveryLocked(auth.ID)
+	}
 	cooldownStateChanged := false
 	now := time.Now()
 	if !existing.Disabled && existing.Status != StatusDisabled && !auth.Disabled && auth.Status != StatusDisabled {
@@ -697,6 +702,8 @@ func (m *Manager) RemoveIf(ctx context.Context, id string, predicate func(*Auth)
 	}
 	provider := strings.TrimSpace(existing.Provider)
 	delete(m.auths, id)
+	delete(m.modelDiscoveries, id)
+	delete(m.modelDiscoveryInvalidBefore, id)
 	m.notifyAuthChangeLocked(id)
 	if m.modelPoolOffsets != nil {
 		delete(m.modelPoolOffsets, id)

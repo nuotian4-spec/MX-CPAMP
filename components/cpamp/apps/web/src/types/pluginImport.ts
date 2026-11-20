@@ -26,6 +26,8 @@ export type UpdateOperationStatus =
   | 'recovery_required';
 
 export interface UpdateOperation {
+  plugin_id?: string;
+  action?: string;
   id: string;
   type: string;
   target_version: string;

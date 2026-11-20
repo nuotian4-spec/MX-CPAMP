@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { authFilesApi } from '@/services/api/authFiles';
+import { ModelDiscoveryNotice } from '@/features/authFiles/components/ModelDiscoveryNotice';
+import { authFilesApi, type ModelDiscoveryState } from '@/services/api/authFiles';
 import { pluginsApi } from '@/services/api/plugins';
 import type { ApiClientRequestScope } from '@/services/api/client';
 import type { AuthFileItem, PluginConfigObject } from '@/types';
@@ -20,6 +21,7 @@ function PluginModelsContent({ scope }: { scope: ApiClientRequestScope }) {
   const [config, setConfig] = useState<PluginConfigObject>();
   const [selected, setSelected] = useState('');
   const [models, setModels] = useState<string[]>();
+  const [discovery, setDiscovery] = useState<ModelDiscoveryState>();
   const [loading, setLoading] = useState(true);
   const [modelLoading, setModelLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,9 +63,12 @@ function PluginModelsContent({ scope }: { scope: ApiClientRequestScope }) {
     let disposed = false;
     if (!file) return;
     authFilesApi
-      .getModelsForAuthFile(String(file.id || file.name), scope)
+      .getModelsWithDiscovery(String(file.id || file.name), scope)
       .then((result) => {
-        if (!disposed) setModels([...new Set(result.map((item) => item.id))]);
+        if (!disposed) {
+          setModels([...new Set(result.models.map((item) => item.id))]);
+          setDiscovery(result.discovery);
+        }
       })
       .catch(() => {
         if (!disposed) setModelError('读取本站注册目录失败；模型状态未知，请刷新。');
@@ -92,6 +97,7 @@ function PluginModelsContent({ scope }: { scope: ApiClientRequestScope }) {
     setFiles([]);
     setConfig(undefined);
     setModels(undefined);
+    setDiscovery(undefined);
     setModelError('');
     setError('');
     setModelLoading(true);
@@ -112,6 +118,7 @@ function PluginModelsContent({ scope }: { scope: ApiClientRequestScope }) {
           disabled={loading || !files.length}
           onChange={(event) => {
             setModels(undefined);
+            setDiscovery(undefined);
             setModelError('');
             setModelLoading(true);
             setSelected(event.target.value);
@@ -135,7 +142,14 @@ function PluginModelsContent({ scope }: { scope: ApiClientRequestScope }) {
           。注册目录不代表实时官方权限、剩余额度或推理成功。
         </p>
       )}
-      {models?.length === 0 && (
+      {file && !modelLoading && !modelError && (
+        <ModelDiscoveryNotice
+          discovery={discovery}
+          modelCount={models?.length ?? 0}
+          disabled={file.disabled === true}
+        />
+      )}
+      {models?.length === 0 && discovery?.status !== 'failed' && (
         <p>此凭证尚无本站注册模型；请核对插件配置与账号注册状态，不要反复重新登录。</p>
       )}
       {models && (

@@ -588,7 +588,7 @@ export async function handleDemoApiRequest<T = unknown>(
     return ok as T;
   }
   if (pathname === '/auth-files/status') return ok as T;
-  if (pathname === '/auth-files/models') {
+  if (pathname === '/auth-files/models' || pathname === '/credentials/models') {
     const file = findDemoAuthFile(params.get('name') ?? '');
     return {
       models: file ? getDemoModelsForProvider(String(file.type ?? file.provider ?? '')) : [],

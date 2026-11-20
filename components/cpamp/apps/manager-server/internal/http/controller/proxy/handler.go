@@ -57,6 +57,19 @@ func (h *Handler) V8APIKeysConfig(w http.ResponseWriter, r *http.Request) {
 	h.App.ProxyService.ProxyV8APIKeysConfig(w, r, response.Error, response.MethodNotAllowed)
 }
 
+func (h *Handler) V8CredentialModels(w http.ResponseWriter, r *http.Request) {
+	ok, err := h.App.AdminAuthService.VerifyHeader(r.Context(), r.Header.Get("Authorization"))
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, errors.New("invalid admin key"))
+		return
+	}
+	h.App.ProxyService.ProxyV8CredentialModels(w, r, response.Error, response.MethodNotAllowed)
+}
+
 // V8Updates forwards only update-center routes for verified Manager admins.
 func (h *Handler) V8Updates(w http.ResponseWriter, r *http.Request) {
 	ok, err := h.App.AdminAuthService.VerifyHeader(r.Context(), r.Header.Get("Authorization"))
