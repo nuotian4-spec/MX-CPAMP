@@ -462,6 +462,7 @@ func applyAuthFileFieldsPatch(targetAuth *coreauth.Auth, req map[string]json.Raw
 				}
 				targetAuth.Metadata[coreauth.AttributeConcurrencyLimit] = limit
 			}
+			delete(targetAuth.Attributes, coreauth.AttributeConcurrencyLimit)
 		} else if fieldPath == coreauth.AttributeWeight {
 			if value == nil {
 				delete(targetAuth.Metadata, coreauth.AttributeWeight)

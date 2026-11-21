@@ -221,6 +221,9 @@ func synthesizeFileAuths(ctx *SynthesisContext, fullPath string, data []byte) ([
 					return nil, true, fmt.Errorf("invalid plugin auth weight in %s: %w", defaultFileName, errWeight)
 				}
 				coreauth.ApplyAuthPriorityMetadata(auth, metadata)
+				if errLimit := coreauth.ApplyFileConcurrencyMetadata(auth, metadata); errLimit != nil {
+					return nil, true, fmt.Errorf("invalid plugin auth concurrency in %s: %w", defaultFileName, errLimit)
+				}
 				if _, inherited := auth.Attributes[coreauth.AttributeFilePriority]; inherited {
 					if setter, ok := auth.Storage.(interface{ SetMetadata(map[string]any) }); ok {
 						setter.SetMetadata(auth.Metadata)

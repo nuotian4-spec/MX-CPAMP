@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"maps"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MoeForge/moego/json"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/kilolatency"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/requestlatency"
@@ -115,6 +115,40 @@ func ParseConcurrencyLimit(value any) (int, error) {
 	}
 	return int(v), nil
 }
+
+// ApplyFileConcurrencyMetadata projects the host-owned limit from the source file.
+// Plugin metadata and attributes must not replace an administrator's override.
+func ApplyFileConcurrencyMetadata(auth *Auth, metadata map[string]any) error {
+	if auth == nil {
+		return nil
+	}
+	raw := metadata[AttributeConcurrencyLimit]
+	var limit int
+	if raw != nil {
+		var err error
+		limit, err = ParseConcurrencyLimit(raw)
+		if err != nil {
+			return err
+		}
+	}
+	_, hadMetadata := auth.Metadata[AttributeConcurrencyLimit]
+	_, hadAttribute := auth.Attributes[AttributeConcurrencyLimit]
+	delete(auth.Attributes, AttributeConcurrencyLimit)
+	delete(auth.Metadata, AttributeConcurrencyLimit)
+	if raw != nil {
+		if auth.Metadata == nil {
+			auth.Metadata = make(map[string]any)
+		}
+		auth.Metadata[AttributeConcurrencyLimit] = limit
+	}
+	if raw != nil || hadMetadata || hadAttribute {
+		if setter, ok := auth.Storage.(interface{ SetMetadata(map[string]any) }); ok {
+			setter.SetMetadata(auth.Metadata)
+		}
+	}
+	return nil
+}
+
 func credentialConcurrencyLimit(auth *Auth) (int, *int) {
 	if auth != nil {
 		if raw := auth.Attributes[AttributeConcurrencyLimit]; raw != "" {

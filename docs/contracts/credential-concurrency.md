@@ -16,6 +16,8 @@ Default limit: 20 per runtime AuthID, shared across models. Missing override inh
 
 `PATCH /v8/management/credentials/fields` with `{name: AUTH_ID, concurrency_limit: 20}`. A positive integer up to 2147483647 is accepted. `null` removes the override and restores the default. Invalid/fractional/nonpositive values return 400. Existing mutation and persistence apply; refresh and same-identity re-login preserve metadata.
 
+The override belongs to the host. Token refresh and request preparation retain the current administrator value even when a plugin omits or returns an older value. For plugin files, initial loading and watcher reload read the override from the source JSON, replacing stale plugin attributes. Clearing it removes the field from serialized plugin storage as well as runtime metadata. Management edits return an error before publishing the edited runtime state if storage fails; plugin storage snapshots are cloned so a failed edit does not mutate the published storage object. Manager still verifies the effective limit after a successful write.
+
 ## Config API key override
 
 Read `/v8/management/config/api-keys`, retain ETag, locate the exact key node by `auth_index` matching the snapshot `auth_index` (existing v8 config mapping). Update only its `concurrency-limit` with the existing config PUT/PATCH and `If-Match`; omit/remove the field to inherit 20. Never edit by array position alone or return raw config keys to the browser. Changed ETag or missing/ambiguous mapping requires refetch, not guessing. `concurrency-limit` is per `keys[]` entry, not the provider group; it does not enter AuthID derivation.

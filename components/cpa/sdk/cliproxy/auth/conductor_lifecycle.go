@@ -313,7 +313,8 @@ func (m *Manager) Update(ctx context.Context, auth *Auth) (*Auth, error) {
 
 // Modify loads the latest auth for id while holding the per-auth mutation gate,
 // applies edit to a clone of that auth, and commits the result through the
-// standard persistence and publication path. It returns (nil, false, nil) if
+// persistence and publication path, returning storage errors before publication.
+// It returns (nil, false, nil) if
 // the auth is not present when the gate is acquired.
 func (m *Manager) Modify(ctx context.Context, id string, expectedEpoch uint64, edit func(*Auth) error) (*Auth, bool, error) {
 	id = strings.TrimSpace(id)
@@ -350,7 +351,7 @@ func (m *Manager) Modify(ctx context.Context, id string, expectedEpoch uint64, e
 	if expectedEpoch != 0 {
 		current.RegistrationEpoch = expectedEpoch
 	}
-	committedAuth, didCommit, persistCooldown, errUpdate := m.updateInternalLocked(ctx, nil, current, updateModeReplace)
+	committedAuth, didCommit, persistCooldown, errUpdate := m.updateInternalLocked(ctx, nil, current, updateModeReplace, true)
 	releaseMutation()
 	if errUpdate == nil && didCommit && committedAuth != nil {
 		m.finishAuthUpdate(ctx, committedAuth, persistCooldown)
@@ -366,7 +367,7 @@ func (m *Manager) updateInternal(ctx context.Context, base, auth *Auth, mode upd
 	if errMutation != nil {
 		return nil, errMutation
 	}
-	committedAuth, didCommit, persistCooldown, err := m.updateInternalLocked(ctx, base, auth, mode)
+	committedAuth, didCommit, persistCooldown, err := m.updateInternalLocked(ctx, base, auth, mode, false)
 	releaseMutation()
 	if err == nil && didCommit && committedAuth != nil {
 		m.finishAuthUpdate(ctx, committedAuth, persistCooldown)
@@ -403,7 +404,7 @@ func (m *Manager) finishAuthUpdate(ctx context.Context, committed *Auth, persist
 // The second return value reports whether this call actually committed new
 // state (versus returning the current snapshot for a discarded stale
 // update); only real commits may run post-commit side effects.
-func (m *Manager) updateInternalLocked(ctx context.Context, base, auth *Auth, mode updateAuthMode) (committedAuth *Auth, committed bool, persistCooldown bool, err error) {
+func (m *Manager) updateInternalLocked(ctx context.Context, base, auth *Auth, mode updateAuthMode, requirePersistence bool) (committedAuth *Auth, committed bool, persistCooldown bool, err error) {
 	if auth == nil || auth.ID == "" {
 		return nil, false, false, nil
 	}
@@ -711,6 +712,10 @@ func (m *Manager) updateInternalLocked(ctx context.Context, base, auth *Auth, mo
 	refreshPatchBeforeSave := auth.CodexRefreshPatch
 	persistMetaMint := (mode == updateModePrepare || mode == updateModeRefresh) && strings.EqualFold(strings.TrimSpace(auth.Provider), "meta")
 	if errPersist := m.persistLocked(ctx, auth); errPersist != nil {
+		if requirePersistence {
+			m.mu.Unlock()
+			return nil, false, false, fmt.Errorf("persist auth modification: %w", errPersist)
+		}
 		// A minted Meta key must reach the store before requests can use it.
 		if persistMetaMint {
 			m.mu.Unlock()

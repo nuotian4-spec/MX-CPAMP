@@ -1172,7 +1172,7 @@
     },
     "components/cpa/internal/api/handlers/management/auth_files_fields.go": {
       "mode": "100644",
-      "blob": "b075f89e82b76ca365843106e63378ec80813d86"
+      "blob": "ab0f47fa139a397750c6e99d460d68480e6d169f"
     },
     "components/cpa/internal/api/handlers/management/auth_files_filter_test.go": {
       "mode": "100644",
@@ -1413,6 +1413,10 @@
     "components/cpa/internal/api/handlers/management/core_updates.go": {
       "mode": "100644",
       "blob": "9ac1d726a0708f2b44415f91423a5854d93b3402"
+    },
+    "components/cpa/internal/api/handlers/management/credential_concurrency_plugin_test.go": {
+      "mode": "100644",
+      "blob": "78782b73f22faa81ca74c9010950f00d8d27b8e6"
     },
     "components/cpa/internal/api/handlers/management/credential_concurrency_test.go": {
       "mode": "100644",
@@ -4088,7 +4092,7 @@
     },
     "components/cpa/internal/pluginhost/auth_provider.go": {
       "mode": "100644",
-      "blob": "1f4d3796203a32fbf4dde0173bf10b4c1b069834"
+      "blob": "414518f44ef0b55f900669d5f7879bb8b8e0af17"
     },
     "components/cpa/internal/pluginhost/auth_provider_oauth_provider_test.go": {
       "mode": "100644",
@@ -8984,7 +8988,7 @@
     },
     "components/cpa/internal/watcher/synthesizer/file.go": {
       "mode": "100644",
-      "blob": "f5a7b91a2ee3b5a0cd820330eb850b5cd84c5b59"
+      "blob": "1c541f99b6413d861f87cb9f9682eb9d4f7fe35a"
     },
     "components/cpa/internal/watcher/synthesizer/file_oauth_provider_test.go": {
       "mode": "100644",
@@ -9688,7 +9692,7 @@
     },
     "components/cpa/sdk/auth/filestore.go": {
       "mode": "100644",
-      "blob": "f00f5d7cbf1a4a250b9efe7336aec131d2689140"
+      "blob": "6860d479b3de6fcd8e762b25061f2680ace0de0f"
     },
     "components/cpa/sdk/auth/filestore_bps_test.go": {
       "mode": "100644",
@@ -10184,7 +10188,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/conductor_lifecycle.go": {
       "mode": "100644",
-      "blob": "5c0d037125a62c01245278d60a59a6adc605df3d"
+      "blob": "d0ac1f2b254b93764f4e8ca31172afae1efa853a"
     },
     "components/cpa/sdk/cliproxy/auth/conductor_lifecycle_race_test.go": {
       "mode": "100644",
@@ -10300,7 +10304,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/conductor_selection.go": {
       "mode": "100644",
-      "blob": "20d0f768f62ff00e594d07fcb07700fe884505a0"
+      "blob": "a7f2a696b8e840837fd42bfe4dd1ef44b9990f26"
     },
     "components/cpa/sdk/cliproxy/auth/conductor_selection_cooldown_test.go": {
       "mode": "100644",
@@ -10408,7 +10412,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/credential_concurrency.go": {
       "mode": "100644",
-      "blob": "c6016d18ae0524fb5cb1ffad9d8dd9f63939f604"
+      "blob": "56f7c09b128f9ed584cc309e0b8b23132a16f7c0"
     },
     "components/cpa/sdk/cliproxy/auth/credential_concurrency_test.go": {
       "mode": "100644",
@@ -10732,7 +10736,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/metadata_merge.go": {
       "mode": "100644",
-      "blob": "b29b699e86ffbc204f1d1e1a2367e213e8f1c82f"
+      "blob": "62348b0b81c9f75ebd7c94ef0723857671dbfd20"
     },
     "components/cpa/sdk/cliproxy/auth/metadata_merge_test.go": {
       "mode": "100644",
@@ -10988,7 +10992,7 @@
     },
     "components/cpa/sdk/cliproxy/auth/types.go": {
       "mode": "100644",
-      "blob": "9e6394cad6a98106b6e95368f5e2bfbcea7cfb5d"
+      "blob": "9101f14665afe4a9a92d49c0d9dcfbd206ac2b9c"
     },
     "components/cpa/sdk/cliproxy/auth/types_cooling_test.go": {
       "mode": "100644",
@@ -19954,16 +19958,16 @@
   ],
   "incremental_review": {
     "status": "PASS",
-    "reviewer": "core8080_review",
-    "receipt": "docs/execution/CPA-UPSTREAM-V8.0.80-REVIEW-20261121.zh-CN.md",
+    "reviewer": "current-session-source-review",
+    "receipt": "docs/execution/BPS-CONCURRENCY-FIX-20261121.zh-CN.md",
     "normal_startup_preserved": true,
     "source_mapping_reviewed": true,
-    "review_note": "CPA v8.0.80完整增量与本站定制接缝已独立核对；普通启动、BPS/Kilo通道与维护边界保持。验证结果及既有失败边界见本轮回执。"
+    "review_note": "本轮十个组件路径已核对；并发字段生命周期、插件存储快照及管理写入错误传播专项通过。当前会话复核，非独立审查；既有运行证据保留。"
   },
   "working_tree_candidate": {
-    "base_commit": "966ad2f29e8b4d1848438b6ee055c1cdc5f20ff1",
-    "component_tree": "1163a73a8ef7a1b46944a0fe14a996181b8a3258",
-    "input_record": "docs/execution/CPA-UPSTREAM-V8.0.80-20261121.zh-CN.md",
-    "publication": "候选组件树绑定；正式发布绑定后续固定提交。"
+    "base_commit": "58cdb174d37ee2e80fd976a0e270de869ef2e1fa",
+    "component_tree": "be4b0d17f27234ceb55e6932dc47f23438909b5a",
+    "input_record": "docs/execution/BPS-CONCURRENCY-FIX-20261121.zh-CN.md",
+    "publication": "本地组件候选树绑定；正式发布绑定后续固定提交。"
   }
 }

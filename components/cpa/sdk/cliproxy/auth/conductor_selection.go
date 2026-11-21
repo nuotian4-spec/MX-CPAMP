@@ -2086,7 +2086,7 @@ func (m *Manager) updateIfRegistrationCurrent(ctx context.Context, base *Auth, u
 	if !matches {
 		return nil, false, nil
 	}
-	committedAuth, didCommit, persistCooldown, errUpdate := m.updateInternalLocked(ctx, nil, updated, updateModeReplace)
+	committedAuth, didCommit, persistCooldown, errUpdate := m.updateInternalLocked(ctx, nil, updated, updateModeReplace, false)
 	if discoveryAttempt != nil && errUpdate == nil && didCommit && committedAuth != nil {
 		m.mu.RLock()
 		invalidated := *discoveryAttempt <= m.modelDiscoveryInvalidBefore[base.ID]

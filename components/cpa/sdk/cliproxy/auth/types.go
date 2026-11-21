@@ -531,6 +531,9 @@ func (a *Auth) Clone() *Auth {
 		}
 	}
 	copyAuth.Runtime = a.Runtime
+	if storage, ok := a.Storage.(interface{ Clone() baseauth.TokenStorage }); ok {
+		copyAuth.Storage = storage.Clone()
+	}
 	return &copyAuth
 }
 

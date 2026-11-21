@@ -239,6 +239,9 @@ func mergeAuthContent(base, current, updated *Auth) *Auth {
 	// 1. Three-way merge for Metadata (excluding proxy_url which has dedicated canonical merge)
 	if updated.Metadata != nil {
 		for k, v := range updated.Metadata {
+			if k == AttributeConcurrencyLimit {
+				continue
+			}
 			if strings.EqualFold(strings.TrimSpace(k), "proxy_url") {
 				continue
 			}
@@ -286,6 +289,9 @@ func mergeAuthContent(base, current, updated *Auth) *Auth {
 		// Deletions by executor: only delete if user didn't modify the field concurrently
 		if baseMeta != nil {
 			for k, baseVal := range baseMeta {
+				if k == AttributeConcurrencyLimit {
+					continue
+				}
 				trimmedKey := strings.ToLower(strings.TrimSpace(k))
 				if trimmedKey == "proxy_url" || trimmedKey == "siwc" || trimmedKey == "use_siwc" {
 					continue
@@ -406,6 +412,9 @@ func mergeAuthContent(base, current, updated *Auth) *Auth {
 			baseAttrs = base.Attributes
 		}
 		for k, v := range updated.Attributes {
+			if k == AttributeConcurrencyLimit {
+				continue
+			}
 			baseVal, hadInBase := baseAttrs[k]
 			currentVal, hadInCurrent := current.Attributes[k]
 
@@ -418,6 +427,9 @@ func mergeAuthContent(base, current, updated *Auth) *Auth {
 		}
 		if baseAttrs != nil {
 			for k, baseVal := range baseAttrs {
+				if k == AttributeConcurrencyLimit {
+					continue
+				}
 				if _, inUpdated := updated.Attributes[k]; !inUpdated {
 					if currentVal, ok := current.Attributes[k]; ok {
 						if baseVal == currentVal {

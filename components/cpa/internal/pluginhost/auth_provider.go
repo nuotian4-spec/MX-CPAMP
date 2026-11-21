@@ -13,6 +13,7 @@ import (
 
 	"github.com/MoeForge/moego/json"
 	"github.com/MoeForge/moego/ojson"
+	baseauth "github.com/router-for-me/CLIProxyAPI/v8/internal/auth"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/config"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
@@ -1202,6 +1203,13 @@ type pluginTokenStorage struct {
 	meta     map[string]any
 }
 
+func (s *pluginTokenStorage) Clone() baseauth.TokenStorage {
+	if s == nil {
+		return (*pluginTokenStorage)(nil)
+	}
+	return &pluginTokenStorage{provider: s.provider, rawJSON: bytes.Clone(s.rawJSON), meta: cloneAnyMap(s.meta)}
+}
+
 func (s *pluginTokenStorage) SetMetadata(meta map[string]any) {
 	if s == nil {
 		return
@@ -1281,6 +1289,8 @@ func mergedStorageJSON(raw []byte, metadata map[string]any, provider string) ([]
 			out = make(map[string]any)
 		}
 	}
+	// The host owns this field, including removal when the override is cleared.
+	delete(out, coreauth.AttributeConcurrencyLimit)
 	for key, value := range metadata {
 		out[key] = value
 	}
