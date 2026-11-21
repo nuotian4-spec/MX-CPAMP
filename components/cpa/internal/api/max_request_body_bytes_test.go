@@ -397,6 +397,7 @@ access:
 	})
 
 	t.Run("v8 management chunked body exceeding limit returns 413", func(t *testing.T) {
+		registerServerTestUpdateSite(t)
 		rawCfg := "config-version: 8\nserver:\n  max-request-body-bytes: 32\nmanagement:\n  allow-remote: true\n  secret-key: mgmt-secret\n"
 		cfgMgmt := parseTestServerConfigYAML(t, rawCfg)
 		srvMgmt := newTestServerWithConfig(t, cfgMgmt)

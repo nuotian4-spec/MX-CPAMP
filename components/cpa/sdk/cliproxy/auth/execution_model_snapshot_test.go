@@ -14,6 +14,8 @@ func TestResolveExecutionModelWithConfig(t *testing.T) {
 	manager := NewManager(nil, nil, nil)
 	manager.SetConfig(next)
 	manager.SetOAuthModelAlias(next.OAuthModelAlias)
+	selfAlias := &Auth{Provider: "codex", Prefix: "prefix", Metadata: map[string]any{"access_token": "synthetic"}}
+	SetOAuthModelAliasesAttribute(selfAlias, []config.OAuthModelAlias{{Name: "search", Alias: "Search"}})
 	for _, tc := range []struct {
 		name             string
 		auth             *Auth
@@ -22,6 +24,7 @@ func TestResolveExecutionModelWithConfig(t *testing.T) {
 		{"oauth", &Auth{Provider: "codex", Prefix: "prefix", Metadata: map[string]any{"access_token": "synthetic"}}, "old-model(high)", "new-model(high)"},
 		{"api_key", &Auth{Provider: "codex", Prefix: "prefix", Attributes: map[string]string{AttributeAPIKey: "synthetic"}}, "old-api(high)", "new-api(high)"},
 		{"home", &Auth{Provider: "codex", Attributes: map[string]string{homeUpstreamModelAttributeKey: "home-model"}}, "home-model", "home-model"},
+		{"per_auth_self_alias", selfAlias, "search(high)", "search(high)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := manager.ResolveExecutionModelWithConfig(old, tc.auth, "prefix/search(high)"); got != tc.oldWant {

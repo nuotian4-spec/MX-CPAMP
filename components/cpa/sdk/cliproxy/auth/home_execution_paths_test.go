@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"sync"
@@ -10,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/MoeForge/moego/json"
 	internalconfig "github.com/router-for-me/CLIProxyAPI/v8/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/home"
 	internallogging "github.com/router-for-me/CLIProxyAPI/v8/internal/logging"
@@ -236,6 +236,7 @@ func TestHomeStreamConsumerCancelEndsSelection(t *testing.T) {
 	registry := executionregistry.New()
 	manager.PublishHomeDispatch(homeExecutionDispatcher{}, registry, 1)
 	chunks := make(chan cliproxyexecutor.StreamChunk, 1)
+	t.Cleanup(func() { close(chunks) })
 	chunks <- cliproxyexecutor.StreamChunk{Payload: []byte("initial")}
 	manager.RegisterExecutor(&homeExecutionStreamExecutor{chunks: chunks})
 

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/MoeForge/moego/json"
 	"github.com/gin-gonic/gin"
 	internalconfig "github.com/router-for-me/CLIProxyAPI/v8/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/interfaces"
@@ -586,9 +586,14 @@ func TestExecuteStreamWithAuthManager_ResetsResponsesValidatorOnBootstrapRetry(t
 
 func TestExecuteStreamWithAuthManager_CancelDuringSynchronousBootstrap(t *testing.T) {
 	started := make(chan struct{})
-	executor := &bootstrapStreamExecutor{stream: func(_ context.Context, _ int) (*coreexecutor.StreamResult, error) {
+	executor := &bootstrapStreamExecutor{stream: func(ctx context.Context, _ int) (*coreexecutor.StreamResult, error) {
+		chunks := make(chan coreexecutor.StreamChunk)
+		go func() {
+			<-ctx.Done()
+			close(chunks)
+		}()
 		close(started)
-		return &coreexecutor.StreamResult{Chunks: make(chan coreexecutor.StreamChunk)}, nil
+		return &coreexecutor.StreamResult{Chunks: chunks}, nil
 	}}
 	handler, _ := registerBootstrapExecutor(t, executor)
 	ctx, cancel := context.WithCancel(context.Background())

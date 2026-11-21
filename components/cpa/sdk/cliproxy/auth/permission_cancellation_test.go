@@ -61,3 +61,30 @@ func TestBPSPermissionCancellationRequiresTypedEvidence(t *testing.T) {
 		}
 	}
 }
+
+func TestBPSPermissionCancellationPreservesBufferedTerminal(t *testing.T) {
+	store := NewFileCooldownStateStore(t.TempDir())
+	m := permissionTestManager(t, store)
+	auth, _ := m.GetByID("permission-test")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	remaining := make(chan cliproxyexecutor.StreamChunk)
+	close(remaining)
+	result := m.wrapStreamResult(ctx, auth, "bps", "model-a", "model-a", nil,
+		[]cliproxyexecutor.StreamChunk{{Err: permissionCancellationEvidence{}}}, remaining,
+		OAuthModelAliasResult{}, false, cliproxyexecutor.Options{}, 1)
+	for range result.Chunks {
+	}
+	state, _ := m.GetByID(auth.ID)
+	if len(state.PermissionSuspensions) != 1 || state.Generation != auth.Generation+1 {
+		t.Fatalf("buffered terminal was not recorded exactly once: %+v", state)
+	}
+	restarted := permissionTestManager(t, store)
+	if err := restarted.RestoreCooldownStates(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	restored, _ := restarted.GetByID(auth.ID)
+	if len(restored.PermissionSuspensions) != 1 {
+		t.Fatal("buffered terminal did not persist")
+	}
+}

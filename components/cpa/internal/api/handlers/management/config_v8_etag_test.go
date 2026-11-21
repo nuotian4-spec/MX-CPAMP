@@ -92,7 +92,7 @@ func TestConfigV8ETagIfMatch(t *testing.T) {
 	}
 
 	// Another writer revokes the API key between the read above and our write.
-	revoked := do(http.MethodPut, "/v8/management/config/access/api-keys", `["other-key"]`, "")
+	revoked := do(http.MethodPut, "/v8/management/config/access", `{"api-keys":["other-key"],"client-key-scopes":[{"api-key":"other-key","channel":"codex"}]}`, "")
 	wantStatus(revoked, http.StatusOK)
 	if got := revoked.Header().Get("ETag"); got != fileETag() {
 		t.Fatalf("PUT response ETag=%q want %q", got, fileETag())
@@ -158,8 +158,9 @@ func TestConfigV8ETagIfMatch(t *testing.T) {
 	}
 
 	// A list containing the current tag (with whitespace and weak members) passes.
+	// Remove keys and their associated channel scopes together.
 	current := fileETag()
-	listed := do(http.MethodDelete, "/v8/management/config/access/api-keys", "", `"stale", `+current+` , W/`+current)
+	listed := do(http.MethodDelete, "/v8/management/config/access", "", `"stale", `+current+` , W/`+current)
 	wantStatus(listed, http.StatusOK)
 	loaded, err = config.LoadConfig(path)
 	if err != nil {

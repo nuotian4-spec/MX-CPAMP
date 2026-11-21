@@ -3,9 +3,11 @@ package openai
 import (
 	"errors"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/MoeForge/moego/json"
 	"github.com/MoeForge/moego/ojson"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/interfaces"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/runtime/executor/helps"
@@ -63,7 +65,14 @@ func TestForwardResponsesStreamBPSSearchFailureIdentity(t *testing.T) {
 				}
 			} else {
 				want := handlers.BuildOpenAIResponsesStreamFailedChunk(http.StatusBadGateway, failure.Error(), framer.dataFrames)
-				if failed != string(want) {
+				var gotJSON, wantJSON any
+				if err := json.Unmarshal([]byte(failed), &gotJSON); err != nil {
+					t.Fatalf("failed event is not JSON: %v", err)
+				}
+				if err := json.Unmarshal(want, &wantJSON); err != nil {
+					t.Fatalf("expected event is not JSON: %v", err)
+				}
+				if !reflect.DeepEqual(gotJSON, wantJSON) {
 					t.Fatalf("unrelated error shape changed: got=%s want=%s", failed, want)
 				}
 			}

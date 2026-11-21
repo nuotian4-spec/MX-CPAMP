@@ -93,6 +93,10 @@ func TestKiloNativeManagerChannelKeysJointBridge(t *testing.T) {
 	if goBin == "" || managerDir == "" || os.Getenv("KILO_JOINT_NODE_BIN") == "" || os.Getenv("KILO_JOINT_WEB_DIR") == "" {
 		t.Skip("channel key joint runtime not configured; integration is not verified")
 	}
+	updateRoot := t.TempDir()
+	t.Setenv("MX_UPDATE_LOCK_PATH", filepath.Join(updateRoot, ".mx-update.lock"))
+	t.Setenv("MX_UPDATE_STATE_DIR", filepath.Join(updateRoot, "state"))
+	t.Setenv("MX_UPDATE_CAPABILITY_EVIDENCE", "")
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	f := newKiloNativeFixture(t, kiloSuccessStream)

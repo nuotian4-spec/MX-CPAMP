@@ -27,3 +27,11 @@ CPA 与 CPAMP 原样导入分别核对了 2296、1572 个上游跟踪文件，bl
 登录协议的逐文件来源与许可见 [NOTICE](../components/oauth-login/NOTICE.zh-CN.md)，保留 toSub2 MIT 与 Sub2API LGPL-3.0 原文。供体含未提交输入的事实已记录，不将供体 HEAD 描述为全部输入。
 
 实现证据见 [CPA 回执](evidence/cpa-runtime/README.zh-CN.md)、[Manager/Worker 回执](evidence/manager-login/RECEIPT.zh-CN.md)。本地验证、推送、镜像发布与生产部署分开记录；来源提交不替代业务验收。
+
+## CPA v8.0.80 升级来源
+
+2026-11-21 将 CPA 的上游来源推进到 [v8.0.80](https://github.com/router-for-me/CLIProxyAPI/releases/tag/v8.0.80)，固定提交 `f5c5681a8361c9da53e93c60b6507816eee7468b`，上游 tree 为 `36bef95f17cb09c90b1e48174a32832e6fcc19c7`。本站整合基线为 `966ad2f29e8b4d1848438b6ee055c1cdc5f20ff1`。
+
+三方整合以原样导入的 v8.0.63 为共同基线，纳入上游 942 项路径变化（759 修改、182 新增、1 删除），保留本站 BPS、Kilo、通道鉴权、插件冷更新与请求观测定制。v8.0.63 的原始导入提交及来源记录保持原意，不将定制树描述为上游原样代码。
+
+整合接缝和验收范围见 [升级执行记录](execution/CPA-UPSTREAM-V8.0.80-20261121.zh-CN.md)。最终发行由固定的 MX-CPAMP 提交绑定；上游提交号只标识来源。

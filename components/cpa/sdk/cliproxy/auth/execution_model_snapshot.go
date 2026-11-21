@@ -20,8 +20,8 @@ func (m *Manager) ResolveExecutionModelWithConfig(cfg *internalconfig.Config, se
 	}
 	model := rewriteModelForAuth(routeModel, selected)
 	if channel := modelAliasChannel(selected); channel != "" {
-		alias := resolveUpstreamModelFromAliases(OAuthModelAliasesFromAttributes(authAttributes(selected)), model)
-		if alias.UpstreamModel == "" && cfg != nil {
+		alias, matched := resolveUpstreamModelFromAliases(OAuthModelAliasesFromAttributes(authAttributes(selected)), model)
+		if !matched && cfg != nil {
 			alias = resolveUpstreamModelFromCompiledAliasTable(compileOAuthModelAliasTable(cfg.OAuthModelAlias), model, channel)
 		}
 		if alias.UpstreamModel != "" {
