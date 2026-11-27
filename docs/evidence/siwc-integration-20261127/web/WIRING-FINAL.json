@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "mapping_count": 5125,
+  "changed_cpamp_entries": 20,
+  "cpa_mapping_unchanged": true,
+  "component_tree": "a2e51ff45f1f04e3f706f28f474b2b752e0bc905",
+  "independent_review": "docs/evidence/siwc-integration-20261127/review/REVIEW.zh-CN.md",
+  "contract_validation": true,
+  "source_mapping_validation": true
+}

@@ -24,6 +24,7 @@ import styles from '@/features/accounts/AccountsPage.module.scss';
 type AccountConfigurationTabProps = {
   row: AccountRow;
   concurrencySection?: ReactNode;
+  siwcSection?: ReactNode;
   disableControls: boolean;
   editor: UseAuthFileConfigurationEditorResult;
   onCopyText: (text: string) => void | Promise<void>;
@@ -35,9 +36,10 @@ export function AccountConfigurationTab({
   editor,
   onCopyText,
   concurrencySection,
+  siwcSection,
 }: AccountConfigurationTabProps) {
   const { t } = useTranslation();
-  const concurrencySlot = <Fragment key="credential-concurrency">{concurrencySection}</Fragment>;
+  const concurrencySlot = <Fragment key="credential-concurrency">{siwcSection}{concurrencySection}</Fragment>;
   const exclusionPriority = getAccountModelExclusionPriority(
     useAuthStore((authState) => authState.serverVersion)
   );

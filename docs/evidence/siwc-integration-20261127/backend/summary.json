@@ -1,0 +1,11 @@
+{
+  "exit_code": 0,
+  "roots": 16,
+  "leaves": 31,
+  "passed_events": 36,
+  "failed_events": 0,
+  "packages": [
+    "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/siwc",
+    "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/router"
+  ]
+}

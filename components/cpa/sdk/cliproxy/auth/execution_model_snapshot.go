@@ -29,7 +29,7 @@ func (m *Manager) ResolveExecutionModelWithConfig(cfg *internalconfig.Config, se
 		}
 	}
 	if pool := resolveOpenAICompatUpstreamModelPool(cfg, selected, model); len(pool) > 0 {
-		return pool[m.nextModelPoolOffset(openAICompatModelPoolKey(selected, model), len(pool))%len(pool)]
+		return pool[m.nextModelPoolOffset(selected, openAICompatModelPoolKey(selected, model), len(pool))%len(pool)]
 	}
 	resolved := m.applyAPIKeyModelAliasWithRouting(&apiKeyModelRoutingSnapshot{config: cfg}, selected, model)
 	if strings.TrimSpace(resolved) != "" {

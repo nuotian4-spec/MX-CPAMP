@@ -283,7 +283,7 @@ func TestScopedPluginLegacyProviderListUsesExecutorIdentity(t *testing.T) {
 			if channel == "bps" {
 				pluginID = "cpa-bps"
 			}
-			adapter, err := host.executorAdapterForPlugin(pluginID)
+			adapter, err := host.executorAdapterForPlugin(context.Background(), pluginID, "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -330,7 +330,7 @@ func TestScopedPluginAdapterBoundaryForAllDirectMethods(t *testing.T) {
 
 func TestScopedPluginCatalogChecksActualRegisteredAdapter(t *testing.T) {
 	host, h, _ := scopedPluginFixture(t)
-	adapter, err := host.executorAdapterForPlugin("codex-executor")
+	adapter, err := host.executorAdapterForPlugin(context.Background(), "codex-executor", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +353,7 @@ func TestScopedPluginCatalogChecksActualRegisteredAdapter(t *testing.T) {
 
 func TestScopedPluginBPSHostMappingUsesRegisteredRecord(t *testing.T) {
 	host, _, _ := scopedPluginFixture(t)
-	adapter, err := host.executorAdapterForPlugin("cpa-bps")
+	adapter, err := host.executorAdapterForPlugin(context.Background(), "cpa-bps", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +376,7 @@ func TestScopedPluginBPSMappingRejectsMissingExecutor(t *testing.T) {
 	if _, known := host.PluginExecutorChannel("cpa-bps"); known {
 		t.Fatal("无执行器能力的记录获得通道权限")
 	}
-	if _, err := host.executorAdapterForPlugin("cpa-bps"); err == nil {
+	if _, err := host.executorAdapterForPlugin(context.Background(), "cpa-bps", ""); err == nil {
 		t.Fatal("无执行器能力的记录获得适配器")
 	}
 }
@@ -386,7 +386,7 @@ func TestScopedPluginBPSMappingRejectsStaleAndMismatchedAdapter(t *testing.T) {
 		for _, change := range []string{"path", "version", "executor"} {
 			t.Run(scope+"/"+change, func(t *testing.T) {
 				host, _, counters := scopedPluginFixture(t)
-				adapter, err := host.executorAdapterForPlugin("cpa-bps")
+				adapter, err := host.executorAdapterForPlugin(context.Background(), "cpa-bps", "")
 				if err != nil {
 					t.Fatal(err)
 				}

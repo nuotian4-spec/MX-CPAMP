@@ -30,6 +30,7 @@ import (
 	proxysvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/proxy"
 	quotasnapshotsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/quotasnapshot"
 	setupsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/setup"
+	siwcsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/siwc"
 	updatechecksvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/updatecheck"
 	usagesvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/usage"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/store"
@@ -63,6 +64,7 @@ type Context struct {
 	ManagerConfigService           *managerconfigsvc.Service
 	CredentialConcurrencyService   *concurrencysvc.Service
 	KiloService                    *kilosvc.Service
+	SIWCService                    *siwcsvc.Service
 	CollectorService               *collectorsvc.Service
 	UsageService                   *usagesvc.Service
 	DashboardService               *dashboardsvc.Service
@@ -184,6 +186,7 @@ func fromExisting(
 		ManagerConfigService:         managerConfigService,
 		CredentialConcurrencyService: connectionService,
 		KiloService:                  kilosvc.New(managerConfigService, connectionService, nil),
+		SIWCService:                  siwcsvc.New(managerConfigService, connectionService, nil),
 		CollectorService:             collectorService,
 		UsageService:                 usageService,
 		DashboardService:             dashboardsvc.New(st, cfg.DashboardHourlyRollupEnabled),

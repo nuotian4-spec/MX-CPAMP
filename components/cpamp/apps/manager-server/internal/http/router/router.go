@@ -23,6 +23,7 @@ import (
 	quotacooldowncontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/quotacooldown"
 	quotasnapshotcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/quotasnapshot"
 	setupcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/setup"
+	siwccontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/siwc"
 	systemcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/system"
 	updatecheckcontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/updatecheck"
 	usagecontroller "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/http/controller/usage"
@@ -69,6 +70,10 @@ func New(appCtx *app.Context) http.Handler {
 	mux.HandleFunc("/api/kilo/accounts/", middleware.WithCORS(appCtx.Config, kiloHandler.Handle))
 	loginHandler := &logincontroller.Handler{Service: appCtx.OAuthLoginService, Auth: appCtx.AdminAuthService}
 	mux.HandleFunc("/api/oauth-login/", middleware.WithCORS(appCtx.Config, loginHandler.Handle))
+	siwcHandler := &siwccontroller.Handler{Service: appCtx.SIWCService, Auth: appCtx.AdminAuthService}
+	for _, path := range []string{"/api/siwc/credential", "/api/siwc/bind", "/api/siwc/callback", "/api/siwc/status", "/api/siwc/session"} {
+		mux.HandleFunc(path, middleware.WithCORS(appCtx.Config, siwcHandler.Handle))
+	}
 	updates := &updatecheckcontroller.Handler{App: appCtx}
 	mux.HandleFunc("/usage-service/updates", middleware.WithCORS(appCtx.Config, updates.Handle))
 	mux.HandleFunc("/usage-service/updates/", middleware.WithCORS(appCtx.Config, updates.Handle))

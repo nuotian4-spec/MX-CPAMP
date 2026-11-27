@@ -1,0 +1,21 @@
+{
+  "order": [
+    "tsc",
+    "vite build",
+    "copy dist assets to Manager embed",
+    "go build linux/amd64 CGO=0"
+  ],
+  "node": "22.23.4",
+  "go": "1.26.10 windows/amd64",
+  "web_version": "siwc-local",
+  "source_commit": "ba548720f8d46f16835b8d5bed5b2d99aeaf316a",
+  "component_tree": "a2e51ff45f1f04e3f706f28f474b2b752e0bc905",
+  "cpa_tree_unchanged": "8501bb9d2095cb9e7bc71b6bc008aa097b6670cc",
+  "typecheck_exit": 0,
+  "vite_exit": 0,
+  "manager_exit": 0,
+  "manager_binary": "C:\\Users\\子羽\\.codex\\artifacts\\cpa-core-v817-20261127\\cpa-manager-plus-siwc-final",
+  "manager_bytes": 32475537,
+  "web_bytes": 6863077,
+  "embed_bytes_equal": true
+}

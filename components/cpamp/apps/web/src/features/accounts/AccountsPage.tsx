@@ -18,6 +18,7 @@ import { kiloApi, type KiloAccountsSnapshot } from '@/services/api/kilo';
 import { useCredentialConcurrencySnapshot } from './hooks/useCredentialConcurrencySnapshot';
 import { CredentialConcurrencyBadge } from './components/CredentialConcurrencyBadge';
 import { AccountConcurrencySection } from './components/accountDetail/AccountConcurrencySection';
+import { AccountSiwcSection } from './components/accountDetail/AccountSiwcSection';
 import type { ConcurrencyEditorState } from './components/CredentialConcurrencyEditor';
 import { useQuotaStore as usePluginQuotaStore } from '@/stores/useQuotaStore';
 import { getCpaBpsQuotaKey, getCpaBpsQuotaState, getCpaBpsQuotaScope } from './model/cpaBpsQuotaState';
@@ -10872,6 +10873,15 @@ export function AccountsPage() {
             disableControls={disableControls}
             editor={configurationEditor}
             onCopyText={copyTextWithNotification}
+            siwcSection={selectedRow.provider === 'codex' ? (
+              <AccountSiwcSection
+                key={JSON.stringify([authFilesRequestScope.apiBase, authFilesRequestScope.managementKey, selectedRow.selectionKey])}
+                row={selectedRow}
+                scope={authFilesRequestScope}
+                home={concurrency.snapshot?.mode === 'home'}
+                disabled={disableControls || configurationSaving}
+              />
+            ) : undefined}
             concurrencySection={
               <AccountConcurrencySection
                 key={concurrencyOwner}

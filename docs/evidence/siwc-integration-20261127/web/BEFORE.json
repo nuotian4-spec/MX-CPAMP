@@ -1,0 +1,11 @@
+{
+  "baseline": "b9ea2dc4c6bb377d31143970a6df1084297e4b09",
+  "files": [
+    "src/features/accounts/AccountsPage.tsx",
+    "src/features/accounts/components/accountDetail/AccountConfigurationTab.tsx",
+    "src/i18n/locales/zh-CN.json",
+    "src/i18n/locales/zh-TW.json",
+    "src/i18n/locales/en.json",
+    "src/i18n/locales/ru.json"
+  ]
+}

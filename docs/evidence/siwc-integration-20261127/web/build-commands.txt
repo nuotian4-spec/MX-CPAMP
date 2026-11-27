@@ -1,0 +1,8 @@
+Node 22.23.4
+node node_modules/typescript/bin/tsc --pretty false
+VERSION=siwc-local node node_modules/vite/bin/vite.js build
+copy dist/index.html -> ../manager-server/internal/httpapi/web/management.html
+copy dist/favicon.ico -> ../manager-server/internal/httpapi/web/favicon.ico
+copy dist/apple-touch-icon.png -> ../manager-server/internal/httpapi/web/apple-touch-icon.png
+Go 1.26.10; GOPROXY=off GOTOOLCHAIN=local CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+go build -ldflags "-X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.Version=siwc-local -X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.SourceCommit=ba548720f8d46f16835b8d5bed5b2d99aeaf316a" -o C:/Users/子羽/.codex/artifacts/cpa-core-v817-20261127/cpa-manager-plus-siwc-final ./cmd/cpa-manager-plus

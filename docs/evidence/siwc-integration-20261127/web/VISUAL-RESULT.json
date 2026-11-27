@@ -1,0 +1,37 @@
+{
+  "route": "AppRouter -> MainLayout -> AccountsPage /accounts?account=siwc-synthetic.json%00synthetic-index&tab=config",
+  "fixture": "C:\\Users\\子羽\\.codex\\artifacts\\cpa-core-v817-20261127\\siwc-visual.mjs",
+  "screenshots": [
+    {
+      "file": "desktop-light.jpg",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "file": "desktop-dark.jpg",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "file": "mobile-light.jpg",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "file": "mobile-dark.jpg",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "observations": [
+    "SIWC嵌入Codex详情配置区域，保留原五块配置",
+    "授权URL、完整回调输入、提交/取消/查询均可滚动触达",
+    "390和1280下documentElement.scrollWidth分别等于390和1280",
+    "明暗主题文本及按钮可辨，无SIWC横向溢出"
+  ],
+  "fixture_limitation": "合成HTTP未覆盖/api/bps/settings，返回{}触发既有bpsCredentialSnapshot.ts:17的缺connection_ref提示；背景红条保留，不视为SIWC连接失败。",
+  "browser_closed": true,
+  "viewport_reset": true,
+  "fixture_stopped": true,
+  "real_login_calls": 0
+}

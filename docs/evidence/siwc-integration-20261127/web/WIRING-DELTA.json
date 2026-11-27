@@ -1,0 +1,177 @@
+{
+  "tree": "a2e51ff45f1f04e3f706f28f474b2b752e0bc905",
+  "cpa_tree": "8501bb9d2095cb9e7bc71b6bc008aa097b6670cc",
+  "cpamp_tree": "ba548720f8d46f16835b8d5bed5b2d99aeaf316a",
+  "mapping_count": 5125,
+  "changed_mapping_count": 20,
+  "delta": {
+    "components/cpamp/apps/manager-server/internal/http/router/router.go": {
+      "before": {
+        "mode": "100644",
+        "blob": "88d2bbd04cee048f6a014925136b4a2218e54905"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c631cbc40d67e6255d5decebfc1d4a0a51aed57f"
+      }
+    },
+    "components/cpamp/apps/web/src/services/api/siwc.ts": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "089c1e7b5a40fa8e86c1a2e789d0940ee6ea2b26"
+      }
+    },
+    "components/cpamp/apps/web/src/i18n/locales/ru.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "c6c5c1429dcbbc8d3eeef02012494f073436f2b3"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "0b48d391aceba4b91a47a885983e6da5daed2c7c"
+      }
+    },
+    "components/cpamp/apps/manager-server/internal/service/siwc/service.go": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "99812d727a430e88b3d03c89ff341b00cdfb2d76"
+      }
+    },
+    "components/cpamp/apps/manager-server/internal/app/context.go": {
+      "before": {
+        "mode": "100644",
+        "blob": "922c087f9b7bec004e4dfb6a7ffa46bb2ade0a70"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "0fe93c4771328da859e11369664f7f7c6c4a2e39"
+      }
+    },
+    "components/cpamp/apps/manager-server/internal/service/siwc/service_test.go": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "0a47a416a86d8d5695bed739662dc50fccf565b9"
+      }
+    },
+    "components/cpamp/apps/web/src/i18n/locales/en.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "403817075cc572ed74c25e6138e041af50d708a1"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "44adb69590af5691f0dbb96c7c89f36b11e4f0d1"
+      }
+    },
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountConfigurationTab.tsx": {
+      "before": {
+        "mode": "100644",
+        "blob": "c125c468536ccb5ed26bbd7bc201dcbae698d2b0"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "08a4b1ba4c226cde30d1d0f23cfd1d1b32478bba"
+      }
+    },
+    "components/cpamp/apps/web/src/i18n/locales/zh-CN.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "6c9a7a4e073479a64e5b02e24aeeaceb83bc7fc5"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "4ea1731c45aa73e4723e06976343248b164c7acd"
+      }
+    },
+    "components/cpamp/apps/manager-server/internal/httpapi/web/management.html": {
+      "before": {
+        "mode": "100644",
+        "blob": "7d90b9d978504d395bf9a5adf7de9ed57992b7b2"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "176ef451437d81358727a7c9ebb6ee54340e25b4"
+      }
+    },
+    "components/cpamp/apps/web/src/features/accounts/AccountsPage.tsx": {
+      "before": {
+        "mode": "100644",
+        "blob": "f5c5cc3a21113b547162372445cd464c5c7e9989"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f8a6f5f95c5d4a2663e021a8376e2af34cf3c2c2"
+      }
+    },
+    "components/cpamp/apps/manager-server/internal/model/siwc.go": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "672f81a2878681a3e9c0f6cc6e127d600494a869"
+      }
+    },
+    "components/cpamp/apps/web/src/i18n/locales/zh-TW.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "0af38c78392772dc78f3f17a005011af39dbb725"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "04b00310d207a0be68165f1a1adf4fc468d1f95e"
+      }
+    },
+    "components/cpamp/apps/web/src/services/api/siwc.test.ts": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "63500de58eb78b5ecf9a19ad5d51045de5dd0967"
+      }
+    },
+    "components/cpamp/apps/web/src/features/accounts/hooks/useSiwcBinding.ts": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "a4cdd502c180951b08a1523ee0c24b4871956d56"
+      }
+    },
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountSiwcSection.test.tsx": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "dd0506035f29dfe89805e72f532bef9b11257062"
+      }
+    },
+    "components/cpamp/apps/manager-server/internal/http/controller/siwc/handler.go": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "222512fb8d7f97f9ee10529f15fa09873f109d36"
+      }
+    },
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountSiwcSection.module.scss": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "71a63b9a6d747ee1834a99644a7c73c56d74773a"
+      }
+    },
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountSiwcSection.tsx": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "9e36bcc567c2f8ad9a48d93a85e26a8141458baf"
+      }
+    },
+    "components/cpamp/apps/manager-server/internal/http/router/siwc_test.go": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "284a48dd0cae15eb589e95b3707f18108e577c68"
+      }
+    }
+  },
+  "cpa_mapping_unchanged": true
+}

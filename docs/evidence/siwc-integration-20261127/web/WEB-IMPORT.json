@@ -1,0 +1,21 @@
+{
+  "baseline": "b9ea2dc4c6bb377d31143970a6df1084297e4b09",
+  "source": "C:\\Users\\子羽\\.codex\\worktrees\\siwc-web-20261127\\MX-CPAMP",
+  "destination": "C:\\Users\\子羽\\.codex\\worktrees\\cpa-core-v817-20261127\\MX-CPAMP",
+  "files": [
+    "components/cpamp/apps/web/src/features/accounts/AccountsPage.tsx",
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountConfigurationTab.tsx",
+    "components/cpamp/apps/web/src/i18n/locales/en.json",
+    "components/cpamp/apps/web/src/i18n/locales/ru.json",
+    "components/cpamp/apps/web/src/i18n/locales/zh-CN.json",
+    "components/cpamp/apps/web/src/i18n/locales/zh-TW.json",
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountSiwcSection.module.scss",
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountSiwcSection.test.tsx",
+    "components/cpamp/apps/web/src/features/accounts/components/accountDetail/AccountSiwcSection.tsx",
+    "components/cpamp/apps/web/src/features/accounts/hooks/useSiwcBinding.ts",
+    "components/cpamp/apps/web/src/services/api/siwc.test.ts",
+    "components/cpamp/apps/web/src/services/api/siwc.ts"
+  ],
+  "before_bytes_equal": true,
+  "after_bytes_equal": true
+}

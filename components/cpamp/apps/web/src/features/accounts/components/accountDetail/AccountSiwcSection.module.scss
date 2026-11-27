@@ -1,0 +1,57 @@
+.section {
+  min-width: 0;
+}
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+.summary {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.heading .summary {
+  margin-top: $spacing-xs;
+}
+.status {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.status[data-status='valid'],
+.success {
+  color: var(--data-green-base);
+}
+.status[data-status='invalid'],
+.error {
+  color: var(--data-red-base);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  align-items: center;
+}
+.session {
+  display: grid;
+  gap: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1px solid var(--border-color);
+  min-width: 0;
+}
+.session form {
+  display: grid;
+  gap: $spacing-sm;
+  min-width: 0;
+}
+.error,
+.success {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

@@ -350,3 +350,85 @@ func TestCredentialConcurrencyReplacementSeparatesOldLease(t *testing.T) {
 	old()
 	assertActive(t, m, "file.json", 1)
 }
+
+func TestCredentialConcurrencyVerifyCancellationRetainsLeaseUntilSourceExit(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		m, exec, ids := concurrencyFixture(t, nil)
+		source := make(chan core.StreamChunk)
+		var closeSource sync.Once
+		defer closeSource.Do(func() { close(source) })
+		started := make(chan struct{})
+		exec.streamFn = func(context.Context, *Auth) (*core.StreamResult, error) {
+			close(started)
+			return &core.StreamResult{Chunks: source}, nil
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		done := make(chan error, 1)
+		go func() {
+			_, err := m.VerifyInference(ctx, ids[0], "test-model")
+			done <- err
+		}()
+		<-started
+		assertActive(t, m, ids[0], 1)
+		cancel()
+		synctest.Wait()
+		select {
+		case err := <-done:
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("验证取消返回 %v，预期 context.Canceled", err)
+			}
+		default:
+			t.Fatal("源流未退出时，验证调用没有及时返回")
+		}
+		assertActive(t, m, ids[0], 1)
+		closeSource.Do(func() { close(source) })
+		synctest.Wait()
+		assertActive(t, m, ids[0], 0)
+	})
+}
+
+func TestCredentialConcurrencyCreditsCancellationHoldsUntilSourceExit(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		const model = "claude-sonnet-4-6"
+		m, exec, ids := setupIssue7658CreditsManager(t, t.Name(), model, 1, nil, 1, func(_ int, auth *Auth) {
+			auth.Metadata = map[string]any{AttributeConcurrencyLimit: 1}
+		})
+		source := make(chan core.StreamChunk, 1)
+		source <- core.StreamChunk{Payload: []byte(`data: {"type":"response.created"}`)}
+		var closeSource sync.Once
+		defer closeSource.Do(func() { close(source) })
+		upstreamCanceled := make(chan struct{})
+		exec.streamFn = func(ctx context.Context, _ *Auth, _ core.Request, _ core.Options) (*core.StreamResult, error) {
+			go func() {
+				<-ctx.Done()
+				close(upstreamCanceled)
+			}()
+			return &core.StreamResult{Chunks: source}, nil
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		result, attempted, err := m.tryAntigravityCreditsExecuteStream(ctx, core.Request{Model: model}, core.Options{Stream: true})
+		if err != nil || !attempted || result == nil {
+			t.Fatalf("credits 流未建立：attempted=%v err=%v", attempted, err)
+		}
+		if calls := exec.CreditsCalls(); len(calls) != 1 || calls[0] != ids[0] {
+			t.Fatalf("credits 实际调用账号为 %v", calls)
+		}
+		<-result.Chunks
+		assertActive(t, m, ids[0], 1)
+		cancel()
+		synctest.Wait()
+		select {
+		case <-upstreamCanceled:
+		default:
+			t.Fatal("credits 上游未收到取消")
+		}
+		assertActive(t, m, ids[0], 1)
+		closeSource.Do(func() { close(source) })
+		synctest.Wait()
+		for range result.Chunks {
+		}
+		assertActive(t, m, ids[0], 0)
+	})
+}

@@ -1,0 +1,22 @@
+{
+  "tool": "docker",
+  "arguments": [
+    "run",
+    "--rm",
+    "--pull",
+    "never",
+    "--network",
+    "none",
+    "--mount",
+    "type=bind,source=C:/Users/子羽/.codex/artifacts/cpa-core-v817-20261127/CLIProxyAPI-final,target=/inputs/CLIProxyAPI,readonly",
+    "--mount",
+    "type=bind,source=C:\\Users\\子羽\\.codex\\artifacts\\cpa-core-v817-20261127\\cpa-manager-plus-siwc-final,target=/inputs/manager,readonly",
+    "--mount",
+    "type=bind,source=C:\\Users\\子羽\\.codex\\worktrees\\cpa-core-v817-20261127\\MX-CPAMP\\docs\\evidence\\siwc-integration-20261127\\backend,target=/evidence",
+    "python:3.12-bookworm",
+    "python3",
+    "/evidence/run-real-chain.py"
+  ],
+  "manager_binary": "C:\\Users\\子羽\\.codex\\artifacts\\cpa-core-v817-20261127\\cpa-manager-plus-siwc-final",
+  "cpa_binary": "C:/Users/子羽/.codex/artifacts/cpa-core-v817-20261127/CLIProxyAPI-final"
+}

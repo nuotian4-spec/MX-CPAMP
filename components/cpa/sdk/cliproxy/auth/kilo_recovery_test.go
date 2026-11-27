@@ -98,7 +98,7 @@ func TestKiloM6HostTickAndCancellation(t *testing.T) {
 	m.auths[a.ID] = a
 	m.mu.Unlock()
 	hook := &m6ClockHook{updates: make(chan *Auth, 10)}
-	m.hook = hook
+	t.Cleanup(m.AddHook(hook))
 	ticks := make(chan time.Time)
 	ctx, cancel := context.WithCancel(context.Background())
 	m.startKiloRecovery(ctx, ticks, func() {})
